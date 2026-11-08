@@ -10,6 +10,35 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+/// What a member may do in a household (docs/households/W2.md): the
+/// [owner] created it and names [admin]s; both remove members and make
+/// group links.
+enum HouseholdRole() {
+  owner,
+  admin,
+  member;
+
+  /// The server's `role`; anything unknown counts as [member].
+  static HouseholdRole parse(Object? role) =>
+      values.where((r) => r.name == role).firstOrNull ?? member;
+
+  /// Removes members, makes and revokes group links.
+  bool get manages => this != member;
+}
+
+/// Who the household shops together: what the user picked when creating
+/// it (job 168), null when not asked. Invites say it in their text.
+enum HouseholdKind() {
+  partner,
+  family,
+  flat,
+  club,
+  solo;
+
+  static HouseholdKind? parse(Object? kind) =>
+      values.where((k) => k.name == kind).firstOrNull;
+}
+
 /// One of the user's households, as `my_households()` answers it.
 @immutable
 class const Household({
@@ -23,6 +52,13 @@ class const Household({
 
   /// Items not ticked yet.
   final int openCount = 0,
+  final HouseholdKind? kind,
+
+  /// The user's own role in it.
+  final HouseholdRole role = HouseholdRole.member,
+
+  /// It has Hummlist Premium, which covers every member.
+  final bool premium = false,
 }) {
   /// A row of `my_households()` or of the device cache; null when it has no
   /// id or name.
@@ -39,6 +75,9 @@ class const Household({
         final int n => n,
         _ => 0,
       },
+      kind: HouseholdKind.parse(json['kind']),
+      role: HouseholdRole.parse(json['role']),
+      premium: json['premium'] == true,
     ),
     _ => null,
   };
@@ -49,7 +88,21 @@ class const Household({
     'is_default': isDefault,
     'member_count': memberCount,
     'open_count': openCount,
+    'kind': kind?.name,
+    'role': role.name,
+    'premium': premium,
   };
+
+  Household copyWith({String? name, bool? isDefault}) => Household(
+    id: id,
+    name: name ?? this.name,
+    isDefault: isDefault ?? this.isDefault,
+    memberCount: memberCount,
+    openCount: openCount,
+    kind: kind,
+    role: role,
+    premium: premium,
+  );
 }
 
 /// Where a household was created, for `household_created`'s `context`.
@@ -198,6 +251,15 @@ class SessionCubit(
   /// second answer (the same household) is not counted again.
   final _created = <String>{};
 
+  /// Households this device is leaving: gone after the next refresh, but
+  /// not removed by someone else.
+  final _leaving = <String>{};
+  final _removals = StreamController<Household>.broadcast();
+
+  /// Each household someone else removed the user from (job 169b W2), as a
+  /// refresh finds it gone. The session already shows another one.
+  Stream<Household> get removals => _removals.stream;
+
   /// A join whose answer never came (offline, a timeout): the server may
   /// have done it. The retry then answers `member`, and the event goes out
   /// once, then.
@@ -205,6 +267,8 @@ class SessionCubit(
 
   Future<void> _load(String? userId) async {
     if (userId == null) {
+      // A reload still out for the old user must not show their household.
+      _reloads++;
       _loadedFor = null;
       _toShow = null;
       _retry?.cancel();
@@ -241,7 +305,10 @@ class SessionCubit(
     }
     try {
       await refresh();
-      _loadedFor = userId;
+      // A reload dropped by a sign-out meanwhile loaded nothing.
+      if (_client.auth.currentUser?.id == userId) {
+        _loadedFor = userId;
+      }
     } on Object {
       // Offline: ask until the server answers.
       _retry?.cancel();
@@ -296,6 +363,20 @@ class SessionCubit(
         ? NeedsHousehold(userId)
         : InHousehold(userId, _pick(households, shown), households);
     _toShow = null;
+    final gone = switch (state) {
+      InHousehold(userId: final user, households: final before)
+          when user == userId =>
+        [
+          for (final h in before)
+            if (!households.any((now) => now.id == h.id) &&
+                !_leaving.remove(h.id))
+              h,
+        ],
+      _ => const <Household>[],
+    };
+    // Shown before the write: a switch during it must not be undone.
+    emit(next);
+    gone.forEach(_removals.add);
     await _cache.remember(
       userId,
       households: households,
@@ -304,7 +385,6 @@ class SessionCubit(
         _ => null,
       },
     );
-    emit(next);
   }
 
   /// Shows [householdId], one of the user's households, on this device: the
@@ -353,12 +433,22 @@ class SessionCubit(
   /// default one; leaving the last one, onboarding. Throws
   /// [HouseholdError].
   Future<void> leave(String householdId, {bool archive = false}) async {
-    final result = await householdCall(
-      () => _client.rpc<Map<String, dynamic>>(
-        'leave_household',
-        params: {'p_household': householdId, 'p_archive': archive},
-      ),
-    );
+    _leaving.add(householdId);
+    final Map<String, dynamic> result;
+    try {
+      result = await householdCall(
+        () => _client.rpc<Map<String, dynamic>>(
+          'leave_household',
+          params: {'p_household': householdId, 'p_archive': archive},
+        ),
+      );
+    } on HouseholdError catch (e) {
+      // Offline, the server may have done it: then it is gone by our hand.
+      if (e.problem != HouseholdProblem.offline) {
+        _leaving.remove(householdId);
+      }
+      rethrow;
+    }
     switch (result) {
       case {'status': 'left'}:
         await _left(householdId);
@@ -409,6 +499,7 @@ class SessionCubit(
               _pick(kept, household.id == householdId ? null : household.id),
               kept,
             );
+      emit(next);
       await _cache.remember(
         userId,
         households: kept,
@@ -417,7 +508,6 @@ class SessionCubit(
           _ => null,
         },
       );
-      emit(next);
     }
   }
 
@@ -575,6 +665,7 @@ class SessionCubit(
   /// The server already deleted the account and its sessions: signs out on
   /// this device only and drops everything cached.
   Future<void> accountDeleted(AccountDeletedNotice notice) async {
+    _reloads++;
     _loadedFor = null;
     _retry?.cancel();
     pendingInvite?.signedOut();
@@ -610,6 +701,7 @@ class SessionCubit(
   Future<void> close() async {
     _retry?.cancel();
     await _auth.cancel();
+    await _removals.close();
     await super.close();
   }
 }

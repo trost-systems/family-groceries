@@ -143,7 +143,7 @@ class JoinCubit(
 
   JoinMethod _methodOf(String code) =>
       link != null && normalizeInviteCode(link!) == code
-      ? JoinMethod.link
+      ? pendingInvite?.methodOf(code) ?? JoinMethod.link
       : JoinMethod.code;
 
   @override

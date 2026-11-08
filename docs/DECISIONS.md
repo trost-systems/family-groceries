@@ -10501,3 +10501,79 @@ switch drops the user's other cached lists.
     the incomplete warning: several households can only be made in the new app, and the builds
     without it went to TestFlight and Play internal testing only, never to a public store. The new
     app's deletion names every household that goes.
+
+## Job 169b: the invite loop, wave 2, 2026-11-08
+
+Contract [`docs/households/W2.md`](households/W2.md). Peter (2026-11-08): reusable group links
+(30 days, 50 joins, revocable, admins only); admins remove members, revoke the group link and
+make a new one; invites stay links the user shares (N-18).
+
+1. **One active group link per household, idempotent create.** Creating while one is open
+   answers the open one; after a revoke, expiry or the 50th join a new code. Two places to manage
+   a link would mean two links forwarded around a club.
+2. **Uses are counted under the invite's row lock**, with a check `use_count between 0 and
+   max_uses` as the last guard. The two-connection tests race the 50th join (49 taken: one
+   joins, one gets `invalid_invite`; 48 taken, three racers: two join). They fail without the
+   condition in the update.
+3. **The static join page** (`app/web/join/`, a Vercel rewrite before the web app) shows who
+   invites to what without loading Flutter, which is what a link opened in a messenger's
+   in-app browser needs. It calls `preview_invite_public`, the only new function `anon` may
+   call. It shows the inviter's first name only when they set a display name (the default name
+   is the email's local part), the household name and kind, member and open-item counts and
+   Premium; never item names. Store buttons and the Smart App Banner stay off until a listing is
+   public (`storeListings` in `join.js`).
+4. **Rate limits without raw IPs.** Per client (30/hour) and per code (60/hour), keyed by a
+   salted SHA-256 of `X-Real-IP` (the hosted header the client can't forge) or the code, fixed
+   hourly windows, past hours deleted on the next call. The salt is generated in the database at
+   migration time and never leaves it.
+5. **Sign-in started from an invite returns to `/?invite=<code>`**, not `/join/<code>`: on the
+   web that path is now the static page, and on phones it is claimed by the apps.
+6. **Roles: Hauptadmin (owner), Admin, member.** "Hauptadmin" is gender-neutral, short and ranks
+   above Admin. The owner names admins; owner and admins remove members; an admin can't remove
+   the owner or another admin. Ownership passes to the earliest admin, else the earliest member,
+   when the owner leaves or deletes the account (nobody can remove the owner).
+7. **"Wer ist beigetreten" lists current members only**, and leaving or a removal deletes the
+   user's join record for that household (Legal draft #328, question 3). The export lists the
+   user's own join records.
+8. **Store bridges without an SDK.** Android reads the Play Install Referrer once on the first
+   start and keeps only `invite=<code>` (dated, so it lapses after 7 days). "Einladung einfügen"
+   reads the clipboard only on that tap. No fingerprinting, no paid deep-link service.
+9. **Admins send `actor_role: admin`** on list events; the `alexa` function keeps reporting an
+   admin as `member` (its telemetry allow-list predates roles).
+10. **A removal keeps the person out of every invite made before it** (review W2.1). A club's
+    group link stays in its chat for 30 days, so removing someone meant nothing while that link
+    let them straight back. `household_removals (household_id, user_id, removed_at)` remembers
+    the removal, and `check_invite` answers `invalid_invite` (the answer for a revoked code, so
+    nothing tells them why) to an invite of that household created at or before `removed_at`,
+    person invites included: any member can make one, so a member about to be removed could
+    otherwise keep one in reserve. Removing is the owner's and admins' call (Q-HH3, Peter
+    2026-11-08, review W2.2), so only an invite made after the removal by someone who is the
+    household's owner or an admin when it is used lets them in, and that join deletes the record.
+    A plain member's invite answers `invalid_invite` to them like the old ones; otherwise any
+    member could undo an admin's removal. The creator's current role decides, read from
+    `household_members` at check time: one lookup, no new column, and an invite from an admin
+    since demoted or gone stops working for the removed person. Renewing the group link on every
+    removal was the other option; it would break the link for the whole club each time. The
+    record goes with the account and the household, and a daily cron job deletes it 30 days after
+    the removal (review W2.2): by then every invite made up to the removal has expired (person
+    invites 7 days, group links 30), and storage limitation says not to keep "removed at T"
+    longer. After those 30 days a plain member's invite lets them in again. No client reads the
+    table (select revoked; `check_invite` and the export are security definer).
+11. **Group links are the owner's and admins' to revoke too** (Q-HH3). `revoke_invite` answers
+    `not_admin` to a member for a group link. Old store builds list `invites` directly
+    (`used_at is null`) with a revoke button each, so the table's select policy now shows
+    person invites only, to everyone; the new app reads `household_invites` (security definer),
+    which shows the group link to all members and its controls to owner and admins.
+12. **A full group link stays listed** in `household_invites` while it is the household's newest
+    group link and not revoked or expired, so the sheet says „Der Link ist voll" with who joined
+    and offers a new link, instead of falling back to „Gruppenlink erstellen".
+13. **"Wer ist beigetreten" polls every 5 s while the sheet or Einladungen is on screen** instead of realtime on
+    `invite_uses`. Realtime doesn't apply RLS to DELETE events, which carry the primary key
+    (`invite_id`, `user_id`) to any subscriber, so leaving or a removal anywhere would have been
+    visible to every signed-in user. `household_members` has the same problem, so it stays out
+    of the publication too.
+    The poll stops when the panel goes off screen (a tab switch keeps More's branch mounted but
+    turns its tickers off, so `InvitesScope` follows `TickerMode`) and while the app is hidden,
+    and reloads once on return (review W2.2: 24 requests a minute from the list tab before).
+    Only the newest load emits and a tick waits for the last answer, so a slow poll can't bring
+    back a link just revoked or renewed.

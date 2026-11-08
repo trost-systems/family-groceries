@@ -29,6 +29,8 @@ language sql as $$
   select 'households', count(*)::int from public.households where id = p_household
   union all select 'household_members', count(*)::int from public.household_members where household_id = p_household
   union all select 'invites', count(*)::int from public.invites where household_id = p_household
+  union all select 'invite_uses', count(*)::int from public.invite_uses where household_id = p_household
+  union all select 'household_removals', count(*)::int from public.household_removals where household_id = p_household
   union all select 'categories', count(*)::int from public.categories where household_id = p_household
   union all select 'stores', count(*)::int from public.stores where household_id = p_household
   union all select 'store_category_order', count(*)::int from public.store_category_order where household_id = p_household
@@ -237,6 +239,9 @@ select public.purchase_record('apple', '2000000000002501', '2000000000002501', r
 insert into public.integration_blocks (household_id, integration, reported_at) values ((select id from h), 'siri', now());
 -- Job 73: the household's API requests today.
 insert into public.api_household_days (household_id, day, requests) values ((select id from h), current_date, 3);
+-- Job 169b W2: a former member was removed from it.
+insert into public.household_removals (household_id, user_id)
+values ((select id from h), '00000000-0000-0000-0000-0000000000a2');
 select is(
   (select array_agg(tbl order by tbl) from pg_temp.household_rows((select id from h)) where n = 0),
   null, 'before: every household table has rows'
@@ -295,7 +300,7 @@ create temp table export as select public.export_my_data() as doc;
 select is(
   (select array_agg(k order by k) from export, jsonb_object_keys(doc) k),
   array['access_tokens', 'account', 'alexa_links', 'analytics_decisions', 'archived_households', 'connected_apps', 'exported_at',
-        'feedback', 'format', 'history', 'household', 'households', 'invites_created', 'items_added',
+        'feedback', 'format', 'history', 'household', 'household_removals', 'households', 'invite_uses', 'invites_created', 'items_added',
         'profile', 'purchases', 'version'],
   'the export has the documented sections'
 );
@@ -321,7 +326,7 @@ select is(
       'created_at', now(), 'last_used_at', null, 'revoked_at', null)),
     -- Job 22: Emil's invite, which Frida used; not who used it.
     'invites_created', jsonb_build_array(jsonb_build_object('code', (select code from inv_e),
-      'created_at', now(), 'expires_at', now() + interval '7 days', 'used_at', now(), 'revoked_at', null)),
+      'kind', 'person', 'max_uses', 1, 'use_count', 1, 'created_at', now(), 'expires_at', now() + interval '7 days', 'used_at', now(), 'revoked_at', null)),
     'feedback', jsonb_build_array(jsonb_build_object('created_at', now(), 'message', 'Bitte dunkles Design',
       'category', 'idea', 'contact_ok', true, 'screen', 'list', 'platform', 'ios', 'app_version', '0.1.0',
       'build', '7', 'os_version', 'iOS 18.1', 'locale', 'de', 'household_id', (select id from he),
@@ -332,7 +337,10 @@ select is(
     'alexa_links', '[]'::jsonb,
     -- Job 25: Emil bought nothing (purchases.test.sql covers a buyer's export).
     'purchases', '[]'::jsonb,
-    'archived_households', '[]'::jsonb
+    'archived_households', '[]'::jsonb,
+    -- Job 169b: Emil joined no household through an invite.
+    'invite_uses', '[]'::jsonb,
+    'household_removals', '[]'::jsonb
   ),
   'the export holds the user''s own data and nothing of the other member''s'
 );

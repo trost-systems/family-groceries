@@ -8,6 +8,7 @@ import 'package:family_groceries/design/brand_block.dart';
 import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/status_bar_backdrop.dart';
 import 'package:family_groceries/design/tokens.g.dart';
+import 'package:family_groceries/household/paste_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/provider_buttons.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -39,14 +40,20 @@ class const LoginScreen({
       returnPath: switch (next) {
         final next? when Uri.parse(next).path == consentPath => next,
         // Back at the root, which the apps don't claim: a claimed link
-        // would open the app with a code only this browser can redeem.
+        // would open the app with a code only this browser can redeem. An
+        // invite comes back the same way: /join/<code> is claimed too, and
+        // on the web it is the static join page (job 169b).
         final next? => Uri(
           path: '/',
           queryParameters: {'next': next},
         ).toString(),
-        null => invite == null ? '/' : '/join/$invite',
+        null =>
+          invite == null
+              ? '/'
+              : Uri(path: '/', queryParameters: {'invite': invite}).toString(),
       },
       header: const BrandBlock(),
+      footer: PasteInvite(waiting: invite),
     );
     return Scaffold(
       body: StatusBarBackdrop(
@@ -87,12 +94,15 @@ class const LoginScreen({
 /// have. The MCP consent page embeds it too, with its own [returnPath].
 class const SignInPanel({
   /// Where a web redirect or magic link lands after sign-in, e.g.
-  /// `/join/ABCD2345`. The mobile apps always return through
+  /// `/?invite=ABCD2345`. The mobile apps always return through
   /// [mobileAuthCallback].
   required final String returnPath,
 
   /// Shown above the methods, inside the scrolling form.
   final Widget? header,
+
+  /// Shown below the methods, inside the scrolling form.
+  final Widget? footer,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -337,6 +347,10 @@ class _SignInPanelState() extends State<SignInPanel> {
                       ),
                 child: Text(l10n.sendMagicLink),
               ),
+            ],
+            if (widget.footer case final footer?) ...[
+              const SizedBox(height: HlSpace.s4),
+              footer,
             ],
           ],
         ),

@@ -762,7 +762,6 @@ void main() {
         location: '/more/invites',
         session: inHome,
       );
-      expect(find.text('Keine offenen Einladungen.'), findsOneWidget);
       await tapKey(tester, 'invite-new');
       expect(o.invites.created, hasLength(1));
       final events = await sentEvents(tester, o);
