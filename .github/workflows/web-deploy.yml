@@ -13,26 +13,19 @@ on:
         description: Commit to deploy (the new head of `release`)
         type: string
         required: true
-      before:
-        description: Previous head of `release`; the build is skipped when the app did not change
-        type: string
-        default: ''
   workflow_dispatch:
     inputs:
       sha:
-        description: Commit to deploy (must already be on `release`)
-        type: string
-        required: true
-      before:
-        description: Previous production commit (empty = always build)
+        description: Commit to deploy (empty = the head of `release`; anything else must be it)
         type: string
         default: ''
   pull_request:
     paths:
       - .github/workflows/web-deploy.yml
 
+# Production deploys queue in one group; a pull request's build check never cancels one.
 concurrency:
-  group: web-deploy
+  group: web-deploy-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
   cancel-in-progress: false
 
 permissions:
@@ -85,40 +78,47 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ inputs.sha }}
+          ref: release
           fetch-depth: 0
-      - name: App changed?
-        id: changed
+      # Production only ever gets the head of `release`: a rerun of an older Release run or a
+      # dispatch of an older commit deploys nothing, so production never moves back from here.
+      # The build is skipped when the app did not change since the commit production serves.
+      - name: What to deploy
+        id: plan
         env:
-          BEFORE: ${{ inputs.before }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          WANT: ${{ inputs.sha }}
         run: |
-          # Same paths as the former Vercel Ignored Build Step. An unknown `before` builds.
-          if [[ -n $BEFORE ]] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null \
-            && git diff --quiet "$BEFORE" HEAD -- app ':!app/test' vercel.json scripts/vercel.sh scripts/join-config.sh; then
+          head="$(git rev-parse HEAD)"
+          if [[ -n $WANT && $WANT != "$head" ]]; then
+            echo "::notice::${WANT:0:7} is not the head of release (${head:0:7}); nothing deployed."
+            echo "build=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "sha=$head" >> "$GITHUB_OUTPUT"
+          if [[ -z $VERCEL_TOKEN ]]; then
+            echo "::warning::No VERCEL_TOKEN secret: built but not deployed (docs/DEPLOY.md)."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"; echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+          live="$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/app.hummlist.com?teamId=$VERCEL_ORG_ID" \
+            | jq -r '.meta.githubCommitSha // empty' || true)"
+          echo "live=$live" >> "$GITHUB_OUTPUT"
+          # An unknown live commit builds.
+          if [[ -n $live ]] && git cat-file -e "$live^{commit}" 2>/dev/null \
+            && git diff --quiet "$live" HEAD -- app ':!app/test' vercel.json scripts/vercel.sh scripts/join-config.sh; then
             echo "build=false" >> "$GITHUB_OUTPUT"
-            echo "No app change since ${BEFORE:0:7}; app.hummlist.com stays as it is." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "No app change since the live ${live:0:7}; app.hummlist.com stays as it is." | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "build=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Deploy allowed?
-        id: token
-        if: steps.changed.outputs.build == 'true'
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          if [[ -z $VERCEL_TOKEN ]]; then
-            echo "deploy=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No VERCEL_TOKEN secret: built but not deployed (docs/DEPLOY.md)."
-          else
-            echo "deploy=true" >> "$GITHUB_OUTPUT"
-          fi
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        if: steps.changed.outputs.build == 'true'
+        if: steps.plan.outputs.build == 'true'
         with:
           node-version: 22
       # scripts/vercel.sh keeps the Flutter SDK and the pub cache in node_modules/.
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        if: steps.changed.outputs.build == 'true'
+        if: steps.plan.outputs.build == 'true'
         with:
           path: |
             node_modules/.flutter
@@ -126,7 +126,7 @@ jobs:
           key: web-deploy-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml', 'app/pubspec.lock') }}
           restore-keys: web-deploy-${{ runner.os }}-
       - name: Vercel project settings and production env
-        if: steps.token.outputs.deploy == 'true'
+        if: steps.plan.outputs.build == 'true' && steps.plan.outputs.deploy == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
@@ -134,14 +134,14 @@ jobs:
           # Sensitive Vercel variables come back empty; drop them so the job's env below wins.
           sed -i -E '/^[A-Z0-9_]+=""$/d' .vercel/.env.production.local
       - name: Build (vercel build, i.e. scripts/vercel.sh)
-        if: steps.changed.outputs.build == 'true'
+        if: steps.plan.outputs.build == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          DEPLOY: ${{ steps.token.outputs.deploy }}
+          DEPLOY: ${{ steps.plan.outputs.deploy }}
           POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
           POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
           POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
-          VERCEL_GIT_COMMIT_SHA: ${{ inputs.sha }}
+          VERCEL_GIT_COMMIT_SHA: ${{ steps.plan.outputs.sha }}
         run: |
           if [[ $DEPLOY == true ]]; then
             npx --yes "$VERCEL_CLI" build --prod --yes --token="$VERCEL_TOKEN"
@@ -155,29 +155,32 @@ jobs:
           fi
       - name: Deploy to production
         id: deploy
-        if: steps.token.outputs.deploy == 'true'
+        if: steps.plan.outputs.build == 'true' && steps.plan.outputs.deploy == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          SHA: ${{ inputs.sha }}
+          SHA: ${{ steps.plan.outputs.sha }}
         run: |
           url="$(npx --yes "$VERCEL_CLI" deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN")"
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed ${SHA:0:7} as $url" | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: app.hummlist.com serves the new deployment
-        if: steps.token.outputs.deploy == 'true'
+      # Vercel's own Git build of the same commit may take the alias too, so this checks the commit
+      # app.hummlist.com serves, not the deployment id.
+      - name: app.hummlist.com serves this commit
+        if: steps.plan.outputs.build == 'true' && steps.plan.outputs.deploy == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          URL: ${{ steps.deploy.outputs.url }}
+          SHA: ${{ steps.plan.outputs.sha }}
         run: |
-          want="$(npx --yes "$VERCEL_CLI" inspect "$URL" --token="$VERCEL_TOKEN" 2>&1 | awk '$1 == "id" {print $2; exit}')"
           for _ in $(seq 1 12); do
-            have="$(npx --yes "$VERCEL_CLI" inspect app.hummlist.com --token="$VERCEL_TOKEN" 2>&1 | awk '$1 == "id" {print $2; exit}')"
+            live="$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v13/deployments/app.hummlist.com?teamId=$VERCEL_ORG_ID" \
+              | jq -r '"\(.id) \(.meta.githubCommitSha // "")"' || true)"
             code="$(curl -s -o /dev/null -w '%{http_code}' https://app.hummlist.com/)"
-            if [[ -n $want && $have == "$want" && $code == 200 ]]; then
-              echo "app.hummlist.com: HTTP 200, deployment $have" | tee -a "$GITHUB_STEP_SUMMARY"
+            if [[ ${live#* } == "$SHA" && $code == 200 ]]; then
+              echo "app.hummlist.com: HTTP 200, deployment ${live%% *}, commit ${SHA:0:7}" | tee -a "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
             sleep 10
           done
-          echo "::error::app.hummlist.com is on '$have' (HTTP $code), expected $want"
+          echo "::error::app.hummlist.com serves '$live' (HTTP $code), expected commit $SHA"
           exit 1
