@@ -43,7 +43,7 @@ xcrun simctl status_bar "$udid" override --time 9:41 --dataNetwork wifi --wifiMo
   --wifiBars 3 --cellularMode active --cellularBars 4 --batteryState charged --batteryLevel 100
 
 xcrun simctl install "$udid" build/ios/iphonesimulator/Runner.app
-xcrun simctl launch "$udid" com.hummlist.app
+xcrun simctl launch "$udid" com.snacklist.app
 # PW-P4 has one Buy for the picked plan: the yearly plan picked (the page's default) goes to
 # out.png, Lifetime picked to out-lifetime.png. The app picks Lifetime after taken-yearly.
 shoot() { # plan file

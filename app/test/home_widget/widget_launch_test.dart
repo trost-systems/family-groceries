@@ -40,11 +40,11 @@ class FakeLaunches(final Future<Uri?> _initial) implements WidgetLaunches {
 void main() {
   group('widgetLaunchOf', () {
     for (final (link, launch) in [
-      ('hummlist-widget://open/?homeWidget', WidgetLaunch.list),
-      ('hummlist-widget://add/?homeWidget', WidgetLaunch.add),
-      ('hummlist-widget://add', WidgetLaunch.add),
-      ('hummlist-widget://tick/?homeWidget', null),
-      ('com.hummlist.app://login-callback?code=x', null),
+      ('snacklist-widget://open/?homeWidget', WidgetLaunch.list),
+      ('snacklist-widget://add/?homeWidget', WidgetLaunch.add),
+      ('snacklist-widget://add', WidgetLaunch.add),
+      ('snacklist-widget://tick/?homeWidget', null),
+      ('com.snacklist.app://login-callback?code=x', null),
       ('https://app.hummlist.com/join/ABC123', null),
     ]) {
       test('$link is $launch', () {
@@ -57,13 +57,13 @@ void main() {
 
   test('the starting tap, then later ones; errors launch nothing', () async {
     final launches = FakeLaunches(
-      Future.value(Uri.parse('hummlist-widget://add/?homeWidget')),
+      Future.value(Uri.parse('snacklist-widget://add/?homeWidget')),
     );
     final seen = <WidgetLaunch>[];
     final sub = followWidgetLaunches(launches, seen.add);
     await pumpEventQueue();
     launches.tapped
-      ..add(Uri.parse('hummlist-widget://open/?homeWidget'))
+      ..add(Uri.parse('snacklist-widget://open/?homeWidget'))
       ..add(null)
       ..addError(StateError('plugin'))
       ..add(Uri.parse('https://app.hummlist.com/join/ABC123'));

@@ -21,8 +21,9 @@ const env = process.env;
 const dryRun = process.argv.includes('--dry-run');
 const ref = env.SUPABASE_PROJECT_REF || 'jdwqrallbpdbshrdhenk';
 // Builds before the Hummlist rename (job 20) still sign in as com.petertrost.familygroceries;
-// drop it once the com.hummlist.app build is verified (docs/NEEDS_PETER.md, job 20).
-const bundleIds = ['com.petertrost.familygroceries', 'com.hummlist.app'];
+// drop it once the com.hummlist.app build is verified (docs/NEEDS_PETER.md, job 20). Hummlist
+// builds sign in as com.hummlist.app until Snacklist (job 174) replaces them.
+const bundleIds = ['com.petertrost.familygroceries', 'com.hummlist.app', 'com.snacklist.app'];
 const mobileCallbacks = bundleIds.map((id) => `${id}://login-callback`);
 const api = `https://api.supabase.com/v1/projects/${ref}/config/auth`;
 

@@ -1,17 +1,17 @@
-// Hummlist Premium as the stores sell it (docs/PURCHASES.md, "Store setup"): a yearly subscription
+// Snacklist Premium as the stores sell it (docs/PURCHASES.md, "Store setup"): a yearly subscription
 // and Lifetime, both granting the RevenueCat entitlement `premium`. One place for the products'
 // ids, names and base prices; apple_product.ts and google_product.ts create Lifetime from here,
-// app/ios/Hummlist.storekit mirrors both (product_test.ts keeps them in step) and price_drift.ts
+// app/ios/Snacklist.storekit mirrors both (product_test.ts keeps them in step) and price_drift.ts
 // checks the stores against expectedPrices.
 
 /** The App Store subscription group that holds the yearly subscription. */
-export const subscriptionGroup = { name: 'Hummlist Premium', appleId: '22532621' } as const;
+export const subscriptionGroup = { name: 'Snacklist Premium', appleId: '22562774' } as const;
 
 export const lifetime = {
-  id: 'com.hummlist.app.lifetime',
-  appleId: '6829223747',
+  id: 'com.snacklist.app.lifetime',
+  appleId: '6832759640',
   /** App Store Connect's reference name (never shown to buyers). */
-  referenceName: 'Hummlist Lifetime',
+  referenceName: 'Snacklist Lifetime',
   /** Base price in the base territory; the stores equalize every other territory from it. */
   basePrice: { territory: 'DEU', region: 'DE', currency: 'EUR', amount: '29.99' },
   /** Apple Family Sharing stays off: Apple doesn't let it be turned off again (decision 3). */
@@ -20,41 +20,41 @@ export const lifetime = {
     {
       apple: 'de-DE',
       google: 'de-DE',
-      name: 'Hummlist Lifetime',
+      name: 'Snacklist Lifetime',
       description: 'Ein Kauf für den ganzen Haushalt.',
     },
     {
       apple: 'en-US',
       google: 'en-US',
-      name: 'Hummlist Lifetime',
+      name: 'Snacklist Lifetime',
       description: 'One purchase for the whole household.',
     },
   ],
 } as const;
 
 export const yearly = {
-  id: 'com.hummlist.app.yearly',
-  appleId: '6829293557',
+  id: 'com.snacklist.app.yearly',
+  appleId: '6832759834',
   /** Play names it `<id>:<base plan id>` (supabase/functions/purchases/types.ts). */
   playBasePlanId: 'yearly',
-  referenceName: 'Hummlist Premium Yearly',
+  referenceName: 'Snacklist Premium Yearly',
   basePrice: { territory: 'DEU', region: 'DE', currency: 'EUR', amount: '9.99' },
   /** ISO 8601, as App Store Connect and StoreKit write it. No trial, no introductory offer. */
   period: 'P1Y',
   familySharable: false,
-  // Placeholder copy: Hummlist Launch writes the real store listing.
+  // Placeholder copy: Snacklist Launch writes the real store listing.
   listings: [
     {
       apple: 'de-DE',
       google: 'de-DE',
-      name: 'Hummlist Premium',
-      description: 'Hummlist Premium für den ganzen Haushalt, ein Jahr.',
+      name: 'Snacklist Premium',
+      description: 'Snacklist Premium für den ganzen Haushalt, ein Jahr.',
     },
     {
       apple: 'en-US',
       google: 'en-US',
-      name: 'Hummlist Premium',
-      description: 'Hummlist Premium for the whole household, one year.',
+      name: 'Snacklist Premium',
+      description: 'Snacklist Premium for the whole household, one year.',
     },
   ],
 } as const;

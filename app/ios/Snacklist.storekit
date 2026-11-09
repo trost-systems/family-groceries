@@ -7,21 +7,21 @@
     {
       "displayPrice" : "29.99",
       "familyShareable" : false,
-      "internalID" : "6829223747",
+      "internalID" : "6832759640",
       "localizations" : [
         {
           "description" : "Ein Kauf für den ganzen Haushalt.",
-          "displayName" : "Hummlist Lifetime",
+          "displayName" : "Snacklist Lifetime",
           "locale" : "de"
         },
         {
           "description" : "One purchase for the whole household.",
-          "displayName" : "Hummlist Lifetime",
+          "displayName" : "Snacklist Lifetime",
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.hummlist.app.lifetime",
-      "referenceName" : "Hummlist Lifetime",
+      "productID" : "com.snacklist.app.lifetime",
+      "referenceName" : "Snacklist Lifetime",
       "type" : "NonConsumable"
     }
   ],
@@ -36,11 +36,11 @@
   },
   "subscriptionGroups" : [
     {
-      "id" : "22532621",
+      "id" : "22562774",
       "localizations" : [
 
       ],
-      "name" : "Hummlist Premium",
+      "name" : "Snacklist Premium",
       "subscriptions" : [
         {
           "adHocOffers" : [
@@ -52,24 +52,24 @@
           "displayPrice" : "9.99",
           "familyShareable" : false,
           "groupNumber" : 1,
-          "internalID" : "6829293557",
+          "internalID" : "6832759834",
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Hummlist Premium für den ganzen Haushalt, ein Jahr.",
-              "displayName" : "Hummlist Premium",
+              "description" : "Snacklist Premium für den ganzen Haushalt, ein Jahr.",
+              "displayName" : "Snacklist Premium",
               "locale" : "de"
             },
             {
-              "description" : "Hummlist Premium for the whole household, one year.",
-              "displayName" : "Hummlist Premium",
+              "description" : "Snacklist Premium for the whole household, one year.",
+              "displayName" : "Snacklist Premium",
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.hummlist.app.yearly",
+          "productID" : "com.snacklist.app.yearly",
           "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Hummlist Premium Yearly",
-          "subscriptionGroupID" : "22532621",
+          "referenceName" : "Snacklist Premium Yearly",
+          "subscriptionGroupID" : "22562774",
           "type" : "RecurringSubscription",
           "winbackOffers" : [
 

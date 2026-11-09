@@ -9,11 +9,20 @@ import type { AppStore } from '../_shared/purchases.ts';
  */
 export const webhookPath = '/purchases/revenuecat/webhook';
 
-/** Hummlist Premium yearly: an auto-renewing subscription (scripts/iap/product.ts). */
-export const yearlyProductId = 'com.hummlist.app.yearly';
+/** Snacklist Premium yearly: an auto-renewing subscription (scripts/iap/product.ts). */
+export const yearlyProductId = 'com.snacklist.app.yearly';
 
-/** Hummlist Premium Lifetime: a non-consumable, same id on both stores (scripts/iap/product.ts). */
-export const lifetimeProductId = 'com.hummlist.app.lifetime';
+/** Snacklist Premium Lifetime: a non-consumable, same id on both stores (scripts/iap/product.ts). */
+export const lifetimeProductId = 'com.snacklist.app.lifetime';
+
+/**
+ * The same two products of the Hummlist app (com.hummlist.app), whose installed builds still sell
+ * them until Snacklist replaces it (job 174). Recorded under their own ids.
+ */
+export const hummlistProductIds = {
+  yearly: 'com.hummlist.app.yearly',
+  lifetime: 'com.hummlist.app.lifetime',
+} as const;
 
 /**
  * The Play subscription's base plan (Hummlist Ops, 2026-10-31). RevenueCat names a Play
@@ -37,15 +46,16 @@ export interface Product {
   plan: Plan;
 }
 
+const plans = (yearly: string, lifetime: string): Record<string, Product> => ({
+  [yearly]: { id: yearly, kind: 'premium', plan: 'yearly' },
+  [`${yearly}:${playBasePlanId}`]: { id: yearly, kind: 'premium', plan: 'yearly' },
+  [lifetime]: { id: lifetime, kind: 'premium', plan: 'lifetime' },
+});
+
 /** Every product this function records, by every id RevenueCat may send. Others are ignored. */
 const products: Readonly<Record<string, Product>> = {
-  [yearlyProductId]: { id: yearlyProductId, kind: 'premium', plan: 'yearly' },
-  [`${yearlyProductId}:${playBasePlanId}`]: {
-    id: yearlyProductId,
-    kind: 'premium',
-    plan: 'yearly',
-  },
-  [lifetimeProductId]: { id: lifetimeProductId, kind: 'premium', plan: 'lifetime' },
+  ...plans(yearlyProductId, lifetimeProductId),
+  ...plans(hummlistProductIds.yearly, hummlistProductIds.lifetime),
 };
 
 export const productOf = (productId: string): Product | null =>

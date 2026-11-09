@@ -164,7 +164,8 @@ export function retention(
   return new Map([...cohorts].sort());
 }
 
-const yearlyProductId = 'com.hummlist.app.yearly';
+/** Snacklist's yearly id and Hummlist's (job 174). */
+const yearlyProductIds = new Set(['com.snacklist.app.yearly', 'com.hummlist.app.yearly']);
 
 /**
  * How long a Yearly purchase counts as paying: a year and 14 days' grace. Renewals send no event,
@@ -194,7 +195,7 @@ function purchases(kept: Event[]): Purchase[] {
     if (!household || e.event !== 'purchase_completed') return [];
     if (refunded.has(str(e.properties.transaction_ref))) return [];
     const yearly = e.properties.premium_source === 'yearly' ||
-      e.properties.product_id === yearlyProductId;
+      yearlyProductIds.has(str(e.properties.product_id) ?? '');
     return [{ household, at: Date.parse(e.timestamp), yearly }];
   });
 }

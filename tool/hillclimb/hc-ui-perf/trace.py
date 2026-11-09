@@ -80,7 +80,7 @@ def main():
     time.sleep(0.7)
     try:
         with tempfile.TemporaryDirectory(prefix="hc108-trace-") as home:
-            data = Path(home, "data", "com.hummlist.app")
+            data = Path(home, "data", "com.snacklist.app")
             data.mkdir(parents=True)
             (data / "shared_preferences.json").write_text(json.dumps({"flutter.sb-127-auth-token": session()}))
             env = {

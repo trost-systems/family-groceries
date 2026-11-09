@@ -51,8 +51,8 @@ void main() {
       expect(calls, hasLength(1));
       expect(calls.single.method, 'prices');
       expect(calls.single.arguments, {
-        'yearly': 'com.hummlist.app.yearly',
-        'lifetime': 'com.hummlist.app.lifetime',
+        'yearly': 'com.snacklist.app.yearly',
+        'lifetime': 'com.snacklist.app.lifetime',
         'basePlan': 'yearly',
       });
     });

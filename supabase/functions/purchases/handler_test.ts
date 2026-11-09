@@ -477,7 +477,7 @@ Deno.test('refused purchases unlock nothing and are logged without ids', async (
     [purchase({ is_family_share: true }), 'family_share'],
     [purchase({ app_user_id: '$RCAnonymousID:8f3e0a1b2c3d4e5f' }), 'app_user_id'],
     [purchase({ app_user_id: PETER.slice(1) }), 'app_user_id'],
-    [purchase({ product_id: 'com.hummlist.app.plus' }), 'product'],
+    [purchase({ product_id: 'com.snacklist.app.plus' }), 'product'],
     [purchase({ product_id: 'toString' }), 'product'],
     [purchase({ store: 'STRIPE' }), 'store'],
     // A promotional grant of another entitlement (premium's are read from the API, below).
@@ -920,7 +920,7 @@ Deno.test('routes match exactly: the documented webhook path reaches the webhook
 function yearly(type: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return purchase({
     type,
-    product_id: 'com.hummlist.app.yearly',
+    product_id: 'com.snacklist.app.yearly',
     entitlement_ids: ['premium'],
     transaction_id: '2000000900000002',
     original_transaction_id: '2000000900000001',
@@ -942,7 +942,7 @@ Deno.test('a yearly plan is recorded with its end; entitlement ids old or new bo
       { status: 'granted' },
     );
     const p = w.books.rows.get(`apple:${id}`)!.purchase;
-    assertEquals([p.plan, p.kind, p.productId], ['yearly', 'premium', 'com.hummlist.app.yearly']);
+    assertEquals([p.plan, p.kind, p.productId], ['yearly', 'premium', 'com.snacklist.app.yearly']);
     assertEquals(p.subscription, {
       expiresAt: new Date(NOW.getTime() + 365 * 86_400_000),
       autoRenew: true,
@@ -956,7 +956,7 @@ Deno.test("Play's subscription:basePlan id is the yearly plan; another base plan
   await expect(
     await w.deliver(yearly('INITIAL_PURCHASE', {
       store: 'PLAY_STORE',
-      product_id: 'com.hummlist.app.yearly:yearly',
+      product_id: 'com.snacklist.app.yearly:yearly',
       original_transaction_id: 'GPA.1234-5678-9012-34567',
       transaction_id: 'GPA.1234-5678-9012-34567',
     })),
@@ -965,12 +965,12 @@ Deno.test("Play's subscription:basePlan id is the yearly plan; another base plan
   );
   assertEquals(
     w.books.rows.get('google:GPA.1234-5678-9012-34567')!.purchase.productId,
-    'com.hummlist.app.yearly',
+    'com.snacklist.app.yearly',
   );
   const logs = await logsOf(async () => {
     await expect(
       await w.deliver(
-        yearly('INITIAL_PURCHASE', { product_id: 'com.hummlist.app.yearly:monthly' }),
+        yearly('INITIAL_PURCHASE', { product_id: 'com.snacklist.app.yearly:monthly' }),
       ),
       200,
       { status: 'ignored' },

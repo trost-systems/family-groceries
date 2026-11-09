@@ -16,6 +16,10 @@ void main() {
         as String,
   );
   const teamId = 'VCZSHMZY25';
+  // Job 174: the Hummlist build stays installed until Snacklist replaces it,
+  // so its app id and its host stay next to Snacklist's.
+  const hummlistId = 'com.hummlist.app';
+  final hosts = {'app.snacklist.app', 'app.hummlist.com', appUrl.host};
 
   String bundleId() => RegExp(r'PRODUCT_BUNDLE_IDENTIFIER = ([\w.]+);')
       .allMatches(
@@ -31,7 +35,9 @@ void main() {
     final entitlements = File('ios/Runner/Runner.entitlements')
         .readAsStringSync();
     expect(entitlements, contains('com.apple.developer.associated-domains'));
-    expect(entitlements, contains('<string>applinks:${appUrl.host}</string>'));
+    for (final host in hosts) {
+      expect(entitlements, contains('<string>applinks:$host</string>'));
+    }
     // Sign in with Apple stays.
     expect(entitlements, contains('com.apple.developer.applesignin'));
   });
@@ -42,7 +48,7 @@ void main() {
     ) as Map<String, Object?>;
     final details =
         ((aasa['applinks']! as Map)['details']! as List).single as Map;
-    expect(details['appIDs'], ['$teamId.${bundleId()}']);
+    expect(details['appIDs'], ['$teamId.${bundleId()}', '$teamId.$hummlistId']);
     expect((details['components']! as List).map((c) => (c as Map)['/']), [
       for (final link in appLinks)
         if (link.prefix) '${link.path}*' else link.path,
@@ -58,7 +64,9 @@ void main() {
     expect(filter, contains('android.intent.action.VIEW'));
     expect(filter, contains('android.intent.category.BROWSABLE'));
     expect(filter, contains('android:scheme="https"'));
-    expect(filter, contains('android:host="${appUrl.host}"'));
+    for (final host in hosts) {
+      expect(filter, contains('android:host="$host"'));
+    }
     final paths = RegExp('android:(path|pathPrefix)="([^"]*)"')
         .allMatches(filter)
         .map((m) => (path: m[2]!, prefix: m[1] == 'pathPrefix'));
@@ -67,7 +75,7 @@ void main() {
     expect(
       manifest,
       contains(
-        'android:scheme="com.hummlist.app" android:host="login-callback"',
+        'android:scheme="com.snacklist.app" android:host="login-callback"',
       ),
     );
   });
@@ -75,16 +83,23 @@ void main() {
   test(
     'assetlinks.json names the package and the signing keys of RELEASE.md',
     () {
-      final links =
-          (jsonDecode(
-                File('web/.well-known/assetlinks.json').readAsStringSync(),
-              ) as List).single
-              as Map;
-      final target = links['target']! as Map;
-      expect(links['relation'], ['delegate_permission/common.handle_all_urls']);
-      expect(target['package_name'], applicationId());
-      final fingerprints = (target['sha256_cert_fingerprints']! as List)
+      final statements = (jsonDecode(
+        File('web/.well-known/assetlinks.json').readAsStringSync(),
+      ) as List).cast<Map<String, Object?>>();
+      final targets = [for (final s in statements) s['target']! as Map];
+      for (final statement in statements) {
+        expect(statement['relation'], [
+          'delegate_permission/common.handle_all_urls',
+        ]);
+      }
+      expect(targets.map((t) => t['package_name']), [
+        applicationId(),
+        hummlistId,
+      ]);
+      // Play App Signing reuses Hummlist's key for Snacklist.
+      final fingerprints = (targets.first['sha256_cert_fingerprints']! as List)
           .cast<String>();
+      expect(targets.last['sha256_cert_fingerprints'], fingerprints);
       final sha256 = RegExp(r'^([0-9A-F]{2}:){31}[0-9A-F]{2}$');
       expect(fingerprints, everyElement(matches(sha256)));
       // Play App Signing signs what testers install; the upload key what CI

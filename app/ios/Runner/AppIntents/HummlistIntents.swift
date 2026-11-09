@@ -76,7 +76,7 @@ struct OpenListIntent: AppIntent {
 
   /// The link a widget tap opens (ListSnapshot.swift, lib/home_widget): the app goes to the list
   /// from wherever it was.
-  static let list = URL(string: "hummlist-widget://open/?homeWidget")!
+  static let list = URL(string: "snacklist-widget://open/?homeWidget")!
 
   @MainActor
   func perform() async throws -> some IntentResult {

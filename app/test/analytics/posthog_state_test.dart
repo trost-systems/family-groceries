@@ -13,7 +13,7 @@ void main() {
   Future<void> forget() => forgetPostHogState(
     'phc_unit_test',
     supportDirectory: () async => support,
-    bundleId: () async => 'com.hummlist.app',
+    bundleId: () async => 'com.snacklist.app',
   );
 
   setUp(() {
@@ -28,7 +28,7 @@ void main() {
   test('iOS: the posthog files in Application Support/<bundle id>, and '
       'nothing else', () async {
     debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
-    final folder = Directory('${support.path}/com.hummlist.app')..createSync();
+    final folder = Directory('${support.path}/com.snacklist.app')..createSync();
     for (final name in ['posthog.anonymousId', 'posthog.deviceId']) {
       File('${folder.path}/$name').writeAsStringSync('0198-…');
     }

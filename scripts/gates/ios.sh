@@ -86,7 +86,7 @@ print("passed %s, failed %s, skipped %s" % (s.get("passedTests"), s.get("failedT
 sys.exit(0 if s.get("result") == "Passed" and s.get("passedTests", 0) > 0 else 1)'
 [[ -z ${status:-} ]] || exit "$status"
 
-# The StoreKit tests need storekitd to take Hummlist.storekit. From iOS 26.4 on it refuses that to
+# The StoreKit tests need storekitd to take Snacklist.storekit. From iOS 26.4 on it refuses that to
 # this ad-hoc signed build ("not installed for development"); iOS 26.2's still takes it, so they
 # run on a 26.2 simulator, and every one of them must pass (DECISIONS 127;
 # scripts/ios-storekit-probe.sh checks other runtimes).
@@ -103,7 +103,7 @@ for r in json.load(sys.stdin)["runtimes"]:
 }
 read -r runtime devicetype <<<"$(storekit_runtime)"
 # Downloading it here would cost several GB inside the job's 40 minutes: fail and say so.
-[[ -n ${runtime:-} ]] || { echo "ios: the runner image has no iOS $storekit_ios simulator runtime for the StoreKit tests; run scripts/ios-storekit-probe.sh on it to find a runtime whose storekitd takes Hummlist.storekit and set storekit_ios (DECISIONS 127)" >&2; exit 1; }
+[[ -n ${runtime:-} ]] || { echo "ios: the runner image has no iOS $storekit_ios simulator runtime for the StoreKit tests; run scripts/ios-storekit-probe.sh on it to find a runtime whose storekitd takes Snacklist.storekit and set storekit_ios (DECISIONS 127)" >&2; exit 1; }
 storekit_udid="$(xcrun simctl create "Hummlist StoreKit" "$devicetype" "$runtime")"
 # Created and booted after the main tests: xcodebuild there lost its own simulator ("Unable to find
 # a device") while this one was being created and booted (job 127).
@@ -143,6 +143,6 @@ for case in cases:
     why = "; ".join(c.get("name", "") for c in case.get("children", [])) if case.get("result") != "Passed" else ""
     print("%s %s%s" % (case.get("result"), case.get("nodeIdentifier"), ": " + why if why else ""))
 if not cases or any(c.get("result") != "Passed" for c in cases):
-    sys.exit("ios: every LifetimeStoreKitTests case must pass on iOS %s (a skip means storekitd refused Hummlist.storekit)" % sys.argv[1])
+    sys.exit("ios: every LifetimeStoreKitTests case must pass on iOS %s (a skip means storekitd refused Snacklist.storekit)" % sys.argv[1])
 PY
 exit "${status:-0}"

@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart' show immutable;
 
 /// Hummlist Premium Lifetime, a non-consumable with the same id on both
 /// stores (supabase/functions/purchases/types.ts).
-const lifetimeProductId = 'com.hummlist.app.lifetime';
+const lifetimeProductId = 'com.snacklist.app.lifetime';
 
 /// Hummlist Premium yearly, an auto-renewing subscription. Play names it
 /// `<id>:<base plan>` in the SDK and in RevenueCat's events.
-const yearlyProductId = 'com.hummlist.app.yearly';
+const yearlyProductId = 'com.snacklist.app.yearly';
 
 /// The Play subscription's base plan (Hummlist Ops, 2026-10-31).
 const playBasePlanId = 'yearly';

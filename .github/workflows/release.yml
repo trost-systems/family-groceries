@@ -335,7 +335,7 @@ jobs:
       # For the first upload by hand (Play creates the app from it) and for inspection.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: hummlist-${{ env.BUILD_NUMBER }}-aab
+          name: snacklist-${{ env.BUILD_NUMBER }}-aab
           path: app/build/app/outputs/bundle/release/app-release.aab
           retention-days: 7
           if-no-files-found: error
@@ -358,7 +358,7 @@ jobs:
             if [ "$access" = ok ]; then
               echo "::notice::Play access works, but PLAY_RELEASE_STATUS is unset: no Play upload. Set it to draft (docs/NEEDS_LEAD.md, L3)."
             else
-              echo "::notice::No Play upload: Play refuses the service account for com.hummlist.app ($access). docs/NEEDS_LEAD.md, L1-L4; the signed AAB is in this run's artifacts."
+              echo "::notice::No Play upload: Play refuses the service account for com.snacklist.app ($access). docs/NEEDS_LEAD.md, L1-L4; the signed AAB is in this run's artifacts."
             fi
             exit 0
           fi

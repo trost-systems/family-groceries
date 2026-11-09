@@ -1,4 +1,4 @@
-package com.hummlist.app
+package com.snacklist.app
 
 import android.content.Intent
 import android.os.Build

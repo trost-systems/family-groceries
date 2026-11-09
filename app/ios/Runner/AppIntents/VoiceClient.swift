@@ -60,8 +60,8 @@ struct VoiceClient {
   /// (`x-hummlist-client`, voice's request line), so a test session sees which path Siri took.
   var caller = "unknown"
 
-  /// The Siri log in Console.app (subsystem com.hummlist.app, category siri). Never the text.
-  static let log = Logger(subsystem: "com.hummlist.app", category: "siri")
+  /// The Siri log in Console.app (subsystem com.snacklist.app, category siri). Never the text.
+  static let log = Logger(subsystem: "com.snacklist.app", category: "siri")
 
   static func configuration() -> URLSessionConfiguration {
     let config = URLSessionConfiguration.ephemeral

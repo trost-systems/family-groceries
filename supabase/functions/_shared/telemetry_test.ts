@@ -248,7 +248,7 @@ Deno.test('server events pass the catalog only', async () => {
 Deno.test('premium_source (job 49): yearly or lifetime on purchase events only', () => {
   for (const name of ['purchase_completed', 'purchase_refunded']) {
     for (const source of ['yearly', 'lifetime']) {
-      checkServerEvent(name, { product_id: 'com.hummlist.app.yearly', premium_source: source });
+      checkServerEvent(name, { product_id: 'com.snacklist.app.yearly', premium_source: source });
     }
     for (const bad of ['tester_grant', 'Yearly', 'premium', 1]) {
       assertThrows(() => checkServerEvent(name, { premium_source: bad }), RefusedEvent);

@@ -1,4 +1,4 @@
-package com.hummlist.app.widget
+package com.snacklist.app.widget
 
 import android.content.Context
 import android.net.Uri
@@ -37,15 +37,15 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import com.hummlist.app.MainActivity
-import com.hummlist.app.R
+import com.snacklist.app.MainActivity
+import com.snacklist.app.R
 import es.antonborri.home_widget.HomeWidgetGlanceState
 import es.antonborri.home_widget.HomeWidgetGlanceStateDefinition
 import es.antonborri.home_widget.actionStartActivity
 
 /** The links lib/home_widget/widget_launch.dart maps (docs/HOME_WIDGETS.md, "Taps"). */
-private val OPEN_URI = Uri.parse("hummlist-widget://open/?homeWidget")
-private val ADD_URI = Uri.parse("hummlist-widget://add/?homeWidget")
+private val OPEN_URI = Uri.parse("snacklist-widget://open/?homeWidget")
+private val ADD_URI = Uri.parse("snacklist-widget://add/?homeWidget")
 
 private val MEDIUM_WIDTH = 250.dp
 
@@ -65,7 +65,7 @@ private val ROW = 22.dp
  * Hummlist on the Android Home Screen: how many items are open and the next few. It draws only
  * what the app last wrote (WidgetPayload) and opens the app on a tap; it never changes the list.
  */
-class HummlistWidget : GlanceAppWidget() {
+class SnacklistWidget : GlanceAppWidget() {
     override val stateDefinition = HomeWidgetGlanceStateDefinition()
 
     override val sizeMode = SizeMode.Responsive(SIZES)

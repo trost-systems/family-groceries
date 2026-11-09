@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Does storekitd take StoreKit's local test store (Hummlist.storekit) from this Mac's simulator
+# Does storekitd take StoreKit's local test store (Snacklist.storekit) from this Mac's simulator
 # build? Builds the app once, then runs LifetimeStoreKitTests on a fresh iPhone simulator of each
 # given iOS runtime (downloaded with xcodebuild if missing) and prints per runtime what storekitd
 # said and how the tests ended. `--scheme-config` also tries the scheme's Test-action StoreKit
@@ -87,7 +87,7 @@ if [[ $scheme_config == 1 && -n $last_udid ]]; then
   log "phase scheme StoreKit configuration"
   scheme=ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme
   cp "$scheme" "$out/Runner.xcscheme.orig"
-  python3 - "$scheme" "$PWD/ios/Hummlist.storekit" <<'PY'
+  python3 - "$scheme" "$PWD/ios/Snacklist.storekit" <<'PY'
 import sys
 path, storekit = sys.argv[1:]
 s = open(path).read()

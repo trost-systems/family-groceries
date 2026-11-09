@@ -55,7 +55,7 @@ function ev(
 }
 
 const lifetime = (ref: string) => ({
-  product_id: 'com.hummlist.app.lifetime',
+  product_id: 'com.snacklist.app.lifetime',
   price: 9.99,
   currency: 'EUR',
   app_store: 'apple',
@@ -98,7 +98,7 @@ export const events: Event[] = [
   ev('household_created', '2026-11-09T10:01:00Z', I4, H4),
   ev('item_added', '2026-11-09T10:05:00Z', I4, H4, { source: 'typed' }),
   ev('purchase_restored', '2026-11-10T10:00:00Z', I4, H4, {
-    product_id: 'com.hummlist.app.lifetime',
+    product_id: 'com.snacklist.app.lifetime',
     app_store: 'apple',
   }),
 
@@ -194,7 +194,7 @@ export const H27 = household(27);
 
 const premium = (source: 'yearly' | 'lifetime', ref: string) => ({
   ...lifetime(ref),
-  product_id: `com.hummlist.app.${source}`,
+  product_id: `com.snacklist.app.${source}`,
   price: source === 'yearly' ? 9.99 : 29.99,
   net_amount: source === 'yearly' ? 7.14 : 21.43,
   premium_source: source,
@@ -243,8 +243,8 @@ export const premiumEvents: Event[] = [
   ...start(26, H26, '2027-03-01T09:00:00Z', '2028-03-21T10:00:00Z'),
   ev('purchase_completed', '2027-03-03T10:00:00Z', id(26), H26, lifetime('s')),
 
-  // H27: the yearly product_id without premium_source still counts as Yearly: not paying in the
-  // week of 20 March 2028.
+  // H27: the yearly product_id without premium_source still counts as Yearly, Hummlist's id too
+  // (job 174): not paying in the week of 20 March 2028.
   ...start(27, H27, '2027-03-01T09:00:00Z', '2028-03-21T10:00:00Z'),
   ev('purchase_completed', '2027-03-03T10:00:00Z', id(27), H27, {
     ...lifetime('t'),

@@ -101,7 +101,7 @@ final appleSubscriptionsUrl = Uri.parse(
 );
 
 /// The app's Play package (applicationId on main).
-const playPackage = 'com.hummlist.app';
+const playPackage = 'com.snacklist.app';
 
 /// Google Play's page for one subscription: `sku` is the subscription's
 /// product id, `package` the app's (Play Billing docs, "Deep link to the
@@ -109,7 +109,7 @@ const playPackage = 'com.hummlist.app';
 final googleSubscriptionUrl = Uri.https(
   'play.google.com',
   '/store/account/subscriptions',
-  {'sku': 'com.hummlist.app.yearly', 'package': playPackage},
+  {'sku': 'com.snacklist.app.yearly', 'package': playPackage},
 );
 
 /// Google Play's list of all subscriptions.

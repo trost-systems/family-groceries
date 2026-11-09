@@ -8,7 +8,7 @@ enum ListSnapshot: Equatable {
   /// No payload yet, an unreadable one or another version: the widget asks to open the app.
   case noData
 
-  static let appGroup = "group.com.hummlist.app"
+  static let appGroup = "group.com.snacklist.app"
   static let payloadKey = "hummlist_widget"
 
   static func read() -> ListSnapshot {
@@ -61,6 +61,6 @@ struct ListRow: Identifiable {
 
 enum WidgetLinks {
   /// The `homeWidget` query item tells the home_widget plugin the URL is its own.
-  static let open = URL(string: "hummlist-widget://open/?homeWidget")!
-  static let add = URL(string: "hummlist-widget://add/?homeWidget")!
+  static let open = URL(string: "snacklist-widget://open/?homeWidget")!
+  static let add = URL(string: "snacklist-widget://add/?homeWidget")!
 }

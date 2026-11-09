@@ -38,7 +38,7 @@ struct SiriCredentialStore {
     let status: OSStatus
   }
 
-  var service = "com.hummlist.app.siri"
+  var service = "com.snacklist.app.siri"
   var account = "credential"
 
   private var query: [String: Any] {
