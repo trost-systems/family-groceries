@@ -24,9 +24,10 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - `app/fastlane/`, `.github/workflows/release.yml`: TestFlight and Play
   internal releases after every green CI on `main` (and by hand), signing
   from secrets (`docs/RELEASE.md`).
-- `vercel.json`, `scripts/vercel.sh`: Vercel builds the web app on every push
-  (`scripts/vercel-local.sh` runs the same build in Vercel's base image).
-  `main` goes to `preview.app.hummlist.com` (Vercel login); `app.hummlist.com`
+- `vercel.json`, `scripts/vercel.sh`: Vercel builds the web app only for the
+  `release` branch and only when the app changed (Ignored Build Step;
+  `scripts/vercel-local.sh` runs the same build in Vercel's base image).
+  `main` no longer builds, so `preview.app.hummlist.com` is frozen; `app.hummlist.com`
   moves when a `release.yml` run uploads to a store and pushes the `release`
   branch (`docs/DEPLOY.md`, section "Web app").
   `supabase-deploy.yml` deploys migrations (`supabase/deploy/`, Management
