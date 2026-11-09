@@ -1437,3 +1437,25 @@ Built and merged (#327, #332, #333). What only Peter can do:
    Siri, Alexa and AI assistants move to the oldest other membership without asking; "Neuer
    Haushalt" in the switcher asks for no kind, so a club made there gets no club share text and no
    approval default (job 168's onboarding sets the kind). All deliberate for now.
+
+## Job 168c: guided start and join approval (2026-11-09)
+
+1. **Decide whether to backfill join approval.** #331 (guided start) created club households
+   with „Beitritte bestätigen“ off, against the W3 rule that a new club starts with it on; #336
+   fixes new ones. Clubs made in between keep it off. To see how many there are, in the SQL
+   editor: `select count(*) from households where kind = 'club' and join_approval = false and
+   created_at >= '2026-11-09 03:00+01';`. A club the buggy build created but whose kind was
+   written only after the fix (an app killed mid-setup) also keeps approval off; the query finds
+   it too. If any, decide: leave them (owners can switch it on under Mehr → household; some may
+   have chosen off), or switch them on with an `update` limited to those rows. Nothing was
+   changed in production by the job.
+2. **Join requests have no signal on the guided start's invite step.** Since #336 every club made
+   in the guided start has join approval on, so a member who accepts an invite from its invite
+   step becomes a join request: the step's card stays unchanged (no „beigetreten“), and the
+   request waits on Mehr → the household. This is 169b's item 4 gap („no signal for open join
+   requests outside More → household“), now on the main club path. Decide together with that
+   item whether the invite step should show waiting requests (a later job; copy and UX).
+3. **Later copy job: the invite entry on a club's Mehr menu.** On a club, Mehr still says
+   „Partner einladen“ (169b W2's generic entry), while the guided start says „Mitglieder
+   einladen“. Left unchanged here (no copy changes in a landing job); a copy job should decide
+   the wording per household kind.

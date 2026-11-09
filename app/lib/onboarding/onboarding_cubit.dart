@@ -201,6 +201,9 @@ class OnboardingCubit(
       await session.createHousehold(
         name == null || name.isEmpty ? defaultName : name,
         stores: draft.stores,
+        // With the create, not after it: the server turns join approval on
+        // for a new club household (job 169b W3) only from the create's kind.
+        kind: draft.kind?.name,
         requestId: draft.requestId,
       );
       if (session.state case InHousehold(:final userId, :final household)) {
@@ -214,6 +217,7 @@ class OnboardingCubit(
     }
     final household = current.household;
     final ours = draft.householdId == household.id;
+    // A household made before the kind went with the create (job 168c).
     if (ours && household.kind == null) {
       if (draft.kind case final kind?) {
         try {

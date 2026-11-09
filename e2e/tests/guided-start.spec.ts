@@ -18,9 +18,10 @@ async function userIdOf(email: string): Promise<string | undefined> {
 }
 
 async function householdsCreatedBy(userId: string) {
-  const { data, error } = await adminClient().from('households').select('id, name, kind').eq('created_by', userId);
+  const { data, error } = await adminClient().from('households').select('id, name, kind, join_approval')
+    .eq('created_by', userId);
   if (error) throw error;
-  return data as { id: string; name: string; kind: string | null }[];
+  return data as { id: string; name: string; kind: string | null; join_approval: boolean }[];
 }
 
 async function listOf(household: string) {
@@ -189,6 +190,19 @@ test('the X: sign in instead keeps the draft for later; discard starts over with
   // Usage stays answered (that is the install's choice, not the draft's).
   await expect(page).toHaveURL(/\/start\/who$/);
   await expect(onboardingChip(page, 'Familie')).not.toBeChecked();
+});
+
+// Job 168c: the kind goes with the create, so a club starts with join approval on (169b W3), as the
+// server does it only from create_household's p_kind.
+test('a club from the guided start starts with join approval on', async ({ browser }) => {
+  const email = newEmail('guided-club');
+  const page = await (await browser.newContext({ viewport: phone })).newPage();
+  await signUp(page, email);
+  await createHousehold(page, { kinds: ['Verein oder Team'] });
+  await expect(page.getByRole('button', { name: 'Mitglieder einladen', exact: true })).toBeVisible();
+  const household = firstOf(await householdsCreatedBy(must(await userIdOf(email), 'user')), 'household');
+  expect(household.kind).toBe('club');
+  expect(household.join_approval, 'join approval on for a new club').toBe(true);
 });
 
 test('signing in to an account with a household puts the draft items on its list', async ({ browser }) => {
