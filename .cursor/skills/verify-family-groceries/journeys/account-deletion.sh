@@ -139,9 +139,16 @@ last="konto-last-$stamp@fg.test"
 step "a throwaway ($last) is the last member of 'WG $stamp' and deletes the account"
 sign_up "$last"
 run tap --key onboarding-create --client lea >/dev/null
+# The guided start (job 168b): „Mit wem“ skipped, the name, no stores, nothing needed yet.
+run wait --key onboarding-who --client lea >/dev/null
+run tap --key onboarding-skip --client lea >/dev/null
 run wait --key household-name --client lea >/dev/null
 run type --key household-name --input "WG $stamp" --client lea >/dev/null
-run tap --key create-household --client lea >/dev/null
+run tap --key onboarding-next --client lea >/dev/null
+run wait --key onboarding-stores --client lea >/dev/null
+run tap --key onboarding-skip --client lea >/dev/null
+run wait --key onboarding-need --client lea >/dev/null
+run tap --key onboarding-next --client lea >/dev/null
 run wait --key invite-later --client lea >/dev/null
 run tap --key invite-later --client lea >/dev/null
 run wait --key add-item-field --client lea >/dev/null

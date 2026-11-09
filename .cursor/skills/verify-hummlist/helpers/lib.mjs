@@ -111,10 +111,11 @@ export async function openApp(inst, { lang = 'de', viewport = { width: 390, heig
 
 /**
  * Signs a member in on the login screen with email and password, declines the analytics question
- * a new install asks, dismisses the explainer card, and waits for the focused add field.
+ * a new install asks, dismisses the Erste Schritte card, and waits for the focused add field.
  */
 export async function signIn(page, L, user) {
-  await page.goto('/');
+  // Signed out, `/` is the guided start's first screen (job 168b); `/login` is the sign-in.
+  await page.goto('/login');
   // Builds with Google or Apple keep the email form behind „Weiter mit E-Mail“ (job 70).
   const withEmail = page.getByRole('button', { name: L('continueWithEmail') });
   await withEmail.or(page.getByRole('textbox', { name: L('email') })).waitFor({ timeout: 30_000 });
@@ -136,7 +137,7 @@ export async function signIn(page, L, user) {
     await decline.click();
     await addField(page, L).waitFor({ timeout: 30_000 });
   }
-  const hint = page.getByRole('button', { name: L('listHintDismiss'), exact: true });
+  const hint = page.getByRole('button', { name: L('checklistDismiss'), exact: true });
   if (await hint.waitFor({ timeout: 3_000 }).then(() => true, () => false)) await hint.click();
 }
 

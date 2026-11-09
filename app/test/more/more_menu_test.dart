@@ -45,7 +45,15 @@ void main() {
       .evaluate()
       .isNotEmpty;
 
+  // The list builds lazily: rows below the fold are scrolled to first.
   Future<void> tapKey(WidgetTester tester, String k) async {
+    if (key(k).evaluate().isEmpty) {
+      await tester.scrollUntilVisible(
+        key(k),
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
+    }
     await tester.ensureVisible(key(k));
     await tester.pumpAndSettle();
     await tester.tap(key(k));
@@ -99,6 +107,7 @@ void main() {
       'Anderem Haushalt beitreten',
       'Zugänge',
       'Einstellungen',
+      'Tipps',
       'Feedback senden',
       'Hummlist bewerten',
       'Hilfe & Kontakt',
@@ -127,6 +136,7 @@ void main() {
       'Join another household',
       'Access',
       'Settings',
+      'Tips',
       'Send feedback',
       'Rate Hummlist',
       'Help & contact',

@@ -51,8 +51,9 @@ test('stores and categories are dividers that scroll away, stores fold for good,
   const email = newEmail('walk-dividers');
   await signUpWithHousehold(page, email, { stores: chainStores });
   const hint = 'Tippen hakt ab · Halten bearbeitet';
-  await expect(page.getByText(hint)).toBeVisible();
   await seed(page, email, lidl);
+  // The Erste Schritte card waits for the first open item: an empty list stays clean.
+  await expect(page.getByText(hint)).toBeVisible();
   await expect(storeDivider(page, 'Lidl')).toHaveAccessibleName(/^Lidl, 5 Artikel/);
   await expect(storeDivider(page, 'dm')).toHaveAccessibleName(/^dm, 1 Artikel/);
   await expect(storeDivider(page, 'EDEKA'), 'a store without items does not show').toHaveCount(0);
@@ -76,7 +77,7 @@ test('stores and categories are dividers that scroll away, stores fold for good,
   expect(moved, 'store divider, category divider and row move by the same delta: nothing sticks').toEqual([moved[0], moved[0], moved[0]]);
   await page.mouse.wheel(0, -80);
 
-  await page.getByRole('button', { name: 'Verstanden' }).click();
+  await page.getByRole('button', { name: 'Erste Schritte ausblenden' }).click();
   await expect(page.getByText(hint)).toHaveCount(0);
 
   await store.click();
@@ -115,8 +116,8 @@ test('stores and categories are dividers that scroll away, stores fold for good,
 test('nothing on the list drags: a hold on a row edits, a hold or right click on a divider does nothing, a tap folds', async ({ page }) => {
   const email = newEmail('walk-hold');
   await signUpWithHousehold(page, email, { stores: chainStores });
-  await page.getByRole('button', { name: 'Verstanden' }).click();
   await seed(page, email, lidl);
+  await page.getByRole('button', { name: 'Erste Schritte ausblenden' }).click();
   const before = await outline(page);
 
   const g = await boxOf(itemRow(page, 'Gurke'));
@@ -203,12 +204,12 @@ test('wide screens put the stores in columns, and an item moves across them', as
   const email = newEmail('walk-wide');
   await page.setViewportSize({ width: 1366, height: 1024 });
   await signUpWithHousehold(page, email, { stores: chainStores });
-  await page.getByRole('button', { name: 'Verstanden' }).click();
   await seed(page, email, [
     ...lidl,
     { name: 'Hack', store: 'EDEKA', category: 'Fleisch/Wurst/Fisch', quantity: '500 g', key: 1024 },
     { name: 'Schokolade', store: 'EDEKA', category: 'Süßes & Snacks', brand: 'Ritter Sport', key: 1024 },
   ]);
+  await page.getByRole('button', { name: 'Erste Schritte ausblenden' }).click();
   const columns = async (names: string[]) =>
     new Set(await Promise.all(names.map(async (n) => (await storeDivider(page, n).boundingBox())?.x ?? NaN))).size;
   await expect.poll(() => columns(['dm', 'Lidl', 'EDEKA', 'Ohne Laden']), { message: 'three columns at 1366 px' }).toBe(3);

@@ -167,7 +167,7 @@ test.describe('on a phone browser', () => {
   test('edit: a finger hold opens the sheet, one that wobbles a little too; move in it, tick with a tap', async ({ page }) => {
     const email = newEmail('hold-phone');
     await householdWithItems(email, ['Zahnpasta', 'Milch', 'Brot'], { stores: ['Supermarkt'] });
-    await page.goto('/');
+    await page.goto('/login');
     await signIn(page, email);
     const row = itemRow(page, 'Zahnpasta');
     const before = await boxOf(row);

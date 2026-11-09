@@ -6,10 +6,10 @@ import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/onboarding/onboarding_cubit.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 /// The joiner's wait (job 169b W3 M): the household confirms joins, so the
 /// invite made a request an owner or admin decides on. "Anfrage gesendet:
@@ -122,7 +122,20 @@ class _JoinRequestWaitingState() extends State<JoinRequestWaiting> {
             key: const ValueKey('join-request-go-on'),
             onPressed: inHousehold
                 ? () => leaveStep(context)
-                : () => context.go(createHouseholdPath),
+                // The guided start from „Mit wem“, as on Willkommen: off
+                // the join screen's address, the router resumes the draft.
+                : () {
+                    context.read<OnboardingCubit>().start(
+                      askUsage: false,
+                      ownHouseholdFor: switch (context
+                          .read<SessionCubit>()
+                          .state) {
+                        NeedsHousehold(:final userId) => userId,
+                        _ => null,
+                      },
+                    );
+                    goToStart(context);
+                  },
             child: Text(
               inHousehold ? l10n.joinRequestToList : l10n.joinRequestCreateOwn,
             ),

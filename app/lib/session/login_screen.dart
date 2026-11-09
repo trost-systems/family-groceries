@@ -47,13 +47,30 @@ class const LoginScreen({
           path: '/',
           queryParameters: {'next': next},
         ).toString(),
+        // Back here, not at the root, which opens the guided start (job
+        // 168b): a cancelled or failed provider sign-in says so here. An
+        // invite comes back at the root: /join/<code> is claimed by the
+        // apps, and on the web it is the static join page (job 169b).
         null =>
           invite == null
-              ? '/'
+              ? signInReturnPath
               : Uri(path: '/', queryParameters: {'invite': invite}).toString(),
       },
       header: const BrandBlock(),
-      footer: PasteInvite(waiting: invite),
+      // Job 168b: back to the guided start (resumed if under way); not for
+      // an invite or a link, which want this account. Inside the form, so
+      // it never takes the form's height (a phone turned sideways).
+      footer: Column(
+        children: [
+          if (invite == null && next == null)
+            TextButton(
+              key: const ValueKey('login-new'),
+              onPressed: () => goToStart(context),
+              child: Text(l10n.loginNew),
+            ),
+          PasteInvite(waiting: invite),
+        ],
+      ),
     );
     return Scaffold(
       body: StatusBarBackdrop(

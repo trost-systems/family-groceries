@@ -373,7 +373,8 @@ export async function openEmailSignIn(page: Page, { button = 'Weiter mit E-Mail'
 /**
  * Signs up in a fresh browser context, then answers the analytics consent that follows the first
  * sign-in on an install (job 19): declined unless [consent] says otherwise. Ends on onboarding
- * (or its join form for an invite, [invitePath]).
+ * (or its join form for an invite, [invitePath]). [path] `/` opens the sign-in itself: signed out,
+ * `/` is the guided start's first screen (job 168b), which asks before the account.
  */
 export async function signUp(
   page: Page,
@@ -381,7 +382,7 @@ export async function signUp(
   path = '/',
   options: { consent?: ConsentChoice } = {},
 ): Promise<void> {
-  await page.goto(path);
+  await page.goto(path === '/' ? '/login' : path);
   await signUpHere(page, email, options);
 }
 
@@ -445,7 +446,7 @@ export const consentScreen = (page: Page): Locator => page.getByRole('button', {
 export async function answerConsent(page: Page, choice: ConsentChoice = 'decline'): Promise<void> {
   await expect(page).toHaveURL(/\/analytics-consent(\?|$)/);
   const answer = page.getByRole('button', { name: choice === 'accept' ? 'Erlauben' : 'Nicht erlauben', exact: true });
-  await expect(page.getByRole('heading', { name: 'Nutzungsdaten' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nutzungsdaten', exact: true })).toBeVisible();
   // A phone (job 33b): the consent text is longer than an iPhone screen. Scroll as a finger does
   // (no mouse wheel on a phone), then tap the answer.
   if (await page.evaluate(() => matchMedia('(pointer: coarse)').matches)) {
@@ -570,42 +571,102 @@ export const popularStores = ['EDEKA', 'REWE', 'Lidl', 'Aldi Süd', 'Aldi Nord',
  */
 export const chainStores = ['dm', 'Lidl', 'EDEKA'];
 
+/** The guided start's words (job 168b), in German and English. */
+const guidedStartWords = {
+  de: {
+    create: /^Haushalt erstellen/, next: 'Weiter', skip: 'Überspringen', name: 'Name des Haushalts',
+    own: 'Eigenen Laden hinzufügen', storeName: 'Name des Ladens', need: 'Noch etwas?', add: 'Hinzufügen',
+    remove: (item: string) => `${item} entfernen`,
+    needNext: /^Weiter( mit \d+ Artikeln?)?$/,
+  },
+  en: {
+    create: /^Create a household/, next: 'Continue', skip: 'Skip', name: 'Household name',
+    own: 'Add your own store', storeName: 'Store name', need: 'Anything else?', add: 'Add',
+    remove: (item: string) => `Remove ${item}`,
+    needNext: /^Continue( with \d+ items?)?$/,
+  },
+} as const;
+
+/** A chip of the guided start (who, stores, staples): Flutter web names a FilterChip a checkbox. */
+export const onboardingChip = (page: Page, name: string): Locator =>
+  page.getByRole('checkbox', { name, exact: true }).or(page.getByRole('button', { name, exact: true }));
+
 /**
- * Onboarding (job 22) from Step 1: "Haushalt erstellen", then Step 2a with [name] (the prefilled
- * "Unser Haushalt" by default) and [stores], picked in order; a name not on the offer is typed as
- * an own store. The default is none, as in the app, where nothing is preselected: "Überspringen".
- * Specs that only need some store type generic ones (Supermarkt, Drogerie); [chainStores] are for
- * chain behaviour. Ends on Step 3, inviting the partner.
+ * Creates a household from the welcome screen (signed in, none yet) through the guided start
+ * (job 168b): "Haushalt erstellen", then „Mit wem“ ([kinds] picked in order, skipped without),
+ * the name ([name], or the suggestion kept), the stores ([stores] picked in order; a name not on
+ * the offer is typed as an own store; none: "Überspringen", as nothing is preselected), and „Was
+ * fehlt gerade?“ ([items] typed, none by default). Specs that only need some store type generic
+ * ones (Supermarkt, Drogerie); [chainStores] are for chain behaviour. Ends on the invite step.
+ * [lang] `en` for an English browser.
  */
 export async function createHousehold(
   page: Page,
-  { name, stores = [] }: { name?: string; stores?: string[] | undefined } = {},
+  { name, stores = [], kinds = [], items = [], lang = 'de' }: {
+    name?: string;
+    stores?: string[] | undefined;
+    kinds?: string[];
+    items?: string[];
+    lang?: 'de' | 'en';
+  } = {},
 ): Promise<void> {
+  const t = guidedStartWords[lang];
   await expect(page).toHaveURL(/\/welcome(\?|$)/);
-  await page.getByRole('button', { name: /^Haushalt erstellen/ }).click();
-  await expect(page).toHaveURL(/\/welcome\/create(\?|$)/);
+  await page.getByRole('button', { name: t.create }).click();
+  await expect(page).toHaveURL(/\/start\/who(\?|$)/);
+  for (const kind of kinds) await onboardingChip(page, kind).click();
+  await page.getByRole('button', { name: kinds.length === 0 ? t.skip : t.next, exact: true }).click();
+
+  await expect(page).toHaveURL(/\/start\/name(\?|$)/);
   // The prefilled name is not in the DOM until the field is edited, so it is not checked here.
-  const field = page.getByRole('textbox', { name: 'Name des Haushalts' });
+  const field = page.getByRole('textbox', { name: t.name });
   await expect(field).toBeVisible();
   if (name !== undefined) await typeInto(field, name);
+  await page.getByRole('button', { name: t.next, exact: true }).click();
+
+  await expect(page).toHaveURL(/\/start\/stores(\?|$)/);
   for (const store of stores) {
     if (popularStores.includes(store)) {
-      await page.getByRole('checkbox', { name: store, exact: true }).or(page.getByRole('button', { name: store, exact: true }))
-        .click();
+      await onboardingChip(page, store).click();
     } else {
-      await page.getByRole('button', { name: 'Eigenen Laden hinzufügen' }).click();
-      await typeInto(page.getByRole('textbox', { name: 'Name des Ladens' }), store);
+      await page.getByRole('button', { name: t.own }).click();
+      await typeInto(page.getByRole('textbox', { name: t.storeName }), store);
       await page.keyboard.press('Enter');
-      await expect(page.getByRole('textbox', { name: 'Name des Ladens' })).toHaveCount(0);
+      await expect(page.getByRole('textbox', { name: t.storeName })).toHaveCount(0);
     }
   }
-  if (stores.length === 0) await page.getByRole('button', { name: 'Überspringen', exact: true }).click();
-  else await page.getByRole('button', { name: 'Haushalt erstellen', exact: true }).click();
-  await expect(page).toHaveURL(/\/welcome\/invite$/);
+  await page.getByRole('button', { name: stores.length === 0 ? t.skip : t.next, exact: true }).click();
+
+  await expect(page).toHaveURL(/\/start\/need(\?|$)/);
+  for (const item of items) await addNeed(page, item, lang);
+  await page.getByRole('button', { name: t.needNext }).click();
+  await expect(page).toHaveURL(/\/start\/invite(\?|$)/, { timeout: 20_000 });
 }
 
-/** Onboarding Step 3's "Später" (or "Weiter zur Liste" once invited): on to the list, its add field focused. */
+/** On „Was fehlt gerade?“: types [text] into „Noch etwas?“ and adds it. */
+export async function addNeed(page: Page, text: string, lang: 'de' | 'en' = 'de'): Promise<void> {
+  const t = guidedStartWords[lang];
+  const field = page.getByRole('textbox', { name: t.need });
+  // The added item's own X: a staple chip of the same name does not count.
+  const added = page.getByRole('button', { name: t.remove(text), exact: true });
+  // A click right after typing can beat the web engine's report of the text to the app: then nothing
+  // is added and the field empties all the same. Type again until the item shows on the step.
+  await expect(async () => {
+    if ((await added.count()) === 0) {
+      await typeInto(field, text);
+      await page.getByRole('button', { name: t.add, exact: true }).click();
+    }
+    await expect(added.first()).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+  await expect(field).toHaveValue('');
+}
+
+/**
+ * The invite step's "Später" (or "Weiter zur Liste" once invited), of the guided start or of a
+ * household made from the switcher: on to the list, its add field focused.
+ */
 export async function skipInvite(page: Page): Promise<void> {
+  await expect(page).toHaveURL(/\/(start|households\/new)\/invite(\?|$)/);
   await page.getByRole('button', { name: /^(Später|Weiter zur Liste)$/ }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(addField(page)).toBeFocused();

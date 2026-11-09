@@ -211,15 +211,16 @@ test.describe('in English', () => {
   test('the yearly status and the manage note', async ({ page }) => {
     const email = newEmail('yearly-en');
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+    await page.goto('/login');
     await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
     await typeInto(page.getByRole('textbox', { name: 'Email' }), email);
     await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
     await page.getByRole('button', { name: 'Sign up' }).click();
     await page.getByRole('button', { name: "Don't allow", exact: true }).click();
-    await page.getByRole('button', { name: /^Create a household/ }).click();
-    await page.getByRole('button', { name: 'Create a household', exact: true }).click();
-    await expect(page).toHaveURL(/\/welcome\/invite$/);
+    await createHousehold(page, { lang: 'en' });
+    // The invite step stays until it is left.
+    await page.getByRole('button', { name: 'Later', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeVisible();
     expect(await subscribe(email, `4905${Date.now()}`)).toBe('granted');
     await page.goto('/more/lifetime');
     await expect(page.getByText(/^Hummlist Premium active \(yearly, renews on /)).toBeVisible({ timeout: 10_000 });

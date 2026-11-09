@@ -41,13 +41,13 @@ test('no request leaves for Google: login, sign-in, a list in many scripts, the 
     document.addEventListener('securitypolicyviolation', (e) => seen.push(`${e.violatedDirective} ${e.blockedURI}`));
   });
 
-  await page.goto('/');
+  await page.goto('/login');
   await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await screenshot(page, `33c-${browserName}-login`);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Nutzungsdaten' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nutzungsdaten', exact: true })).toBeVisible();
   expect(requests.filter((url) => url.host === posthog).map(String), 'PostHog before consent').toEqual([]);
   await answerConsent(page, 'accept');
 

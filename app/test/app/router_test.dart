@@ -1,4 +1,5 @@
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/onboarding/draft.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -15,39 +16,44 @@ void main() {
   const next = 'next=%2Foauth%2Fconsent%3Fauthorization_id%3Dabc';
   const cases = <(Session, String, String?)>[
     (SessionLoading(), '/', null),
-    (SignedOut(), '/', '/login'),
+    // Job 168b: signed out, the guided start's first screen.
+    (SignedOut(), '/', '/start'),
+    (SignedOut(), '/start', null),
+    (SignedOut(), '/start/who', '/start'),
     (SignedOut(), '/login', null),
     (SignedOut(), '/join/ABCD2345', '/login?invite=ABCD2345'),
+    (NeedsHousehold('u'), '/start', '/welcome'),
+    (NeedsHousehold('u'), '/start/who', '/welcome'),
+    (household, '/start', '/'),
+    (household, '/start/invite', '/'),
     // Job 22: an invite skips Step 1 and opens the join screen.
     (NeedsHousehold('u'), '/login?invite=ABCD2345', '/join/ABCD2345'),
     (NeedsHousehold('u'), '/', '/welcome'),
     (NeedsHousehold('u'), '/join/ABCD2345', null),
     (NeedsHousehold('u'), '/welcome?invite=ABCD2345', '/join/ABCD2345'),
     (NeedsHousehold('u'), '/welcome', null),
-    (NeedsHousehold('u'), '/welcome/create', null),
     (NeedsHousehold('u'), '/join', null),
     (NeedsHousehold('u'), '/welcome/invite', '/welcome'),
     (NeedsHousehold('u'), '/more/invites', '/welcome?next=%2Fmore%2Finvites'),
-    // Job 169b W3 M: a join request waits instead of Step 1, and creating
-    // a household instead stays open.
+    // Job 169b W3 M: a join request waits instead of Willkommen; the
+    // guided start (a draft) leads it (job 168c).
     (waiting, '/', '/welcome/waiting'),
     (waiting, '/welcome', '/welcome/waiting'),
     (waiting, '/welcome/waiting', null),
-    (waiting, '/welcome/create', null),
     (waiting, '/join/ABCD2345', null),
     (NeedsHousehold('u'), '/welcome/waiting', '/welcome'),
     (household, '/welcome/waiting', '/'),
-    (household, '/welcome/create', '/welcome/invite'),
-    (household, '/welcome/invite', null),
     (household, '/join', null),
     (household, '/more/invites', null),
-    // Job 169b: one more household and the household page, in one only.
+    // Job 169b: one more household, its invite step and the household
+    // page, in one only.
     (household, '/households/new', null),
+    (household, '/households/new/invite', null),
     (household, '/more/household', null),
     (NeedsHousehold('u'), '/households/new', '/welcome'),
-    (SignedOut(), '/households/new', '/login'),
-    (SignedOut(), '/welcome/invite', '/login'),
-    (SignedOut(), '/join', '/login'),
+    (SignedOut(), '/households/new', '/start'),
+    (SignedOut(), '/welcome', '/start'),
+    (SignedOut(), '/join', '/start'),
     (household, '/login', '/'),
     (household, '/welcome', '/'),
     // An invite in any location opens the join screen.
@@ -72,7 +78,7 @@ void main() {
     (household, '/edit/none', null),
     (household, '/edit/lidl/more', '/'),
     (NeedsHousehold('u'), '/edit/lidl', '/welcome'),
-    (SignedOut(), '/edit', '/login'),
+    (SignedOut(), '/edit', '/start'),
     (household, '/more/access', null),
     (household, '/more/account', null),
     (household, '/more/account?invite=ABCD2345', '/join/ABCD2345'),
@@ -92,16 +98,16 @@ void main() {
     (NeedsHousehold('u'), '/more/access', '/welcome?next=%2Fmore%2Faccess'),
     (household, '/more/nothing-here', '/'),
     (SignedOut(), '/more', '/login?next=%2Fmore'),
-    (SignedOut(), '/settings', '/login'),
+    (SignedOut(), '/settings', '/start'),
     (SignedOut(), consent, '/login?$next'),
     (SignedOut(), '/login?$next', null),
     (NeedsHousehold('u'), '/login?$next', '/welcome?$next'),
     (NeedsHousehold('u'), consent, '/welcome?$next'),
     (NeedsHousehold('u'), '/welcome?$next', null),
-    (NeedsHousehold('u'), '/welcome/create?$next', null),
+    (NeedsHousehold('u'), '/start/who?$next', '/welcome?$next'),
     (NeedsHousehold('u'), '/join?$next', null),
     (NeedsHousehold('u'), '/join/ABCD2345?$next', null),
-    (household, '/welcome/create?$next', consent),
+    (household, '/start/who?$next', consent),
     (household, '/join?$next', consent),
     (household, '/login?$next', consent),
     (household, '/welcome?$next', consent),
@@ -214,14 +220,14 @@ void main() {
   const ask = '/analytics-consent';
   const asking = <(Session, String, String?)>[
     (SessionLoading(), '/', null),
-    (SignedOut(), '/', '/login'),
-    (SignedOut(), ask, '/login'),
+    (SignedOut(), '/', '/start'),
+    (SignedOut(), ask, '/start'),
     (SignedOut(), '/login', null),
     (SignedOut(), '/join/ABCD2345', '/login?invite=ABCD2345'),
     (NeedsHousehold('u'), '/login', ask),
     (NeedsHousehold('u'), '/', ask),
     (NeedsHousehold('u'), '/welcome', ask),
-    (NeedsHousehold('u'), '/welcome/create', ask),
+    (NeedsHousehold('u'), '/start/who', ask),
     (NeedsHousehold('u'), ask, null),
     (NeedsHousehold('u'), '/login?invite=ABCD2345', '$ask?invite=ABCD2345'),
     (NeedsHousehold('u'), '/join/ABCD2345', '$ask?invite=ABCD2345'),
@@ -254,7 +260,7 @@ void main() {
     (NeedsHousehold('u'), '$ask?invite=ABCD2345', '/join/ABCD2345'),
     (household, ask, '/'),
     (household, '$ask?invite=ABCD2345', '/join/ABCD2345'),
-    (SignedOut(), ask, '/login'),
+    (SignedOut(), ask, '/start'),
   ];
   for (final (session, from, to) in decided) {
     test('decided: ${session.runtimeType} at $from goes to $to', () {
@@ -274,9 +280,9 @@ void main() {
     (household, '/more/settings', null),
     (household, '/join/ABCD2345', null),
     (household, '/nope', '/'),
-    (SignedOut(), '/nope', '/login'),
+    (SignedOut(), '/nope', '/start'),
     // A More page that isn't one: no `next` to nowhere.
-    (SignedOut(), '/more/nothing-here', '/login'),
+    (SignedOut(), '/more/nothing-here', '/start'),
     (household, '/login?next=%2Fmore%2Fnothing-here', '/'),
     (household, 'https://app.hummlist.com/add', '/'),
     // Signed out, sign-in continues there.
@@ -303,8 +309,7 @@ void main() {
     (NeedsHousehold('u'), '/login?next=%2Fadd', '/welcome?next=%2Fadd'),
     (NeedsHousehold('u'), '/add', '/welcome?next=%2Fadd'),
     (NeedsHousehold('u'), '/welcome?next=%2Fadd', null),
-    (NeedsHousehold('u'), '/welcome/create?next=%2Fadd', null),
-    (household, '/welcome/create?next=%2Fadd', '/add'),
+    (household, '/start/who?next=%2Fadd', '/add'),
     (household, '/welcome?next=%2Fmore%2Finvites', '/more/invites'),
     // An invite link keeps to its own way, `next` never carries one.
     (SignedOut(), '/login?next=%2Fjoin%2FABCD2345', '/login'),
@@ -407,7 +412,9 @@ void main() {
         memory.redirect(const SignedOut(), Uri.parse('/more/account')),
         '/login',
       );
-      expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/login');
+      // The sign-in shows; the next start opens the guided start's.
+      expect(memory.redirect(const SignedOut(), Uri.parse('/login')), isNull);
+      expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/start');
     });
 
     test('signed out, a link opened later still continues', () {
@@ -425,8 +432,135 @@ void main() {
         ..redirect(const SignedOut(), Uri.parse('/add'))
         ..redirect(const NeedsHousehold('u'), Uri.parse('/'));
       expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/login');
-      expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/login');
+      expect(memory.redirect(const SignedOut(), Uri.parse('/')), '/start');
     });
+  });
+
+  // Job 168b: a guided start under way. The screens move on by changing the
+  // draft; the router shows its step, signed out up to the account, signed
+  // in without a household up to the setup, and in the household the setup
+  // and the invite step until it is left.
+  const stores = OnboardingDraft(step: OnboardingStep.stores);
+  const created = OnboardingDraft(
+    step: OnboardingStep.invite,
+    userId: 'u',
+    householdId: 'h',
+  );
+  final drafts = <(Session, String, OnboardingDraft, bool, String?)>[
+    (const SignedOut(), '/', stores, false, '/start/stores'),
+    (const SignedOut(), '/start', stores, false, '/start/stores'),
+    (const SignedOut(), '/start/who', stores, false, '/start/stores'),
+    (const SignedOut(), '/start/stores', stores, false, null),
+    // „Stattdessen anmelden“: the draft waits.
+    (const SignedOut(), '/login', stores, false, null),
+    (
+      const SignedOut(),
+      '/join/ABCD2345',
+      stores,
+      false,
+      '/login?invite=ABCD2345',
+    ),
+    (
+      const SignedOut(),
+      '/start',
+      const OnboardingDraft(),
+      true,
+      '/start/usage',
+    ),
+    (const SignedOut(), '/start', const OnboardingDraft(), false, '/start/who'),
+    (
+      const SignedOut(),
+      '/',
+      const OnboardingDraft(step: OnboardingStep.setup),
+      false,
+      '/start/account',
+    ),
+    (const NeedsHousehold('u'), '/', stores, false, '/start/stores'),
+    (const NeedsHousehold('u'), '/welcome', stores, false, '/start/stores'),
+    (
+      const NeedsHousehold('u'),
+      '/start/account',
+      const OnboardingDraft(step: OnboardingStep.account),
+      false,
+      '/start/setup',
+    ),
+    (
+      const NeedsHousehold('u'),
+      '/welcome?$next',
+      stores,
+      false,
+      '/start/stores?$next',
+    ),
+    (const NeedsHousehold('u'), '/join/ABCD2345', stores, false, null),
+    (household, '/', stores, false, '/start/setup'),
+    (household, '/', created, false, '/start/invite'),
+    (household, '/start/invite', created, false, null),
+    // A link the setup went on to stays; the list brings the step back.
+    (household, '/more/settings', created, false, null),
+    (household, '/edit', created, false, null),
+    (
+      household,
+      '/',
+      const OnboardingDraft(
+        step: OnboardingStep.setup,
+        userId: 'u',
+        householdId: 'h',
+      ),
+      false,
+      '/start/setup',
+    ),
+    // The setup finishes before an MCP authorization opens.
+    (household, '/start/setup?$next', stores, false, null),
+    (household, '/start/invite?$next', created, false, consent),
+    // A draft of another household is not this one's.
+    (
+      const InHousehold('u', Household(id: 'other', name: 'O'), [
+        Household(id: 'other', name: 'O'),
+      ]),
+      '/',
+      created,
+      false,
+      null,
+    ),
+  ];
+  for (final (session, from, draft, ask, to) in drafts) {
+    test('draft at ${draft.step.name}${draft.created ? ' (created)' : ''}: '
+        '${session.runtimeType} at $from goes to ${to ?? 'stays'}', () {
+      expect(
+        authRedirect(session, Uri.parse(from), draft: draft, askConsent: ask),
+        to,
+      );
+    });
+  }
+
+  test('a link the setup went on to stays; the list brings the invite step '
+      'back', () {
+    final memory = RedirectMemory();
+    expect(
+      memory.redirect(
+        household,
+        Uri.parse('/start/invite?next=%2Fmore%2Fsettings'),
+        draft: created,
+      ),
+      '/more/settings',
+    );
+    expect(
+      memory.redirect(household, Uri.parse('/more/settings'), draft: created),
+      isNull,
+    );
+    expect(
+      memory.redirect(household, Uri.parse('/'), draft: created),
+      '/start/invite',
+    );
+  });
+
+  test('every guided start step has its screen name', () {
+    for (final step in OnboardingStep.values) {
+      final name = screenNameOf(Uri.parse(onboardingPath(step)));
+      expect(name, 'onboarding_${step.name}');
+      expect(screenNames, contains(name));
+    }
+    expect(screenNameOf(Uri.parse(startPath)), 'start');
   });
 
   // A page added below `/more` but missing from inMoreTab was sent to the
@@ -446,7 +580,7 @@ void main() {
 
     final more = [for (final route in moreTabRoutes()) ...paths(route, '')]
         .where((p) => p.startsWith(morePath));
-    expect(more, containsAll([usageDataPath, moreLegalPath]));
+    expect(more, containsAll([usageDataPath, tipsPath, moreLegalPath]));
     for (final path in more) {
       expect(authRedirect(household, Uri.parse(path)), isNull, reason: path);
     }

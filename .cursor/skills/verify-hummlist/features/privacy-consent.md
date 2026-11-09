@@ -1,10 +1,11 @@
 # Analytics consent
 
-Builds that carry an analytics key (the web app, TestFlight and Play builds) ask once per install, right after the first sign-in and before onboarding or the list: „Darf Hummlist Nutzungsdaten erfassen?“ / "May Hummlist collect usage data?" Two equal buttons answer it. A no sends nothing and stores no analytics ID on the device; a yes sends pseudonymous usage data and error reports to PostHog (EU servers). The answer can be changed any time under More → Nutzungsdaten.
+Builds that carry an analytics key (the web app, TestFlight and Play builds) ask once per install: as the first step of the guided start (after „Los geht's“ on the start screen, before the account), or, for someone who signs in without it, right after the first sign-in and before onboarding or the list: „Darf Hummlist Nutzungsdaten erfassen?“ / "May Hummlist collect usage data?" Two equal buttons answer it. A no sends nothing and stores no analytics ID on the device; a yes sends pseudonymous usage data and error reports to PostHog (EU servers). The answer can be changed any time under More → Nutzungsdaten.
 
 ## Sub-features
 
-- `ask` the consent screen (app bar title „Nutzungsdaten“ / "Usage data", logout icon with tooltip „Abmelden“): heading „Darf Hummlist Nutzungsdaten erfassen?“ / "May Hummlist collect usage data?", the body below, a link „Datenschutzerklärung“ / "privacy policy" (opens the privacy page of hummlist.com in the app's language) and the two buttons „Nicht erlauben“ / "Don't allow" and „Erlauben“ / "Allow".
+- `guided-start-step` signed out, „Los geht's“ opens the question as step 1 of the guided start (`/start/usage`, „Schritt 1 von 7“, title „Nutzungsdaten“), the same words and buttons as below (`ConsentQuestion`), with the guided start's X instead of the logout icon. The answer is stored on the device at once and moves on to „Mit wem kaufst du ein?“; the server learns it at the sign-in, and after a yes `first_open` goes at the sign-in too. Nothing else is sent before the account. An install that already answered skips the step.
+- `ask` the consent screen (`/analytics-consent`, for a sign-in that did not pass the guided start; app bar title „Nutzungsdaten“ / "Usage data", logout icon with tooltip „Abmelden“): heading „Darf Hummlist Nutzungsdaten erfassen?“ / "May Hummlist collect usage data?", the body below, a link „Datenschutzerklärung“ / "privacy policy" (opens the privacy page of hummlist.com in the app's language) and the two buttons „Nicht erlauben“ / "Don't allow" and „Erlauben“ / "Allow".
 - `decline` „Nicht erlauben“: no events, no error reports, no ID stored; onboarding or the list works the same.
 - `accept` „Erlauben“: events and error reports go out; the decision is stored with the version of the text it was given under.
 - `change-later` More tab → „Nutzungsdaten“ / "Usage data" (`/more/usage-data`, job 85), switch „Nutzungsdaten und Fehlerberichte senden“ / "Send usage data and error reports", hint „Pseudonym an PostHog (Server in der EU), ohne Listeninhalte. Gilt für dieses Gerät. Ausschalten löscht die Kennung auf diesem Gerät.“ / "Pseudonymous, to PostHog (servers in the EU), never list contents. Applies to this device. Turning it off deletes the ID on this device."
@@ -13,7 +14,8 @@ Builds that carry an analytics key (the web app, TestFlight and Play builds) ask
 
 ## How to get to it (user POV)
 
-- Right after the first sign-in or sign-up on a device: the question appears before „Willkommen bei Hummlist“ and before the list.
+- Signed out on a new device: „Los geht's“ on the start screen; the question is the first step.
+- Or right after the first sign-in or sign-up on a device (from „Schon ein Konto? Anmelden“, an invite link or a link to a screen): the question appears before „Willkommen bei Hummlist“ and before the list.
 - Later: tab „Mehr“ / "More" → „Nutzungsdaten“ / "Usage data" → the switch. This is the path the consent text names.
 - The privacy page: the link „Datenschutzerklärung“ / "privacy policy" in the question, or More → „Datenschutzerklärung“ / "Privacy policy" (under the heading „Rechtliches“ / "Legal").
 
@@ -28,7 +30,8 @@ Preconditions:
 - Local stack and the verify-hummlist or e2e web build (both carry a stand-in analytics key, host `https://posthog.invalid`, so the question shows). The answer is stored per browser profile, not per account, and no seed records one: every new browser context is asked. The verify-hummlist `signIn` helper declines it; to stop on the question, sign in or sign up by hand.
 - Fresh email via `newEmail(...)`.
 
-- **See the question.** `signUp(page, email, '/', { consent: 'decline' })` ends by answering; to stop on the screen, do the sign-up steps by hand: `openEmailSignIn(page)`, `typeInto` the textboxes „E-Mail“ and „Passwort“, click button „Registrieren“. Observable result: URL `/analytics-consent`, `page.getByRole('heading', { name: 'Nutzungsdaten' })` (the bar title, also on More's page) and the question `page.getByText('Darf Hummlist Nutzungsdaten erfassen?')` visible, buttons `page.getByRole('button', { name: 'Nicht erlauben', exact: true })` and `{ name: 'Erlauben', exact: true }`.
+- **See the question.** `signUp(page, email, '/', { consent: 'decline' })` ends by answering; to stop on the screen, do the sign-up steps by hand: `openEmailSignIn(page)`, `typeInto` the textboxes „E-Mail“ and „Passwort“, click button „Registrieren“. Observable result: URL `/analytics-consent`, `page.getByRole('heading', { name: 'Nutzungsdaten', exact: true })` (the bar title, also on More's page) and the question `page.getByText('Darf Hummlist Nutzungsdaten erfassen?')` visible, buttons `page.getByRole('button', { name: 'Nicht erlauben', exact: true })` and `{ name: 'Erlauben', exact: true }`.
+- **See it in the guided start.** New context, `page.goto('/')`, `page.getByRole('button', { name: "Los geht's", exact: true }).click()`. Observable result: URL `/start/usage`, heading „Nutzungsdaten“, the same two buttons (wheel down on a short screen). „Nicht erlauben“ goes to `/start/who`; a later sign-up on the account step shows no `/analytics-consent`. `answerConsent` waits for `/analytics-consent`, so click the button directly here (`e2e/tests/guided-start.spec.ts`, `letsGo`).
 - **Answer.** `answerConsent(page, 'decline' | 'accept')`; it scrolls on short screens and phones. Observable result: URL leaves `/analytics-consent`; on a no, no request reaches the collector and no install ID is stored (localStorage keeps only the no and its text version, and the server notes the no); on a yes, a `first_open` event reaches the fake collector (the spec captures it), and localStorage holds `analytics.consent = true` and `analytics.consent_text_version = "2026-11-01"` (driven 2026-11-04 after a sign-up).
 - **Asked again.** After a yes, set the localStorage value ending in `analytics.consent_text_version` to `"2026-10-30"` and reload. Observable result: URL `/analytics-consent` again, nothing sent to the collector before the new yes.
 - **Change later.** `openMore(page, 'Nutzungsdaten')` (URL `/more/usage-data`), then the switch `page.getByRole('switch', { name: /^Nutzungsdaten und Fehlerberichte senden/ })` (the spec also accepts `getByRole('checkbox', ...)` for some engines). Observable result: turning it off stops sending at once.
@@ -38,6 +41,7 @@ Preconditions:
 ## Gotchas
 
 - The question appears only in builds with an analytics key. Local fg/Linux builds and builds without a key never ask and have no „Nutzungsdaten“ row on Mehr.
+- One answer per install, wherever it was given: the guided start's step and the consent screen are the same question, so a device never sees both.
 - Asked once per install: an existing user on a new install is asked once, then goes to the list (spec "a member with a household is asked once on a new install"). Sign-out keeps the answer on the device, so a second account signing in on an already answered install is not asked again (from code: sign-out leaves the `analytics.*` keys alone).
 - A browser tab authorizing an AI assistant (MCP consent) is not interrupted by the question; the app asks the next time it opens.
 - A yes under an older consent text version is treated as no decision (nothing is sent until the new yes). The current version is 2026-11-01.

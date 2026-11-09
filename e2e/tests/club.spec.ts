@@ -359,15 +359,14 @@ test('join approval: the owner turns it on; a request waits, is approved live an
 test('EN, dark: the list tabs', async ({ browser }) => {
   const page = await newPage(browser, { locale: 'en-US', colorScheme: 'dark' });
   const email = newEmail('club-en');
-  await page.goto('/');
+  // Signed out, `/` is the guided start (job 168b): the sign-in first, then its steps from Welcome.
+  await page.goto('/login');
   await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
   await typeInto(page.getByRole('textbox', { name: 'Email' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
   await page.getByRole('button', { name: 'Sign up' }).click();
   await page.getByRole('button', { name: "Don't allow", exact: true }).click();
-  await page.getByRole('button', { name: /^Create a household/ }).click();
-  await typeInto(page.getByRole('textbox', { name: 'Household name' }), 'Green Club');
-  await page.getByRole('button', { name: 'Create a household', exact: true }).click();
+  await createHousehold(page, { name: 'Green Club', lang: 'en' });
   await page.getByRole('button', { name: 'Later', exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
 

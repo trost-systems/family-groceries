@@ -401,7 +401,13 @@ export const driveCommands: Command[] = [
         return { user, email: member.email, accessToken: session.accessToken, userId: session.userId };
       }
       const { name, m } = client(ctx, { ...args, flags: { ...args.flags, client: str(args, 'client') ?? args.positional[0] ?? 'peter' } });
-      const elements = await m.elements();
+      let elements = await m.elements();
+      // Job 168b: a signed-out start shows the guided start's first screen; its „Anmelden“ opens the form.
+      if (elements.some((e) => e.key === SCREEN_KEYS.start)) {
+        await m.call(['tap', '--key', SCREEN_KEYS.start]);
+        await waitForAnyKey(ctx, m, [SCREEN_KEYS.login], 15_000);
+        elements = await m.elements();
+      }
       if (!elements.some((e) => e.key === 'login-email')) {
         const screen = screenOf(elements);
         throw new FgError(
@@ -432,7 +438,9 @@ export const driveCommands: Command[] = [
     async run(ctx, args) {
       const { name, m } = client(ctx, args);
       const elements = await m.elements();
-      if (elements.some((e) => e.key === 'login-email')) return { client: name, screen: 'login', alreadySignedOut: true };
+      if (elements.some((e) => e.key === 'login-email' || e.key === SCREEN_KEYS.start)) {
+        return { client: name, screen: 'login', alreadySignedOut: true };
+      }
       const welcomeSignOut = elements.find((e) => (e.tooltip === 'Abmelden' || e.tooltip === 'Sign out') && e.bounds);
       if (welcomeSignOut?.bounds) {
         const { x, y, width, height } = welcomeSignOut.bounds;

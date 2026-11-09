@@ -1,4 +1,5 @@
 import 'package:family_groceries/analytics/events.dart';
+import 'package:family_groceries/tips/hints.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -26,6 +27,12 @@ void main() {
       'dedupe_hint_ignored',
       'paywall_viewed',
       'review_prompt_requested',
+      'onboarding_completed',
+      'hint_shown',
+      'hint_dismissed',
+      'hint_acted',
+      'checklist_step_done',
+      'checklist_dismissed',
     });
   });
 
@@ -67,6 +74,17 @@ void main() {
     ('item_ticked', {'actor_role': 'owner', 'household_size': 2}),
     ('item_ticked', {'actor_role': 'admin', 'household_size': 2}),
     ('item_ticked', {}),
+    (
+      'onboarding_completed',
+      {
+        'kind': 'club',
+        'kind_count': 2,
+        'item_count': 12,
+        'store_count': 3,
+        'invited': true,
+      },
+    ),
+    ('onboarding_completed', {'kind': 'skipped'}),
     ('category_reordered', {'scope': 'default'}),
     ('category_reordered', {'scope': 'store'}),
     ('store_reordered', {}),
@@ -103,7 +121,18 @@ void main() {
       ('dedupe_hint_$hint', {'actor_role': 'member', 'household_size': 2}),
     ],
   ];
-  for (final (event, properties) in [...allowed, ...allowed32a]) {
+  final allowed168b = <(String, Map<String, Object>)>[
+    for (final event in ['hint_shown', 'hint_dismissed', 'hint_acted'])
+      for (final id in HintId.values) (event, {'hint_id': id.wire}),
+    for (final step in ['invite', 'first_shop', 'assistant'])
+      ('checklist_step_done', {'step': step}),
+    for (final open in [0, 3]) ('checklist_dismissed', {'open_steps': open}),
+  ];
+  for (final (event, properties) in [
+    ...allowed,
+    ...allowed32a,
+    ...allowed168b,
+  ]) {
     test('allows $event $properties', () {
       expect(() => checkEvent(event, properties), returnsNormally);
     });
@@ -111,6 +140,10 @@ void main() {
 
   const refused = <(String, Map<String, Object>, String)>[
     ('household_joined', {}, 'the old name'),
+    ('onboarding_completed', {'kind': 'Kegelclub'}, 'the Andere words'),
+    ('onboarding_completed', {'name': 'Familie Trost'}, 'the household name'),
+    ('onboarding_completed', {'item_count': 501}, 'over 500 items'),
+    ('onboarding_completed', {'items': 'Milch'}, 'an item'),
     ('paywall_viewed', {'entry_point': 'list'}, 'an entry the page has not'),
     ('paywall_viewed', {'price': '9,99 €'}, 'a price'),
     ('integration_blocked', {}, 'server-only'),
@@ -168,6 +201,11 @@ void main() {
     ('dedupe_hint_shown', {'item': 'Möhren'}, 'the matched item'),
     ('dedupe_hint_merged', {'quantity': '2'}, 'a quantity'),
     ('feedback_submitted', {'email': 'max@gmail.com'}, 'an e-mail'),
+    ('hint_shown', {'hint_id': 'Halte einen Artikel'}, 'the hint text'),
+    ('hint_shown', {'hint_id': 'tips'}, 'an id not in the catalogue'),
+    ('hint_acted', {'target': '/more/invites'}, 'where it led'),
+    ('checklist_step_done', {'step': 'started'}, 'the step done from start'),
+    ('checklist_dismissed', {'open_steps': 4}, 'more steps than there are'),
   ];
   for (final (event, properties, why) in refused) {
     if (event == 'invite_accepted' && properties.isEmpty) {

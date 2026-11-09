@@ -4,6 +4,7 @@ import { openStores, storeRow } from './catalog';
 import {
   addField, addItem, boxOf, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto, inviteCodeLabel, wheelTo,
   openEmailSignIn,
+  onboardingChip,
 } from './helpers';
 
 const moreTab = (page: Page) => page.getByRole('tab', { name: 'Mehr' });
@@ -85,7 +86,7 @@ test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit 
   await wheelTo(page, usageRow);
   await usageRow.click();
   await expect(page).toHaveURL(/\/more\/usage-data$/);
-  await expect(page.getByRole('heading', { name: 'Nutzungsdaten' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nutzungsdaten', exact: true })).toBeVisible();
   await expect(page.getByRole('switch', { name: /^Nutzungsdaten und Fehlerberichte senden/ })
     .or(page.getByRole('checkbox', { name: /^Nutzungsdaten und Fehlerberichte senden/ }))).toBeVisible();
   await expect(page.getByRole('button', { name: 'Datenschutzerklärung', exact: true }), 'the policy is a More row, not here')
@@ -245,6 +246,11 @@ test.describe('with an English browser', () => {
     const german = germanTexts();
     expect(german.length, 'the scan has German texts to look for').toBeGreaterThan(100);
     await page.goto('/');
+    await expect(page).toHaveURL(/\/start$/);
+    await expect(page.getByRole('button', { name: 'Get started' })).toBeVisible();
+    await expectNoGerman(page, 'first screen', german);
+    await page.getByRole('button', { name: 'Already have an account? Log in' }).click();
+    await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('button', { name: 'Continue with email' })).toBeVisible();
     await expectNoGerman(page, 'login', german);
     await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
@@ -259,13 +265,24 @@ test.describe('with an English browser', () => {
     // Job 22: onboarding's steps, in English too.
     await expect(page.getByRole('button', { name: /^Create a household/ })).toBeVisible();
     await expectNoGerman(page, 'welcome', german);
+    // Job 168b: the guided start's steps.
     await page.getByRole('button', { name: /^Create a household/ }).click();
+    await expect(page).toHaveURL(/\/start\/who$/);
+    await expect(onboardingChip(page, 'Partner')).toBeVisible();
+    await expectNoGerman(page, 'who', german);
+    await page.getByRole('button', { name: 'Skip', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Household name' })).toBeVisible();
+    await expectNoGerman(page, 'household name', german);
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Add your own store' })).toBeVisible();
-    await expectNoGerman(page, 'create household', german);
-    await page.getByRole('button', { name: 'Create a household', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Invite your partner', exact: true })).toBeVisible();
-    await expectNoGerman(page, 'invite partner', german);
-    await page.getByRole('button', { name: 'Invite your partner', exact: true }).click();
+    await expectNoGerman(page, 'stores', german);
+    await page.getByRole('button', { name: 'Skip', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Anything else?' })).toBeVisible();
+    await expectNoGerman(page, 'what you need', german);
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Invite someone', exact: true })).toBeVisible();
+    await expectNoGerman(page, 'invite', german);
+    await page.getByRole('button', { name: 'Invite someone', exact: true }).click();
     await expect(page.getByText(/^valid until /)).toBeVisible();
     await expectNoGerman(page, 'invite card', german);
     await page.getByRole('button', { name: 'Go to the list' }).click();

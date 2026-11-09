@@ -144,7 +144,7 @@ async function tour(page: Page, theme: 'light' | 'dark'): Promise<void> {
 test('Dunkel switches every screen at once and survives a reload; System follows the device live', async ({ page }) => {
   test.setTimeout(240_000);
   const email = newEmail('theme');
-  await page.goto('/');
+  await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Weiter mit E-Mail' })).toBeVisible();
   await expectTheme(page, 'light', 'the login of a light browser');
   await screenshot(page, 'theme-light-12-login');

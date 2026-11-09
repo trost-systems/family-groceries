@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:family_groceries/analytics/events.dart';
+import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/invite_repository.dart';
-import 'package:family_groceries/household/popular_stores.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
@@ -22,18 +22,20 @@ const offline =
 
 void main() {
   group('Step 1', () {
-    testWidgets('offers create and join; create opens Step 2a', (tester) async {
+    testWidgets('offers create and join; create starts the guided start at '
+        '"Mit wem"', (tester) async {
       final o = await pumpOnboarding(tester, location: '/');
       expect(location(o), '/welcome');
       expect(find.text('Willkommen bei Hummlist'), findsOneWidget);
       expect(find.text('Haushalt erstellen'), findsOneWidget);
       expect(find.text('Einladung annehmen'), findsOneWidget);
-      await tapKey(tester, 'onboarding-create');
-      expect(location(o), '/welcome/create');
-      await tester.tap(find.byType(BackButton));
-      await tester.pumpAndSettle();
       await tapKey(tester, 'onboarding-join');
       expect(location(o), '/join');
+      o.router.go('/welcome');
+      await tester.pumpAndSettle();
+      await tapKey(tester, 'onboarding-create');
+      expect(location(o), '/start/who');
+      expect(find.text('Mit wem kaufst du ein?'), findsOneWidget);
     });
 
     testWidgets('in English', (tester) async {
@@ -53,254 +55,6 @@ void main() {
       );
       expect(location(o), '/join/ABCD2345');
       expect(find.text('Familie Trost'), findsOneWidget);
-    });
-  });
-
-  group('Step 2a: create', () {
-    testWidgets('the name is prefilled, no store is picked, the stores '
-        'and the disclaimer show', (tester) async {
-      final o = await pumpOnboarding(tester, location: '/welcome/create');
-      expect(find.widgetWithText(TextField, 'Unser Haushalt'), findsOneWidget);
-      for (final store in popularStores) {
-        final chip = tester.widget<FilterChip>(key('onboarding-store-$store'));
-        expect(chip.selected, isFalse, reason: store);
-      }
-      expect(key('stores-disclaimer'), findsOneWidget);
-      expect(
-        find.textContaining('Ladennamen wie dm, Lidl oder EDEKA'),
-        findsOneWidget,
-      );
-      await tapKey(tester, 'create-household');
-      expect(o.session.creates, [('Unser Haushalt', '')]);
-      // Created: Step 3.
-      expect(location(o), '/welcome/invite');
-    });
-
-    testWidgets('the picked stores and an own one are created in the order '
-        'picked; unpicking takes one out', (tester) async {
-      final o = await pumpOnboarding(tester, location: '/welcome/create');
-      await tapKey(tester, 'onboarding-store-REWE');
-      await tapKey(tester, 'onboarding-store-dm');
-      await tapKey(tester, 'onboarding-store-EDEKA');
-      await tapKey(tester, 'onboarding-store-dm');
-      await tapKey(tester, 'onboarding-store-own');
-      await tester.enterText(key('store-new-field'), '  Bäcker   Kühn ');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pumpAndSettle();
-      expect(
-        tester.widget<FilterChip>(key('onboarding-store-Bäcker Kühn')).selected,
-        isTrue,
-      );
-      await tapKey(tester, 'onboarding-store-own');
-      await tester.enterText(key('store-new-field'), 'rewe');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pumpAndSettle();
-      await tapKey(tester, 'create-household');
-      expect(o.session.creates, [
-        ('Unser Haushalt', 'REWE, EDEKA, Bäcker Kühn'),
-      ]);
-    });
-
-    group('an own store named like an offered chain ticks the chain', () {
-      Future<void> typeOwn(WidgetTester tester, String name) async {
-        await tapKey(tester, 'onboarding-store-own');
-        await tester.enterText(key('store-new-field'), name);
-        await tester.testTextInput.receiveAction(TextInputAction.done);
-        await tester.pumpAndSettle();
-      }
-
-      bool ticked(WidgetTester tester, String store) =>
-          tester.widget<FilterChip>(key('onboarding-store-$store')).selected;
-
-      for (final typed in ['Edeka', 'edeka', ' EDEKA ', '  eDeKa  ']) {
-        testWidgets('"$typed" ticks EDEKA', (tester) async {
-          final o = await pumpOnboarding(tester, location: '/welcome/create');
-          await typeOwn(tester, typed);
-          expect(ticked(tester, 'EDEKA'), isTrue);
-          expect(find.byType(FilterChip), findsNWidgets(popularStores.length));
-          await tapKey(tester, 'create-household');
-          expect(o.session.creates, [('Unser Haushalt', 'EDEKA')]);
-        });
-      }
-
-      testWidgets('typing it twice keeps one, ticked', (tester) async {
-        final o = await pumpOnboarding(tester, location: '/welcome/create');
-        await typeOwn(tester, 'Dm');
-        await typeOwn(tester, 'DM');
-        await typeOwn(tester, 'Bio Laden');
-        await typeOwn(tester, 'bio   LADEN');
-        expect(ticked(tester, 'dm'), isTrue);
-        expect(ticked(tester, 'Bio Laden'), isTrue);
-        expect(
-          find.byType(FilterChip),
-          findsNWidgets(popularStores.length + 1),
-        );
-        await tapKey(tester, 'create-household');
-        expect(o.session.creates, [('Unser Haushalt', 'dm, Bio Laden')]);
-      });
-
-      testWidgets('its chip then unticks it', (tester) async {
-        final o = await pumpOnboarding(tester, location: '/welcome/create');
-        await typeOwn(tester, 'lidl');
-        expect(ticked(tester, 'Lidl'), isTrue);
-        await tapKey(tester, 'onboarding-store-Lidl');
-        expect(ticked(tester, 'Lidl'), isFalse);
-        await tapKey(tester, 'create-household');
-        expect(o.session.creates, [('Unser Haushalt', '')]);
-      });
-
-      testWidgets('its chip ticked off and on again creates it once', (
-        tester,
-      ) async {
-        final o = await pumpOnboarding(tester, location: '/welcome/create');
-        await typeOwn(tester, 'lidl');
-        await tapKey(tester, 'onboarding-store-Lidl');
-        await tapKey(tester, 'onboarding-store-Lidl');
-        expect(ticked(tester, 'Lidl'), isTrue);
-        await tapKey(tester, 'create-household');
-        expect(o.session.creates, [('Unser Haushalt', 'Lidl')]);
-      });
-    });
-
-    testWidgets('the own-store row reads as a button, not a check box', (
-      tester,
-    ) async {
-      final handle = tester.ensureSemantics();
-      await pumpOnboarding(tester, location: '/welcome/create');
-      expect(
-        tester.getSemantics(find.bySemanticsLabel('Eigenen Laden hinzufügen')),
-        isSemantics(isButton: true, hasCheckedState: false, hasTapAction: true),
-      );
-      handle.dispose();
-    });
-
-    testWidgets('Skip creates without stores, under the typed name', (
-      tester,
-    ) async {
-      final o = await pumpOnboarding(tester, location: '/welcome/create');
-      await tester.enterText(key('household-name'), '  WG Sonnenallee ');
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pump();
-      await tapKey(tester, 'onboarding-store-Lidl');
-      // Liste → Anpassen is where stores are added later (jobs 58, 78).
-      expect(
-        find.text(
-          'Ohne Läden starten. '
-          'Du kannst sie später unter Liste → Anpassen anlegen.',
-        ),
-        findsOneWidget,
-      );
-      await tapKey(tester, 'skip-stores');
-      expect(o.session.creates, [('WG Sonnenallee', '')]);
-      expect(
-        find.text(
-          'Ohne Läden starten. '
-          'Du kannst sie später unter Liste → Anpassen anlegen.',
-        ),
-        findsNothing,
-        reason: 'created: Step 3',
-      );
-    });
-
-    testWidgets('an empty name is refused before any call', (tester) async {
-      final o = await pumpOnboarding(tester, location: '/welcome/create');
-      await tester.enterText(key('household-name'), '   ');
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pump();
-      await tapKey(tester, 'create-household');
-      expect(
-        // The name field takes focus back and scrolls up; the line stays
-        // under the button, out of view.
-        find.descendant(
-          of: find.byKey(
-            const ValueKey('create-name-problem'),
-            skipOffstage: false,
-          ),
-          matching: find.text(
-            'Gib einen Namen mit 1 bis 80 Zeichen ein.',
-            skipOffstage: false,
-          ),
-          skipOffstage: false,
-        ),
-        findsOneWidget,
-        reason: 'beside the button, where the tap was',
-      );
-      expect(o.session.creates, isEmpty);
-    });
-
-    testWidgets('a double tap creates once', (tester) async {
-      final o = await pumpOnboarding(tester, location: '/welcome/create');
-      o.session.hold = Completer();
-      await scrollTo(tester, key('create-household'));
-      await tester.pumpAndSettle();
-      await tester.tap(key('create-household'));
-      await tester.pump();
-      await tester.tap(key('create-household'), warnIfMissed: false);
-      await tester.pump();
-      o.session.hold!.complete();
-      await tester.pumpAndSettle();
-      expect(o.session.creates, hasLength(1));
-    });
-
-    testWidgets('offline keeps the name and the choice; the retry creates', (
-      tester,
-    ) async {
-      final o = await pumpOnboarding(tester, location: '/welcome/create');
-      await tester.enterText(key('household-name'), 'Familie Trost');
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pump();
-      await tapKey(tester, 'onboarding-store-Penny');
-      o.session.fail = HouseholdProblem.offline;
-      await tapKey(tester, 'create-household');
-      expect(find.text(offline), findsOneWidget);
-      await tester.scrollUntilVisible(
-        key('household-name'),
-        -200,
-        scrollable: find
-            .descendant(
-              of: key('create-household-screen'),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      expect(find.widgetWithText(TextField, 'Familie Trost'), findsOneWidget);
-      expect(location(o), '/welcome/create');
-      await tester.scrollUntilVisible(
-        key('create-household'),
-        200,
-        scrollable: find
-            .descendant(
-              of: key('create-household-screen'),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      expect(
-        tester.widget<FilterChip>(key('onboarding-store-Penny')).selected,
-        isTrue,
-      );
-      await tapKey(tester, 'create-household');
-      expect(o.session.creates, [
-        ('Familie Trost', 'Penny'),
-        ('Familie Trost', 'Penny'),
-      ]);
-      expect(location(o), '/welcome/invite');
-    });
-
-    testWidgets('in English', (tester) async {
-      await pumpOnboarding(
-        tester,
-        location: '/welcome/create',
-        locale: const Locale('en'),
-      );
-      expect(find.widgetWithText(TextField, 'Our household'), findsOneWidget);
-      expect(find.text('Add your own store'), findsOneWidget);
-      await scrollTo(tester, find.text('Skip'));
-      expect(find.text('Skip'), findsOneWidget);
-      expect(
-        find.textContaining("Hummlist is independent and isn't affiliated"),
-        findsOneWidget,
-      );
     });
   });
 
@@ -633,15 +387,34 @@ void main() {
     });
   });
 
-  group('Step 3: invite the partner', () {
+  group("the new household's invite step", () {
     const inHome = InHousehold('peter', home, [home]);
+
+    testWidgets("the switcher's Neuer Haushalt creates one more, then "
+        'offers its invites, not the guided start', (tester) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: newHouseholdPath,
+        session: inHome,
+      );
+      expect(find.text('Neuer Haushalt'), findsOneWidget);
+      await tester.enterText(key('household-name'), 'Ferienhaus');
+      await tapKey(tester, 'skip-stores');
+      expect(o.session.creates, [('Ferienhaus', '')]);
+      expect(o.session.origins, [HouseholdOrigin.switcher]);
+      expect(location(o), invitePartnerPath);
+      expect(key('invite-partner-screen'), findsOneWidget);
+      await tapKey(tester, 'invite-later');
+      expect(location(o), '/');
+      expect(o.onboarding.state, isNull);
+    });
 
     testWidgets('makes one invite, opens the share sheet with link and code', (
       tester,
     ) async {
       final o = await pumpOnboarding(
         tester,
-        location: '/welcome/invite',
+        location: invitePartnerPath,
         session: inHome,
       );
       expect(find.text('Später'), findsOneWidget);
@@ -677,7 +450,7 @@ void main() {
     ) async {
       final o = await pumpOnboarding(
         tester,
-        location: '/welcome/invite',
+        location: invitePartnerPath,
         session: inHome,
         sharer: FakeSharer(available: false),
       );
@@ -697,7 +470,7 @@ void main() {
       final invites = FakeInvites()..next = HouseholdProblem.offline;
       final o = await pumpOnboarding(
         tester,
-        location: '/welcome/invite',
+        location: invitePartnerPath,
         session: inHome,
         invites: invites,
       );
@@ -713,7 +486,7 @@ void main() {
     testWidgets('in English', (tester) async {
       final o = await pumpOnboarding(
         tester,
-        location: '/welcome/invite',
+        location: invitePartnerPath,
         session: inHome,
         locale: const Locale('en'),
       );

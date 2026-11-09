@@ -236,6 +236,10 @@ class Analytics(
     }
     _syncConsent();
     _registerContext();
+    if (user != null) {
+      // Not queued behind the SDK's set-ups: once it runs, decide() sends.
+      unawaited(_sendFirstOpen());
+    }
   }
 
   /// The user's answer on the consent screen or the More toggle. Yes starts
@@ -266,11 +270,19 @@ class Analytics(
       return;
     }
     _syncConsent(answered: true);
-    if (_firstOpenFor != id && _live) {
-      _firstOpenFor = id;
-      track('first_open');
-      await _store.saveFirstOpenSentFor(id);
+    await _sendFirstOpen();
+  }
+
+  /// `first_open`, once per install id. A yes before sign-in (job 168b's
+  /// guided start) has no user to send it with: it goes at the sign-in.
+  Future<void> _sendFirstOpen() async {
+    final id = _installId;
+    if (id == null || _firstOpenFor == id || !_live) {
+      return;
     }
+    _firstOpenFor = id;
+    track('first_open');
+    await _store.saveFirstOpenSentFor(id);
   }
 
   Future<void> _serially(Future<void> Function() step) =>

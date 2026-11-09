@@ -1118,12 +1118,6 @@ abstract class AppLocalizations {
   /// **'Tippen hakt ab · Halten bearbeitet'**
   String get listHint;
 
-  /// No description provided for @listHintDismiss.
-  ///
-  /// In de, this message translates to:
-  /// **'Verstanden'**
-  String get listHintDismiss;
-
   /// No description provided for @reorderNeedsConnection.
   ///
   /// In de, this message translates to:
@@ -2120,6 +2114,360 @@ abstract class AppLocalizations {
   /// **'Weiter zur Liste'**
   String get toTheList;
 
+  /// Guided start (job 168b), first screen: tagline under the wordmark
+  ///
+  /// In de, this message translates to:
+  /// **'Eure Einkaufsliste. Live auf jedem Handy.'**
+  String get startTagline;
+
+  /// Guided start, first screen: welcome line
+  ///
+  /// In de, this message translates to:
+  /// **'Willkommen! In zwei Minuten steht eure gemeinsame Liste, mit allem, was gerade fehlt.'**
+  String get startWelcome;
+
+  /// Guided start, first screen: primary button that starts the setup
+  ///
+  /// In de, this message translates to:
+  /// **'Los geht\'s'**
+  String get startGo;
+
+  /// Guided start, first screen: secondary button to the sign-in
+  ///
+  /// In de, this message translates to:
+  /// **'Schon ein Konto? Anmelden'**
+  String get startLogIn;
+
+  /// Sign-in screen: link back to the guided start
+  ///
+  /// In de, this message translates to:
+  /// **'Neu bei Hummlist? Los geht\'s'**
+  String get loginNew;
+
+  /// Guided start: progress under the title
+  ///
+  /// In de, this message translates to:
+  /// **'Schritt {step} von {count}'**
+  String onboardingProgress(int step, int count);
+
+  /// Guided start: back to the previous step
+  ///
+  /// In de, this message translates to:
+  /// **'Zurück'**
+  String get onboardingBack;
+
+  /// Guided start: next step
+  ///
+  /// In de, this message translates to:
+  /// **'Weiter'**
+  String get onboardingNext;
+
+  /// Guided start: skip this question
+  ///
+  /// In de, this message translates to:
+  /// **'Überspringen'**
+  String get onboardingSkip;
+
+  /// Guided start: tooltip of the X on every step
+  ///
+  /// In de, this message translates to:
+  /// **'Einrichtung verlassen'**
+  String get onboardingExit;
+
+  /// Guided start, leave dialog: title
+  ///
+  /// In de, this message translates to:
+  /// **'Einrichtung verlassen?'**
+  String get onboardingExitTitle;
+
+  /// Guided start, leave dialog: body
+  ///
+  /// In de, this message translates to:
+  /// **'Was du bisher eingegeben hast, bleibt auf diesem Gerät gespeichert.'**
+  String get onboardingExitBody;
+
+  /// Guided start, leave dialog: go to the sign-in, keeping the progress
+  ///
+  /// In de, this message translates to:
+  /// **'Stattdessen anmelden'**
+  String get onboardingExitLogIn;
+
+  /// Guided start, leave dialog: drop everything entered (asks again)
+  ///
+  /// In de, this message translates to:
+  /// **'Fortschritt verwerfen'**
+  String get onboardingExitDiscard;
+
+  /// Guided start, leave dialog: close the dialog
+  ///
+  /// In de, this message translates to:
+  /// **'Weiter einrichten'**
+  String get onboardingExitStay;
+
+  /// Guided start: confirmation before dropping the progress
+  ///
+  /// In de, this message translates to:
+  /// **'Fortschritt verwerfen?'**
+  String get onboardingDiscardTitle;
+
+  /// Guided start: what discarding deletes; count is the number of items entered
+  ///
+  /// In de, this message translates to:
+  /// **'Deine Antworten{count, plural, =0{} =1{ und 1 Artikel} other{ und {count} Artikel}} werden von diesem Gerät gelöscht.'**
+  String onboardingDiscardBody(int count);
+
+  /// Guided start: confirm discarding
+  ///
+  /// In de, this message translates to:
+  /// **'Verwerfen'**
+  String get onboardingDiscard;
+
+  /// Guided start, step who: title
+  ///
+  /// In de, this message translates to:
+  /// **'Mit wem kaufst du ein?'**
+  String get whoTitle;
+
+  /// Guided start, step who: body
+  ///
+  /// In de, this message translates to:
+  /// **'Wähl alles, was passt. Danach richten sich Name, Einladung und deine ersten Tipps.'**
+  String get whoBody;
+
+  /// Household kind: a couple
+  ///
+  /// In de, this message translates to:
+  /// **'Partner·in'**
+  String get kindPartner;
+
+  /// Household kind: a family
+  ///
+  /// In de, this message translates to:
+  /// **'Familie'**
+  String get kindFamily;
+
+  /// Household kind: a shared flat
+  ///
+  /// In de, this message translates to:
+  /// **'WG'**
+  String get kindFlat;
+
+  /// Household kind: a club, association or team
+  ///
+  /// In de, this message translates to:
+  /// **'Verein oder Team'**
+  String get kindClub;
+
+  /// Household kind: the user alone
+  ///
+  /// In de, this message translates to:
+  /// **'Nur ich'**
+  String get kindSolo;
+
+  /// Household kind: something else, with a text field
+  ///
+  /// In de, this message translates to:
+  /// **'Andere'**
+  String get kindOther;
+
+  /// Guided start, step who: label of the field shown for Andere
+  ///
+  /// In de, this message translates to:
+  /// **'Mit wem noch?'**
+  String get whoOtherLabel;
+
+  /// Guided start, step who: example in the Andere field
+  ///
+  /// In de, this message translates to:
+  /// **'z. B. Nachbarn'**
+  String get whoOtherHint;
+
+  /// Guided start, step who: shown when several kinds are picked; first is the first pick's label
+  ///
+  /// In de, this message translates to:
+  /// **'Wir starten mit „{first}“. Die anderen merken wir uns für später.'**
+  String whoSeveral(String first);
+
+  /// Guided start, step name: title
+  ///
+  /// In de, this message translates to:
+  /// **'Wie soll euer Haushalt heißen?'**
+  String get nameTitle;
+
+  /// Guided start, step name: body
+  ///
+  /// In de, this message translates to:
+  /// **'Den Namen sehen alle, die du einlädst. Du kannst ihn später ändern.'**
+  String get nameBody;
+
+  /// Suggested household name for a family
+  ///
+  /// In de, this message translates to:
+  /// **'Unsere Familie'**
+  String get householdNameFamily;
+
+  /// Suggested household name for a shared flat
+  ///
+  /// In de, this message translates to:
+  /// **'Unsere WG'**
+  String get householdNameFlat;
+
+  /// Suggested household name for a club or team
+  ///
+  /// In de, this message translates to:
+  /// **'Unser Verein'**
+  String get householdNameClub;
+
+  /// Suggested household name for the user alone
+  ///
+  /// In de, this message translates to:
+  /// **'Meine Liste'**
+  String get householdNameSolo;
+
+  /// Guided start, step stores: title
+  ///
+  /// In de, this message translates to:
+  /// **'Wo kauft ihr ein?'**
+  String get storesStepTitle;
+
+  /// Guided start, step need: title
+  ///
+  /// In de, this message translates to:
+  /// **'Was fehlt gerade?'**
+  String get needTitle;
+
+  /// Guided start, step need: body
+  ///
+  /// In de, this message translates to:
+  /// **'Tipp an, was auf die Liste soll, oder schreib es unten hin.'**
+  String get needBody;
+
+  /// Guided start, step need: the staple chips, comma-separated, in this order; each becomes a list item as written
+  ///
+  /// In de, this message translates to:
+  /// **'Milch,Brot,Eier,Butter,Käse,Bananen,Äpfel,Tomaten,Nudeln,Kaffee,Joghurt,Klopapier'**
+  String get needStaples;
+
+  /// Guided start, step need: label of the field for own items
+  ///
+  /// In de, this message translates to:
+  /// **'Noch etwas?'**
+  String get needFieldLabel;
+
+  /// Guided start, step need: example in the field
+  ///
+  /// In de, this message translates to:
+  /// **'z. B. 2 Gurken'**
+  String get needFieldHint;
+
+  /// Guided start, step need: button next to the field
+  ///
+  /// In de, this message translates to:
+  /// **'Hinzufügen'**
+  String get needAdd;
+
+  /// Guided start, step need: heading over what was added
+  ///
+  /// In de, this message translates to:
+  /// **'Auf deiner Liste ({count})'**
+  String needListTitle(int count);
+
+  /// Guided start, step need: tooltip of the X on an added item
+  ///
+  /// In de, this message translates to:
+  /// **'{name} entfernen'**
+  String needRemove(String name);
+
+  /// Guided start, step need: next button with the number of items
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =0{Weiter} =1{Weiter mit 1 Artikel} other{Weiter mit {count} Artikeln}}'**
+  String needNext(int count);
+
+  /// Guided start, step account: title
+  ///
+  /// In de, this message translates to:
+  /// **'Konto erstellen'**
+  String get accountStepTitle;
+
+  /// Guided start, step account: body above the sign-in methods
+  ///
+  /// In de, this message translates to:
+  /// **'Fast geschafft. Mit einem Konto speichern wir eure Liste, und du kannst jemanden einladen.'**
+  String get accountStepBody;
+
+  /// Guided start, after sign-in: while the household is created and the items are added
+  ///
+  /// In de, this message translates to:
+  /// **'Wir richten euren Haushalt ein …'**
+  String get setupBusy;
+
+  /// Guided start, step invite: title for a couple
+  ///
+  /// In de, this message translates to:
+  /// **'Partner·in einladen'**
+  String get inviteStepPartner;
+
+  /// Guided start, step invite: title for a family
+  ///
+  /// In de, this message translates to:
+  /// **'Familie einladen'**
+  String get inviteStepFamily;
+
+  /// Guided start, step invite: title for a shared flat
+  ///
+  /// In de, this message translates to:
+  /// **'Mitbewohner einladen'**
+  String get inviteStepFlat;
+
+  /// Guided start, step invite: title for a club
+  ///
+  /// In de, this message translates to:
+  /// **'Mitglieder einladen'**
+  String get inviteStepClub;
+
+  /// Guided start, step invite: title for anyone else
+  ///
+  /// In de, this message translates to:
+  /// **'Jemanden einladen'**
+  String get inviteStepOther;
+
+  /// Guided start, step invite: body
+  ///
+  /// In de, this message translates to:
+  /// **'Teile den Link mit der Person, mit der du einkaufst. Jede Einladung gilt 7 Tage und für eine Person.'**
+  String get inviteStepBody;
+
+  /// Guided start, step invite: body for a club
+  ///
+  /// In de, this message translates to:
+  /// **'Schick jedem Mitglied einen eigenen Link. Alle sehen dieselbe Liste.'**
+  String get inviteStepBodyClub;
+
+  /// Guided start, step invite: how many items the invitee sees at once (shown from 1)
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Artikel wartet schon auf der Liste.} other{{count} Artikel warten schon auf der Liste.}}'**
+  String inviteStepWaiting(int count);
+
+  /// Guided start, step invite: makes one more invite (one per person)
+  ///
+  /// In de, this message translates to:
+  /// **'Weitere Einladung'**
+  String get inviteAnother;
+
+  /// Invite card: the invite was accepted while the screen is open
+  ///
+  /// In de, this message translates to:
+  /// **'Beigetreten'**
+  String get inviteJoined;
+
+  /// Invite card: who accepted the invite
+  ///
+  /// In de, this message translates to:
+  /// **'{name} ist beigetreten'**
+  String inviteJoinedName(String name);
+
   /// No description provided for @inviteShareTextCodeOnly.
   ///
   /// In de, this message translates to:
@@ -2927,7 +3275,7 @@ abstract class AppLocalizations {
   /// List tab tip card (job 80): a hold released without moving (touch or mouse) opens the edit sheet with these fields; a hold that moves drags instead
   ///
   /// In de, this message translates to:
-  /// **'Halte einen Artikel gedrückt, ohne ihn zu ziehen, und ändere Menge, Marke, Laden und mehr.'**
+  /// **'Halte einen Artikel gedrückt und ändere Menge, Marke, Laden und mehr.'**
   String get tipEditBody;
 
   /// List tab tip card (job 80): title of the tip that the amount can be typed with the item
@@ -3601,6 +3949,216 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Ablehnen'**
   String get joinRequestDecline;
+
+  /// Hint invite-partner (job 168b): title
+  ///
+  /// In de, this message translates to:
+  /// **'Gemeinsam einkaufen'**
+  String get hintInviteTitle;
+
+  /// Hint invite-partner: shown to a household's only member after a day with 3 items
+  ///
+  /// In de, this message translates to:
+  /// **'Lade jemanden ein, um die Liste gemeinsam zu nutzen.'**
+  String get hintInviteBody;
+
+  /// Hint invite-partner and the Erste Schritte invite item: button that opens More → Einladungen
+  ///
+  /// In de, this message translates to:
+  /// **'Einladen'**
+  String get hintInviteAction;
+
+  /// Hint store-order (job 168b): title of the callout under Anpassen
+  ///
+  /// In de, this message translates to:
+  /// **'Sortiert wie dein Laden'**
+  String get hintStoreOrderTitle;
+
+  /// Hint store-order: callout under the Anpassen button after the first finished shop; 'Hier' is Anpassen
+  ///
+  /// In de, this message translates to:
+  /// **'Hier kannst du die Kategorien so sortieren, wie du durch den Laden gehst.'**
+  String get hintStoreOrderBody;
+
+  /// Hint add-store (job 168b): title of the callout under Anpassen
+  ///
+  /// In de, this message translates to:
+  /// **'Noch ein Laden?'**
+  String get hintAddStoreTitle;
+
+  /// Hint add-store: callout under the Anpassen button for a household without a store; 'Hier' is Anpassen
+  ///
+  /// In de, this message translates to:
+  /// **'Hier kannst du weitere Läden anlegen, bei denen du einkaufst.'**
+  String get hintAddStoreBody;
+
+  /// Hint dictation (job 168b, iPhone and Android): title of the callout above the add bar
+  ///
+  /// In de, this message translates to:
+  /// **'Sag einfach, was fehlt'**
+  String get hintDictationTitle;
+
+  /// Hint dictation: callout pointing at the microphone after 10 typed adds
+  ///
+  /// In de, this message translates to:
+  /// **'Tipp aufs Mikrofon und sprich: „Milch, zwei Gurken und Klopapier“.'**
+  String get hintDictationBody;
+
+  /// Hint ai-assistant (job 168b): title
+  ///
+  /// In de, this message translates to:
+  /// **'Noch besser mit KI & Automatisierung'**
+  String get hintAssistantTitle;
+
+  /// Hint ai-assistant: for clubs, or after 7 active days on the web or a computer
+  ///
+  /// In de, this message translates to:
+  /// **'Lass deinen KI-Assistenten deine Liste verwalten oder nutze die API, um Automatisierungen zu erstellen.'**
+  String get hintAssistantBody;
+
+  /// Hint ai-assistant: button that opens More → Zugänge
+  ///
+  /// In de, this message translates to:
+  /// **'Zugriffe verwalten'**
+  String get hintAssistantAction;
+
+  /// Hint siri (job 168b, iPhone): title
+  ///
+  /// In de, this message translates to:
+  /// **'Mit Siri hinzufügen'**
+  String get hintSiriTitle;
+
+  /// Hint siri: a native Siri App Shortcut phrase (app/ios/Runner/AppShortcuts.xcstrings, Add to Hummlist)
+  ///
+  /// In de, this message translates to:
+  /// **'Sag „Hey Siri, füge etwas zu Hummlist hinzu“, wenn die Hände voll sind.'**
+  String get hintSiriBody;
+
+  /// Hint home-widget (job 168b, iPhone and Android): title
+  ///
+  /// In de, this message translates to:
+  /// **'Liste auf dem Home-Bildschirm'**
+  String get hintWidgetTitle;
+
+  /// Hint home-widget: how to place the widget, after 5 active days
+  ///
+  /// In de, this message translates to:
+  /// **'Füge das Hummlist-Widget hinzu, indem du den Home-Bildschirm deines Smartphones gedrückt hältst.'**
+  String get hintWidgetBody;
+
+  /// Hint own-household (job 168b): title, for someone who joined another person's household
+  ///
+  /// In de, this message translates to:
+  /// **'Deine eigene Liste'**
+  String get hintOwnHouseholdTitle;
+
+  /// Hint own-household: shows only once the app can create a second household (job 169b)
+  ///
+  /// In de, this message translates to:
+  /// **'Diesen Haushalt hat jemand anderes angelegt. Leg auch einen eigenen an, zum Beispiel nur für dich.'**
+  String get hintOwnHouseholdBody;
+
+  /// Hint second-household (job 168b): title
+  ///
+  /// In de, this message translates to:
+  /// **'Noch eine Liste?'**
+  String get hintSecondHouseholdTitle;
+
+  /// Hint second-household: shows only once the app can create a second household (job 169b)
+  ///
+  /// In de, this message translates to:
+  /// **'Für den Verein oder die WG: Leg einen zweiten Haushalt an.'**
+  String get hintSecondHouseholdBody;
+
+  /// Hints own-household and second-household: button that opens the household creation flow
+  ///
+  /// In de, this message translates to:
+  /// **'Haushalt erstellen'**
+  String get hintAddHouseholdAction;
+
+  /// Snackbar for 3 s after the X on a hint (job 168b): where every hint can be read again
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Tipps unter Mehr → Tipps.'**
+  String get hintDismissedNotice;
+
+  /// More: the row and page that list every hint (job 168b)
+  ///
+  /// In de, this message translates to:
+  /// **'Tipps'**
+  String get hintsTitle;
+
+  /// List tab checklist card (job 168b): title; it takes the gesture card's place
+  ///
+  /// In de, this message translates to:
+  /// **'Erste Schritte'**
+  String get checklistTitle;
+
+  /// Checklist card: tooltip and screen reader label of the X that hides it for this household
+  ///
+  /// In de, this message translates to:
+  /// **'Erste Schritte ausblenden'**
+  String get checklistDismiss;
+
+  /// Checklist card: how many items are done, under the title
+  ///
+  /// In de, this message translates to:
+  /// **'{done} von {total}'**
+  String checklistProgress(int done, int total);
+
+  /// Checklist item, always done: the user created the household
+  ///
+  /// In de, this message translates to:
+  /// **'Liste angelegt'**
+  String get checklistStarted;
+
+  /// Checklist item, always done: the user joined someone else's household
+  ///
+  /// In de, this message translates to:
+  /// **'Haushalt beigetreten'**
+  String get checklistJoined;
+
+  /// Checklist item: invite someone; kind is the household's answer to Mit wem kaufst du ein? (partner, family, flat, club, other)
+  ///
+  /// In de, this message translates to:
+  /// **'{kind, select, partner{Partner einladen} family{Familie einladen} flat{Mitbewohner einladen} club{Mitglieder einladen} other{Jemanden einladen}}'**
+  String checklistInvite(String kind);
+
+  /// Checklist item invite: the line under it; done once a second member joined
+  ///
+  /// In de, this message translates to:
+  /// **'{kind, select, club{Alle sehen dieselbe Liste und können selbst etwas draufsetzen.} other{Sieht deine Artikel sofort und kann selbst etwas draufsetzen.}}'**
+  String checklistInviteBody(String kind);
+
+  /// Checklist item: done once the user's tick empties the list; listHint is the line under it
+  ///
+  /// In de, this message translates to:
+  /// **'Einmal einkaufen'**
+  String get checklistShop;
+
+  /// Checklist item for clubs: connect an AI assistant
+  ///
+  /// In de, this message translates to:
+  /// **'KI-Assistenten verbinden'**
+  String get checklistAssistant;
+
+  /// Checklist item KI-Assistenten verbinden: the line under it
+  ///
+  /// In de, this message translates to:
+  /// **'Mehr → Zugänge. Er setzt Dinge auf eure Liste.'**
+  String get checklistAssistantBody;
+
+  /// Checklist item KI-Assistenten verbinden: button that opens More → Zugänge
+  ///
+  /// In de, this message translates to:
+  /// **'Öffnen'**
+  String get checklistOpen;
+
+  /// Checklist: screen reader label of a done item; step is its title
+  ///
+  /// In de, this message translates to:
+  /// **'{step}, erledigt'**
+  String checklistDone(String step);
 }
 
 class _AppLocalizationsDelegate

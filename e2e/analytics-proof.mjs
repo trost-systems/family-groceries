@@ -46,7 +46,8 @@ page.on('request', (r) => { if (r.url().includes('posthog.com')) sent.push({ met
 const answers = [];
 page.on('response', async (r) => { if (r.url().includes('posthog.com')) answers.push({ url: r.url(), status: r.status(), body: await r.text().catch(() => '') }); });
 page.on('requestfailed', (r) => { if (r.url().includes('posthog.com')) answers.push({ url: r.url(), failed: r.failure()?.errorText }); });
-await page.goto(`${app}/`);
+// The sign-in itself: signed out, `/` is the guided start's first screen (job 168b).
+await page.goto(`${app}/login`);
 // Builds with Google or Apple keep the email form behind „Weiter mit E-Mail“.
 const withEmail = page.getByRole('button', { name: 'Weiter mit E-Mail' });
 await withEmail.or(page.getByRole('textbox', { name: 'E-Mail' })).waitFor();

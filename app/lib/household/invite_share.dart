@@ -111,6 +111,10 @@ class const InviteCard({
 
   /// More's Einladungen: revoke this invite.
   final VoidCallback? onRevoke,
+
+  /// Accepted while the screen is open (job 168b): who joined, empty when
+  /// they have no name; null while open.
+  final String? joinedBy,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -173,53 +177,75 @@ class const InviteCard({
               ),
             ),
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (sharer.canShare)
-                  Builder(
-                    builder: (button) => FilledButton.icon(
-                      key: const ValueKey('invite-share'),
-                      icon: const Icon(Icons.ios_share),
-                      label: Text(l10n.share),
-                      onPressed: () => unawaited(
-                        shareInvite(button, invite, household, origin),
+            if (joinedBy case final name?)
+              Semantics(
+                key: const ValueKey('invite-joined'),
+                container: true,
+                liveRegion: true,
+                child: Row(
+                  spacing: 8,
+                  children: [
+                    Icon(Icons.check_circle, color: theme.colorScheme.primary),
+                    Expanded(
+                      child: Text(
+                        name.trim().isEmpty
+                            ? l10n.inviteJoined
+                            : l10n.inviteJoinedName(name.trim()),
+                        style: theme.textTheme.titleSmall,
                       ),
                     ),
-                  ),
-                if (link != null)
-                  OutlinedButton.icon(
-                    key: const ValueKey('invite-copy-link'),
-                    icon: const Icon(Icons.link),
-                    label: Text(l10n.copyLink),
-                    onPressed: () =>
-                        unawaited(_copy(context, link, InviteChannel.copyLink)),
-                  ),
-                OutlinedButton.icon(
-                  key: const ValueKey('invite-copy-code'),
-                  icon: const Icon(Icons.copy),
-                  label: Text(l10n.copyCode),
-                  onPressed: () => unawaited(
-                    _copy(context, invite.code, InviteChannel.copyCode),
-                  ),
+                  ],
                 ),
-                if (onRevoke != null)
-                  TextButton.icon(
-                    key: const ValueKey('invite-revoke'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: theme.colorScheme.error,
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (sharer.canShare)
+                    Builder(
+                      builder: (button) => FilledButton.icon(
+                        key: const ValueKey('invite-share'),
+                        icon: const Icon(Icons.ios_share),
+                        label: Text(l10n.share),
+                        onPressed: () => unawaited(
+                          shareInvite(button, invite, household, origin),
+                        ),
+                      ),
                     ),
-                    icon: const Icon(Icons.block),
-                    label: Semantics(
-                      label: l10n.inviteRevokeLabel(invite.code),
-                      excludeSemantics: true,
-                      child: Text(l10n.inviteRevoke),
+                  if (link != null)
+                    OutlinedButton.icon(
+                      key: const ValueKey('invite-copy-link'),
+                      icon: const Icon(Icons.link),
+                      label: Text(l10n.copyLink),
+                      onPressed: () => unawaited(
+                        _copy(context, link, InviteChannel.copyLink),
+                      ),
                     ),
-                    onPressed: onRevoke,
+                  OutlinedButton.icon(
+                    key: const ValueKey('invite-copy-code'),
+                    icon: const Icon(Icons.copy),
+                    label: Text(l10n.copyCode),
+                    onPressed: () => unawaited(
+                      _copy(context, invite.code, InviteChannel.copyCode),
+                    ),
                   ),
-              ],
-            ),
+                  if (onRevoke != null)
+                    TextButton.icon(
+                      key: const ValueKey('invite-revoke'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                      ),
+                      icon: const Icon(Icons.block),
+                      label: Semantics(
+                        label: l10n.inviteRevokeLabel(invite.code),
+                        excludeSemantics: true,
+                        child: Text(l10n.inviteRevoke),
+                      ),
+                      onPressed: onRevoke,
+                    ),
+                ],
+              ),
           ],
         ),
       ),

@@ -110,7 +110,7 @@ async function measure(browser: Browser, baseURL: string | undefined, email: str
   if (isolated) await isolate(page);
   const loaded = watchBuild(page);
   try {
-    await page.goto('/');
+    await page.goto('/login');
     await signIn(page, email);
     const loads: number[] = [];
     for (let i = 0; i < 3; i++) {

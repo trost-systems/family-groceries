@@ -340,7 +340,7 @@ const menuGroups = [
   ['more-invite', 'more-join'],
   ['more-access'],
   ['more-settings'],
-  ['more-feedback', 'more-rate', 'more-help'],
+  ['more-tips', 'more-feedback', 'more-rate', 'more-help'],
   legalRows,
   ['more-sign-out'],
 ];

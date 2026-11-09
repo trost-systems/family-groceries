@@ -25,7 +25,7 @@ async function signOut(page: Page): Promise<void> {
 test('the login screen offers Google and Apple first and email behind one button, nothing focused', async ({ page }) => {
   // Flutter web adds its <input> only for a focused field.
   const fieldFocused = () => page.evaluate(() => ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? ''));
-  await page.goto('/');
+  await page.goto('/login');
   await expect(google(page)).toBeVisible();
   await expect(apple(page)).toBeVisible();
   const email = page.getByRole('button', { name: 'Weiter mit E-Mail' });
@@ -48,12 +48,13 @@ test('the login screen offers Google and Apple first and email behind one button
 
 for (const [name, button] of [['google', google], ['apple', apple]] as const) {
   test(`${name}: the button starts the PKCE redirect to Supabase's authorize URL`, async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/login');
     const origin = new URL(page.url()).origin;
     const url = await authorizeUrl(page, button(page));
     expect(url.origin + url.pathname).toBe(`${supabaseUrl}/auth/v1/authorize`);
     expect(url.searchParams.get('provider')).toBe(name);
-    expect(url.searchParams.get('redirect_to')).toBe(`${origin}/`);
+    // Back at the sign-in (job 168b): the root opens the guided start, which would hide a cancel.
+    expect(url.searchParams.get('redirect_to')).toBe(`${origin}/login`);
     expect(url.searchParams.get('code_challenge')).toMatch(/^[\w-]{43}$/);
     expect(url.searchParams.get('code_challenge_method')).toBe('s256');
   });
@@ -69,7 +70,7 @@ test('an invite link survives the provider redirect', async ({ page }) => {
 
 test('a first provider sign-in goes through household onboarding', async ({ page }) => {
   const email = newEmail('google-new');
-  await page.goto('/');
+  await page.goto('/login');
   await viaFakeProvider(page, email);
   await google(page).click();
   // Job 19: the analytics consent comes first, then onboarding.
@@ -103,7 +104,7 @@ test('the same email via a provider lands in the existing account and household'
 });
 
 test('canceling at the provider says so on the login screen', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/login');
   await viaFakeProvider(page, newEmail('cancel'), { cancel: true });
   await google(page).click();
   await expect(page.getByText('Anmeldung abgebrochen').first()).toBeVisible();

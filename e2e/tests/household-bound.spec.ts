@@ -208,15 +208,16 @@ test.describe('in English', () => {
   test('the web copy, and the refund help once bought twice', async ({ page }) => {
     const email = newEmail('iap43-en');
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/');
+    await page.goto('/login');
     await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
     await typeInto(page.getByRole('textbox', { name: 'Email' }), email);
     await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
     await page.getByRole('button', { name: 'Sign up' }).click();
     await page.getByRole('button', { name: "Don't allow", exact: true }).click();
-    await page.getByRole('button', { name: /^Create a household/ }).click();
-    await page.getByRole('button', { name: 'Create a household', exact: true }).click();
-    await expect(page).toHaveURL(/\/welcome\/invite$/);
+    await createHousehold(page, { lang: 'en' });
+    // The invite step stays until it is left.
+    await page.getByRole('button', { name: 'Later', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeVisible();
     await page.goto('/more/lifetime');
     await expect(page.getByText('Hummlist Premium covers your whole household, including everyone who joins later.')).toBeVisible();
     await expect(page.getByText(/^You can buy Hummlist Premium in the iPhone or Android app\./)).toHaveCount(0);

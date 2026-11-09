@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/household/household_kind.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/invites_cubit.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -305,10 +306,7 @@ void main() {
   group('the share text', () {
     const link = 'https://app.hummlist.com/join/ABCD2345';
     for (final locale in AppLocalizations.supportedLocales) {
-      for (final kind in [
-        ...HouseholdKind.values.map((k) => k.name),
-        'other',
-      ]) {
+      for (final kind in HouseholdKind.values.map((k) => k.name)) {
         test('${locale.languageCode}, $kind: the link and the code', () {
           final text = lookupAppLocalizations(locale)
               .inviteShareKind(kind, 'Familie Trost', link, 'ABCD2345');

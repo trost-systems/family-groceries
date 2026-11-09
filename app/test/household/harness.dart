@@ -4,6 +4,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/create_household_screen.dart';
+import 'package:family_groceries/household/household_kind.dart';
 import 'package:family_groceries/household/household_page.dart';
 import 'package:family_groceries/household/invite_partner_screen.dart';
 import 'package:family_groceries/household/invite_repository.dart';
@@ -15,10 +16,15 @@ import 'package:family_groceries/household/paste_invite.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/household/welcome_screen.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/onboarding/draft.dart';
+import 'package:family_groceries/onboarding/onboarding_cubit.dart';
+import 'package:family_groceries/onboarding/start_screen.dart';
+import 'package:family_groceries/onboarding/steps.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/session_cubit.dart';
+import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,6 +33,7 @@ import 'package:go_router/go_router.dart';
 
 import '../analytics/fakes.dart';
 import '../purchases/fakes.dart';
+import '../session/fake_auth.dart';
 import '../settings/fake_account.dart';
 
 const home = Household(id: 'home', name: 'Zuhause', isDefault: true);
@@ -264,6 +271,79 @@ class FakeInvites() implements InviteRepository {
     await _answer();
     return [...archivedNow];
   }
+
+  /// Accepted invites by id: who joined (job 168b).
+  final acceptedNow = <String, String>{};
+
+  /// The live watch's callback while one is open.
+  void Function()? onChange;
+  var watches = 0;
+
+  @override
+  Future<Map<String, String>> accepted(List<String> ids) async {
+    await _answer();
+    return {for (final id in ids) id: ?acceptedNow[id]};
+  }
+
+  @override
+  Future<void> Function() watch(String householdId, void Function() onChange) {
+    watches++;
+    this.onChange = onChange;
+    return () async => this.onChange = null;
+  }
+
+  /// Someone accepts invite [id] as [name], and realtime says so.
+  void accept(String id, String name) {
+    acceptedNow[id] = name;
+    onChange?.call();
+  }
+}
+
+/// The guided start's draft, in memory (job 168b).
+class MemoryOnboardingStore({var String? json}) implements OnboardingStore {
+  final later = <String, List<HouseholdKind>>{};
+
+  @override
+  Future<String?> onboardingDraft() async => json;
+
+  @override
+  Future<void> saveOnboardingDraft(String? json) async => this.json = json;
+
+  @override
+  Future<void> saveLaterKinds(String userId, List<HouseholdKind> kinds) async =>
+      later[userId] = kinds;
+}
+
+/// What the guided start sent: kinds and items per household; [fail] fails
+/// the next call once.
+class FakeOnboardingBackend() implements OnboardingBackend {
+  final kinds = <String, HouseholdKind>{};
+  final items = <String, List<DraftItem>>{};
+  HouseholdProblem? fail;
+
+  void _answer() {
+    if (fail case final problem?) {
+      fail = null;
+      throw HouseholdError(problem);
+    }
+  }
+
+  @override
+  Future<void> setKind(String householdId, HouseholdKind kind) async {
+    _answer();
+    kinds[householdId] = kind;
+  }
+
+  @override
+  Future<void> addItems(String householdId, List<DraftItem> items) async {
+    _answer();
+    final added = this.items[householdId] ??= [];
+    for (final item in items) {
+      if (!added.any((i) => i.id == item.id)) {
+        added.add(item);
+      }
+    }
+  }
 }
 
 /// Records what would go to the share sheet and the clipboard.
@@ -297,6 +377,9 @@ class TestSession(super.initialState)
   /// Each create: the name and the stores, joined with ", ", and where.
   final creates = <(String, String)>[];
   final origins = <HouseholdOrigin>[];
+
+  /// The household each create request id made.
+  final createdBy = <String, String>{};
   final defaults = <String>[];
   final renames = <(String, String)>[];
 
@@ -350,7 +433,12 @@ class TestSession(super.initialState)
     final others = [..._households.where((h) => h.id != household.id)];
     final first = others.isEmpty;
     final shown = first
-        ? Household(id: household.id, name: household.name, isDefault: true)
+        ? Household(
+            id: household.id,
+            name: household.name,
+            isDefault: true,
+            kind: household.kind,
+          )
         : household;
     emit(InHousehold('peter', shown, [...others, shown]));
   }
@@ -404,11 +492,20 @@ class TestSession(super.initialState)
     List<String> stores = const [],
     String? kind,
     HouseholdOrigin from = HouseholdOrigin.onboarding,
+    String? requestId,
   }) async {
+    // The server's answer to a repeated request id: the household it made.
+    if (createdBy[requestId] case final id?) {
+      _show(_households.firstWhere((h) => h.id == id));
+      return id;
+    }
     creates.add((name, stores.join(', ')));
     origins.add(from);
     await _answer();
     final id = _households.isEmpty ? 'home' : 'new-${creates.length}';
+    if (requestId != null) {
+      createdBy[requestId] = id;
+    }
     _show(Household(id: id, name: name));
     return id;
   }
@@ -510,6 +607,9 @@ typedef Onboarding = ({
   NativePostHog sink,
   Analytics analytics,
   FakePremiumServer premium,
+  OnboardingCubit onboarding,
+  MemoryOnboardingStore onboardingStore,
+  FakeOnboardingBackend backend,
 });
 
 /// The onboarding routes as `buildRouter` has them, the list a stub, with
@@ -531,6 +631,13 @@ Future<Onboarding> pumpOnboarding(
 
   /// The household page offers archiving (job 43).
   bool archiveOffered = false,
+
+  /// The guided start's draft under way (job 168b).
+  OnboardingDraft? draft,
+  MemoryOnboardingStore? onboardingStore,
+
+  /// Whether this install answered the usage-data question already.
+  bool consentAnswered = true,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -549,7 +656,9 @@ Future<Onboarding> pumpOnboarding(
   final analytics = await tester.runAsync(
     () => loadedAnalytics(MemoryAnalyticsStore()),
   );
-  await tester.runAsync(() => analytics!.decide(granted: true));
+  if (consentAnswered) {
+    await tester.runAsync(() => analytics!.decide(granted: true));
+  }
   analytics!.setUser(const AnalyticsUser(email: 'neu@gmail.com'));
   addTearDown(analytics.close);
   final server = premium ?? FakePremiumServer();
@@ -558,9 +667,26 @@ Future<Onboarding> pumpOnboarding(
     testSession,
   );
   addTearDown(rows.close);
+  final drafts = onboardingStore ?? MemoryOnboardingStore();
+  final onboarding = draft != null
+      ? OnboardingCubit(drafts, initial: draft, analytics: analytics)
+      : await tester.runAsync(
+          () => OnboardingCubit.load(drafts, analytics: analytics),
+        );
+  addTearDown(onboarding!.close);
+  onboarding.sessionChanged(testSession.state);
+  final sessions = testSession.stream.listen(onboarding.sessionChanged);
+  addTearDown(sessions.cancel);
+  final backend = FakeOnboardingBackend();
+  final auth = FakeAuth();
+  addTearDown(auth.close);
   final router = GoRouter(
     initialLocation: location,
-    refreshListenable: _SessionListenable(testSession),
+    refreshListenable: Listenable.merge([
+      _SessionListenable(testSession),
+      _SessionListenable(onboarding),
+      _SessionListenable(analytics),
+    ]),
     redirect: (_, state) {
       if (inviteIn(state.uri) case final code?) {
         pending.remember(code);
@@ -569,6 +695,8 @@ Future<Onboarding> pumpOnboarding(
         testSession.state,
         state.uri,
         pendingInvite: pending.code,
+        draft: onboarding.state,
+        askConsent: analytics.asksConsent,
       );
     },
     routes: [
@@ -590,26 +718,38 @@ Future<Onboarding> pumpOnboarding(
         builder: (_, _) => const Scaffold(body: InvitesPage()),
       ),
       GoRoute(
+        path: welcomePath,
+        builder: (_, _) => const WelcomeScreen(),
+        routes: [
+          GoRoute(
+            path: 'waiting',
+            builder: (_, _) => const PendingJoinScreen(),
+          ),
+        ],
+      ),
+      GoRoute(
         path: householdPath,
         builder: (_, _) =>
             Scaffold(body: HouseholdPage(archiveOffered: archiveOffered)),
       ),
       GoRoute(
-        path: welcomePath,
-        builder: (_, _) => const WelcomeScreen(),
+        path: newHouseholdPath,
+        builder: (_, _) =>
+            const CreateHouseholdScreen(from: HouseholdOrigin.switcher),
+      ),
+      GoRoute(
+        path: invitePartnerPath,
+        builder: (_, _) => const InvitePartnerScreen(),
+      ),
+      GoRoute(
+        path: startPath,
+        builder: (_, _) => const StartScreen(),
         routes: [
-          GoRoute(
-            path: 'create',
-            builder: (_, _) => const CreateHouseholdScreen(),
-          ),
-          GoRoute(
-            path: 'invite',
-            builder: (_, _) => const InvitePartnerScreen(),
-          ),
-          GoRoute(
-            path: 'waiting',
-            builder: (_, _) => const PendingJoinScreen(),
-          ),
+          for (final step in OnboardingStep.values)
+            GoRoute(
+              path: step.name,
+              builder: (_, _) => onboardingStepScreen(step),
+            ),
         ],
       ),
       GoRoute(path: joinCodePath, builder: (_, _) => const JoinScreen()),
@@ -633,10 +773,20 @@ Future<Onboarding> pumpOnboarding(
         RepositoryProvider<StorePriceReader>.value(
           value: FakeStorePrices(fakeStorePrices, manages: true),
         ),
+        RepositoryProvider<OnboardingBackend>.value(value: backend),
+        // The account step's sign-in panel; this build offers email only.
+        RepositoryProvider.value(
+          value: SocialSignIn(
+            auth,
+            flows: const {},
+            native: FakeNativeSignIn(),
+          ),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider<SessionCubit>.value(value: testSession),
+          BlocProvider.value(value: onboarding),
           BlocProvider.value(value: analytics),
           BlocProvider.value(value: rows),
         ],
@@ -659,6 +809,9 @@ Future<Onboarding> pumpOnboarding(
     sink: sink,
     analytics: analytics,
     premium: server,
+    onboarding: onboarding,
+    onboardingStore: drafts,
+    backend: backend,
   );
 }
 
@@ -674,12 +827,12 @@ Future<List<Map<String, Object?>>> sentEvents(
   ];
 }
 
-class _SessionListenable(Cubit<Session> session) extends ChangeNotifier {
+class _SessionListenable(BlocBase<Object?> session) extends ChangeNotifier {
   this {
     _subscription = session.stream.listen((_) => notifyListeners());
   }
 
-  late final StreamSubscription<Session> _subscription;
+  late final StreamSubscription<Object?> _subscription;
 
   @override
   void dispose() {

@@ -29,6 +29,7 @@ interest.
 | Lists of a household: name, position, creator, created (job 169b) | `public.lists` | Several lists per household | (b) | While the household exists | Supabase EU | With the list or the household; creator nulled on account deletion | `20261108144409_households_lists.sql` |
 | "Ich bringe" claims: which member brings which item, optional amount (job 169b) | `public.item_claims` (all members of the household see them) | Members saying what they bring | (b) | Until the item is ticked or deleted, its list deleted, or the member leaves, is removed or deletes the account | Supabase EU | As listed; with the account | `20261108144410_households_claims.sql` |
 | Join requests: requester, household, invite, when, decision and who decided (job 169b) | `public.join_requests` (the requester and the household's owner and admins see them, with the requester's display name) | Households that confirm joins | (b) | Open until decided or withdrawn; decided ones are deleted after 7 days by a daily job | Supabase EU | As listed; with the account or the household | `20261108144412_households_join_approval.sql` |
+| Who the household shops with (`kind`: partner, family, flat, club, solo, other; job 168b), from the guided start's „Mit wem kaufst du ein?“; skippable, nullable. The words typed for „Andere“ never leave the device | `households.kind` | Pick the invite step's title and copy, the „Erste Schritte“ items and hints (club: AI assistant) | (b) it configures what the user sees | While the household exists | Supabase EU | With the household | `20261108204546_household_kind_invite_realtime.sql` |
 | List items: name, quantity, brand, properties, category, store, status, added_by, bought_by, timestamps, `canonical_key`, `categorized_via` | `public.items` | The shopping list | (b) | While the household exists | Supabase EU | Item delete; account deletion nulls `added_by`/`bought_by` (names stay visible to the others) | `20261022150000_foundation.sql`, `20261030110000_classifier_variants.sql` |
 | History: action, item name, category, actor | `public.item_events` | "Recently bought", undo, history | (b) | While the household exists (no purge) | Supabase EU | Account deletion nulls `actor`; household deletion cascades | `..._account_deletion.sql` line 122 |
 | Merges of duplicate items (job 32b): both items' rows before and after (names, quantities, who added), who merged, when, undone | `public.item_merges` (members read, no client writes) | Undo a merge ("Rückgängig") | (b) | 30 days (older rows of the household are deleted on the next merge) | Supabase EU | Household deletion cascades; a deleted user's id is cleared from the stored rows (trigger on `auth.users`) | `20261030160000_dedupe_merge.sql` |
@@ -74,7 +75,7 @@ interest.
 
 | Data | Where | Purpose | Basis | Kept | Processor / region | Deletion | Source |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Events from `eventCatalog`: first_open, household_created, invite_accepted, invite_sent, item_added, item_ticked, category_reordered, store_reordered, item_categorized, dedupe_hint_*, feedback_submitted, with only the listed properties (no item names, no text) | PostHog EU | Product decisions | (a) consent on the consent screen after sign-in; TDDDG §25 for the install id on the device | 1 year at PostHog (policy) | PostHog, EU cloud (Frankfurt) | Withdraw: Mehr → Nutzungsdaten switch off (stops the SDK and deletes its ids and queue on the device, job 44) | `app/lib/analytics/events.dart` |
+| Events from `eventCatalog`: first_open, household_created, invite_accepted, invite_sent, item_added, item_ticked, category_reordered, store_reordered, item_categorized, dedupe_hint_*, feedback_submitted, onboarding_completed (job 168b: counts and the first household kind), hint_shown, hint_dismissed, hint_acted (the hint's catalogue id), checklist_step_done, checklist_dismissed (job 168b), with only the listed properties (no item names, no text) | PostHog EU | Product decisions | (a) consent on the consent screen after sign-in, or as the guided start's first step before it (job 168b; events still wait for a sign-in); TDDDG §25 for the install id on the device | 1 year at PostHog (policy) | PostHog, EU cloud (Frankfurt) | Withdraw: Mehr → Nutzungsdaten switch off (stops the SDK and deletes its ids and queue on the device, job 44) | `app/lib/analytics/events.dart` |
 | Context on every event: random install id (`install_id`, also the `distinct_id`), household id, platform, app version, internal flag; `$geoip_disable: true`, `$process_person_profile: false`; also kept by the SDK as super properties for the events it builds itself | PostHog EU | Counting installs and households | (a) | 1 year | PostHog EU | As above | `app/lib/analytics/analytics.dart` `_context`, `_registerContext` |
 | Added by PostHog's SDK (job 44): iOS and Android: app name, version, build and bundle id, device maker, model and type, emulator/TestFlight/sideloaded flags, OS name and version, screen size (Android: density), locale, time zone, Wi-Fi/cellular (Android: Bluetooth, carrier name, the system HTTP user agent), a random in-memory session id; web: browser and OS name and version, device type, screen and window size, language, time zone (URL, referrer, user agent, session and device ids stripped by our `before_send`); the SDK's name and version | PostHog EU | Sent by the SDK with every event; used to tell platforms and versions apart in error tracking | (a) | 1 year | PostHog EU | As above | `docs/ANALYTICS.md` "What the SDKs add"; web: `app/lib/analytics/posthog_platform_web.dart` |
 | Feature-flag requests (job 44): install id (as distinct id and device id), time zone, SDK name and version; the answer is cached by the native SDKs on the device | PostHog EU | Runtime toggles (`Analytics.flags`) | (a), only after a yes to the current consent text version; no request before it | Not stored as events | PostHog EU | Off stops the SDK; no further requests | `app/lib/analytics/flags.dart`, `posthog_client.dart` |
@@ -91,6 +92,26 @@ interest.
 `DeviceCache` (`app/lib/app/device_cache.dart`) keeps the last household (id, name), a list cache
 for offline start, list preferences (folded stores, hints), language, theme and a pending invite
 code. Device only, needed for the app to work (TDDDG §25(2) no. 2), gone on sign-out or uninstall.
+
+The guided start's draft (job 168b, `onboarding.draft`, `app/lib/onboarding/draft.dart`): the
+answers given before the account exists (who the user shops with, the „Andere“ words, the household
+name, the stores picked, the things added on „Was fehlt gerade?“ with the ids they will have on the
+list) and, once the household is made, its id and the user's id. It is the user's own input kept
+so the setup survives an app restart (TDDDG §25(2) no. 2, (b)), device only until the sign-up,
+when it becomes the household and its list on the server. It is deleted when the invite step is
+left, by „Fortschritt verwerfen“, at a sign-out or account deletion once the household exists, and
+on uninstall. The other kinds picked (`onboarding.later.<user id>`, a list of kind names) stay for
+when a user can have several households (job 169).
+
+The hints' log per user (job 168b, `hints.<user id>`, `app/lib/tips/usage_log.dart`): counts of
+what the user did on the list (typed adds, adds with an amount, dictation, saved edits, category
+reorders, finished trips), whether the household had a store, a second member or the user as
+owner, whether an assistant or a Home Screen widget was found, the number of active days, and per
+hint how often it showed, its X and its button. Never item names or text. It is the user's own
+"hide this" and "used it already", needed to honour them (TDDDG §25(2) no. 2), device only, never
+sent, and kept after sign-out like job 80's dismissed tips (`tips.<user id>`, read into it once);
+uninstall removes it. Hint and checklist events go to PostHog only after the analytics yes (the
+`eventCatalog` row above).
 
 ## Backups and hosting
 
