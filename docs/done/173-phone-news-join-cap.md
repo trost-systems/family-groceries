@@ -60,7 +60,8 @@ vmaint-20261109 (gaps 1 and 2). Reasons: docs/DECISIONS.md, "Job 173".
 
 - Where the line sits on a phone is a design call for Peter (docs/NEEDS_PETER.md, job 173):
   while it shows it covers the left end of the first store divider, as the sync card does.
-- Gaps 3-6 of vmaint-20261109 (copy items): not checked. The summary file stays on the box and
+- Gaps 3-6 of vmaint-20261109 (copy items): listed in docs/NEEDS_PETER.md (job 173 item 4) after
+  the summary reached hz; earlier text here said not checked. The summary file stays on the box and
   never reached hz (asked on BOARD at 18:44 and again after review 1; no copy arrived). Listed as open in
   docs/NEEDS_PETER.md (job 173, item 4).
 - A copy item: an approval for a requester who reached 10 meanwhile reads as a decline
@@ -74,3 +75,11 @@ screen for 3 s, which for an add below the fold means until the user scrolls to 
 showing after 60 s in the review's drive), covering the first store divider's badge and name
 and, once scrolled, the start of the top rows. Item 1 and DECISIONS now say so; item 3 also
 notes the oldest builds' `join_household` and the restore wording. Docs only.
+
+## Post-merge review 1 (docs follow-up, job/173c-gaps-3-6)
+
+The vmaint-20261109 summary reached hz at 21:45 (jobs-watcher copy). Its gaps 3-6 (copy items:
+the consent page's household promise to Alexa, the AI tip's API mention, „Zugangs-Tokens“ in the
+deletion dialog, „Admins ernennt nur, wer den Haushalt angelegt hat“ after a handover) were not
+in NEEDS_PETER; job 173 item 4 now lists them with file and line instead of "not checked". Item
+1 also says a tap on a row's name under the line doesn't tick it. Docs only, no copy changed.
