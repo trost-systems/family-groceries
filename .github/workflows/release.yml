@@ -388,11 +388,10 @@ jobs:
   # The web app ships with every real store upload: app.hummlist.com is public and is Vercel's
   # production, whose branch is `release` (docs/DEPLOY.md, section "Web app"). When `Uploaded`
   # succeeds (automatic per-merge, schedule, or dispatch), this job moves `release` to this run's
-  # commit so Vercel builds it and assigns app.hummlist.com. That keeps the public web app on the
+  # commit, and `Web deploy` (web-deploy.yml) builds it on a runner and deploys it to app.hummlist.com. That keeps the public web app on the
   # same commit the internal testers just got, never ahead of TestFlight/Play. A rerun of an older
   # run is a no-op, and the plain push only fast-forwards, so production never moves back from
-  # here. Pushes to `main` still build previews only (preview.app.hummlist.com, behind Vercel
-  # Authentication). No branch protection or ruleset may block github-actions from pushing `release`.
+  # here. Vercel's own Git builds are skipped (docs/DEPLOY.md, "Build skips"). No branch protection or ruleset may block github-actions from pushing `release`.
   web:
     name: Web production
     needs: [plan, uploaded]
@@ -401,15 +400,20 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write
+    outputs:
+      moved: ${{ steps.move.outputs.moved }}
+      before: ${{ steps.move.outputs.before }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
       - name: Fast-forward the release branch
+        id: move
         env:
           SHA: ${{ needs.plan.outputs.sha }}
         run: |
           before="$(git rev-parse -q --verify origin/release || echo none)"
+          echo "before=${before/#none/}" >> "$GITHUB_OUTPUT"
           # Already there, or release is already past this commit (a rerun of an older run).
           if [ "$before" != none ] && git merge-base --is-ancestor "$SHA" "$before"; then
             echo "release (${before:0:7}) already contains ${SHA:0:7}; production unchanged." \
@@ -417,8 +421,22 @@ jobs:
             exit 0
           fi
           git push origin "$SHA:refs/heads/release"
-          echo "release: ${before:0:7} -> ${SHA:0:7}. Vercel builds it for app.hummlist.com." \
+          echo "moved=true" >> "$GITHUB_OUTPUT"
+          echo "release: ${before:0:7} -> ${SHA:0:7}. Web deploy builds it for app.hummlist.com." \
             | tee -a "$GITHUB_STEP_SUMMARY"
+
+  # A push by this workflow's token starts no workflow, so the deploy is called here.
+  web-deploy:
+    name: Web deploy
+    needs: [plan, web]
+    if: ${{ !cancelled() && needs.web.result == 'success' && needs.web.outputs.moved == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/web-deploy.yml
+    with:
+      sha: ${{ needs.plan.outputs.sha }}
+      before: ${{ needs.web.outputs.before }}
+    secrets: inherit
 
   # Not after a red or foreign CI run (plan skipped by its `if`): there is nothing to report.
   report:
