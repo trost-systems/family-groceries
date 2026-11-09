@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show max;
 import 'dart:ui' show SemanticsHitTestBehavior;
 
 import 'package:family_groceries/app/notices.dart';
@@ -31,6 +32,7 @@ import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/tips/hint_views.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show OrdinalSortKey;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -115,6 +117,10 @@ class _ShoppingListState() extends State<_ShoppingList> {
   /// its room.
   final _chipWidth = ValueNotifier<double>(0);
   final _anpassenWidth = ValueNotifier<double>(0);
+
+  /// The bar's room for the partner's new adds, null until laid out:
+  /// narrower than their line, it shows below the household chip instead.
+  final _statusRoom = ValueNotifier<double?>(null);
 
   /// The add bar around the input: it holds focus between a tap in the
   /// sheet and the input's refocus, and after a close, and takes Escape
@@ -226,6 +232,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
   void dispose() {
     _chipWidth.dispose();
     _anpassenWidth.dispose();
+    _statusRoom.dispose();
     _links?.changes.removeListener(_linked);
     _sheetOpen?.removeListener(_followShell);
     if (_addSheetRequest?.listTab == _openRequested) {
@@ -496,14 +503,35 @@ class _ShoppingListState() extends State<_ShoppingList> {
                       rowHeight: _Header.height,
                       cardTop: _Header.extentFor(tabs: tabs),
                       pillInset: _chipWidth,
-                      child: BottomScrollEdge(
-                        child: ShoppingListView(
-                          onInteract: _leaveField,
-                          header: _Header(
-                            chipWidth: _chipWidth,
-                            anpassenWidth: _anpassenWidth,
-                            tabs: tabs,
-                          ),
+                      // A screen reader reads the new adds below the chip
+                      // before the list, not after its last row: one node, so
+                      // the sync shell beside it doesn't split their order.
+                      child: Semantics(
+                        container: true,
+                        explicitChildNodes: true,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Semantics(
+                              sortKey: const OrdinalSortKey(1),
+                              child: BottomScrollEdge(
+                                child: ShoppingListView(
+                                  onInteract: _leaveField,
+                                  header: _Header(
+                                    chipWidth: _chipWidth,
+                                    anpassenWidth: _anpassenWidth,
+                                    statusRoom: _statusRoom,
+                                    tabs: tabs,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _StatusBelow(
+                              room: _statusRoom,
+                              anpassenWidth: _anpassenWidth,
+                              tabs: tabs,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -828,6 +856,7 @@ const _composeHeight = 52.0;
 class const _Header({
   required final ValueNotifier<double> chipWidth,
   required final ValueNotifier<double> anpassenWidth,
+  required final ValueNotifier<double?> statusRoom,
   required final bool tabs,
 }) extends StatelessWidget implements PreferredSizeWidget {
   /// The bar's height: the tab pill's.
@@ -923,10 +952,13 @@ class const _Header({
             ),
             SyncPillSpace(row: row - chipWidth.value),
             const SizedBox(width: HlSpace.s2),
-            const Expanded(
-              child: Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: _Status(),
+            Expanded(
+              child: MeasuredWidth(
+                onWidth: (width) => statusRoom.value = width,
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: _Status(room: statusRoom),
+                ),
               ),
             ),
             const SizedBox(width: HlSpace.s2),
@@ -966,9 +998,92 @@ class const _Header({
   );
 }
 
-/// The partner's new adds in a small raised capsule beside Anpassen;
-/// nothing while there are none.
-class const _Status() extends StatelessWidget {
+/// The partner's new adds below the household chip, where the bar has no
+/// room for their whole line (a phone): floating over the list like the
+/// sync card, at the same place.
+class const _StatusBelow({
+  required final ValueListenable<double?> room,
+  required final ValueListenable<double> anpassenWidth,
+  required final bool tabs,
+}) extends StatelessWidget {
+  /// Anpassen at its widest, until it is measured.
+  static const _anpassen = 160.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = context.watch<ListCubit>().state;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final inset =
+            ShoppingListView.frameFor(constraints.maxWidth, state).side +
+            HlSpace.s4;
+        return Stack(
+          children: [
+            PositionedDirectional(
+              start: inset,
+              top:
+                  MediaQuery.paddingOf(context).top +
+                  _Header.extentFor(tabs: tabs),
+              // Clear of the column under Anpassen, where a store divider
+              // has its count and fold key: a long name ellipsizes.
+              child: ValueListenableBuilder(
+                valueListenable: anpassenWidth,
+                builder: (context, anpassen, child) => ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: max(
+                      0,
+                      constraints.maxWidth -
+                          2 * inset -
+                          (anpassen > 0 ? anpassen : _anpassen) -
+                          HlSpace.s4,
+                    ),
+                  ),
+                  child: child,
+                ),
+                child: MediaQuery.withClampedTextScaling(
+                  maxScaleFactor: SyncPillSpace.maxTextScale,
+                  child: _Status(room: room, below: true),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// The partner's new adds in a small raised capsule beside Anpassen, while
+/// their whole line fits in the bar's [room], else [below] the household
+/// chip; nothing while there are none.
+class const _Status({
+  required final ValueListenable<double?> room,
+  final bool below = false,
+}) extends StatelessWidget {
+  static const _inset = HlHex.tip * HlSize.target + HlSpace.s1;
+
+  /// The capsule's width with [text] whole on one line, and that line's
+  /// height.
+  static ({double width, double line}) _measure(
+    BuildContext context,
+    String text,
+    TextStyle style,
+  ) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: DefaultTextStyle.of(context).style.merge(style),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width.ceilToDouble() + 2 * _inset;
+    final line = painter.height;
+    painter.dispose();
+    return (width: width, line: line);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -982,54 +1097,71 @@ class const _Status() extends StatelessWidget {
     if (fresh.isEmpty) {
       return const SizedBox.shrink();
     }
-    return Semantics(
-      key: const ValueKey('list-status'),
-      container: true,
-      hitTestBehavior: SemanticsHitTestBehavior.opaque,
-      child: DecoratedBox(
-        decoration: ShapeDecoration(
-          shape: const HexBorder(),
-          shadows: HlSticker.shadow(brightness, StickerDepth.s),
-        ),
-        child: Material(
-          color: t.surfaceRaised,
-          shape: HexBorder(
-            side: BorderSide(color: t.border, width: HlBorder.width),
-          ),
-          child: SizedBox(
-            height: HlSize.target,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: HlHex.tip * HlSize.target + HlSpace.s1,
+    final text = partner == null
+        ? l10n.newItems(fresh.length)
+        : l10n.newItemsFrom(fresh.length, partner.displayName);
+    final style = TextStyle(
+      fontSize: 13,
+      color: t.success,
+      fontWeight: FontWeight.w700,
+    );
+    return ValueListenableBuilder(
+      valueListenable: room,
+      builder: (context, room, _) {
+        if (room == null) {
+          return const SizedBox.shrink();
+        }
+        // One line decides the place: below the chip it may wrap within
+        // its own width.
+        final (:width, :line) = _measure(context, text, style);
+        if (below == (width <= room)) {
+          return const SizedBox.shrink();
+        }
+        // A long name takes a second line below the chip while two fit
+        // inside the contour; large text keeps one, ellipsized.
+        final lines = below && 2 * line <= HlSize.target - 2 * HlBorder.width
+            ? 2
+            : 1;
+        return Semantics(
+          key: const ValueKey('list-status'),
+          container: true,
+          sortKey: below ? const OrdinalSortKey(0) : null,
+          hitTestBehavior: SemanticsHitTestBehavior.opaque,
+          child: DecoratedBox(
+            decoration: ShapeDecoration(
+              shape: const HexBorder(),
+              shadows: HlSticker.shadow(brightness, StickerDepth.s),
+            ),
+            child: Material(
+              color: t.surfaceRaised,
+              shape: HexBorder(
+                side: BorderSide(color: t.border, width: HlBorder.width),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: HlSpace.s2,
-                children: [
-                  Flexible(
-                    child: Text(
-                      partner == null
-                          ? l10n.newItems(fresh.length)
-                          : l10n.newItemsFrom(
-                              fresh.length,
-                              partner.displayName,
-                            ),
-                      key: const ValueKey('new-items-subtitle'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: t.success,
-                        fontWeight: FontWeight.w700,
+              child: SizedBox(
+                height: HlSize.target,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: _inset),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          text,
+                          key: const ValueKey('new-items-subtitle'),
+                          maxLines: lines,
+                          textWidthBasis: TextWidthBasis.longestLine,
+                          overflow: TextOverflow.ellipsis,
+                          style: style,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

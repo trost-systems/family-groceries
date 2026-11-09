@@ -35,6 +35,7 @@
 - Job 101, hill-climb hc-strictness: a strict TypeScript/JavaScript lint pack (`tool/lint/ts/`, every Deno lint rule and strict compiler option decided, 114 enforced in the lint gate), score 1030 -> 2 over 241 files, reviews 0 and 1: the type check fails closed, Deno is pinned in `.dvmrc`, every in-scope TS file is type-checked: [docs/done/101-hc-strictness.md](docs/done/101-hc-strictness.md)
 - Job 171, a store divider only folds; a hold or right click on a divider does nothing: [docs/done/171-store-header-tap.md](docs/done/171-store-header-tap.md)
 - Job 168c, guided start (#331) rebased onto several households (#327) and landed: [docs/done/168c.md](docs/done/168c.md)
+- Job 173, partner news under the household chip on phones; the 10-household cap on every join: [docs/done/173-phone-news-join-cap.md](docs/done/173-phone-news-join-cap.md)
 
 ## Job 1: foundation (2026-10-22)
 

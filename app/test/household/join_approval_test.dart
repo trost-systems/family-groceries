@@ -221,6 +221,36 @@ void main() {
       });
     }
 
+    // Job 173: the server refuses a join (or a join request) at 10.
+    for (final (locale, text) in [
+      (
+        const Locale('de'),
+        'Du bist schon in 10 Haushalten. Verlasse einen, bevor du einen neuen '
+            'anlegst oder beitrittst.',
+      ),
+      (
+        const Locale('en'),
+        'You are in 10 households already. Leave one before you create or '
+            'join another.',
+      ),
+    ]) {
+      testWidgets('$locale: in 10 households, the join says so', (
+        tester,
+      ) async {
+        final o = await pumpOnboarding(
+          tester,
+          location: '/join/ABCD2345',
+          session: inHome,
+          invites: _sommerfest(),
+          locale: locale,
+        );
+        o.session.fail = HouseholdProblem.tooManyHouseholds;
+        await tapKey(tester, 'join-confirm');
+        expect(find.text(text), findsOneWidget);
+        expect((o.session.state as InHousehold).households, hasLength(1));
+      });
+    }
+
     testWidgets('in English', (tester) async {
       await pumpOnboarding(
         tester,
