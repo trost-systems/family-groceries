@@ -56,11 +56,11 @@ if (httpChecks) {
   // docs/DEEP_LINKS.md. Apple fetches the association without following redirects and wants JSON.
   const aasa = await head('/.well-known/apple-app-site-association');
   const details = aasa.status === 200 ? JSON.parse(aasa.body).applinks.details[0] : null;
-  check(aasa.type.startsWith('application/json') && details?.appIDs.includes('VCZSHMZY25.com.hummlist.app')
+  check(aasa.type.startsWith('application/json') && ['VCZSHMZY25.com.snacklist.app', 'VCZSHMZY25.com.hummlist.app'].every((id) => details?.appIDs.includes(id))
     && details.components.some((c) => c['/'] === '/more/*'),
     `/.well-known/apple-app-site-association ${aasa.status}, ${aasa.type}, claims /more/*`);
   const links = await head('/.well-known/assetlinks.json');
-  check(links.status === 200 && links.type.startsWith('application/json') && JSON.parse(links.body)[0].target.package_name === 'com.hummlist.app',
+  check(links.status === 200 && links.type.startsWith('application/json') && JSON.parse(links.body).map((l) => l.target.package_name).join() === 'com.snacklist.app,com.hummlist.app',
     `/.well-known/assetlinks.json ${links.status}, ${links.type}`);
   for (const path of ['/does-not-exist.js', '/missing.js', '/assets/x.png', '/canvaskit/missing.wasm']) {
     const missing = await head(path);

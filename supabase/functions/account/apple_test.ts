@@ -165,7 +165,7 @@ Deno.test('every Apple failure falls back to manual removal, without logging sec
   }
 });
 
-Deno.test('the configuration comes from the environment, with both bundle ids', () => {
+Deno.test('the configuration comes from the environment, with every bundle id, Hummlist first', () => {
   // Split so secret scanners don't take the placeholder for a key.
   const [begin, end] = ['BEGIN', 'END'].map((word) => `-----${word} PRIVATE KEY-----`);
   const env: Record<string, string> = {
@@ -173,7 +173,11 @@ Deno.test('the configuration comes from the environment, with both bundle ids', 
     APPLE_KEY_ID: 'K',
     APPLE_PRIVATE_KEY: `${begin}\\nabc\\n${end}`,
   };
-  assertEquals(appleBundleIds, ['com.hummlist.app', 'com.petertrost.familygroceries']);
+  assertEquals(appleBundleIds, [
+    'com.hummlist.app',
+    'com.snacklist.app',
+    'com.petertrost.familygroceries',
+  ]);
   assertEquals(appleConfig((name) => env[name]), {
     clientIds: appleBundleIds,
     teamId: 'T',

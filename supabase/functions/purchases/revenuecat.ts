@@ -331,7 +331,7 @@ const day = 86_400_000;
 /**
  * POST /purchases/test/event (local stack only): a RevenueCat-shaped webhook body for the app's
  * fake store, fg and the e2e specs. Null for a request it cannot build one from. Optional:
- * `productId` (Lifetime by default; `com.hummlist.app.yearly` or Play's `…:yearly`), `type`
+ * `productId` (Lifetime by default; `com.snacklist.app.yearly` or Play's `…:yearly`), `type`
  * (NON_RENEWING_PURCHASE for Lifetime, INITIAL_PURCHASE for yearly by default), `expiresInDays`
  * (yearly: the period's end from now, 365 by default; negative for the past), `graceDays`
  * (BILLING_ISSUE), `cancelReason` (CANCELLATION: CUSTOMER_SUPPORT by default, a refund),
@@ -341,7 +341,7 @@ export function testEvent(body: unknown, now: Date): { api_version: string; even
   if (typeof body !== 'object' || body === null) return null;
   const b = body as Record<string, unknown>;
   const productId = b.productId ?? lifetimeProductId;
-  const yearly = typeof productId === 'string' && productId.startsWith(yearlyProductId);
+  const yearly = typeof productId === 'string' && productOf(productId)?.plan === 'yearly';
   const type = b.type ?? (yearly ? 'INITIAL_PURCHASE' : 'NON_RENEWING_PURCHASE');
   const store = b.store ??
     (typeof productId === 'string' && productId.includes(':') ? 'PLAY_STORE' : 'APP_STORE');

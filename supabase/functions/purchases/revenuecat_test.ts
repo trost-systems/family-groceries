@@ -16,7 +16,7 @@ function event(type: string, overrides: Record<string, unknown> = {}) {
       app_user_id: HOME,
       store: 'APP_STORE',
       environment: 'PRODUCTION',
-      product_id: 'com.hummlist.app.yearly',
+      product_id: 'com.snacklist.app.yearly',
       entitlement_ids: ['premium'],
       transaction_id: 't2',
       original_transaction_id: 't1',
@@ -92,7 +92,7 @@ Deno.test('UNKNOWN with a negative price is a refund; with a positive one it is 
 Deno.test('any CANCELLATION of the one-time purchase is a refund, as before', () => {
   for (const reason of ['UNSUBSCRIBE', 'UNKNOWN', 'CUSTOMER_SUPPORT', undefined]) {
     const a = action('CANCELLATION', {
-      product_id: 'com.hummlist.app.lifetime',
+      product_id: 'com.snacklist.app.lifetime',
       cancel_reason: reason,
     });
     assertEquals(a.do, 'revoke');
@@ -172,21 +172,46 @@ Deno.test('REFUND_REVERSED reinstates; TRANSFER, PRODUCT_CHANGE and others write
 
 Deno.test('lifecycle events of the one-time purchase change nothing', () => {
   for (const type of ['UNCANCELLATION', 'BILLING_ISSUE', 'EXPIRATION', 'SUBSCRIPTION_EXTENDED']) {
-    assertEquals(action(type, { product_id: 'com.hummlist.app.lifetime' }), { do: 'ignore' }, type);
+    assertEquals(
+      action(type, { product_id: 'com.snacklist.app.lifetime' }),
+      { do: 'ignore' },
+      type,
+    );
   }
 });
 
 Deno.test('Play ids: the bare subscription id and :yearly map to yearly, other base plans do not', () => {
-  for (const id of ['com.hummlist.app.yearly', 'com.hummlist.app.yearly:yearly']) {
+  for (const id of ['com.snacklist.app.yearly', 'com.snacklist.app.yearly:yearly']) {
     const a = action('RENEWAL', { store: 'PLAY_STORE', product_id: id });
     assertEquals(a.do === 'record' && [a.purchase.productId, a.purchase.plan], [
-      'com.hummlist.app.yearly',
+      'com.snacklist.app.yearly',
       'yearly',
     ]);
   }
-  for (const id of ['com.hummlist.app.yearly:monthly', 'com.hummlist.app.yearly:', 'other']) {
+  for (const id of ['com.snacklist.app.yearly:monthly', 'com.snacklist.app.yearly:', 'other']) {
     assertEquals(action('RENEWAL', { product_id: id }), { do: 'ignore', refused: 'product' });
   }
+});
+
+Deno.test('Hummlist builds still sell under com.hummlist.app ids: recorded under their own id', () => {
+  for (
+    const [id, store, productId, plan] of [
+      ['com.hummlist.app.lifetime', 'APP_STORE', 'com.hummlist.app.lifetime', 'lifetime'],
+      ['com.hummlist.app.yearly', 'APP_STORE', 'com.hummlist.app.yearly', 'yearly'],
+      ['com.hummlist.app.yearly:yearly', 'PLAY_STORE', 'com.hummlist.app.yearly', 'yearly'],
+    ]
+  ) {
+    const a = action('INITIAL_PURCHASE', { store, product_id: id });
+    assertEquals(
+      a.do === 'record' && [a.purchase.productId, a.purchase.plan],
+      [productId, plan],
+      id,
+    );
+  }
+  assertEquals(action('RENEWAL', { product_id: 'com.hummlist.app.yearly:monthly' }), {
+    do: 'ignore',
+    refused: 'product',
+  });
 });
 
 Deno.test('a lifecycle event names its transaction by the original id and its time', () => {

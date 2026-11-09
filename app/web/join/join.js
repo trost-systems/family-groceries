@@ -6,8 +6,8 @@ import { publishableKey, supabaseUrl } from './config.js';
 // Off until the listings are public (site/config/stores.mjs): then the store buttons and the
 // Smart App Banner show.
 const storeListings = { appStore: false, googlePlay: false };
-const appStoreId = '6826922741';
-const playPackage = 'com.hummlist.app';
+const appStoreId = '6832756448';
+const playPackage = 'com.snacklist.app';
 
 // The alphabet create_invite draws from (app/lib/household/pending_invite.dart).
 const codePattern = /^[A-HJ-NP-Z2-9]{8}$/;

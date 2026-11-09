@@ -6,7 +6,7 @@ git_branch("main")
 
 type("appstore")
 # The app and its Home Screen widget extension (docs/HOME_WIDGETS.md).
-app_identifier(["com.hummlist.app", "com.hummlist.app.HomeWidget"])
+app_identifier(["com.snacklist.app", "com.snacklist.app.HomeWidget"])
 
 # Read-only so a CI run never mints certificates; `ios certificates` overrides it.
 readonly(true)

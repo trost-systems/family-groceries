@@ -132,11 +132,12 @@ Client IDs are public; secrets are not.
 | Value | Public? | Where it goes |
 | --- | --- | --- |
 | Google Web client ID | yes | `app/config/auth.json` (`GOOGLE_WEB_CLIENT_ID`), Supabase Google provider (first client ID) |
-| Google iOS client ID | yes | `app/config/auth.json` (`GOOGLE_IOS_CLIENT_ID`), reversed in `app/ios/Flutter/Auth.xcconfig`, Supabase (additional client ID) |
-| Google Android client ID | yes | only Google Cloud and Supabase (additional client ID); Android finds it by package name and SHA-1 |
+| Google iOS client ID | yes | `app/config/auth.json` (`GOOGLE_IOS_CLIENT_ID`, Snacklist's `1001040145655-k035gko9uos1e0co15j71jr8tp18pek9` since job 174), reversed in `app/ios/Flutter/Auth.xcconfig`, Supabase (additional client ID). Hummlist's `1001040145655-q542vlf983lrhjc7oht2mvmcsp4fhie9` stays in Supabase until Hummlist retires |
+| Google Android client IDs | yes | only Google Cloud and Supabase (additional client IDs); Android finds them by package name and SHA-1. Snacklist (`com.snacklist.app`): Play app signing `1001040145655-raog296lceu901h72e852e10kt75a7e2`, upload key `1001040145655-q9q9t08ugkv4fr117j01qck0ijobb3ck`, box debug `1001040145655-l88umh5facf1anqmqtpv7mtbtaukqe61`. Hummlist's clients stay |
 | Google Web client secret | **no** | Supabase only (dashboard or `scripts/configure-social-auth.mjs`) |
 | Apple Services ID | yes | Supabase Apple provider (first client ID) |
-| Bundle ID `com.hummlist.app` | yes | Supabase Apple provider (in the client ID list) |
+| Bundle ID `com.snacklist.app` | yes | Supabase Apple provider (in the client ID list), added at the Snacklist cut-over (job 174, S2) |
+| Bundle ID `com.hummlist.app` | yes | Supabase Apple provider (in the client ID list) until Hummlist retires |
 | Old bundle ID `com.petertrost.familygroceries` | yes | Supabase Apple provider (in the client ID list) until the Hummlist build is verified (`NEEDS_PETER.md`, job 20) |
 | Apple Team ID, Key ID | yes | inputs to the client secret |
 | Apple Sign in with Apple key (`.p8`) | **no** | stays on Peter's machine; never in the repo |
@@ -156,6 +157,9 @@ a real provider against the local stack, export the variables from
 `.env.example` and set `enabled = true` locally.
 
 The hosted project is configured with `scripts/configure-social-auth.mjs`.
+`GOOGLE_IOS_CLIENT_ID` and `GOOGLE_ANDROID_CLIENT_ID` take comma lists:
+while Hummlist and Snacklist both run (job 174), pass both apps' clients,
+or the script drops the ones it isn't given.
 It reads the values from the environment, enables a provider only when all of
 its credentials are present, generates Apple's client secret from the `.p8`
 key, and always makes sure both deep links (old and new bundle ID) are in the

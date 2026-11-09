@@ -67,7 +67,7 @@ project.build_configurations.map(&:name).each do |config_name|
     "IPHONEOS_DEPLOYMENT_TARGET" => "17.0",
     "LD_RUNPATH_SEARCH_PATHS" => ["$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks"],
     "MARKETING_VERSION" => "$(FLUTTER_BUILD_NAME)",
-    "PRODUCT_BUNDLE_IDENTIFIER" => "com.hummlist.app.#{NAME}",
+    "PRODUCT_BUNDLE_IDENTIFIER" => "com.snacklist.app.#{NAME}",
     "PRODUCT_NAME" => "$(TARGET_NAME)",
     "SKIP_INSTALL" => "YES",
     "SWIFT_EMIT_LOC_STRINGS" => "YES",

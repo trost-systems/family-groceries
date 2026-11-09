@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["VCZSHMZY25.com.hummlist.app"],
+        "appIDs": ["VCZSHMZY25.com.snacklist.app", "VCZSHMZY25.com.hummlist.app"],
         "components": [
           { "/": "/list", "comment": "The list." },
           { "/": "/add", "comment": "The list with the add sheet open." },

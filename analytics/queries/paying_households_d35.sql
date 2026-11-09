@@ -2,7 +2,7 @@
 -- starts with its first event (household_created, invite_accepted, an add or a tick), as in
 -- retention_weekly.sql; its cohort is the Berlin week of that start. It is paying when a
 -- purchase_completed for it arrived within 35 days (35 * 24 h) of the start, for either product
--- (com.hummlist.app.yearly or com.hummlist.app.lifetime; a yearly subscription runs well past day
+-- (com.snacklist.app.yearly or .lifetime, or Hummlist's com.hummlist.app ones; a yearly subscription runs well past day
 -- 35). A purchase the store refunded since (same transaction_ref, any time) does not count; the
 -- household's other purchases still do, and several count once. A buyer without analytics consent
 -- sends no purchase_completed, so the share is a lower bound. Tester households and Sandbox

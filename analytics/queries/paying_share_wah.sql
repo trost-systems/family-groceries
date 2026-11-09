@@ -36,7 +36,7 @@ WITH
       timestamp,
       toString(properties.transaction_ref) AS ref,
       ifNull(toString(properties.premium_source), '') = 'yearly'
-        OR ifNull(toString(properties.product_id), '') = 'com.hummlist.app.yearly' AS yearly
+        OR ifNull(toString(properties.product_id), '') IN ('com.snacklist.app.yearly', 'com.hummlist.app.yearly') AS yearly
     FROM events
     WHERE event IN ('item_added', 'item_ticked', 'purchase_completed')
       AND properties.household_id IS NOT NULL

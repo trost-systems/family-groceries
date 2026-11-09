@@ -12,7 +12,7 @@
 import { importPKCS8, SignJWT } from 'npm:jose@6.2.13';
 import { money, product } from './product.ts';
 
-export const packageName = 'com.hummlist.app';
+export const packageName = 'com.snacklist.app';
 const api = 'https://androidpublisher.googleapis.com/androidpublisher/v3';
 export const purchaseOptionId = 'buy';
 

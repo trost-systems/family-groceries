@@ -138,7 +138,7 @@ Future<void> main() async {
 }
 
 /// The German storefront's prices as StoreKit formats them: App Store
-/// Connect's base prices (scripts/iap/product.ts, app/ios/Hummlist.storekit).
+/// Connect's base prices (scripts/iap/product.ts, app/ios/Snacklist.storekit).
 /// On GitHub's macOS runner StoreKit's local test store does not open and
 /// the sandbox answers with the US storefront (DECISIONS, job 86).
 const _germanStorefront = {

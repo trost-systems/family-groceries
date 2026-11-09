@@ -26,7 +26,7 @@ Deno.test('the products are the ones the purchases function sells, both as premi
   assertEquals(productOf(`${yearly.id}:${yearly.playBasePlanId}`), premium(yearly.id, 'yearly'));
   assertEquals(productOf(lifetime.id), premium(lifetime.id, 'lifetime'));
   assertEquals(productOf(`${yearly.id}:monthly`), null);
-  assertEquals(productOf('com.hummlist.app.plus'), null);
+  assertEquals(productOf('com.snacklist.app.plus'), null);
   assertEquals(productOf('toString'), null);
 });
 
@@ -42,7 +42,7 @@ const listings = (p: typeof yearly | typeof lifetime) =>
 
 Deno.test('the StoreKit configuration file mirrors both products', async () => {
   const storekit = JSON.parse(
-    await Deno.readTextFile(new URL('../../app/ios/Hummlist.storekit', import.meta.url)),
+    await Deno.readTextFile(new URL('../../app/ios/Snacklist.storekit', import.meta.url)),
   );
   assertEquals(storekit.version.major, 4);
   assertEquals(storekit.settings._storefront, lifetime.basePrice.territory);
@@ -102,8 +102,8 @@ Deno.test('the StoreKit configuration file mirrors both products', async () => {
 Deno.test('Apple: a non-consumable without Family Sharing, priced in Germany', () => {
   const body = createProductBody() as { data: { attributes: Record<string, unknown> } };
   assertEquals(body.data.attributes, {
-    name: 'Hummlist Lifetime',
-    productId: 'com.hummlist.app.lifetime',
+    name: 'Snacklist Lifetime',
+    productId: 'com.snacklist.app.lifetime',
     inAppPurchaseType: 'NON_CONSUMABLE',
     familySharable: false,
   });

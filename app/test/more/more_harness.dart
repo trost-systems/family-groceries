@@ -79,7 +79,7 @@ Future<void> fakeSupabase() async {
   SharedPreferences.setMockInitialValues({});
   PackageInfo.setMockInitialValues(
     appName: 'Hummlist',
-    packageName: 'com.hummlist.app',
+    packageName: 'com.snacklist.app',
     version: '1.2.3',
     buildNumber: '45',
     buildSignature: '',

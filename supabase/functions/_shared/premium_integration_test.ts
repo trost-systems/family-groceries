@@ -155,7 +155,7 @@ function mcp(m: Member, telemetry: Telemetry) {
 
 const yearly = async (sql: postgres.Sql, m: Member, tx: string) =>
   await sql`select public.purchase_record('apple', ${tx}, ${tx}, ${await sha256Hex(tx)},
-        'com.hummlist.app.yearly', 'premium', 'yearly', 'Production', now() - interval '1 minute',
+        'com.snacklist.app.yearly', 'premium', 'yearly', 'Production', now() - interval '1 minute',
         9.99, 'EUR', 'DE', ${m.householdId}::uuid, now(), now() + interval '365 days', true, false)`;
 
 const test = (name: string, fn: () => Promise<void>) =>

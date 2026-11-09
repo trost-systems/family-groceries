@@ -10,10 +10,10 @@ enum WidgetLaunch() {
   add,
 }
 
-/// `hummlist-widget://open/?homeWidget` is the list,
-/// `hummlist-widget://add/?homeWidget` the list with the add sheet open;
+/// `snacklist-widget://open/?homeWidget` is the list,
+/// `snacklist-widget://add/?homeWidget` the list with the add sheet open;
 /// any other link is not a widget's.
-WidgetLaunch? widgetLaunchOf(Uri? uri) => uri?.scheme == 'hummlist-widget'
+WidgetLaunch? widgetLaunchOf(Uri? uri) => uri?.scheme == 'snacklist-widget'
     ? switch (uri?.host) {
         'open' => WidgetLaunch.list,
         'add' => WidgetLaunch.add,

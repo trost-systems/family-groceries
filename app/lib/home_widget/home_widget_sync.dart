@@ -16,13 +16,13 @@ abstract interface class WidgetPublisher() {
 
 class const PluginWidgetPublisher() implements WidgetPublisher {
   /// Shared with the iOS extension (both entitlements files).
-  static const appGroup = 'group.com.hummlist.app';
+  static const appGroup = 'group.com.snacklist.app';
   static const key = 'hummlist_widget';
 
   /// The WidgetKit kind (`app/ios/HomeWidget/HomeWidget.swift`).
   static const iOSKind = 'HomeWidget';
   static const androidReceiver =
-      'com.hummlist.app.widget.HummlistWidgetReceiver';
+      'com.snacklist.app.widget.SnacklistWidgetReceiver';
 
   @override
   Future<void> publish(String json) async {

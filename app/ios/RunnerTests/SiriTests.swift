@@ -430,7 +430,7 @@ final class SiriAnswerTests: XCTestCase {
 }
 
 final class SiriStoreTests: XCTestCase {
-  let store = SiriCredentialStore(service: "com.hummlist.app.siri.tests")
+  let store = SiriCredentialStore(service: "com.snacklist.app.siri.tests")
 
   override func tearDown() {
     store.clear()
@@ -553,10 +553,10 @@ final class SiriStoreTests: XCTestCase {
 
 final class OpenListIntentTests: XCTestCase {
   func testItOpensTheListTheWayAWidgetTapDoes() {
-    XCTAssertEqual(OpenListIntent.list.absoluteString, "hummlist-widget://open/?homeWidget")
+    XCTAssertEqual(OpenListIntent.list.absoluteString, "snacklist-widget://open/?homeWidget")
     let schemes = (Bundle.main.object(forInfoDictionaryKey: "CFBundleURLTypes") as? [[String: Any]] ?? [])
       .flatMap { $0["CFBundleURLSchemes"] as? [String] ?? [] }
-    XCTAssertTrue(schemes.contains("hummlist-widget"), "the app answers its own link")
+    XCTAssertTrue(schemes.contains("snacklist-widget"), "the app answers its own link")
   }
 
   @available(*, deprecated)

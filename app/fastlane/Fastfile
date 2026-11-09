@@ -26,7 +26,7 @@ require "json"
 require "plist"
 require "shellwords"
 
-APP_ID = "com.hummlist.app"
+APP_ID = "com.snacklist.app"
 # The Home Screen widget extension (docs/HOME_WIDGETS.md); the Matchfile lists both.
 WIDGET_ID = "#{APP_ID}.HomeWidget"
 # Each signed bundle ID and its Xcode target.

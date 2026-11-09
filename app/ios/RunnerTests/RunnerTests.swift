@@ -13,11 +13,11 @@ class RunnerTests: XCTestCase {
 
 }
 
-/// Job 25: Hummlist Lifetime against StoreKit's local test store (app/ios/Hummlist.storekit),
+/// Job 25: Snacklist Lifetime against StoreKit's local test store (app/ios/Snacklist.storekit),
 /// no App Store account or agreement needed. The ios gate runs them on an iOS 26.2 simulator,
 /// whose storekitd takes the configuration from CI's ad-hoc build (DECISIONS 127).
 final class LifetimeStoreKitTests: XCTestCase {
-  let productId = "com.hummlist.app.lifetime"
+  let productId = "com.snacklist.app.lifetime"
   var session: SKTestSession!
 
   override func setUpWithError() throws {
@@ -25,7 +25,7 @@ final class LifetimeStoreKitTests: XCTestCase {
     // The configuration file beside this folder; the simulator reads the host's file system.
     let url = URL(fileURLWithPath: #filePath)
       .deletingLastPathComponent().deletingLastPathComponent()
-      .appendingPathComponent("Hummlist.storekit")
+      .appendingPathComponent("Snacklist.storekit")
     session = try SKTestSession(contentsOf: url)
     // storekitd refuses the configuration of an app it doesn't count as installed for development
     // (CI's ad-hoc signed build); the session's calls then fail only in the log and StoreKit
@@ -34,7 +34,7 @@ final class LifetimeStoreKitTests: XCTestCase {
     let config = try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as! [String: Any]
     let storefront = (config["settings"] as! [String: Any])["_storefront"] as! String
     guard session.storefront == storefront else {
-      throw XCTSkip("storekitd did not take Hummlist.storekit (storefront '\(session.storefront)', want \(storefront)): the app is not installed for development (DECISIONS 127)")
+      throw XCTSkip("storekitd did not take Snacklist.storekit (storefront '\(session.storefront)', want \(storefront)): the app is not installed for development (DECISIONS 127)")
     }
     session.resetToDefaultState()
     session.disableDialogs = true
@@ -59,7 +59,7 @@ final class LifetimeStoreKitTests: XCTestCase {
     let p = try await lifetime()
     XCTAssertEqual(p.type, .nonConsumable)
     XCTAssertEqual(p.price, Decimal(string: "29.99"))
-    XCTAssertEqual(p.displayName, "Hummlist Lifetime")
+    XCTAssertEqual(p.displayName, "Snacklist Lifetime")
     XCTAssertFalse(p.isFamilyShareable)
   }
 

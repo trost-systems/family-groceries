@@ -12,7 +12,7 @@
 import { importPKCS8, SignJWT } from 'npm:jose@6.2.13';
 import { product } from './product.ts';
 
-export const appAppleId = '6826922741';
+export const appAppleId = '6832756448';
 const api = 'https://api.appstoreconnect.apple.com';
 
 /** Signs App Store Connect API tokens with an API key's .p8 (also price_drift.ts). */

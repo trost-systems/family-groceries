@@ -17,7 +17,7 @@ abstract interface class StoreReview() {
 /// The `in_app_review` plugin; the only file that imports it.
 final class InAppStoreReview() implements StoreReview {
   /// Also `appAppleId` in scripts/iap/apple_product.ts and docs/RELEASE.md.
-  static const appStoreId = '6826922741';
+  static const appStoreId = '6832756448';
 
   @override
   Future<bool> isAvailable() => InAppReview.instance.isAvailable();

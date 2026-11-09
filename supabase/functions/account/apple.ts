@@ -5,10 +5,15 @@
 import { decodeJwt, importPKCS8, SignJWT } from 'jose';
 
 /**
- * The bundle ids a native iOS code can be issued to, newest first. Builds from before the
- * Hummlist rename (job 20) still sign in as com.petertrost.familygroceries.
+ * The bundle ids a native iOS code can be issued to, tried in order. Hummlist builds (job 20) sign
+ * in as com.hummlist.app, Snacklist builds as com.snacklist.app (job 174; first once they are the
+ * ones in use), older ones as com.petertrost.familygroceries.
  */
-export const appleBundleIds = ['com.hummlist.app', 'com.petertrost.familygroceries'];
+export const appleBundleIds = [
+  'com.hummlist.app',
+  'com.snacklist.app',
+  'com.petertrost.familygroceries',
+];
 
 export type AppleConfig = {
   /** The client ids to exchange a code with, tried in order. */

@@ -1,4 +1,4 @@
-package com.hummlist.app.widget
+package com.snacklist.app.widget
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

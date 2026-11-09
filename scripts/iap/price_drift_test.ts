@@ -169,7 +169,7 @@ function fakeStores(world: World, seen: string[]) {
           [],
         )),
     'POST https://oauth2.fake.test/token': () => json({ access_token: accessToken }),
-    '/androidpublisher/v3/applications/com.hummlist.app/subscriptions/com.hummlist.app.yearly':
+    '/androidpublisher/v3/applications/com.snacklist.app/subscriptions/com.snacklist.app.yearly':
       () =>
         json({
           basePlans: [{
@@ -182,7 +182,7 @@ function fakeStores(world: World, seen: string[]) {
             })),
           }],
         }),
-    '/androidpublisher/v3/applications/com.hummlist.app/oneTimeProducts/com.hummlist.app.lifetime':
+    '/androidpublisher/v3/applications/com.snacklist.app/oneTimeProducts/com.snacklist.app.lifetime':
       () =>
         json({
           purchaseOptions: [{

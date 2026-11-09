@@ -267,7 +267,7 @@ Deno.test({
       ));
       const eventIds: string[] = [];
       const tx = `49${Date.now()}`;
-      const yearlyId = 'com.hummlist.app.yearly';
+      const yearlyId = 'com.snacklist.app.yearly';
       const deliver = async (
         type: string,
         more: Record<string, unknown> = {},
@@ -487,7 +487,7 @@ Deno.test({
         const e = testEvent({
           appUserId: peter.householdId,
           transactionId,
-          productId: 'com.hummlist.app.yearly:yearly',
+          productId: 'com.snacklist.app.yearly:yearly',
           expiresInDays,
         }, new Date())!;
         eventIds.push((e.event as { id: string }).id);
@@ -510,8 +510,8 @@ Deno.test({
           select expires_at, store, product_id from public.purchases
           where bound_household = ${peter.householdId} order by expires_at`;
         assertEquals(rows.map((r) => [r.store, r.product_id]), [
-          ['google', 'com.hummlist.app.yearly'],
-          ['google', 'com.hummlist.app.yearly'],
+          ['google', 'com.snacklist.app.yearly'],
+          ['google', 'com.snacklist.app.yearly'],
         ]);
         const [p] = await sql<{ expires_at: Date }[]>`
           select expires_at from public.household_premium(${peter.householdId}::uuid)`;

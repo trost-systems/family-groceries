@@ -37,7 +37,7 @@
 			<string>auth-callback</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.hummlist.app</string>
+				<string>com.snacklist.app</string>
 			</array>
 		</dict>
 		<dict>
@@ -57,7 +57,7 @@
 			<string>home-widget</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>hummlist-widget</string>
+				<string>snacklist-widget</string>
 			</array>
 		</dict>
 	</array>

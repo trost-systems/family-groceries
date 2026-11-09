@@ -13,7 +13,7 @@ const webhookAuth = (() => {
   return line.slice('REVENUECAT_WEBHOOK_AUTH='.length).replace(/^"|"$/g, '');
 })();
 
-export const yearlyId = 'com.hummlist.app.yearly';
+export const yearlyId = 'com.snacklist.app.yearly';
 const day = 86_400_000;
 
 /**
@@ -28,7 +28,7 @@ export async function rcEvent(
   {
     authorization = webhookAuth,
     id = crypto.randomUUID(),
-    productId = 'com.hummlist.app.lifetime',
+    productId = 'com.snacklist.app.lifetime',
     expiresInDays = 365,
     extra = {},
   }: {

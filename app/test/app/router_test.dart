@@ -128,7 +128,7 @@ void main() {
 
   // Job 22: the invite kept on the device stands in for one in the
   // location, which the mobile apps lose: a magic link or Apple on Android
-  // returns through com.hummlist.app://login-callback, and a cold start
+  // returns through com.snacklist.app://login-callback, and a cold start
   // opens at `/`.
   const pending = <(Session, String, String?)>[
     (SignedOut(), '/', '/login?invite=ABCD2345'),
@@ -187,7 +187,7 @@ void main() {
   test(
     'the custom-scheme callback has no invite; the pending one leads on',
     () {
-      final callback = Uri.parse('com.hummlist.app://login-callback?code=abc');
+      final callback = Uri.parse('com.snacklist.app://login-callback?code=abc');
       expect(inviteIn(callback), isNull);
       expect(
         authRedirect(
@@ -380,7 +380,7 @@ void main() {
   group('RedirectMemory', () {
     test('a link survives the sign-in callback at /, once', () {
       final memory = RedirectMemory();
-      final callback = Uri.parse('com.hummlist.app://login-callback?code=a');
+      final callback = Uri.parse('com.snacklist.app://login-callback?code=a');
       expect(
         memory.redirect(const SignedOut(), Uri.parse('/add')),
         '/login?next=%2Fadd',
