@@ -1473,7 +1473,8 @@ Built and merged (#327, #332, #333). What only Peter can do:
    at the top of the list the first store divider's badge and name („Ohne Laden“ in the demo),
    and once scrolled, the names of the top rows passing under it (for example „Obst & Gemüse“
    and „Bananen“). It ends before the column under „Anpassen“, so a divider's count and fold
-   key stay usable, and taps on it do nothing. A long partner name takes a second line before
+   key stay usable. Taps on it do nothing, which also means a tap on a row's name under it
+   doesn't tick that row until the line clears. A long partner name takes a second line before
    it ellipsizes. Screenshots: `docs/screenshots/173/`. Other options,
    if you prefer one: push the list down by the line's height while it shows (the rows jump
    twice, once when a partner adds and again when it clears); shorten the line to „1 neu“ in
@@ -1493,7 +1494,20 @@ Built and merged (#327, #332, #333). What only Peter can do:
    an invalid code, where before a request was filed that an approval would close anyway.
    Restoring an archived household at 10 shows the cap text, which says „anlegst oder
    beitrittst“ and doesn't name a restore; the same copy job could cover it.
-4. **Gaps 3-6 of vmaint-20261109 (copy items), not checked.** The verification run's summary
-   (`jobs/vmaint-20261109/DONE_SUMMARY.md`) stays on the box and never reached the Hetzner runner
-   this job ran on (asked on BOARD twice, no copy arrived), and PR #337 doesn't list the items. Whether they are in this file is still
-   open; the next box-side job should add any that are missing.
+4. **Copy items from the verification run of 2026-11-09 (vmaint-20261109, gaps 3-6).** Found
+   in its summary, not changed here (copy is Peter's call); a copy job can take them together:
+   - **The consent page promises Alexa a choice it can't make.** For a user in several
+     households, the AI-assistant consent page says „Arbeitet in deinem Standard-Haushalt „X“.
+     Nennst du einen anderen deiner Haushalte, auch dort.“ to every app, Alexa included. Alexa
+     always uses the default household and has no way to name another.
+     `app/lib/oauth/consent_screen.dart:318` (`consentDefaultHousehold`).
+   - **The AI tip mentions the API.** „Noch besser mit KI & Automatisierung“ says „… oder nutze
+     die API, um Automatisierungen zu erstellen.“ (`hintAssistantBody`, `app/l10n/app_de.arb:1096`,
+     shown by `app/lib/tips/hints.dart:230`), also on the web Tipps page, while API keys stay
+     behind the off `public-api` flag.
+   - **„Zugangs-Tokens“ in the deletion dialog.** „Konto löschen“ says „deine Zugangs-Tokens“
+     (`accountDeleteWhat`, `app_de.arb:230`); everywhere else users see „Zugriffstoken“.
+   - **German admin text wrong after an owner handover.** `householdNotOwner` reads „Admins
+     ernennt nur, wer den Haushalt angelegt hat.“ (`app_de.arb:995`). Since the owner role passes
+     on when the creator leaves, the person who may name admins is the owner, not necessarily
+     the creator. The English text ("Only the household's owner names admins.") is right.
