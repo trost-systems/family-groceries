@@ -10832,3 +10832,65 @@ main 6d2a193e; both features stay.
    not queried). New leaves hand the role on already (`hand_over_ownership`, wave 2).
 2. **Leaving keeps the next household's role, kind and Premium on the device** (`copyWith` in
    `SessionCubit._left`), so a failed reload after a leave doesn't hide an admin's controls.
+
+## Job 173: partner news on phones, the household cap on joins, 2026-11-09
+
+Two product gaps from vmaint-20261109.
+
+1. **On a phone the news line moves below the household chip.** Since the chip came (#327), the
+   bar holds the chip (up to 55 % of the row), the news capsule and Anpassen (121 px). On a 390 px
+   phone that leaves the capsule 0 to 74 px, less than its hex padding (36 px), so „1 neu von
+   Lea“ (124 px with padding) ellipsized to nothing: an empty capsule, nothing in the
+   accessibility tree. No one-row layout fits: at 390 px the chip and the line share 212 px, and
+   the chip's own frame takes 78 px of it; at 360 px 182 px. Shortening the line to „1 neu“
+   (the copy for several partners) would drop who added, which Design H keeps („N neu von Lea“
+   stays, h-satz-final SPEC). So the bar measures the room it has for the line
+   (`_statusRoom`); where the whole line doesn't fit, the same capsule shows right below the chip,
+   at the top of the list where the sync card opens, floating over the rows as the bar does. It
+   is laid out in the list screen's stack, not in the pinned header: the header clips and only
+   takes taps inside its extent, so a tap on the capsule would have ticked off the row under it.
+   It shows for as long as the line does, until the adds have been seen; an offline card opening
+   there covers it for its 3 s (the capsule's left tip can show beside the card), then folds
+   into the pill in the bar. Where the line fits (a
+   tablet, the web at 1366 px) it stays in the bar as before. The chip keeps its width. Below the
+   chip the capsule ends 16 px before the column under Anpassen, where a store divider has its
+   count and fold key, so those stay usable (review 0). There a long partner name takes a second
+   line before it ellipsizes (review 1: on one line, names of 12 or more characters were cut at
+   360 px), but only while two lines fit inside its contour at the current text size (up to
+   about 1.2x with the theme's line height); larger text keeps one line, ellipsized (review 2:
+   at 1.5x two lines need 56 px and the capsule cut the second). So on the smallest phones
+   (320 px) at 1.3x text or more even „1 neu von Lea“ ellipsizes; the count still shows and a
+   screen reader gets the whole line. A capsule that grows taller below the chip would lift
+   that, at the cost of a new hex shape: not done. The measurement uses the style above the
+   capsule's Material, which matched the laid-out text in all 252 probed cases (review 3). A
+   screen reader reads it before the list: the list and the capsule share one semantics node with
+   sort keys, so the sync shell beside them keeps its old place. The bar's room is null until
+   laid out, so nothing flashes in the wrong place on the first frame. Tests:
+   `switcher_test.dart` "a partner's new adds beside the chip" (390 and 360 px whole, below the
+   chip, clear of Anpassen, read before the rows, a tap ticks nothing off; a long name at 1.5x
+   text clear of the divider's count and fold key; 1366 px in the bar), e2e
+   `partner-news.spec.ts` on a phone. Where it sits on a phone is a design call for Peter
+   (docs/NEEDS_PETER.md); it works either way.
+2. **The 10-household cap holds on every way in.** `create_household` refused an 11th; joins
+   didn't check (`accept_invite(code, 'add')` made an 11th). The cap now lives on the
+   memberships table (migration 20261109174625): a before-insert trigger on `household_members`
+   raises `too_many_households` at 10, under the user's memberships lock, so the new join, the
+   old builds' joins, `join_household`, a restore (`unarchive_household_add`) and an approval all
+   stop there, and future paths too. The same trigger on `join_requests` refuses a join request
+   at 10, so an admin never gets a request that can't be granted. Old builds' joins leave the
+   default household before they insert, so a user at 10 still moves as before (unchanged). One
+   old-build answer changes (review 0): asking into a household with approval on at 10, the
+   pre-169b store builds' `accept_invite(code, p_archive)` and the job-22 builds' one-argument
+   `accept_invite(code)` get the error instead of
+   `requested`; both map to the same generic error there (`HouseholdError.fromStatus` → other),
+   and no request is filed that an approval would only cancel. The oldest builds'
+   `join_household` catches the error and answers null, as for a filed request, so it is
+   unchanged.
+   `decide_join_request` checks first: a requester who reached 10 since asking has the request
+   closed as `cancelled` (the admin's list drops it, the requester's app reads it as not let in)
+   rather than an error in the admin's hands, whose only text would be the requester's
+   „Du bist schon in 10 Haushalten…“. The admin's row just goes; the requester reads
+   „Deine Anfrage für „…“ wurde nicht angenommen.“ Better words are a copy item (NEEDS_PETER). Users already above 10 from the gap keep their households;
+   they can't join more. Tests: `supabase/tests/households_join_cap.test.sql` (10 refused, 9
+   joins, on each path), `session_cubit_test.dart` and `join_approval_test.dart` (the existing
+   message, DE and EN).

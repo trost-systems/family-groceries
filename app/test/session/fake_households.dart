@@ -231,6 +231,10 @@ class FakeHouseholds(final FakeAuth fakeAuth)
         if (declinedRecently.contains(id)) {
           return {'status': 'declined_recently', 'household_id': null};
         }
+        // Joins and join requests alike (job 173).
+        if (mine.length >= 10) {
+          throw const _Refused('too_many_households');
+        }
         if (approval.contains(id)) {
           if (!requests.values.any(
             (r) => r.user == _user && r.household == id,

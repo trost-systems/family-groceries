@@ -1459,3 +1459,33 @@ Built and merged (#327, #332, #333). What only Peter can do:
    „Partner einladen“ (169b W2's generic entry), while the guided start says „Mitglieder
    einladen“. Left unchanged here (no copy changes in a landing job); a copy job should decide
    the wording per household kind.
+
+## Job 173: partner news on phones, the household cap on joins (2026-11-09)
+
+1. **Where „1 neu von Lea“ sits on a phone (design call, works either way).** Since the
+   household chip came (#327), the bar has no room on a phone for the chip, the news line and
+   „Anpassen“ side by side: at 390 px the chip and the line share 212 px, and the line alone
+   needs 124. The line now shows whole right below the household chip, floating over the top of
+   the list like the sync card, until the adds are seen; on a tablet and the web it stays in the
+   bar. While it shows, it covers the left part of whatever row is under it (at the top of the
+   list, the first store divider's badge and name) for those seconds, as the sync card does; it
+   ends before the column under „Anpassen“, so a divider's count and fold key stay usable, and a
+   long partner name takes a second line before it ellipsizes. Screenshots: `docs/screenshots/173/`. Other options,
+   if you prefer one: push the list down by the line's height while it shows (the rows jump
+   twice, once when a partner adds and again when it clears); shorten the line to „1 neu“ in
+   the bar on phones (who added only for screen readers); or give „Anpassen“ an icon on phones
+   to make room. Decide in a later design job; nothing to do now.
+2. **Users above 10 households.** Joins were not capped until this job. Anyone who joined an
+   11th or more keeps those households (nothing was removed); they can't join or create more
+   until they are below 10. To see whether anyone is affected, in the SQL editor:
+   `select user_id, count(*) from household_members group by user_id having count(*) > 10;`.
+3. **Copy: a join request that can't be granted any more.** If someone asks to join a household
+   with approval on and then reaches 10 households before an admin decides, „Aufnehmen“ closes
+   the request instead of letting them in (they would be in 11). The admin's row just goes
+   away, and the requester reads „Deine Anfrage für „…“ wurde nicht angenommen.“, which sounds
+   like a decline. A copy job could give both sides their own words („… ist schon in 10
+   Haushalten“). Rare: it needs a join elsewhere while the request waits.
+4. **Gaps 3-6 of vmaint-20261109 (copy items), not checked.** The verification run's summary
+   (`jobs/vmaint-20261109/DONE_SUMMARY.md`) stays on the box and never reached the Hetzner runner
+   this job ran on (asked on BOARD twice, no copy arrived), and PR #337 doesn't list the items. Whether they are in this file is still
+   open; the next box-side job should add any that are missing.

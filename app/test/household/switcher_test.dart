@@ -47,7 +47,12 @@ const _club = Household(
   openCount: 1,
 );
 
-typedef _Shell = ({TestSession session, GoRouter router, Popups popups});
+typedef _Shell = ({
+  TestSession session,
+  GoRouter router,
+  Popups popups,
+  FakeRepository repo,
+});
 
 /// The two tabs as `buildRouter` has them, the list showing [rows] open
 /// items, Peter in Zuhause (shown, his default) and Sommerfest.
@@ -58,6 +63,8 @@ Future<_Shell> _pumpShell(
   double textScale = 1,
   Locale locale = const Locale('de'),
   List<JoinRequest> requests = const [],
+  List<Member>? members,
+  List<HouseholdList> lists = const [],
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -75,6 +82,10 @@ Future<_Shell> _pumpShell(
   );
   addTearDown(session.close);
   final repo = FakeRepository();
+  if (members != null) {
+    repo.members = members;
+  }
+  repo.lists = lists;
   final at = DateTime.utc(2026, 11, 8, 12);
   for (var i = 0; i < rows; i++) {
     repo.rows['$i'] = Item(
@@ -160,11 +171,17 @@ Future<_Shell> _pumpShell(
     ),
   );
   await tester.pumpAndSettle();
-  return (session: session, router: router, popups: popups);
+  return (session: session, router: router, popups: popups, repo: repo);
 }
 
 String _location(_Shell s) =>
     s.router.routerDelegate.currentConfiguration.uri.toString();
+
+/// The partner news text's own height, which the capsule would clip.
+double _textHeight(WidgetTester tester) {
+  final text = tester.renderObject<RenderParagraph>(_key('new-items-subtitle'));
+  return text.getMaxIntrinsicHeight(text.size.width);
+}
 
 Future<void> _openSheet(WidgetTester tester) async {
   await tester.tap(_key('household-chip'));
@@ -324,6 +341,188 @@ void main() {
       ),
     );
     expect(name.didExceedMaxLines, isFalse);
+  });
+
+  group("a partner's new adds beside the chip (job 173)", () {
+    /// Lea's add, newer than what the list showed on open.
+    Future<void> leaAdds(WidgetTester tester, FakeRepository repo) async {
+      final tea = repo.rows['tee'] = Item(
+        listId: repo.firstList,
+        id: 'tee',
+        name: 'Tee',
+        status: ItemStatus.active,
+        createdAt: DateTime.utc(2026, 11, 9),
+        updatedAt: DateTime.utc(2026, 11, 9),
+        addedBy: 'lea',
+      );
+      repo.emitItem!(tea);
+      await tester.pump();
+      await tester.pump();
+    }
+
+    for (final size in const [Size(390, 844), Size(360, 780)]) {
+      testWidgets('show whole below the chip at ${size.width.round()} px', (
+        tester,
+      ) async {
+        final handle = tester.ensureSemantics();
+        final s = await _pumpShell(tester, size: size);
+        await s.session.rename('home', 'Familie Brandt');
+        await tester.pumpAndSettle();
+        await leaAdds(tester, s.repo);
+
+        final line = _key('new-items-subtitle');
+        expect(
+          tester.renderObject<RenderParagraph>(line).didExceedMaxLines,
+          isFalse,
+          reason: 'the whole line shows',
+        );
+        expect(find.bySemanticsLabel('1 neu von Lea'), findsOneWidget);
+        final chipName = tester.renderObject<RenderParagraph>(
+          find.descendant(
+            of: _key('household-chip'),
+            matching: find.text('Familie Brandt'),
+          ),
+        );
+        expect(chipName.didExceedMaxLines, isFalse, reason: 'the chip too');
+        final chip = tester.getRect(_key('household-chip'));
+        final status = tester.getRect(_key('list-status'));
+        final edit = tester.getRect(_key('list-edit'));
+        expect(status.left, chip.left, reason: 'right below the chip');
+        expect(status.top, greaterThanOrEqualTo(chip.bottom));
+        expect(status.overlaps(edit), isFalse);
+        expect(status.right, lessThanOrEqualTo(size.width));
+
+        final order = [
+          for (final node in tester.semantics.simulatedAccessibilityTraversal())
+            node.label,
+        ];
+        expect(
+          order.indexOf('1 neu von Lea'),
+          lessThan(order.indexOf('Tee\nNeu')),
+          reason: 'read before the rows, not after the last one',
+        );
+        await tester.tap(_key('list-status'));
+        await tester.pump();
+        expect(s.repo.sent, isEmpty, reason: 'a tap on it ticks nothing off');
+        expect(tester.takeException(), isNull);
+        handle.dispose();
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump(const Duration(minutes: 5));
+      });
+    }
+
+    testWidgets('a two-word name takes a second line rather than '
+        'ellipsizing at 360 px', (tester) async {
+      final s = await _pumpShell(
+        tester,
+        size: const Size(360, 780),
+        members: const [
+          Member(id: 'peter', displayName: 'Peter'),
+          Member(id: 'lea', displayName: 'Christina Müller-Lüdenscheidt'),
+        ],
+      );
+      await leaAdds(tester, s.repo);
+
+      final line = tester.renderObject<RenderParagraph>(
+        _key('new-items-subtitle'),
+      );
+      expect(line.didExceedMaxLines, isFalse, reason: 'the whole name');
+      expect(
+        _textHeight(tester),
+        lessThanOrEqualTo(
+          tester.getRect(_key('list-status')).height - 2 * HlBorder.width,
+        ),
+        reason: 'both lines inside the capsule',
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(minutes: 5));
+    });
+
+    testWidgets("a long name at large text leaves a store's count and fold "
+        'key clear', (tester) async {
+      const name = 'Maximilian-Alexander von Hohenzollern-Sigmaringen';
+      final s = await _pumpShell(
+        tester,
+        size: const Size(360, 780),
+        textScale: 1.5,
+        members: const [
+          Member(id: 'peter', displayName: 'Peter'),
+          Member(id: 'lea', displayName: name),
+        ],
+      );
+      await leaAdds(tester, s.repo);
+
+      final status = tester.getRect(_key('list-status'));
+      final divider = find.byKey(const ValueKey('store-none'));
+      final fold = tester.getRect(
+        find.descendant(of: divider, matching: find.byIcon(Icons.expand_more)),
+      );
+      final count = tester.getRect(
+        find.descendant(
+          of: divider,
+          matching: find.byWidgetPredicate(
+            (w) =>
+                w is RichText &&
+                RegExp(r'^\d+ Artikel').hasMatch(w.text.toPlainText()),
+          ),
+        ),
+      );
+      // Whichever row passes under it: the capsule ends left of the column
+      // where a store divider has its count and fold key.
+      expect(status.right, lessThanOrEqualTo(fold.left), reason: 'fold key');
+      expect(status.right, lessThanOrEqualTo(count.left), reason: 'count');
+      expect(
+        tester
+            .renderObject<RenderParagraph>(_key('new-items-subtitle'))
+            .didExceedMaxLines,
+        isTrue,
+        reason: 'the long name ellipsizes',
+      );
+      expect(
+        _textHeight(tester),
+        lessThanOrEqualTo(status.height - 2 * HlBorder.width),
+        reason: 'no line cut off by the capsule at large text',
+      );
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(minutes: 5));
+    });
+
+    testWidgets('with several lists, below the tabs', (tester) async {
+      final s = await _pumpShell(
+        tester,
+        lists: const [
+          HouseholdList(id: 'weekly', name: 'Wocheneinkauf', position: 0),
+          HouseholdList(id: 'party', name: 'Sommerfest', position: 1),
+        ],
+      );
+      await leaAdds(tester, s.repo);
+
+      final tabs = tester.getRect(_key('list-tabs'));
+      final status = tester.getRect(_key('list-status'));
+      expect(status.top, greaterThanOrEqualTo(tabs.bottom));
+      expect(find.text('1 neu von Lea'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(minutes: 5));
+    });
+
+    testWidgets('stay in the bar where it has room', (tester) async {
+      final s = await _pumpShell(tester, size: const Size(1366, 1024));
+      await s.session.rename('home', 'Familie Brandt');
+      await tester.pumpAndSettle();
+      await leaAdds(tester, s.repo);
+
+      final chip = tester.getRect(_key('household-chip'));
+      final status = tester.getRect(_key('list-status'));
+      final edit = tester.getRect(_key('list-edit'));
+      expect(status.top, chip.top);
+      expect(status.left, greaterThan(chip.right));
+      expect(status.right, lessThan(edit.left));
+      expect(find.text('1 neu von Lea'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(minutes: 5));
+    });
   });
 
   testWidgets('large text at 358 px fits the bar', (tester) async {

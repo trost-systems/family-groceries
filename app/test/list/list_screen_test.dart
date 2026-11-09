@@ -1457,17 +1457,21 @@ void main() {
       expect(status, findsNothing, reason: 'offline is the indicator’s');
       repo.emitItem!(repo.remoteAdd('Tee'));
       await tester.pump(const Duration(seconds: 4));
+      // The card has folded into the pill.
+      await tester.pump(const Duration(seconds: 1));
       expect(find.descendant(of: status, matching: edit), findsNothing);
+      // With the pill in the bar the whole line has no room beside Anpassen
+      // on a phone: it shows below the bar (job 173).
       expect(
-        tester.getRect(status).right,
-        lessThanOrEqualTo(tester.getRect(edit).left),
-        reason: 'beside Anpassen, before it',
+        tester.getRect(status).overlaps(tester.getRect(edit)),
+        isFalse,
+        reason: 'clear of Anpassen',
       );
       expect(find.descendant(of: header(), matching: pill()), findsNothing);
       expect(
-        tester.getRect(pill()).right,
-        lessThanOrEqualTo(tester.getRect(status).left),
-        reason: 'the pill sits left of the capsule',
+        tester.getRect(pill()).overlaps(tester.getRect(status)),
+        isFalse,
+        reason: 'the pill keeps clear of the capsule',
       );
 
       repo.emitStatus!(ConnectionStatus.online);
