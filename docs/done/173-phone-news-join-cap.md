@@ -65,3 +65,12 @@ vmaint-20261109 (gaps 1 and 2). Reasons: docs/DECISIONS.md, "Job 173".
   docs/NEEDS_PETER.md (job 173, item 4).
 - A copy item: an approval for a requester who reached 10 meanwhile reads as a decline
   (docs/NEEDS_PETER.md, job 173, item 3).
+
+## Post-merge review 0 (docs follow-up, job/173b-news-cover-docs)
+
+The post-merge Opus review (FIX, one must-fix) found that docs/NEEDS_PETER.md (job 173 item 1)
+understated what the phone placement covers: the line stays until each new row has been on
+screen for 3 s, which for an add below the fold means until the user scrolls to it (still
+showing after 60 s in the review's drive), covering the first store divider's badge and name
+and, once scrolled, the start of the top rows. Item 1 and DECISIONS now say so; item 3 also
+notes the oldest builds' `join_household` and the restore wording. Docs only.
