@@ -225,7 +225,8 @@ async function typeInto(/** @type {any} */ field, /** @type {string} */ text) {
 async function signIn(/** @type {any} */ c) {
   const page = c.page;
   for (let attempt = 1;; attempt++) {
-    await page.goto(baseURL);
+    // The sign-in itself: signed out, `/` is the guided start's first screen (job 168b).
+    await page.goto(new URL('/login', baseURL).toString());
     // Builds with Google or Apple keep the email form behind „Weiter mit E-Mail“.
     const withEmail = page.getByRole('button', { name: 'Weiter mit E-Mail' });
     await withEmail.or(page.getByRole('textbox', { name: 'E-Mail' })).waitFor();
@@ -244,7 +245,7 @@ async function signIn(/** @type {any} */ c) {
     if (landed === 'consent') {
       // On a small client the answers sit below the text: wheel down to them.
       const decline = page.getByRole('button', { name: 'Nicht erlauben', exact: true });
-      await page.getByRole('heading', { name: 'Nutzungsdaten' }).waitFor({ timeout: 20_000 });
+      await page.getByRole('heading', { name: 'Nutzungsdaten', exact: true }).waitFor({ timeout: 20_000 });
       if (!(await decline.isVisible())) {
         await page.mouse.move(viewport.width / 2, viewport.height / 2);
         for (let i = 0; i < 10 && !(await decline.isVisible()); i++) {
@@ -260,8 +261,8 @@ async function signIn(/** @type {any} */ c) {
       if (landed === 'consent') landed = null;
     }
     if (landed) {
-      // A returning user has dismissed the explainer card; it would push the list down.
-      const hint = page.getByRole('button', { name: 'Verstanden', exact: true });
+      // A returning user has dismissed the Erste Schritte card; it would push the list down.
+      const hint = page.getByRole('button', { name: 'Erste Schritte ausblenden', exact: true });
       if (landed === 'list' && (await hint.waitFor({ timeout: 5_000 }).then(() => true, () => false))) await hint.click();
       if (c.store) await shopAt(page, c.store);
       return landed;

@@ -87,7 +87,7 @@ test('a cold start without Supabase shows the cached list, queues changes across
   await expect(offlineIndicator(page)).toHaveCount(0, { timeout: 15_000 });
 
   const other = await (await browser.newContext()).newPage();
-  await other.goto('/');
+  await other.goto('/login');
   await openEmailSignIn(other);
   await typeInto(other.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(other.getByRole('textbox', { name: 'Passwort' }), password);

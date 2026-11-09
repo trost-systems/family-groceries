@@ -6,6 +6,7 @@ import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
 import 'package:family_groceries/household/paste_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/onboarding/onboarding_cubit.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/delete_account_dialog.dart';
 import 'package:flutter/material.dart';
@@ -40,7 +41,8 @@ class const WelcomeScreen({super.key}) extends StatelessWidget {
           icon: Icons.add_home_outlined,
           label: l10n.createHousehold,
           hint: l10n.onboardingCreateHint,
-          onTap: () => context.go(_keepNext(context, createHouseholdPath)),
+          // The router opens the guided start's first question.
+          onTap: () => context.read<OnboardingCubit>().start(askUsage: false),
         ),
         const SizedBox(height: 12),
         _Choice(

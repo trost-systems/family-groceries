@@ -18,6 +18,7 @@ import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/list/item_icons_remote.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
+import 'package:family_groceries/onboarding/onboarding_cubit.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_api.dart';
@@ -30,9 +31,11 @@ import 'package:family_groceries/review/store_review.dart';
 import 'package:family_groceries/session/plugin_sign_in.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
+import 'package:family_groceries/settings/access_repository.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:family_groceries/siri/siri_credentials.dart';
+import 'package:family_groceries/tips/hint_host.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
@@ -134,6 +137,7 @@ Future<void> _main(WidgetsBinding Function() binding) async {
       android: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
     ),
   );
+  final onboarding = await OnboardingCubit.load(cache, analytics: analytics);
   final siri = switch (siriChannelFor(
     web: kIsWeb,
     platform: defaultTargetPlatform,
@@ -198,7 +202,14 @@ Future<void> _main(WidgetsBinding Function() binding) async {
       feedback: SupabaseFeedbackRepository(client),
       invites: SupabaseInviteRepository(client),
       pendingInvite: pendingInvite,
+      onboarding: onboarding,
+      onboardingBackend: SupabaseOnboardingBackend(client),
       homeWidgets: homeWidgets,
+      hints: HintHost(
+        assistantConnected: () =>
+            assistantConnected(SupabaseAccessRepository(client)),
+        widgetPlaced: homeWidgets == null ? null : homeWidgetPlaced,
+      ),
       widgetLaunches: widgetLaunchesFor(
         web: kIsWeb,
         platform: defaultTargetPlatform,

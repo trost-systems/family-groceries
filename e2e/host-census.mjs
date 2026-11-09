@@ -31,7 +31,8 @@ for (const name of names.split(',')) {
     globalThis.cspViolations = [];
     document.addEventListener('securitypolicyviolation', (e) => globalThis.cspViolations.push(`${e.violatedDirective} ${e.blockedURI}`));
   });
-  await page.goto(url);
+  // The sign-in itself: signed out, `/` is the guided start's first screen (job 168b).
+  await page.goto(new URL('/login', url).toString());
   await page.locator('flt-semantics-host, flutter-view').first().waitFor({ state: 'attached', timeout: 60_000 });
   // Builds with Google or Apple keep the email form behind „Weiter mit E-Mail“.
   const withEmail = page.getByRole('button', { name: 'Weiter mit E-Mail' });

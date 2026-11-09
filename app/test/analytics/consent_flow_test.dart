@@ -10,6 +10,7 @@ import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_link.dart';
+import 'package:family_groceries/onboarding/onboarding_cubit.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -58,6 +59,7 @@ void main() {
       PendingInvite(cache),
       ListLinks(),
       Popups(),
+      OnboardingCubit(cache),
     );
     addTearDown(router.dispose);
     addTearDown(analytics.close);

@@ -220,24 +220,25 @@ for (const [lang, scheme] of [['de', 'light'], ['en', 'dark']] as const) {
     test.skip(!process.env.SCREENSHOT_DIR, 'only when screenshots are asked for');
     const de = lang === 'de';
     const t = de
-      ? { withEmail: 'Weiter mit E-Mail', email: 'E-Mail', password: 'Passwort', signUp: 'Registrieren', decline: 'Nicht erlauben',
-        create: 'Haushalt erstellen', first: 'Unser Haushalt', holiday: 'Ferienhaus', family: 'Familie Trost', title: 'Deine Haushalte',
+      ? { withEmail: 'Weiter mit E-Mail', email: 'E-Mail', password: 'Passwort', signUp: 'Registrieren', decline: 'Nicht erlauben', later: 'Später',
+        first: 'Unser Haushalt', holiday: 'Ferienhaus', family: 'Familie Trost', title: 'Deine Haushalte',
         newHousehold: 'Neuer Haushalt', more: 'Mehr', items: ['Milch', 'Brot', 'Äpfel'], holidayItems: ['Brennholz'] }
-      : { withEmail: 'Continue with email', email: 'Email', password: 'Password', signUp: 'Sign up', decline: "Don't allow",
-        create: 'Create a household', first: 'Our household', holiday: 'Holiday home', family: 'The Trosts', title: 'Your households',
+      : { withEmail: 'Continue with email', email: 'Email', password: 'Password', signUp: 'Sign up', decline: "Don't allow", later: 'Later',
+        first: 'Our household', holiday: 'Holiday home', family: 'The Trosts', title: 'Your households',
         newHousehold: 'New household', more: 'More', items: ['Milk', 'Bread', 'Apples'], holidayItems: ['Firewood'] };
     const shot = (page: Page, name: string) => screenshot(page, `169b-${lang}-${scheme}-${name}`);
     const page = await newPage(browser, { locale: de ? 'de-DE' : 'en-US', colorScheme: scheme, viewport: phone });
     const email = newEmail(`hh-shots-${lang}`);
-    await page.goto('/');
+    // Signed out, `/` is the guided start (job 168b): the sign-in first, then its steps from Willkommen.
+    await page.goto('/login');
     await openEmailSignIn(page, { button: t.withEmail, field: t.email });
     await typeInto(page.getByRole('textbox', { name: t.email }), email);
     await typeInto(page.getByRole('textbox', { name: t.password }), password);
     await page.getByRole('button', { name: t.signUp }).click();
     await page.getByRole('button', { name: t.decline, exact: true }).click();
-    await page.getByRole('button', { name: new RegExp(`^${t.create}`) }).click();
-    await page.getByRole('button', { name: t.create, exact: true }).click();
-    await expect(page).toHaveURL(/\/welcome\/invite$/);
+    await createHousehold(page, { lang });
+    await page.getByRole('button', { name: t.later, exact: true }).click();
+    await expect(page).toHaveURL(/\/$/);
 
     const api = await apiAs(email);
     const owner = await householdWithInvite(`hh-shots-owner-${lang}`, t.family);

@@ -22,6 +22,7 @@ import 'package:family_groceries/household/removed_notice.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
+import 'package:family_groceries/onboarding/onboarding_cubit.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
@@ -32,10 +33,12 @@ import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/integration_lock.dart';
-import 'package:family_groceries/tips/tips.dart';
+import 'package:family_groceries/tips/hint_host.dart';
+import 'package:family_groceries/tips/usage_log.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
 class const App({
   required final SessionCubit session,
@@ -67,6 +70,13 @@ class const App({
   /// The invite link waiting for an answer, loaded before the first frame.
   required final PendingInvite pendingInvite,
 
+  /// The guided start's draft (job 168b), loaded before the first frame;
+  /// none by default.
+  final OnboardingCubit? onboarding,
+
+  /// Where the guided start makes the household; Supabase by default.
+  final OnboardingBackend? onboardingBackend,
+
   /// The share sheet and clipboard; the plugins by default.
   final InviteSharer? sharer,
 
@@ -91,6 +101,10 @@ class const App({
   /// bundled table by default.
   final ItemIconsCubit? itemIcons,
 
+  /// What the List tab's hints may ask and open beyond the list (job 168b);
+  /// none by default.
+  final HintHost hints = const HintHost(),
+
   /// The theme picked there; the device's setting by default.
   final ThemeMode theme = ThemeMode.system,
 
@@ -112,7 +126,12 @@ class _AppState() extends State<App> {
     widget.pendingInvite,
     _listLinks,
     _popups,
+    _onboarding,
   );
+  late final _onboarding =
+      widget.onboarding ??
+      OnboardingCubit(widget.cache, analytics: widget.analytics);
+  late final StreamSubscription<Session> _sessions;
   late final InviteSharer _sharer = widget.sharer ?? PlatformInviteSharer();
   late final _language = LanguageCubit(widget.cache, widget.language);
   late final _theme = ThemeCubit(widget.cache, widget.theme);
@@ -145,6 +164,8 @@ class _AppState() extends State<App> {
   void initState() {
     super.initState();
     _reviewSessions = widget.reviewPrompt.followLifecycle();
+    _onboarding.sessionChanged(widget.session.state);
+    _sessions = widget.session.stream.listen(_onboarding.sessionChanged);
     _lifecycle = AppLifecycleListener(
       onHide: () => unawaited(widget.analytics.flush()),
       onResume: () {
@@ -185,6 +206,10 @@ class _AppState() extends State<App> {
     _lifecycle.dispose();
     _reviewSessions.dispose();
     unawaited(_widgetLaunches?.cancel());
+    unawaited(_sessions.cancel());
+    if (widget.onboarding == null) {
+      unawaited(_onboarding.close());
+    }
     _router.routerDelegate.removeListener(_onRoute);
     _router.dispose();
     _popups.dispose();
@@ -204,7 +229,13 @@ class _AppState() extends State<App> {
     providers: [
       RepositoryProvider.value(value: widget.social),
       RepositoryProvider.value(value: widget.cache),
-      RepositoryProvider<TipStore>.value(value: widget.cache),
+      RepositoryProvider<HintStore>.value(value: widget.cache),
+      RepositoryProvider.value(value: widget.hints),
+      RepositoryProvider<OnboardingBackend>(
+        create: (_) =>
+            widget.onboardingBackend ??
+            SupabaseOnboardingBackend(Supabase.instance.client),
+      ),
       RepositoryProvider.value(value: widget.account),
       RepositoryProvider.value(value: _screens),
       RepositoryProvider.value(value: _device),
@@ -225,6 +256,7 @@ class _AppState() extends State<App> {
     child: MultiBlocProvider(
       providers: [
         BlocProvider.value(value: widget.session),
+        BlocProvider.value(value: _onboarding),
         BlocProvider.value(value: widget.entitlements),
         BlocProvider.value(value: widget.purchases),
         BlocProvider.value(value: widget.analytics),

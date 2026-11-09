@@ -34,6 +34,7 @@
 - Job 151, Baumarkt: seven DIY categories, a Baumarkt store type, 251 DIY words: [docs/done/151-hardware-store-categories.md](docs/done/151-hardware-store-categories.md)
 - Job 101, hill-climb hc-strictness: a strict TypeScript/JavaScript lint pack (`tool/lint/ts/`, every Deno lint rule and strict compiler option decided, 114 enforced in the lint gate), score 1030 -> 2 over 241 files, reviews 0 and 1: the type check fails closed, Deno is pinned in `.dvmrc`, every in-scope TS file is type-checked: [docs/done/101-hc-strictness.md](docs/done/101-hc-strictness.md)
 - Job 171, a store divider only folds; a hold or right click on a divider does nothing: [docs/done/171-store-header-tap.md](docs/done/171-store-header-tap.md)
+- Job 168c, guided start (#331) rebased onto several households (#327) and landed: [docs/done/168c.md](docs/done/168c.md)
 
 ## Job 1: foundation (2026-10-22)
 
@@ -662,3 +663,7 @@ No query change was needed.
 ## Job 169b: several households, the invite loop, club features (2026-11-08)
 
 Three waves, each its own PR merged on an Opus review PASS and ci-ok: #327 (several households, switcher, default household for Siri, Alexa and AI), #332 (join page, group link with QR, roles, removing members), #333 (several lists, „Ich bringe“, join approval). Privacy text and a draft data processing agreement for clubs: draft #328 for Legal (not merged). Details: [docs/done/169b-households.md](docs/done/169b-households.md).
+
+## Job 168b: guided start before the account, and trigger hints
+
+Peter's picks O2 and H2 (PR #331). Signed out, the app opens on a welcome screen; „Los geht's“ asks usage data, who you shop with (several answers, „Andere“), the household name, the stores and what is needed right now, and only then for the account. The answers stay on the device across reloads and app kills; at the sign-up they become the household (name, stores, `households.kind`, the items sorted on the list). The invite step makes several invites and marks one „beigetreten“ live. Trigger hints with Peter's texts, at most one new hint per 24 h, a flat card, „Alle Tipps unter Mehr → Tipps.“ after X, More → Tipps and the „Erste Schritte“ checklist. Multiple households wait for job 169b (extra answers kept, two hints behind one switch). The privacy text is a separate draft for Legal (#326). Details: [docs/done/168b.md](docs/done/168b.md)

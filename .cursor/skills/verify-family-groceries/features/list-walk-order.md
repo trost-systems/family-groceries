@@ -1,6 +1,6 @@
 # List and walk order
 
-The list is one scroll of sections, one per store in the household's store order, then "Ohne Laden" for items without a store. Each store starts with a divider "<Store>, N Artikel" (the name in a hex badge, a cobalt rule) and a fold caret. Inside a store, small uppercase category dividers follow that store's walk order, and the rows under each follow the household's walk order (`sort_key`). A row is a full-width checkbox for screen readers (unchecked, checked while it leaves; job 57), with no visible check box: a tap ticks it, a hold or a right click opens the edit sheet, a swipe does nothing (job 78; it edited since job 29c and deleted before). Nothing on the list drags (job 78): an item changes store or category in the edit sheet, and the order of stores and categories lives under Liste → Anpassen (`/edit`, a store's details `/edit/<store id>` or `/edit/none`). A tap on a store divider folds it; a hold or right click on any divider does nothing (job 171). Folds and the explainer card are kept per device. A partner's adds and moves show live.
+The list is one scroll of sections, one per store in the household's store order, then "Ohne Laden" for items without a store. Each store starts with a divider "<Store>, N Artikel" (the name in a hex badge, a cobalt rule) and a fold caret. Inside a store, small uppercase category dividers follow that store's walk order, and the rows under each follow the household's walk order (`sort_key`). A row is a full-width checkbox for screen readers (unchecked, checked while it leaves; job 57), with no visible check box: a tap ticks it, a hold or a right click opens the edit sheet, a swipe does nothing (job 78; it edited since job 29c and deleted before). Nothing on the list drags (job 78): an item changes store or category in the edit sheet, and the order of stores and categories lives under Liste → Anpassen (`/edit`, a store's details `/edit/<store id>` or `/edit/none`). A tap on a store divider folds it; a hold or right click on any divider does nothing (job 171). Folds and the dismissed „Erste Schritte“ card are kept per device. A partner's adds and moves show live.
 
 ## Sub-features
 
@@ -12,7 +12,7 @@ The list is one scroll of sections, one per store in the household's store order
 - `lw-no-drag` a hold on a row opens the edit sheet once the hold completes (about 300 ms), while the finger is still down; moving afterwards moves nothing, and no empty store ever shows as a drop target. A finger may drift 18 px and still hold.
 - `lw-divider-tap` a tap on a store divider only folds or unfolds it (`lw-fold`). A hold or a right click on a store divider ("Ohne Laden" included) or a category divider does nothing (job 171; before, it pushed the store's details): no route, no fold, no menu, nothing moves. A screen reader's store divider has a tap action and no long-press action, no up/down moves; a category divider has no action. A store's details open only from Liste → Anpassen.
 - `lw-fold` folds a store with a tap on its divider (the caret turns from ˅ to ›); the fold survives a restart.
-- `lw-hint` shows the explainer card (key `list-hint`, "Tippen hakt ab · Halten bearbeitet", since job 78) until "Verstanden" (`list-hint-dismiss`); it stays gone after a restart.
+- `lw-hint` shows the „Erste Schritte“ card (key `list-hint`, job 168b; "Tippen hakt ab · Halten bearbeitet" is its „Einmal einkaufen“ line) until its X (`list-hint-dismiss`, „Erste Schritte ausblenden“); it stays gone after a restart.
 - `lw-empty` shows the empty state (key `list-empty`) when the list has no items: a honey pointy hex with the cart icon (`list-empty-mark`, job 57) over "Die Liste ist leer. Tippe unten ein, was fehlt."
 - `lw-partner` tints a partner's new row (key `new-<id>`, label ends in "Neu") with "N neu von <name>" under the title (`new-items-subtitle`) and no initial; the tint clears after 3 s on screen.
 - `lw-partner-move` shows a partner's move (edit sheet) on the other client without a reload.
@@ -24,7 +24,7 @@ The list is one scroll of sections, one per store in the household's store order
 - Tap a row to tick it; to undo, open "Zuletzt verwendet" at the bottom of the list and tap the item there.
 - Press and hold a row (or right-click it) to edit it; its store and category chips move it.
 - Tap a store divider to fold or unfold it. Holding or right-clicking a store or category divider does nothing.
-- Tap "Verstanden" on the card above the list.
+- Tap the X („Erste Schritte ausblenden“) on the card above the list.
 
 ## Driving it with fg
 

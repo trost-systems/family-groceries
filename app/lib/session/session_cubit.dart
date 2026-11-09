@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/events.dart';
+import 'package:family_groceries/household/household_kind.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:flutter/foundation.dart';
@@ -26,19 +27,6 @@ enum HouseholdRole() {
   bool get manages => this != member;
 }
 
-/// Who the household shops together: what the user picked when creating
-/// it (job 168), null when not asked. Invites say it in their text.
-enum HouseholdKind() {
-  partner,
-  family,
-  flat,
-  club,
-  solo;
-
-  static HouseholdKind? parse(Object? kind) =>
-      values.where((k) => k.name == kind).firstOrNull;
-}
-
 /// One of the user's households, as `my_households()` answers it.
 @immutable
 class const Household({
@@ -52,6 +40,9 @@ class const Household({
 
   /// Items not ticked yet.
   final int openCount = 0,
+
+  /// Who it shops with (job 168b); null when never answered. Invites say
+  /// it in their text.
   final HouseholdKind? kind,
 
   /// The user's own role in it.
@@ -631,6 +622,7 @@ class SessionCubit(
             isDefault: true,
             memberCount: first.memberCount,
             openCount: first.openCount,
+            kind: first.kind,
           ),
           ...others,
         ],
@@ -666,6 +658,8 @@ class SessionCubit(
   /// Calling again with the same arguments after a failure (a lost answer,
   /// a double tap while one is out) sends the same request id, so the
   /// server answers with the household it made and creates no second one.
+  /// A caller that must survive an app kill passes its own kept
+  /// [requestId] (the guided start's draft, job 168c).
   /// Throws [HouseholdError]: [HouseholdProblem.tooManyHouseholds] over 10
   /// households, [HouseholdProblem.offline] without an answer.
   Future<String> createHousehold(
@@ -673,9 +667,10 @@ class SessionCubit(
     List<String> stores = const [],
     String? kind,
     HouseholdOrigin from = HouseholdOrigin.onboarding,
+    String? requestId,
   }) async {
     final key = jsonEncode([name, stores, kind]);
-    final requestId = switch (_create) {
+    requestId ??= switch (_create) {
       (key: final k, :final requestId) when k == key => requestId,
       _ => const Uuid().v4(),
     };

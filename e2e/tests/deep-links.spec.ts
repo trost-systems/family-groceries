@@ -35,7 +35,11 @@ test('a signed-out link survives onboarding for a new account', async ({ page })
   await signUp(page, newEmail('link-onboarding'), '/more/settings');
   await expect(page).toHaveURL(/\/welcome\?next=(%2F|\/)more(%2F|\/)settings$/);
   await page.getByRole('button', { name: /^Haushalt erstellen/ }).click();
+  // Job 168b: the guided start's questions, then the link instead of the invite step.
   await page.getByRole('button', { name: 'Überspringen', exact: true }).click();
+  await page.getByRole('button', { name: 'Weiter', exact: true }).click();
+  await page.getByRole('button', { name: 'Überspringen', exact: true }).click();
+  await page.getByRole('button', { name: 'Weiter', exact: true }).click();
   await expect(page).toHaveURL(/\/more\/settings$/);
 });
 

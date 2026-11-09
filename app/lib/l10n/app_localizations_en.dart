@@ -628,9 +628,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listHint => 'Tap ticks off · Hold to edit';
 
   @override
-  String get listHintDismiss => 'Got it';
-
-  @override
   String get reorderNeedsConnection => 'Reordering needs a connection.';
 
   @override
@@ -1245,6 +1242,227 @@ class AppLocalizationsEn extends AppLocalizations {
   String get toTheList => 'Go to the list';
 
   @override
+  String get startTagline => 'Your shopping list. Live on every phone.';
+
+  @override
+  String get startWelcome =>
+      'Welcome! In two minutes your shared list is ready, with everything you need right now.';
+
+  @override
+  String get startGo => 'Get started';
+
+  @override
+  String get startLogIn => 'Already have an account? Log in';
+
+  @override
+  String get loginNew => 'New to Hummlist? Get started';
+
+  @override
+  String onboardingProgress(int step, int count) {
+    return 'Step $step of $count';
+  }
+
+  @override
+  String get onboardingBack => 'Back';
+
+  @override
+  String get onboardingNext => 'Continue';
+
+  @override
+  String get onboardingSkip => 'Skip';
+
+  @override
+  String get onboardingExit => 'Leave setup';
+
+  @override
+  String get onboardingExitTitle => 'Leave setup?';
+
+  @override
+  String get onboardingExitBody =>
+      'What you\'ve entered so far stays saved on this device.';
+
+  @override
+  String get onboardingExitLogIn => 'Log in instead';
+
+  @override
+  String get onboardingExitDiscard => 'Discard progress';
+
+  @override
+  String get onboardingExitStay => 'Continue setup';
+
+  @override
+  String get onboardingDiscardTitle => 'Discard progress?';
+
+  @override
+  String onboardingDiscardBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: ' and $count items',
+      one: ' and 1 item',
+      zero: '',
+    );
+    return 'Your answers$_temp0 will be deleted from this device.';
+  }
+
+  @override
+  String get onboardingDiscard => 'Discard';
+
+  @override
+  String get whoTitle => 'Who do you shop with?';
+
+  @override
+  String get whoBody =>
+      'Pick all that apply. This sets the name, the invite and your first tips.';
+
+  @override
+  String get kindPartner => 'Partner';
+
+  @override
+  String get kindFamily => 'Family';
+
+  @override
+  String get kindFlat => 'Flatmates';
+
+  @override
+  String get kindClub => 'Club or team';
+
+  @override
+  String get kindSolo => 'Just me';
+
+  @override
+  String get kindOther => 'Other';
+
+  @override
+  String get whoOtherLabel => 'Who else?';
+
+  @override
+  String get whoOtherHint => 'e.g. neighbours';
+
+  @override
+  String whoSeveral(String first) {
+    return 'We\'ll start with “$first” and keep the others for later.';
+  }
+
+  @override
+  String get nameTitle => 'What should your household be called?';
+
+  @override
+  String get nameBody =>
+      'Everyone you invite sees this name. You can change it later.';
+
+  @override
+  String get householdNameFamily => 'Our family';
+
+  @override
+  String get householdNameFlat => 'Our flat';
+
+  @override
+  String get householdNameClub => 'Our club';
+
+  @override
+  String get householdNameSolo => 'My list';
+
+  @override
+  String get storesStepTitle => 'Where do you shop?';
+
+  @override
+  String get needTitle => 'What do you need right now?';
+
+  @override
+  String get needBody => 'Tap what should go on the list, or type it below.';
+
+  @override
+  String get needStaples =>
+      'Milk,Bread,Eggs,Butter,Cheese,Bananas,Apples,Tomatoes,Pasta,Coffee,Yogurt,Toilet paper';
+
+  @override
+  String get needFieldLabel => 'Anything else?';
+
+  @override
+  String get needFieldHint => 'e.g. 2 cucumbers';
+
+  @override
+  String get needAdd => 'Add';
+
+  @override
+  String needListTitle(int count) {
+    return 'On your list ($count)';
+  }
+
+  @override
+  String needRemove(String name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String needNext(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Continue with $count items',
+      one: 'Continue with 1 item',
+      zero: 'Continue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get accountStepTitle => 'Create your account';
+
+  @override
+  String get accountStepBody =>
+      'Almost done. With an account we save your list, and you can invite someone.';
+
+  @override
+  String get setupBusy => 'Setting up your household …';
+
+  @override
+  String get inviteStepPartner => 'Invite your partner';
+
+  @override
+  String get inviteStepFamily => 'Invite your family';
+
+  @override
+  String get inviteStepFlat => 'Invite your flatmates';
+
+  @override
+  String get inviteStepClub => 'Invite members';
+
+  @override
+  String get inviteStepOther => 'Invite someone';
+
+  @override
+  String get inviteStepBody =>
+      'Share the link with the person you shop with. Each invite is valid for 7 days and for one person.';
+
+  @override
+  String get inviteStepBodyClub =>
+      'Send each member their own link. Everyone sees the same list.';
+
+  @override
+  String inviteStepWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items are already waiting on the list.',
+      one: '1 item is already waiting on the list.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inviteAnother => 'Another invite';
+
+  @override
+  String get inviteJoined => 'Joined';
+
+  @override
+  String inviteJoinedName(String name) {
+    return '$name joined';
+  }
+
+  @override
   String inviteShareTextCodeOnly(String code) {
     return 'Join our Hummlist household. Code: $code';
   }
@@ -1746,7 +1964,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tipEditBody =>
-      'Press and hold an item without dragging it to change its quantity, brand, store and more.';
+      'Press and hold an item to change its quantity, brand, store and more.';
 
   @override
   String get tipAmountsTitle => 'Type the amount too';
@@ -2200,4 +2418,136 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get joinRequestDecline => 'Decline';
+
+  @override
+  String get hintInviteTitle => 'Shop together';
+
+  @override
+  String get hintInviteBody => 'Invite someone to use the list together.';
+
+  @override
+  String get hintInviteAction => 'Invite';
+
+  @override
+  String get hintStoreOrderTitle => 'Sorted like your store';
+
+  @override
+  String get hintStoreOrderBody =>
+      'Here you can sort the categories in the order you walk through the store.';
+
+  @override
+  String get hintAddStoreTitle => 'Another store?';
+
+  @override
+  String get hintAddStoreBody => 'Here you can add more stores you shop at.';
+
+  @override
+  String get hintDictationTitle => 'Just say it';
+
+  @override
+  String get hintDictationBody =>
+      'Tap the mic and say: “milk, two cucumbers and toilet paper”.';
+
+  @override
+  String get hintAssistantTitle => 'Even better with AI & automation';
+
+  @override
+  String get hintAssistantBody =>
+      'Let your AI assistant manage your list, or use the API to build automations.';
+
+  @override
+  String get hintAssistantAction => 'Manage access';
+
+  @override
+  String get hintSiriTitle => 'Add with Siri';
+
+  @override
+  String get hintSiriBody =>
+      'Say “Hey Siri, add to Hummlist” when your hands are full.';
+
+  @override
+  String get hintWidgetTitle => 'Your list on the home screen';
+
+  @override
+  String get hintWidgetBody =>
+      'Add the Hummlist widget by pressing and holding your phone\'s home screen.';
+
+  @override
+  String get hintOwnHouseholdTitle => 'A list of your own';
+
+  @override
+  String get hintOwnHouseholdBody =>
+      'Someone else created this household. Create one of your own too, just for you for example.';
+
+  @override
+  String get hintSecondHouseholdTitle => 'Another list?';
+
+  @override
+  String get hintSecondHouseholdBody =>
+      'For your club or flat: create a second household.';
+
+  @override
+  String get hintAddHouseholdAction => 'Create a household';
+
+  @override
+  String get hintDismissedNotice => 'All tips under More → Tips.';
+
+  @override
+  String get hintsTitle => 'Tips';
+
+  @override
+  String get checklistTitle => 'First steps';
+
+  @override
+  String get checklistDismiss => 'Hide first steps';
+
+  @override
+  String checklistProgress(int done, int total) {
+    return '$done of $total';
+  }
+
+  @override
+  String get checklistStarted => 'List started';
+
+  @override
+  String get checklistJoined => 'Joined the household';
+
+  @override
+  String checklistInvite(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'partner': 'Invite your partner',
+      'family': 'Invite your family',
+      'flat': 'Invite your flatmates',
+      'club': 'Invite members',
+      'other': 'Invite someone',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String checklistInviteBody(String kind) {
+    String _temp0 = intl.Intl.selectLogic(kind, {
+      'club': 'Everyone sees the same list and can add to it.',
+      'other': 'They see your items right away and can add their own.',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get checklistShop => 'Do one shop';
+
+  @override
+  String get checklistAssistant => 'Connect an AI assistant';
+
+  @override
+  String get checklistAssistantBody =>
+      'More → Access. It puts things on your list.';
+
+  @override
+  String get checklistOpen => 'Open';
+
+  @override
+  String checklistDone(String step) {
+    return '$step, done';
+  }
 }

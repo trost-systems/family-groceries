@@ -1,5 +1,6 @@
 // Job 22 (Spec #3): onboarding after sign-in and the analytics consent: create a household (with
 // with the stores picked, job 58, or without) or join one with an invite, invite the partner, manage invites.
+// Since job 168b creating one goes through the guided start's questions (guided-start.spec.ts).
 // The acceptance criteria on the web; the mobile parts are unit-tested (app/test/household,
 // app/test/app/router_test.dart, deep_links_config_test.dart) and on Peter's device checklist.
 import { expect, test, type Browser, type Page } from './fixtures';
@@ -55,9 +56,9 @@ async function userIdOf(email: string): Promise<string> {
 }
 
 async function householdsCreatedBy(email: string) {
-  const { data, error } = await adminClient().from('households').select('id, name').eq('created_by', await userIdOf(email));
+  const { data, error } = await adminClient().from('households').select('id, name, kind').eq('created_by', await userIdOf(email));
   if (error) throw error;
-  return data as { id: string; name: string }[];
+  return data as { id: string; name: string; kind: string | null }[];
 }
 
 /** A plain snackbar's text shows twice (semantics and announcement): the semantics one. */
@@ -65,6 +66,23 @@ const snack = (page: Page, text: string) => page.locator('[id^="flt-semantic-nod
 
 /** The join screen's problem line, which a live region may duplicate. */
 const problem = (page: Page, text: string) => page.getByText(text, { exact: true }).first();
+
+/**
+ * From the welcome screen through the guided start's questions (job 168b), skipping „Mit wem“ and
+ * the stores, with [name] typed (the suggestion without): ends on „Was fehlt gerade?“, its
+ * „Weiter“ not yet tapped.
+ */
+async function answerQuestions(page: Page, name?: string): Promise<void> {
+  await page.getByRole('button', { name: /^Haushalt erstellen/ }).click();
+  await page.getByRole('button', { name: 'Überspringen', exact: true }).click();
+  if (name !== undefined) await typeInto(page.getByRole('textbox', { name: 'Name des Haushalts' }), name);
+  await page.getByRole('button', { name: 'Weiter', exact: true }).click();
+  await page.getByRole('button', { name: 'Überspringen', exact: true }).click();
+  await expect(page).toHaveURL(/\/start\/need$/);
+}
+
+/** The invite step's first button without a „Mit wem“ answer. */
+const inviteSomeone = 'Jemanden einladen';
 
 async function newPage(browser: Browser, options: Parameters<Browser['newContext']>[0] = {}): Promise<Page> {
   return (await browser.newContext(options)).newPage();
@@ -79,9 +97,10 @@ test('AC1-3: sign-in, consent, Step 1, create with picked stores, invite with a 
   await expect(page.getByRole('button', { name: /^Haushalt erstellen/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Einladung annehmen/ })).toBeVisible();
 
-  await createHousehold(page, { stores: ['dm', 'Lidl', 'Wochenmarkt'] });
+  await createHousehold(page, { kinds: ['Partner·in'], stores: ['dm', 'Lidl', 'Wochenmarkt'] });
   const household = firstOf(await householdsCreatedBy(email), 'household');
   expect(household.name).toBe('Unser Haushalt');
+  expect(household.kind, 'the first answer to „Mit wem“').toBe('partner');
   expect(await membersOf(household.id), 'the user is its only member').toEqual([await userIdOf(email)]);
   const { data: role } = await adminClient().from('household_members').select('role').eq('household_id', household.id).single();
   expect(must(role, 'membership').role).toBe('owner');
@@ -90,7 +109,7 @@ test('AC1-3: sign-in, consent, Step 1, create with picked stores, invite with a 
     .toEqual(['dm', 'Lidl', 'Wochenmarkt']);
 
   // AC3 on the web: Chromium here has no Web Share, so the invite shows with its code and link.
-  await page.getByRole('button', { name: 'Partner einladen', exact: true }).click();
+  await page.getByRole('button', { name: 'Partner·in einladen', exact: true }).click();
   await expect(inviteCodeLabel(page).first()).toBeVisible();
   const [code] = await shownInviteCodes(page);
   expect(code).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
@@ -131,11 +150,10 @@ test('AC2: Skip creates a household without stores; categories and the fallback 
   await expect(itemRow(page, 'Milch'), 'the list works without stores').toBeVisible();
 });
 
-test('AC2: a double tap, and a retry after a lost answer, make one household', async ({ page }) => {
+test('AC2: a retry after a lost answer makes one household', async ({ page }) => {
   const email = newEmail('double');
   await signUp(page, email);
-  await page.getByRole('button', { name: /^Haushalt erstellen/ }).click();
-  await expect(page).toHaveURL(/\/welcome\/create$/);
+  await answerQuestions(page);
   // The first answer is lost on the way back: the server created the household, the app saw none.
   let dropped = false;
   await page.route('**/rest/v1/rpc/create_household', async (route) => {
@@ -144,14 +162,14 @@ test('AC2: a double tap, and a retry after a lost answer, make one household', a
     await route.fetch();
     await route.abort('connectionreset');
   });
-  const create = page.getByRole('button', { name: 'Haushalt erstellen', exact: true });
-  await create.dblclick();
+  await page.getByRole('button', { name: 'Weiter', exact: true }).click();
+  await expect(page).toHaveURL(/\/start\/setup$/);
   await expect(problem(page, offline)).toBeVisible();
   expect(dropped).toBe(true);
   expect(await householdsCreatedBy(email), 'the server made it').toHaveLength(1);
   // The retry finds it (already_in_household) and goes on.
-  await create.click();
-  await expect(page).toHaveURL(/\/welcome\/invite$/);
+  await page.getByRole('button', { name: 'Erneut versuchen', exact: true }).click();
+  await expect(page).toHaveURL(/\/start\/invite$/);
   expect(await householdsCreatedBy(email), 'still one').toHaveLength(1);
 });
 
@@ -162,7 +180,7 @@ test('AC5 and AC12: a typed code joins; events once, without names, emails, code
   const ownerEmail = newEmail('ac12-owner');
   await signUp(owner, ownerEmail, '/', { consent: 'accept' });
   await createHousehold(owner, { name: 'Familie Geheim', stores: ['Supermarkt', 'Drogerie', 'Wochenmarkt'] });
-  await owner.getByRole('button', { name: 'Partner einladen', exact: true }).click();
+  await owner.getByRole('button', { name: inviteSomeone, exact: true }).click();
   await expect(inviteCodeLabel(owner).first()).toBeVisible();
   const code = firstOf(await shownInviteCodes(owner), 'invite code');
   await owner.getByRole('button', { name: 'Code kopieren' }).click();
@@ -203,7 +221,7 @@ test('AC12: declined, onboarding works the same and sends nothing', async ({ bro
   const page = await context.newPage();
   await signUp(page, newEmail('declined'));
   await createHousehold(page);
-  await page.getByRole('button', { name: 'Partner einladen', exact: true }).click();
+  await page.getByRole('button', { name: inviteSomeone, exact: true }).click();
   await page.getByRole('button', { name: 'Link kopieren' }).click();
   await skipInvite(page);
   const { code } = await householdWithInvite('declined-other');
@@ -362,24 +380,23 @@ test('AC10: offline, create and join say so, keep what was typed and work on ret
   const page = await newPage(browser);
   const email = newEmail('ac10');
   await signUp(page, email);
-  await page.getByRole('button', { name: /^Haushalt erstellen/ }).click();
-  await typeInto(page.getByRole('textbox', { name: 'Name des Haushalts' }), 'Offline-WG');
+  await answerQuestions(page, 'Offline-WG');
   const cut = await cutOff(page);
-  await page.getByRole('button', { name: 'Haushalt erstellen', exact: true }).click();
+  await page.getByRole('button', { name: 'Weiter', exact: true }).click();
   await expect(problem(page, offline)).toBeVisible();
   expect(await householdsCreatedBy(email)).toHaveLength(0);
   await cut.restore();
   // The retry without typing again: the name was kept.
-  await page.getByRole('button', { name: 'Haushalt erstellen', exact: true }).click();
-  await expect(page).toHaveURL(/\/welcome\/invite$/);
+  await page.getByRole('button', { name: 'Erneut versuchen', exact: true }).click();
+  await expect(page).toHaveURL(/\/start\/invite$/);
   expect((await householdsCreatedBy(email)).map((h) => h.name)).toEqual(['Offline-WG']);
 
   // Inviting offline too.
   const cutAgain = await cutOff(page);
-  await page.getByRole('button', { name: 'Partner einladen', exact: true }).click();
+  await page.getByRole('button', { name: inviteSomeone, exact: true }).click();
   await expect(problem(page, offline)).toBeVisible();
   await cutAgain.restore();
-  await page.getByRole('button', { name: 'Partner einladen', exact: true }).click();
+  await page.getByRole('button', { name: inviteSomeone, exact: true }).click();
   await expect(inviteCodeLabel(page).first()).toBeVisible();
 
   const { code, household } = await householdWithInvite('ac10-other');
@@ -447,7 +464,7 @@ test('two people racing for one code: exactly one joins', async () => {
 
 test('AC11: onboarding, the share text and errors in English', async ({ browser }) => {
   const page = await newPage(browser, { locale: 'en-US', permissions: ['clipboard-read', 'clipboard-write'] });
-  await page.goto('/');
+  await page.goto('/login');
   await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
   await typeInto(page.getByRole('textbox', { name: 'Email' }), newEmail('english'));
   await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
@@ -461,12 +478,15 @@ test('AC11: onboarding, the share text and errors in English', async ({ browser 
   await expect(problem(page, 'This code is invalid or has expired.')).toBeVisible();
   await page.getByRole('button', { name: 'Cancel' }).click();
   await page.getByRole('button', { name: /^Create a household/ }).click();
+  await page.getByRole('button', { name: 'Skip', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Household name' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(page.getByRole('checkbox', { name: 'EDEKA', exact: true }), 'nothing picked').not.toBeChecked();
   await expect(page.getByRole('button', { name: 'Add your own store' })).toBeVisible();
   await expect(page.getByText(/^We use shop names such as dm, Lidl or EDEKA only/)).toBeVisible();
-  await page.getByRole('button', { name: 'Create a household', exact: true }).click();
-  await page.getByRole('button', { name: 'Invite your partner', exact: true }).click();
+  await page.getByRole('button', { name: 'Skip', exact: true }).click();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await page.getByRole('button', { name: 'Invite someone', exact: true }).click();
   await expect(page.getByText(/^valid until /)).toBeVisible();
   await page.getByRole('button', { name: 'Copy link' }).click();
   await expect(snack(page, 'Link copied')).toBeVisible();
@@ -480,14 +500,14 @@ for (const [lang, locale] of [['de', 'de-DE'], ['en', 'en-US']] as const) {
       test.skip(!process.env.SCREENSHOT_DIR, 'only when screenshots are asked for');
       const t = lang === 'de'
         ? { withEmail: 'Weiter mit E-Mail', email: 'E-Mail', password: 'Passwort', signUp: 'Registrieren', decline: 'Nicht erlauben', create: 'Haushalt erstellen',
-          join: 'Einladung annehmen', skip: /^Überspringen/, invite: 'Partner einladen', code: 'Einladungscode', next: 'Weiter',
+          join: 'Einladung annehmen', skip: 'Überspringen', invite: 'Jemanden einladen', code: 'Einladungscode', next: 'Weiter', retry: 'Erneut versuchen',
           later: 'Weiter zur Liste', more: 'Partner einladen', newInvite: 'Neue Einladung' }
         : { withEmail: 'Continue with email', email: 'Email', password: 'Password', signUp: 'Sign up', decline: "Don't allow", create: 'Create a household',
-          join: 'Join with an invite', skip: /^Skip/, invite: 'Invite your partner', code: 'Invite code', next: 'Continue',
+          join: 'Join with an invite', skip: 'Skip', invite: 'Invite someone', code: 'Invite code', next: 'Continue', retry: 'Try again',
           later: 'Go to the list', more: 'Invite your partner', newInvite: 'New invite' };
       const shot = (page: Page, n: string, name: string) => screenshot(page, `job22-${lang}-${size}-${n}-${name}`);
       const page = await newPage(browser, { locale, viewport });
-      await page.goto('/');
+      await page.goto('/login');
       await openEmailSignIn(page, { button: t.withEmail, field: t.email });
       await typeInto(page.getByRole('textbox', { name: t.email }), newEmail(`shots-${lang}`));
       await typeInto(page.getByRole('textbox', { name: t.password }), password);
@@ -498,18 +518,22 @@ for (const [lang, locale] of [['de', 'de-DE'], ['en', 'en-US']] as const) {
       await expect(page.getByRole('button', { name: new RegExp(`^${t.create}`) })).toBeVisible();
       await shot(page, '02', 'step1');
       await page.getByRole('button', { name: new RegExp(`^${t.create}`) }).click();
-      await expect(page.getByRole('button', { name: t.create, exact: true })).toBeVisible();
+      await page.getByRole('button', { name: t.skip, exact: true }).click();
+      await page.getByRole('button', { name: t.next, exact: true }).click();
+      await expect(page).toHaveURL(/\/start\/stores$/);
       await shot(page, '03', 'create-stores');
       await page.getByRole('checkbox', { name: 'REWE', exact: true }).or(page.getByRole('button', { name: 'REWE', exact: true }))
         .click();
       await shot(page, '04', 'create-stores-picked');
+      await page.getByRole('button', { name: t.next, exact: true }).click();
+      await expect(page).toHaveURL(/\/start\/need$/);
       const cut = await cutOff(page);
-      await page.getByRole('button', { name: t.create, exact: true }).click();
-      await expect(page.getByRole('textbox').first()).toBeVisible();
+      await page.getByRole('button', { name: t.next, exact: true }).click();
+      await expect(page.getByRole('button', { name: t.retry, exact: true })).toBeVisible();
       await page.waitForTimeout(500);
       await shot(page, '05', 'create-offline');
       await cut.restore();
-      await page.getByRole('button', { name: t.create, exact: true }).click();
+      await page.getByRole('button', { name: t.retry, exact: true }).click();
       await page.getByRole('button', { name: t.invite, exact: true }).click();
       await expect(inviteCodeLabel(page).first().or(page.getByText(/^Code [A-HJ-NP-Z2-9]{8}$/)).first()).toBeVisible();
       await shot(page, '06', 'invite-web-fallback');

@@ -10,7 +10,7 @@ This directory is the maintained record of what Hummlist does today, one file pe
 - Baseline household „Familie Brandt“: members Mia, Noah and Ida Brandt (`member(inst, 'mia' | 'noah' | 'ida')` in `helpers/lib.mjs`, emails `<handle>.<run>@fg-test.invalid`, passwords only in the run file `~/.cache/verify-hummlist/<prefix>/fg/runs/<run>.json`, mode 600). No stores (since job 64 a household starts without one), and the 11 seeded categories. A recipe that needs stores adds them as the app does, `const mia = member(inst, 'mia'); await (await apiAs(inst, mia)).rpc('add_store', { p_household: mia.householdId, p_name: 'Supermarkt' })`: generic names (Supermarkt, Drogerie, Bäckerei, Wochenmarkt) for any store, dm, Lidl or Edeka only for chain behaviour (walk orders, brand defaults). 13 open items, none tagged to a store: „6× Bananen“, „1 kg Äpfel“, „4× Brötchen“, „2× Vollmilch“, Butter, Nudeln, Reis, Schokolade, Mineralwasser, Apfelsaft, Erbsen, Spülmittel, Zahnpasta. No purchase history, so nothing is due yet.
 - English: `launch.sh --scenario demo-family-en` („Brandt family“, English item names). The app follows the browser locale while its language is „Wie Gerät“; `openApp(inst, { lang: 'en' })` sets `en-US`.
 - Other states (heavy history with due items, many stores, a pending invite, a user without a household): `launch.sh --scenario <name>` with any `test/fixtures/scenarios/` file (`docs/TEST_FIXTURES.md`).
-- A new install is asked the analytics question after sign-in. `signIn` in `helpers/lib.mjs` declines it and dismisses the explainer card („Verstanden“).
+- A new install is asked the analytics question after sign-in. `signIn` in `helpers/lib.mjs` declines it and dismisses the „Erste Schritte“ card („Erste Schritte ausblenden“, job 168b).
 - Never drive an instance this run did not start, another job's stack, or the hosted project.
 
 ## Driving conventions
@@ -51,7 +51,7 @@ Getting started
 
 - [sign-in](./sign-in.md): email and password, sign-up with email confirmation, the sign-in link by email (no code), Google and Apple, sign-out.
 - [privacy-consent](./privacy-consent.md): the analytics question after the first sign-in on a device, its exact text, and changing it later under Mehr → Nutzungsdaten.
-- [onboarding](./onboarding.md): „Willkommen bei Hummlist“, creating a household with the stores you pick or type (or none), joining with a code, the invite step.
+- [onboarding](./onboarding.md): the guided start signed out („Los geht's“, „Mit wem“, name, stores, „Was fehlt gerade?“, the account last, several invites with a live „beigetreten“), kept on the device until the sign-up; „Willkommen bei Hummlist“ and joining with a code.
 - [household-invites](./household-invites.md): inviting a partner by code or link (7 days, single use), joining, revoking, switching households.
 - [lists-and-claims](./lists-and-claims.md): several lists per household (tabs, moving items, the household page's „Listen“) and „Ich bringe das“ claims (job 169b K, L).
 - [app-links](./app-links.md): app.hummlist.com links to the list, the add sheet, a store, More's pages and invites; they open the installed app or the web app and wait through sign-in.

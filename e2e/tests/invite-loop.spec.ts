@@ -356,15 +356,14 @@ test('roles: the owner makes an admin, the admin removes a member, whose open ap
 test('EN, dark: the owner\'s invite sheet with a group link and who joined', async ({ browser }) => {
   const peter = await newPage(browser, { locale: 'en-US', colorScheme: 'dark' });
   const peterEmail = newEmail('loop-en');
-  await peter.goto('/');
+  // Signed out, `/` is the guided start (job 168b): the sign-in first, then its steps from Welcome.
+  await peter.goto('/login');
   await openEmailSignIn(peter, { button: 'Continue with email', field: 'Email' });
   await typeInto(peter.getByRole('textbox', { name: 'Email' }), peterEmail);
   await typeInto(peter.getByRole('textbox', { name: 'Password' }), password);
   await peter.getByRole('button', { name: 'Sign up' }).click();
   await peter.getByRole('button', { name: "Don't allow", exact: true }).click();
-  await peter.getByRole('button', { name: /^Create a household/ }).click();
-  await typeInto(peter.getByRole('textbox', { name: 'Household name' }), 'Green Club');
-  await peter.getByRole('button', { name: 'Create a household', exact: true }).click();
+  await createHousehold(peter, { name: 'Green Club', lang: 'en' });
   await peter.getByRole('button', { name: 'Later', exact: true }).click();
   await expect(peter).toHaveURL(/\/$/);
   await nameUser(peterEmail, 'Peter Trost');

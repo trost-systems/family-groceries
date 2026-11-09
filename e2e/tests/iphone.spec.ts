@@ -94,7 +94,7 @@ test('one tap on the add field opens the sheet with the field focused for the ke
   const email = newEmail('iphone');
   await householdWithItems(email, ['Brot']);
   const loaded = watchBuild(page);
-  await page.goto('/');
+  await page.goto('/login');
   await signIn(page, email);
   expect(await page.evaluate(() => navigator.platform)).toBe('iPhone');
   // Flutter keeps WebKit (Safari, every iOS browser) on the JS build by default (DECISIONS job 28).
@@ -116,7 +116,7 @@ test('one tap on the add field opens the sheet with the field focused for the ke
 test('after a tapped suggestion one tap on the field brings the keyboard back', async ({ page }) => {
   const email = newEmail('iphone-pick');
   await householdWithItems(email, ['Brot']);
-  await page.goto('/');
+  await page.goto('/login');
   await signIn(page, email);
   await tapFieldOnce(page, 'Milch');
 
@@ -140,7 +140,7 @@ test('after a tapped suggestion one tap on the field brings the keyboard back', 
 test('a finger swipe across a row opens nothing and moves nothing; a hold edits; Abbrechen in it closes', async ({ page }) => {
   const email = newEmail('iphone-hold');
   await householdWithItems(email, ['Zahnpasta', 'Brot']);
-  await page.goto('/');
+  await page.goto('/login');
   await signIn(page, email);
   const row = itemRow(page, 'Zahnpasta');
   const before = await boxOf(row);

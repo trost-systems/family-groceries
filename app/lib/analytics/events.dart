@@ -16,6 +16,8 @@ import 'package:family_groceries/household/invite_share.dart'
     show InviteChannel, InviteContext;
 import 'package:family_groceries/session/session_cubit.dart'
     show HouseholdOrigin;
+import 'package:family_groceries/tips/checklist.dart';
+import 'package:family_groceries/tips/hints.dart' show HintId;
 
 /// Where an added item came from, as the app knows it.
 enum AddSource() {
@@ -76,6 +78,7 @@ const categorizedVia = {
 };
 
 const _roles = OneOf({'owner', 'admin', 'member'});
+final _hintIds = OneOf({for (final id in HintId.values) id.wire});
 const _householdSize = IntIn(1, 100);
 
 /// Event name to its allowed properties. An event not in here is refused;
@@ -154,6 +157,37 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
   // Job 155: the app asked the store for its rating prompt (the store may
   // not show it and never says). Nothing else: no gate, no counts.
   'review_prompt_requested': const {},
+  // Job 168b: the guided start's invite step was left, the household made.
+  // What was answered, as counts and the first kind; never names or items.
+  'onboarding_completed': const {
+    'kind': OneOf({
+      'partner',
+      'family',
+      'flat',
+      'club',
+      'solo',
+      'other',
+      'skipped',
+    }),
+    'kind_count': IntIn(0, 6),
+    'item_count': IntIn(0, 500),
+    'store_count': IntIn(0, 50),
+    'invited': IsBool(),
+  },
+  // Job 168b: a List tab hint shown (once per session), hidden with X, or
+  // its button tapped. Only the catalogue id.
+  'hint_shown': {'hint_id': _hintIds},
+  'hint_dismissed': {'hint_id': _hintIds},
+  'hint_acted': {'hint_id': _hintIds},
+  // Job 168b: an item of „Erste Schritte“ done (once per user), and the X
+  // on the card with how many items were open.
+  'checklist_step_done': {
+    'step': OneOf({
+      for (final s in ChecklistStep.values)
+        if (s != ChecklistStep.started) s.wire,
+    }),
+  },
+  'checklist_dismissed': const {'open_steps': IntIn(0, 3)},
   // Job 21: after the server took a note, once per note. Never its text.
   'feedback_submitted': {
     'category': const OneOf({'bug', 'idea', 'other', 'none'}),

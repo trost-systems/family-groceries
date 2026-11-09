@@ -10622,3 +10622,193 @@ no club outreach, research or landing page.
    invite (the review proposed the reverse) because the request's invite can move while
    `claim_invite` holds it: with the invite first, an approval would have to lock the new invite out of
    order. The two-connection tests in `_shared/households_integration_test.ts` fail without it.
+
+## Job 168b: guided start (O2), 2026-11-08
+
+Peter picked O2 with his changes (brief ADDENDUM 1): a welcome screen first, the usage-data
+question, then every question before the account, the sign-in as late as possible, the draft
+kept on the device until then, several invites with a live „beigetreten“. Plan:
+docs/onboarding/PLAN.md, section „Phase 2: what was built“.
+
+1. **The draft is state, the router shows it.** `OnboardingCubit` holds one `OnboardingDraft`
+   (step, kinds, the „Andere“ words, name, stores, items with their future ids, and once created
+   the user and household). `authRedirect` shows the draft's step: screens move on by changing
+   the draft (`at(step)`), never by going to a path, the way `auth-navigation-only-in-router`
+   wants. Signed out it shows the steps up to the account; signed in without a household, past
+   the last question, the setup; in the household an unfinished setup, then the invite step
+   until it is left. A resume after an app kill is the same rule.
+2. **One draft per device, outside `forget()`.** Before sign-in there is no user to file it
+   under, and a signed-out start runs `forget()`. It is `onboarding.draft` in `DeviceCache`, one
+   JSON value. A draft that cannot be read (a newer build, a cut-off write) is no draft: the
+   guided start begins again rather than crash.
+3. **The setup is idempotent.** `create_household` answers a second call with the household
+   there is; the kind is set only while unset; items go through `put_item` with the ids the
+   draft gave them, so a retry or a crash in between adds each once. The draft stores the
+   household id right after the create, so a restart continues with the kind and items.
+4. **Signing in to an existing account.** Whoever signs in with a household already (the X's
+   „Stattdessen anmelden“, or the account step with an existing account) gets the draft's items
+   on that list; its name, stores and kind are not applied to a household someone set up
+   before, and there is no invite step. Joining by invite with a draft under way does the same
+   in the joined household.
+5. **Multi-select „Mit wem“ before multiple households.** Job 169b (several households) has
+   not landed. The first pick becomes the household; the others are kept per user
+   (`onboarding.later.<user>` in `DeviceCache`) and the step says „Die anderen merken wir uns
+   für später.“ When 169b lands, the `second-household` hint and its create flow can offer them
+   (the hint's `HintHost.addHousehold` switch, hints item 8).
+6. **`households.kind`** (partner, family, flat, club, solo, other; nullable): the column job
+   169's plan shares, with `other` added for „Andere“ (the words stay on the device and only
+   suggest the name). Members may update it like the name (column grant), so the app sets it
+   with a plain update after the create: no new RPC signature, old apps unaffected. Job 169b
+   adds the same column in its wave 1, so the migration is written to land in either order
+   (`add column if not exists`, one named check `households_kind_check` with every kind; asked on
+   BOARD 15:07 to write theirs alike), and a kind the server refuses does not stop the setup.
+7. **„Nur ich“ alone skips the invite step**; any other answer, or none, shows it.
+8. **Several invites at once, live.** The invite step makes one invite per tap (each a 7-day,
+   one-person invite as before) and subscribes to realtime updates of its household's
+   `invites` (published in this job's migration; RLS `invites_select` limits it to members). An
+   update or a (re)subscription reads which of its invites were accepted and the joiner's
+   display name. Group links (one link, many joins) are job 169's.
+9. **The usage-data question before the account.** The same widget and words as the consent
+   screen (`ConsentQuestion`). The answer is stored at once; the server learns it at the
+   sign-in (`_syncConsent` needs a user), and `first_open` now goes at the sign-in too when the
+   yes came before it (`Analytics._sendFirstOpen`, called from `setUser`; not queued behind the
+   SDK's set-ups, which hung widget tests and adds nothing: `decide` sends it once the SDK runs).
+   Events need a user, so the guided start's screens send nothing before the account;
+   `onboarding_completed` (counts and the first kind) goes when the invite step is left.
+10. **Signed out, `/` is the welcome screen** („Los geht's“, „Schon ein Konto? Anmelden“). The
+    sign-in stays first for invite links, `next` links (MCP consent, app links), after a
+    sign-out and after an account deletion (its notice is on the sign-in). The sign-in got
+    „Neu bei Hummlist? Los geht's“ back to the guided start (not with an invite or a link). On the
+    web the sign-in now returns to `/login` after a provider (not to `/`, which is the welcome
+    screen now): a cancelled or failed provider sign-in shows „Anmeldung abgebrochen“ there as
+    before. The account step returns to `/`, where the router resumes the draft's step.
+11. **The X on every step** opens „Einrichtung verlassen?“: signed out „Stattdessen anmelden“
+    (the draft stays and resumes later), signed in „Abmelden“, and „Fortschritt verwerfen“,
+    which asks again („Deine Antworten und N Artikel werden von diesem Gerät gelöscht.“).
+12. **Removed:** the create screen and the invite screen of job 22 (`/welcome/create`,
+    `/welcome/invite`); `/welcome` (signed in without a household: create or join) stays and its
+    „Haushalt erstellen“ starts the guided start at „Mit wem“.
+13. **Not built (Peter):** importing lists from other apps (a later job), the referral question
+    (until Legal), the activation query `household_activated` (needs the events in production
+    first; the PLAN keeps its definition).
+14. **`welcome-mock.png` was not on the Hetzner runner** (asked on BOARD at 13:42). The welcome
+    screen follows the brief's words: hex mark and wordmark (`BrandBlock`), tagline, welcome line,
+    „Los geht's“ as the filled button, „Schon ein Konto? Anmelden“ as a text button, the legal
+    links at the foot like the sign-in.
+
+## Job 168b: hints, 2026-11-08
+
+Peter's H2 trigger hints and the „Erste Schritte“ checklist (docs/onboarding/PLAN.md, „Contextual
+hints“), replacing job 80's fixed tip queue and the gesture card.
+
+1. **One pure policy, one log.** `nextHint(registry, log, now, context)` in
+   `app/lib/tips/hints.dart` applies every rule; `UsageLog` (`usage_log.dart`) is the device's
+   memory per user under `hints.<user>`, outside `forget()`'s prefixes like job 80's
+   `tips.<user>`. Job 80's dismissed ids are read once into the log (`DeviceCache.hintLog`), so a
+   tip hidden then stays hidden. A new hint is a `HintId`, two `hint…` ARB strings and a
+   registry entry.
+2. **Signals the app already sees.** `ListCubit.activity` grew `OwnItemAdded(source,
+   withAmount)`, `ItemEdited` and `CategoriesReordered`; trips, a store in the catalog, a second
+   member and the owner role come from the list's state. Two probes run at most once per start,
+   only while a hint or the club checklist waits for them: the access repository (an OAuth
+   grant, an MCP token or an API key; Siri's credential does not count, a Shortcut's token
+   does) and `HomeWidget.getInstalledWidgets` (the plugin's own native code, nothing new).
+   Siri adds and a second household are not visible: `siri` and `second-household` retire only on
+   X, their button or three showings.
+3. **„Retired by use“ means saved, not opened.** The edit hint retires on a saved edit, not on
+   opening the sheet: the list view does not report sheet opens and a saved edit is the use the
+   hint is about.
+4. **One slot per session.** A session that showed the checklist shows no hint, also after its
+   X or after its last item is done: no card follows another (job 80's rule). A „session“ is the
+   List tab's `HintsCubit`, one per app start and household.
+5. **The quiet start is 10 s from the List tab's first build**, and a hint needs the List tab on
+   screen (`TickerMode`, the route current), no add sheet, no popup on the root navigator
+   (`Popups`) and no keyboard inset.
+6. **The checklist takes the gesture card's flag** (`ListPrefs.hintDismissed`, per household and
+   device) and its keys (`list-hint`, `list-hint-dismiss`), so fg recipes keep working; e2e and
+   the verify helpers click „Erste Schritte ausblenden“ instead of „Verstanden“. Its steps are
+   per user (a log signal), so a second household's checklist shows a shop already done.
+   `checklist_step_done` goes once per user and step.
+7. **Club checklist from day one, on every platform** (Q-O5's default): „KI-Assistenten
+   verbinden“ opens Zugänge. `ai-assistant` shows for a club on any platform, otherwise after 7
+   active days on the web or a computer (the brief's reading of the plan's two lines).
+8. **Second household: one capability, flipped in `main.dart`.** `HintHost.addHousehold` is null
+   until job 169b; `canAddHousehold` is its presence, so a hint whose button cannot work never
+   shows (nor on More → Tipps). 169b sets `addHousehold: (context) =>
+   context.go(onboardingWhoPath)` in `main.dart` and adds the signal for a second household.
+9. **Flat surfaces.** `StickerDepth.flat` (the 2 px contour, no shadow) for the hint card, the
+   callout and the checklist: they are not pressed as a whole. The callout is a `CalloutBorder`
+   with its tip under „Anpassen“ or above the microphone; no hint text sits in a hex pill or
+   badge.
+10. **Texts.** Peter's sentences verbatim; titles and the dictation and Siri texts from the
+    phase 1 prototype. `tipEditBody` changed to Peter's, the other job 80 keys stay.
+    `listHintDismiss` („Verstanden“) is gone with the gesture card.
+11. **`siri` only with native Siri.** Its text names a native App Shortcut phrase („Hey Siri,
+    füge etwas zu Hummlist hinzu“, `AppShortcuts.xcstrings`), which works only once the
+    `native-siri` hold is released (`NATIVE_SIRI_LIVE`); before that the hint is offered on no
+    platform, the list and More → Tipps included.
+12. **No checklist on an empty list.** The empty list's own text says what to do, and with main's
+    larger empty state (job 154c) the card pushed it under the add field at 150 % text on a small
+    phone. The card shows once an item is open (the guided start's items count).
+
+## Job 168c: guided start landed after several households, 2026-11-08
+
+#331 (job 168b) was built before #327 (job 169b W1) merged and conflicted with it. Rebased onto
+main 6d2a193e; both features stay.
+
+1. **The switcher's „Neuer Haushalt“ keeps W1's create step and the old Step 3.** 168b removed
+   `CreateHouseholdScreen` and `InvitePartnerScreen` because the guided start replaces them in
+   onboarding; W1 reuses both for one more household. They stay, reached only from the switcher:
+   `/households/new`, then its invite step at `/households/new/invite` (was `/welcome/invite`;
+   `/welcome` is the screen for someone without a household). The guided start's invite step
+   reads the draft (kind, items), which a further household does not have. Folding the two
+   invite steps into one is later work, not this merge.
+2. **168b's migration is renamed to sort after W1's** (`20261108204546_household_kind_invite_realtime.sql`).
+   The schema check refuses a new migration older than main's newest, and production already ran
+   W1's, which adds `households.kind` without „other“. 168b's migration finds the column, widens
+   the check to include `other`, and adds `invites` to the realtime publication only when it is
+   not there yet, so every statement can run again.
+3. **`Household` carries both:** W1's `my_households()` row (default, members, open items) and
+   168b's `kind`, which `my_households()` already returns; the device cache stores it too.
+4. **The welcome screen matches Peter's mock** (`jobs/168c-land-onboarding/welcome-mock.png`):
+   mark, „Hummlist“, tagline, welcome line, „Los geht's“, „Schon ein Konto? Anmelden“, in that
+   order. The mock draws the sign-in as a box; it stays a text button, as every secondary action
+   in the app is. No change.
+5. **The `own-household` and `second-household` hints stay hidden** (`HintHost.addHousehold`
+   unset), as 168b shipped them; the extra „Mit wem“ answers stay stored for later. Turning
+   them on is a separate change now that W1 can create a second household.
+6. **Rebased a second time onto W2 (#332, d2e5f675)**, which merged while #331 waited for the
+   merge lock. One `HouseholdKind`: W2 had added its own enum in `session_cubit.dart` with the
+   same wire values but no `other`; 168b's `household/household_kind.dart` (with `other`) stays
+   the only one, and W2's share text already falls back to its `other` wording.
+7. **„Einladung einfügen“ also sits on the start screen**, below „Schon ein Konto? Anmelden“.
+   W2 put it on the screens a signed-out user saw first (the sign-in and „Willkommen“) and wrote
+   that 168's new welcome screen should place it. Without it, someone who copied a join link
+   before installing would meet only „Los geht's“, which makes a household of their own. The
+   mock's two actions stay the prominent ones; the paste line is a text button under them.
+8. **The sign-in footer holds both:** „Neu bei Hummlist? Los geht's“ (168b, without an invite or
+   a link) and W2's „Einladung einfügen“ or its waiting line. A provider sign-in returns to
+   `/login` without an invite (168b) and to `/?invite=<code>` with one (W2).
+9. **Rebased a third time onto W3 (#333, ea85756d)**, merged while review 2 ran. W3's join
+   request wait (`/welcome/waiting`) stays; W3's `/welcome/create` and `/welcome/invite` do not
+   come back (the guided start and the switcher's `/households/new` replace them).
+10. **A guided-start draft leads a waiting join request in the router.** Without a household,
+    the draft rules come before W3's wait rules. Otherwise the wait screen's „Eigenen Haushalt
+    anlegen“ could not start the guided start: the router would send the new draft back to the
+    wait. That button now starts the draft from „Mit wem“ and leaves the join screen's address
+    for the start screen, where the router resumes the draft. Someone with a draft already under
+    way who then asks to join a household with approval goes on with the draft; the request
+    stays and its decision still arrives (W3's notices).
+11. **A draft from the wait screen stays a household of its own** (review 3). Without that, an
+    approval during its questions switched the user into the club, and the setup put the typed
+    items on the club's shared list and made no household. The draft now records whose own
+    household it is (`ownHouseholdFor`, the user who tapped the button): after an approval its
+    questions go on, and the setup creates a new household beside the joined one (W1 allows
+    several). Review 4: the rule that keeps the questions going covers only the steps before the
+    account step, and only that user. Someone else signing in at the account step, and every
+    draft started elsewhere, keep 168b's rule (an existing household gets the items). After an
+    approval first, the joined household stays the default for Siri and AI (W1: the first
+    membership); the user can change it in the switcher. Each new draft also keeps a create request id that the
+    setup passes to `create_household`, so a setup run again after an app kill gets the household
+    the first run made instead of a second one. Tests: `join_approval_test.dart`, "approved during
+    that guided start" and "signed in again at its account step" (same user, someone else).

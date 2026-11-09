@@ -277,14 +277,13 @@ test.describe('in English', () => {
     const context = await browser.newContext({ viewport: phone, locale: 'en-US' });
     const page = await context.newPage();
     const email = newEmail('feedback-en');
-    await page.goto('/');
+    await page.goto('/login');
     await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
     await typeInto(page.getByRole('textbox', { name: 'Email' }), email);
     await typeInto(page.getByRole('textbox', { name: 'Password' }), 'test-password-123');
     await page.getByRole('button', { name: 'Sign up' }).click();
     await page.getByRole('button', { name: "Don't allow", exact: true }).click();
-    await page.getByRole('button', { name: /^Create a household/ }).click();
-    await page.getByRole('button', { name: 'Create a household', exact: true }).click();
+    await createHousehold(page, { lang: 'en' });
     await page.getByRole('button', { name: 'Later', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeFocused();
 

@@ -2,9 +2,13 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { boxOf, itemRow, openEdit, openTab, pickInSheet, reveal, saveEdit } from './helpers';
 
-/** The list's group headings, top to bottom. */
-export function groupHeadings(page: Page): Promise<string[]> {
-  return page.getByRole('heading', { level: 2 }).allTextContents();
+/**
+ * The list's group headings, top to bottom. The Erste Schritte card (job 168b), the list's first
+ * entry for a new household, has a heading of the same level ("Erste Schritte 1 von 3"): not a group.
+ */
+export async function groupHeadings(page: Page): Promise<string[]> {
+  const headings = await page.getByRole('heading', { level: 2 }).allTextContents();
+  return headings.filter((h) => !h.startsWith('Erste Schritte'));
 }
 
 /** The heading of the group an item row sits in: the nearest heading above it. */

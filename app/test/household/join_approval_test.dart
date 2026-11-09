@@ -1,5 +1,7 @@
 import 'package:family_groceries/app/router.dart';
+import 'package:family_groceries/household/household_kind.dart';
 import 'package:family_groceries/household/invite_repository.dart';
+import 'package:family_groceries/onboarding/draft.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -57,9 +59,8 @@ void main() {
       expect(_location(o), '/');
     });
 
-    testWidgets('without a household: wait, or create one instead', (
-      tester,
-    ) async {
+    testWidgets('without a household: wait, or create one instead through '
+        'the guided start', (tester) async {
       final o = await pumpOnboarding(
         tester,
         location: '/join/ABCD2345',
@@ -70,8 +71,71 @@ void main() {
       expect(find.text(_sent), findsOneWidget);
       expect(find.text('Eigenen Haushalt anlegen'), findsOneWidget);
       await tapKey(tester, 'join-request-go-on');
-      expect(_location(o), createHouseholdPath);
+      expect(_location(o), '/start/who');
+      expect(find.text('Mit wem kaufst du ein?'), findsOneWidget);
     });
+
+    testWidgets('approved during that guided start: its questions go on, '
+        'and it makes a household of its own beside the joined one', (
+      tester,
+    ) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/join/ABCD2345',
+        invites: _sommerfest(),
+      );
+      o.session.requestNext = _verein;
+      await tapKey(tester, 'join-confirm');
+      await tapKey(tester, 'join-request-go-on');
+      expect(_location(o), '/start/who');
+      o.session.emit(const InHousehold('peter', _verein, [_verein]));
+      await tester.pumpAndSettle();
+      expect(_location(o), '/start/who', reason: 'the questions go on');
+      await tapKey(tester, 'onboarding-kind-family');
+      await tapKey(tester, 'onboarding-next');
+      await tapKey(tester, 'onboarding-next');
+      await tapKey(tester, 'onboarding-skip');
+      await tapKey(tester, 'onboarding-staple-Milch');
+      await tapKey(tester, 'onboarding-next');
+      expect(o.session.creates, [('Unsere Familie', '')]);
+      final own = (o.session.state as InHousehold).household.id;
+      expect(own, isNot('verein'));
+      expect(o.backend.items['verein'], isNull, reason: 'the club list');
+      expect(o.backend.items[own]?.map((i) => i.text), ['Milch']);
+      expect(_location(o), '/start/invite');
+    });
+
+    for (final (who, own) in [('peter', true), ('lea', false)]) {
+      testWidgets('signed in again at its account step as '
+          '${own ? 'the same user' : 'someone else'}: '
+          '${own ? 'a household of its own' : 'the items on theirs'}', (
+        tester,
+      ) async {
+        final o = await pumpOnboarding(
+          tester,
+          location: '/start/account',
+          session: const InHousehold('peter', _verein, [_verein]),
+          draft: OnboardingDraft(
+            step: OnboardingStep.account,
+            kinds: const [HouseholdKind.family],
+            items: const [DraftItem(id: 'i1', text: 'Milch')],
+            ownHouseholdFor: who,
+            requestId: 'r-1',
+          ),
+        );
+        if (own) {
+          expect(o.session.creates, [('Unsere Familie', '')]);
+          final mine = (o.session.state as InHousehold).household.id;
+          expect(o.backend.items[mine]?.map((i) => i.text), ['Milch']);
+          expect(o.backend.items['verein'], isNull);
+          expect(_location(o), '/start/invite');
+        } else {
+          expect(o.session.creates, isEmpty);
+          expect(o.backend.items['verein']?.map((i) => i.text), ['Milch']);
+          expect(_location(o), '/');
+        }
+      });
+    }
 
     testWidgets('after a restart Step 1 is the wait', (tester) async {
       final o = await pumpOnboarding(

@@ -17,7 +17,6 @@ class const AnalyticsConsentScreen({super.key}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     return Scaffold(
       // A title, like every other page: screen readers (and the web engine's
       // focus on a new page) start on it, not on the sign-out button.
@@ -41,87 +40,109 @@ class const AnalyticsConsentScreen({super.key}) extends StatelessWidget {
             key: const ValueKey('analytics-consent'),
             padding: const EdgeInsets.all(24),
             shrinkWrap: true,
-            children: [
-              Icon(
-                Icons.query_stats_outlined,
-                size: 48,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.analyticsConsentTitle,
-                style: theme.textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(text: '${l10n.analyticsConsentBody} '),
-                    WidgetSpan(
-                      alignment: PlaceholderAlignment.baseline,
-                      baseline: TextBaseline.alphabetic,
-                      child: LegalLink(
-                        key: const ValueKey('analytics-consent-privacy'),
-                        url: privacyPolicyUrl(
-                          Localizations.localeOf(context).languageCode,
-                        ),
-                        builder: (context, open) => GestureDetector(
-                          onTap: open,
-                          child: Text(
-                            l10n.analyticsConsentPrivacyLink,
-                            style: TextStyle(
-                              color: theme.colorScheme.primary,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const TextSpan(text: '.'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Builder(
-                builder: (context) {
-                  final decline = FilledButton.tonal(
-                    key: const ValueKey('analytics-consent-decline'),
-                    onPressed: () => unawaited(
-                      context.read<Analytics>().decide(granted: false),
-                    ),
-                    child: Text(l10n.analyticsDecline),
-                  );
-                  final accept = FilledButton.tonal(
-                    key: const ValueKey('analytics-consent-accept'),
-                    onPressed: () => unawaited(
-                      context.read<Analytics>().decide(granted: true),
-                    ),
-                    child: Text(l10n.analyticsAccept),
-                  );
-                  if (MediaQuery.sizeOf(context).width < 400) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        decline,
-                        const SizedBox(height: HlSpace.s3),
-                        accept,
-                      ],
-                    );
-                  }
-                  return Row(
-                    children: [
-                      Expanded(child: decline),
-                      const SizedBox(width: HlSpace.s3),
-                      Expanded(child: accept),
-                    ],
-                  );
-                },
-              ),
-            ],
+            children: const [ConsentQuestion()],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The question itself, the same words on the consent screen and as the
+/// guided start's first step (job 168b): icon, title, text with the privacy
+/// link, and both answers, equally prominent.
+class const ConsentQuestion({super.key}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Icon(
+          Icons.query_stats_outlined,
+          size: 48,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(height: 16),
+        // Own nodes: one list item on its own, the web merged the title and
+        // the text into one block that screen readers read at once.
+        Semantics(
+          container: true,
+          header: true,
+          child: Text(
+            l10n.analyticsConsentTitle,
+            style: theme.textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Semantics(
+          container: true,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: '${l10n.analyticsConsentBody} '),
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.baseline,
+                  baseline: TextBaseline.alphabetic,
+                  child: LegalLink(
+                    key: const ValueKey('analytics-consent-privacy'),
+                    url: privacyPolicyUrl(
+                      Localizations.localeOf(context).languageCode,
+                    ),
+                    builder: (context, open) => GestureDetector(
+                      onTap: open,
+                      child: Text(
+                        l10n.analyticsConsentPrivacyLink,
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const TextSpan(text: '.'),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Builder(
+          builder: (context) {
+            final decline = FilledButton.tonal(
+              key: const ValueKey('analytics-consent-decline'),
+              onPressed: () =>
+                  unawaited(context.read<Analytics>().decide(granted: false)),
+              child: Text(l10n.analyticsDecline),
+            );
+            final accept = FilledButton.tonal(
+              key: const ValueKey('analytics-consent-accept'),
+              onPressed: () =>
+                  unawaited(context.read<Analytics>().decide(granted: true)),
+              child: Text(l10n.analyticsAccept),
+            );
+            if (MediaQuery.sizeOf(context).width < 400) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  decline,
+                  const SizedBox(height: HlSpace.s3),
+                  accept,
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: decline),
+                const SizedBox(width: HlSpace.s3),
+                Expanded(child: accept),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 }

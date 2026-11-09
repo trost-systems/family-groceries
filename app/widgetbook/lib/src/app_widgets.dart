@@ -1,16 +1,19 @@
 import 'dart:async';
 
 import 'package:family_groceries/design/tokens.g.dart';
+import 'package:family_groceries/household/household_kind.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/foldout_chips.dart';
 import 'package:family_groceries/list/list_view/dividers.dart';
-import 'package:family_groceries/list/list_view/explainer.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
 import 'package:family_groceries/list/store_name_field.dart';
+import 'package:family_groceries/tips/checklist.dart';
+import 'package:family_groceries/tips/hint_views.dart';
+import 'package:family_groceries/tips/hints.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:hummlist_widgetbook/src/fixtures.dart' as fixtures;
@@ -34,10 +37,49 @@ final appComponents = [
       ),
     ),
   ]),
-  component(_path, 'ExplainerCard', [
+  component(_path, 'HintCard', [
     plain(
-      'Hinweis',
-      (context) => SizedBox(width: 390, child: ExplainerCard(onDismiss: () {})),
+      'Tipp',
+      (context) => SizedBox(
+        width: 390,
+        child: HintCard(
+          hint: hints.firstWhere((h) => h.id == HintId.editLongPress),
+          onAct: () {},
+          onDismiss: () {},
+        ),
+      ),
+    ),
+    plain(
+      'Mit Knopf',
+      (context) => SizedBox(
+        width: 390,
+        child: HintCard(
+          hint: hints.firstWhere((h) => h.id == HintId.aiAssistant),
+          onAct: () {},
+          onDismiss: () {},
+        ),
+      ),
+    ),
+  ]),
+  component(_path, 'ChecklistCard', [
+    plain(
+      'Verein',
+      (context) => SizedBox(
+        width: 390,
+        child: ChecklistCard(
+          checklist: const Checklist(
+            [
+              (step: ChecklistStep.started, done: true),
+              (step: ChecklistStep.invite, done: true),
+              (step: ChecklistStep.firstShop, done: false),
+              (step: ChecklistStep.assistant, done: false),
+            ],
+            kind: HouseholdKind.club,
+            joined: false,
+          ),
+          onDismiss: () {},
+        ),
+      ),
     ),
   ]),
   component(_path, 'FoldoutChips', [

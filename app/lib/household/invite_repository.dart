@@ -248,6 +248,15 @@ abstract interface class InviteRepository() {
     String householdId,
     void Function() onChange,
   );
+
+  /// Which of the invites [ids] were accepted, and the display name of who
+  /// did (empty when they have none).
+  Future<Map<String, String>> accepted(List<String> ids);
+
+  /// Calls [onChange] whenever an invite of [householdId] changes (one is
+  /// accepted), and once subscribed, so a change before then counts too.
+  /// Returns the unsubscribe.
+  Future<void> Function() watch(String householdId, void Function() onChange);
 }
 
 class SupabaseInviteRepository(final SupabaseClient _client)
@@ -459,6 +468,60 @@ class SupabaseInviteRepository(final SupabaseClient _client)
         callback: (_) => onChange(),
       )
       ..subscribe();
+    return () async {
+      await _client.removeChannel(channel);
+    };
+  }
+
+  @override
+  Future<Map<String, String>> accepted(List<String> ids) =>
+      householdCall(() async {
+        if (ids.isEmpty) {
+          return const {};
+        }
+        final rows = await _client.rest
+            .from('invites')
+            .select('id, used_by')
+            .inFilter('id', ids)
+            .not('used_at', 'is', null);
+        final users = [
+          ...rows.map<Object?>((row) => row['used_by']).whereType<String>(),
+        ];
+        final names = users.isEmpty
+            ? const <String, String>{}
+            : {
+                for (final row
+                    in await _client.rest
+                        .from('profiles')
+                        .select('id, display_name')
+                        .inFilter('id', users))
+                  row['id'] as String: row['display_name'] as String? ?? '',
+              };
+        return {
+          for (final row in rows)
+            row['id'] as String: names[row['used_by']] ?? '',
+        };
+      });
+
+  @override
+  Future<void> Function() watch(String householdId, void Function() onChange) {
+    final channel = _client.channel('invites:$householdId')
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: 'invites',
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'household_id',
+          value: householdId,
+        ),
+        callback: (_) => onChange(),
+      )
+      ..subscribe((status, _) {
+        if (status == RealtimeSubscribeStatus.subscribed) {
+          onChange();
+        }
+      });
     return () async {
       await _client.removeChannel(channel);
     };

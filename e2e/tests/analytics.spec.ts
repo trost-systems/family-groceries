@@ -58,7 +58,7 @@ async function wheelIntoView(page: Page, target: Locator): Promise<void> {
 async function analyticsSwitch(page: Page) {
   await openMore(page, 'Nutzungsdaten');
   await expect(page).toHaveURL(/\/more\/usage-data$/);
-  await expect(page.getByRole('heading', { name: 'Nutzungsdaten' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Nutzungsdaten', exact: true })).toBeVisible();
   const toggle = page.getByRole('switch', { name: /^Nutzungsdaten und Fehlerberichte senden/ })
     .or(page.getByRole('checkbox', { name: /^Nutzungsdaten und Fehlerberichte senden/ }));
   await wheelIntoView(page, toggle);
@@ -94,6 +94,8 @@ const allowedKeys = new Set([
   '$viewport_width', '$timezone',
   'source', 'actor_role', 'household_size', 'default_stores', 'store_count', 'method', 'channel', 'context', 'scope',
   'via', 'category', 'entry_point', 'screen', 'contact_ok',
+  // The guided start's onboarding_completed and the hints' events (job 168b).
+  'kind', 'kind_count', 'item_count', 'invited', 'hint_id', 'step', 'open_steps',
 ]);
 
 function expectAllowedKeys(collector: Collector) {
@@ -141,7 +143,7 @@ test('sign-in, then consent, then onboarding; declining sends nothing, ever', as
   const context = await browser.newContext();
   const collector = await fakeCollector(context);
   const page = await context.newPage();
-  await page.goto('/');
+  await page.goto('/login');
   await expect(page.getByRole('button', { name: 'Weiter mit E-Mail' })).toBeVisible();
   expect(await storedInstallId(page), 'no install id at the login').toBeNull();
   await openEmailSignIn(page);
@@ -280,7 +282,7 @@ test('in English: the consent text links the English policy; the switch under Mo
   const context = await browser.newContext({ locale: 'en-US' });
   const collector = await fakeCollector(context);
   const page = await context.newPage();
-  await page.goto('/');
+  await page.goto('/login');
   await openEmailSignIn(page, { button: 'Continue with email', field: 'Email' });
   await typeInto(page.getByRole('textbox', { name: 'Email' }), newEmail('consent-en'));
   await typeInto(page.getByRole('textbox', { name: 'Password' }), password);
@@ -306,10 +308,7 @@ test('in English: the consent text links the English policy; the switch under Mo
     await expect(allow).toBeVisible({ timeout: 500 });
   }).toPass();
   await allow.click();
-  await page.getByRole('button', { name: /^Create a household/ }).click();
-  await expect(page).toHaveURL(/\/welcome\/create$/);
-  await page.getByRole('button', { name: 'Create a household', exact: true }).click();
-  await expect(page).toHaveURL(/\/welcome\/invite$/);
+  await createHousehold(page, { lang: 'en' });
   await page.getByRole('button', { name: /^(Later|Go to the list)$/ }).click();
   await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeVisible();
   await expect.poll(() => storedInstallId(page), { message: 'a yes stores an install id' }).toMatch(/^[0-9a-f-]{36}$/);
@@ -318,7 +317,7 @@ test('in English: the consent text links the English policy; the switch under Mo
   await expect(page).toHaveURL(/\/more$/);
   await page.getByRole('button', { name: 'Usage data', exact: true }).click();
   await expect(page).toHaveURL(/\/more\/usage-data$/);
-  await expect(page.getByRole('heading', { name: 'Usage data' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Usage data', exact: true })).toBeVisible();
   const toggle = page.getByRole('switch', { name: /^Send usage data and error reports/ })
     .or(page.getByRole('checkbox', { name: /^Send usage data and error reports/ }));
   await wheelIntoView(page, toggle);
@@ -368,7 +367,7 @@ test('a member with a household is asked once on a new install, then goes to the
   const context = await browser.newContext();
   const collector = await fakeCollector(context);
   const page = await context.newPage();
-  await page.goto('/');
+  await page.goto('/login');
   await openEmailSignIn(page);
   await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);

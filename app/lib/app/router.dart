@@ -18,6 +18,10 @@ import 'package:family_groceries/list/store_details_screen.dart';
 import 'package:family_groceries/list/stores_screen.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
+import 'package:family_groceries/onboarding/draft.dart';
+import 'package:family_groceries/onboarding/onboarding_cubit.dart';
+import 'package:family_groceries/onboarding/start_screen.dart';
+import 'package:family_groceries/onboarding/steps.dart';
 import 'package:family_groceries/purchases/premium_page_cubit.dart';
 import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -32,6 +36,11 @@ const listLinkPath = '/list';
 const addPath = '/add';
 const loginPath = '/login';
 
+/// Where a provider sign-in on the web returns from the sign-in screen
+/// (job 168b): the sign-in itself, which shows a cancel or a failure; `/`
+/// opens the guided start.
+const signInReturnPath = loginPath;
+
 /// The List tab's Anpassen (job 78): the stores screen, and below it one
 /// store's details or, for [noStoreSegment], the categories of the section
 /// without a store.
@@ -40,19 +49,35 @@ const noStoreSegment = 'none';
 String storeDetailsPath(String? storeId) =>
     '$editPath/${storeId ?? noStoreSegment}';
 
-/// Onboarding (job 22): Step 1 chooses, Step 2a creates, Step 3 invites
-/// the partner; Step 2b is the join screen ([joinCodePath], [joinPath]).
+/// Signed in without a household (job 22): create one (the guided start
+/// from [onboardingWhoPath]) or join with a code ([joinCodePath],
+/// [joinPath]).
 const welcomePath = '/welcome';
-const createHouseholdPath = '/welcome/create';
 
-/// Waiting for a join request (job 169b W3 M), instead of Step 1 while
-/// the user has no household but a request ([PendingJoinScreen]).
+/// Waiting for a join request (job 169b W3 M), instead of [welcomePath]
+/// while the user has no household but a request ([PendingJoinScreen]).
 const joinWaitingPath = '/welcome/waiting';
-const invitePartnerPath = '/welcome/invite';
+
+/// The guided start (job 168b): the first screen signed out, „Los geht's“
+/// or „Schon ein Konto? Anmelden“.
+const startPath = '/start';
+
+/// The guided start's step [step], at `/start/<step>`.
+String onboardingPath(OnboardingStep step) => '$startPath/${step.name}';
+
+/// „Mit wem kaufst du ein?“, where creating a household starts.
+final onboardingWhoPath = onboardingPath(OnboardingStep.who);
+
+/// The guided start's step at [uri], or null.
+OnboardingStep? onboardingStepOf(Uri uri) => switch (uri.pathSegments) {
+  ['start', final step] => OnboardingStep.parse(step),
+  _ => null,
+};
 
 /// The switcher's "Neuer Haushalt" (job 169b): the create step for one
-/// more household, then Step 3 for it.
+/// more household, then its invite step ([invitePartnerPath]).
 const newHouseholdPath = '/households/new';
+const invitePartnerPath = '/households/new/invite';
 
 /// The join screen for a typed code: onboarding's "Einladung annehmen" and
 /// More's "Anderem Haushalt beitreten".
@@ -85,6 +110,9 @@ const householdPath = '/more/household';
 /// the household's premium status. The path and its screen name stay
 /// `lifetime` from before job 49, so links and analytics keep their name.
 const premiumPath = '/more/lifetime';
+
+/// More's Tipps: every hint of the List tab, to read again (job 168b).
+const tipsPath = '/more/tips';
 
 /// More's Einstellungen: theme and language.
 const appSettingsPath = '/more/settings';
@@ -120,9 +148,18 @@ const screenNames = {
   'settings',
   'language',
   'usage_data',
+  'tips',
   'login',
   'welcome',
-  'onboarding_create',
+  'start',
+  // One per OnboardingStep, 'onboarding_<step>' ([screenNameOf]).
+  'onboarding_usage',
+  'onboarding_who',
+  'onboarding_name',
+  'onboarding_stores',
+  'onboarding_need',
+  'onboarding_account',
+  'onboarding_setup',
   'onboarding_invite',
   'new_household',
   'analytics_consent',
@@ -135,7 +172,14 @@ const screenNames = {
 /// `join`, an
 /// unknown path `other`. Query parameters are ignored, except an old
 /// `/settings` link's section (it redirects to Zugänge or Konto).
-String screenNameOf(Uri location) => switch (location.path) {
+String screenNameOf(Uri location) {
+  if (onboardingStepOf(location) case final step?) {
+    return 'onboarding_${step.name}';
+  }
+  return _screenNameOfPath(location);
+}
+
+String _screenNameOfPath(Uri location) => switch (location.path) {
   listPath || '' => 'list',
   _ when location.pathSegments.firstOrNull == 'edit' => 'stores',
   morePath => 'more',
@@ -147,12 +191,13 @@ String screenNameOf(Uri location) => switch (location.path) {
   appSettingsPath => 'settings',
   languagePath => 'language',
   usageDataPath => 'usage_data',
+  tipsPath => 'tips',
   settingsPath when location.queryParameters['section'] == 'account' =>
     'account',
   settingsPath => 'access',
   loginPath => 'login',
   welcomePath => 'welcome',
-  createHouseholdPath => 'onboarding_create',
+  startPath => 'start',
   invitePartnerPath => 'onboarding_invite',
   newHouseholdPath => 'new_household',
   analyticsConsentPath => 'analytics_consent',
@@ -176,6 +221,7 @@ bool inMoreTab(Uri location) => const {
   appSettingsPath,
   languagePath,
   usageDataPath,
+  tipsPath,
   moreLegalPath,
   moreJoinPath,
 }.contains(location.path);
@@ -196,14 +242,9 @@ String? inviteIn(Uri uri) {
       : uri.queryParameters['invite'];
 }
 
-/// Where someone without a household may be: onboarding's steps before
-/// there is one.
-const _beforeHousehold = {
-  welcomePath,
-  createHouseholdPath,
-  joinCodePath,
-  joinWaitingPath,
-};
+/// Where someone without a household may be: the steps before there is
+/// one.
+const _beforeHousehold = {welcomePath, joinCodePath, joinWaitingPath};
 
 /// The only auth gate. An invite code from a `/join/<code>` link survives
 /// sign-in, the analytics consent and onboarding as the `invite` query
@@ -214,16 +255,23 @@ const _beforeHousehold = {
 /// lost it. [justSignedOut]: the user signed out here, which carries no
 /// link to the next sign-in.
 ///
-/// [askConsent]: this install has not decided on analytics yet. Signed in,
-/// it goes to the analytics consent first, before onboarding and before the
-/// list; a browser tab authorizing an MCP client (`next`) is not
-/// interrupted and the app asks the next time it is opened.
+/// Signed out (job 168b): the guided start ([startPath]), and with a [draft]
+/// its step (the screens move on by changing the draft, never by going to a
+/// step), or the sign-in for an invite, a link, after a sign-out and when
+/// the user picks it ([goToSignIn]). [askConsent]:
+/// this install has not decided on analytics yet. The guided start asks it
+/// as its first step; signed in, it comes first, before onboarding and
+/// before the list, except in a browser tab authorizing an MCP client
+/// (`next`), and the app asks the next time it is opened.
 ///
-/// Without a household: Step 1 ([welcomePath]), or the join screen at once
-/// for an invite; while a join request waits, [joinWaitingPath] instead of
-/// Step 1. In one: the list and its Anpassen pages, the More tab,
-/// Step 3 right after creating ([invitePartnerPath]), creating one more
-/// ([newHouseholdPath]), or the join screen for an invite.
+/// Without a household: a [draft] past its last question is set up
+/// ([OnboardingStep.setup]) and one before it resumed; otherwise
+/// [welcomePath], or [joinWaitingPath] instead while a join request waits,
+/// or the join screen at once for an invite. In one: the list and its
+/// Anpassen pages, the More tab, the join screen for an invite, creating
+/// one more ([newHouseholdPath]) and its invite step ([invitePartnerPath]),
+/// and the draft's invite step until it is left. A draft not set up yet is
+/// set up in the household the user is in (its items go on that list).
 String? authRedirect(
   Session session,
   Uri uri, {
@@ -231,6 +279,7 @@ String? authRedirect(
   String? pendingInvite,
   String? pendingNext,
   bool justSignedOut = false,
+  OnboardingDraft? draft,
 }) {
   final invite = inviteIn(uri) ?? pendingInvite;
   final consent = uri.path == consentPath
@@ -251,29 +300,73 @@ String? authRedirect(
       : invite != null && inviteIn(Uri(path: path)) == null
       ? '$path?invite=$invite'
       : path;
+  // A draft whose household exists is the invite step of that household
+  // only; the cubit drops it for any other session.
+  final pending = switch ((draft, session)) {
+    (final d?, _) when !d.created => d,
+    (final d?, InHousehold(:final household))
+        when d.householdId == household.id =>
+      d,
+    _ => null,
+  };
+  // Where the draft resumes: the usage question only while it is open.
+  OnboardingStep resumeAt(OnboardingDraft d, {required bool signedIn}) =>
+      switch (d.step) {
+        OnboardingStep.usage when !askConsent => OnboardingStep.who,
+        OnboardingStep.usage when signedIn => OnboardingStep.who,
+        final s when !signedIn && !s.beforeAccount => OnboardingStep.account,
+        final s => s,
+      };
   final target = switch (session) {
     SessionLoading() => null,
-    SignedOut() => carry(loginPath),
+    SignedOut(:final deleted)
+        when invite != null ||
+            next != null ||
+            justSignedOut ||
+            deleted != null ||
+            uri.path == loginPath =>
+      carry(loginPath),
+    SignedOut() when pending != null => onboardingPath(
+      resumeAt(pending, signedIn: false),
+    ),
+    SignedOut() => startPath,
     NeedsHousehold() || InHousehold() when askConsent && consent == null =>
       carry(analyticsConsentPath),
     NeedsHousehold() when invite != null => carry(joinPath(invite)),
+    // An MCP authorization or a link (`next`) rides along the steps. A
+    // draft leads a waiting join request: it is how the waiting screen's
+    // „Eigenen Haushalt erstellen“ goes on (job 168c).
+    NeedsHousehold() when pending != null && !pending.beforeSignIn => carry(
+      onboardingPath(OnboardingStep.setup),
+    ),
+    NeedsHousehold() when pending != null => carry(
+      onboardingPath(resumeAt(pending, signedIn: true)),
+    ),
     NeedsHousehold(requests: []) when uri.path == joinWaitingPath => carry(
       welcomePath,
     ),
     NeedsHousehold(requests: [_, ...]) when uri.path == welcomePath => carry(
       joinWaitingPath,
     ),
-    // An MCP authorization or a link (`next`) rides along onboarding's
-    // steps.
     NeedsHousehold() when _beforeHousehold.contains(uri.path) => carry(
       uri.path,
     ),
     NeedsHousehold(requests: []) => carry(welcomePath),
     NeedsHousehold() => carry(joinWaitingPath),
+    // A household of its own, its questions not done, and a join request
+    // approved meanwhile (job 168c): the questions go on.
+    InHousehold(:final userId)
+        when pending != null &&
+            pending.ownFor(userId) &&
+            pending.step.beforeAccount =>
+      carry(onboardingPath(resumeAt(pending, signedIn: true))),
+    // Before `next`: the setup finishes before anything else opens.
+    InHousehold()
+        when pending != null &&
+            (!pending.created || pending.step != OnboardingStep.invite) =>
+      carry(onboardingPath(OnboardingStep.setup)),
     InHousehold() when next != null => next,
     InHousehold() when invite != null => joinPath(invite),
-    // Created just now: Step 3, inviting the partner.
-    InHousehold() when uri.path == createHouseholdPath => invitePartnerPath,
     InHousehold()
         when uri.path == invitePartnerPath ||
             uri.path == newHouseholdPath ||
@@ -281,10 +374,20 @@ String? authRedirect(
             inMoreTab(uri) ||
             inListTab(uri) =>
       uri.toString(),
+    // Where the list would open: a link (`next`) went first and stays.
+    InHousehold() when pending != null => onboardingPath(OnboardingStep.invite),
     InHousehold() => listPath,
   };
   return target == null || target == uri.toString() ? null : target;
 }
+
+/// The sign-in, when the user picks it (the guided start's „Anmelden“):
+/// [authRedirect] keeps a signed-out user there.
+void goToSignIn(BuildContext context) => context.go(loginPath);
+
+/// The guided start's first screen, from the sign-in's „Neu bei
+/// Hummlist?“: with a draft, [authRedirect] resumes it.
+void goToStart(BuildContext context) => context.go(startPath);
 
 /// Where an old `/settings` link goes now: Konto for `?section=account`,
 /// Zugänge otherwise.
@@ -329,6 +432,7 @@ class RedirectMemory() {
     Uri uri, {
     bool askConsent = false,
     String? pendingInvite,
+    OnboardingDraft? draft,
   }) {
     final justSignedOut =
         session is SignedOut &&
@@ -349,6 +453,7 @@ class RedirectMemory() {
       pendingInvite: pendingInvite,
       pendingNext: _next,
       justSignedOut: justSignedOut,
+      draft: draft,
     );
     // Signed in, the link is in the location now (or was the location).
     if (session is InHousehold) {
@@ -398,6 +503,7 @@ List<RouteBase> moreTabRoutes() => [
         ('household', MorePage.household),
         ('lifetime', MorePage.premium),
         ('usage-data', MorePage.usageData),
+        ('tips', MorePage.tips),
       ])
         GoRoute(
           path: path,
@@ -454,9 +560,15 @@ List<RouteBase> appRoutes({
     path: welcomePath,
     builder: (_, _) => const WelcomeScreen(),
     routes: [
-      GoRoute(path: 'create', builder: (_, _) => const CreateHouseholdScreen()),
-      GoRoute(path: 'invite', builder: (_, _) => const InvitePartnerScreen()),
       GoRoute(path: 'waiting', builder: (_, _) => const PendingJoinScreen()),
+    ],
+  ),
+  GoRoute(
+    path: startPath,
+    builder: (_, _) => const StartScreen(),
+    routes: [
+      for (final step in OnboardingStep.values)
+        GoRoute(path: step.name, builder: (_, _) => onboardingStepScreen(step)),
     ],
   ),
   GoRoute(
@@ -475,6 +587,10 @@ List<RouteBase> appRoutes({
     builder: (_, _) =>
         const CreateHouseholdScreen(from: HouseholdOrigin.switcher),
   ),
+  GoRoute(
+    path: invitePartnerPath,
+    builder: (_, _) => const InvitePartnerScreen(),
+  ),
   GoRoute(path: joinCodePath, builder: (_, _) => const JoinScreen()),
   GoRoute(
     path: '/join/:code',
@@ -488,6 +604,7 @@ GoRouter buildRouter(
   PendingInvite pendingInvite,
   ListLinks listLinks,
   Popups popups,
+  OnboardingCubit onboarding,
 ) {
   final memory = RedirectMemory();
   return GoRouter(
@@ -495,6 +612,7 @@ GoRouter buildRouter(
     refreshListenable: Listenable.merge([
       _StreamListenable(session.stream),
       _StreamListenable(analytics.stream),
+      _StreamListenable(onboarding.stream),
     ]),
     redirect: (context, state) {
       // A link's code is kept the moment it arrives, before sign-in.
@@ -506,6 +624,7 @@ GoRouter buildRouter(
         state.uri,
         askConsent: analytics.asksConsent,
         pendingInvite: pendingInvite.code,
+        draft: onboarding.state,
       );
       // Only once in the household: a sign-in or consent on the way would
       // fire it early.

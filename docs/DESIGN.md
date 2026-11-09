@@ -245,8 +245,8 @@ quarter into its line and struck rows, one wrapped.
   while dragged; the walk-order number a 32 px pointy honey hex.
 - `BrandBlock` (`brand_block.dart`): app icon #5 at 56 dp (exported by
   `design/app-icon/build.mjs` to `app/assets/brand/`) over the wordmark, on
-  login and welcome. The dark icon has the deep `#0b1024` ground, so on the
-  dark surface it shows as the ring and the inner hex without a tile.
+  the start screen, login and welcome. The dark icon has the deep `#0b1024`
+  ground, so on the dark surface it shows as the ring and the inner hex without a tile.
 - Sign-in with Google and Apple keep the providers' own buttons: Google's
   outlined (light) or dark pill with its "G", Apple's black or white button
   drawn per Apple's rules (DECISIONS job 57 item 15). Only "Weiter mit
@@ -291,8 +291,8 @@ quarter into its line and struck rows, one wrapped.
 ### Settings and More
 
 More and Einstellungen use the hex controls: More's usage-data row is a
-`HexSwitchTile`, the language list and the create-household "Läden" choice
-`HexRadioTile`s. The theme is one `HexSegmented` control (job 57, Peter
+`HexSwitchTile`, the language list `HexRadioTile`s. The theme is one
+`HexSegmented` control (job 57, Peter
 14:20): System / Hell / Dunkel, all visible, a honey hex indicator that
 slides to the pick (`HlDuration.medium`, standard curve; a jump with reduced
 motion), radio-group semantics, arrow keys, 48 dp segments. The device keeps
