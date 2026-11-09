@@ -10812,3 +10812,15 @@ main 6d2a193e; both features stay.
     setup passes to `create_household`, so a setup run again after an app kill gets the household
     the first run made instead of a second one. Tests: `join_approval_test.dart`, "approved during
     that guided start" and "signed in again at its account step" (same user, someone else).
+
+## Job 169b review.0: owners for households their creator left, 2026-11-09
+
+1. **Households without an owner get one, once, by the rule a leave uses today.** Before 169b,
+   leaving deleted the owner's membership without handing the role on, so a household its
+   creator left kept members only, and since wave 2 nobody there could name admins, make a group
+   link, remove anyone or decide join requests. `repair_ownerless_households()` (migration
+   20261109002905) makes an admin, else the earliest-joined member, the owner of each such
+   household. Idempotent; how many production households it touches is unknown (production was
+   not queried). New leaves hand the role on already (`hand_over_ownership`, wave 2).
+2. **Leaving keeps the next household's role, kind and Premium on the device** (`copyWith` in
+   `SessionCubit._left`), so a failed reload after a leave doesn't hide an admin's controls.

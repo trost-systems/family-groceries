@@ -329,8 +329,12 @@ test('roles: the owner makes an admin, the admin removes a member, whose open ap
   await menuItem(anna, 'Aus dem Haushalt entfernen').click();
   await expect(anna.getByText('Ben Kurz entfernen?')).toBeVisible();
   await anna.getByRole('button', { name: 'Entfernen', exact: true }).click();
+  // The open dialog hides the page from the accessibility tree, so the row's absence alone proves
+  // nothing: wait for the dialog to go and the server to answer.
+  await expect(anna.getByText('Ben Kurz entfernen?')).toHaveCount(0);
+  await expect.poll(() => membersOf(household), 'removed on the server')
+    .not.toContain(await userIdOf(benEmail));
   await expect(memberRow(anna, 'Ben Kurz')).toHaveCount(0);
-  expect(await membersOf(household)).not.toContain(await userIdOf(benEmail));
 
   // Ben's open app finds out when it comes back to the front: the notice, and his own household.
   await backAndFront(ben);

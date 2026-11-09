@@ -1413,8 +1413,15 @@ Built and merged (#327, #332, #333). What only Peter can do:
    inviter's first name on the signed-out join page (Art. 6(1)(f)?), the hourly salted IP hash,
    the Play Install Referrer and the tap-to-paste clipboard read under § 25 TDDDG, removal
    records (30 days), and whether a club needs an AVV at all. Merge the policy only after Legal
-   approves; the features are live in the app from the next release regardless, so Legal should
-   look before the next store release.
+   approves. **Urgent: the features are already live.** Each merge shipped by the release workflow
+   (web app.hummlist.com, TestFlight, Play internal): wave 1 (several households) on 2026-11-08
+   at about 21:14 CET, wave 2 (join page, group links, removal) on 2026-11-09 at about 00:01
+   CET, wave 3 (lists, claims, join approval) at about 01:12 CET (release runs 42517677040,
+   42531652600, 42537666564). Until #328
+   lands, the published policy contradicts them: it says invite links last 7 days and work once
+   (group links: 30 days, 50 people) and doesn't mention the signed-out join page showing the
+   inviter's first name, its salted IP hash or the removal records. Options while Legal reviews:
+   merge #328 as is, or hide group links behind a flag (Peter's call).
 2. **Store listings and the join page.** When the App Store and Play listings are public, set
    `storeListings` in `app/web/join/join.js` (both) so `/join/<code>` shows "App laden" and the
    Smart App Banner (`app-id=6826922741`), and fill `site/config/stores.mjs`. The Play link already
@@ -1424,5 +1431,9 @@ Built and merged (#327, #332, #333). What only Peter can do:
    on the device. Check whether the Data safety form needs an answer for it (it is Google's own
    API; nothing leaves the device to Hummlist beyond the join that the user then does).
 4. **Decide later (product):** a removed member can be re-invited by any member after 30 days
-   (removal records are purged for privacy; DECISIONS 169b W2 item 10), and a club has no signal
-   for open join requests outside More → household. Both are deliberate for now.
+   (removal records are purged for privacy; DECISIONS 169b W2 item 10); a club has no signal for
+   open join requests outside More → household; any member can rename or delete a list or rename
+   the household, also in clubs; when the default household is left or someone is removed from it,
+   Siri, Alexa and AI assistants move to the oldest other membership without asking; "Neuer
+   Haushalt" in the switcher asks for no kind, so a club made there gets no club share text and no
+   approval default (job 168's onboarding sets the kind). All deliberate for now.

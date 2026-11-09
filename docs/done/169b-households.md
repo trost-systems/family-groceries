@@ -33,7 +33,7 @@ review PASS and `ci-ok`.
 ## Not in the repo's merge path
 
 - Privacy text and a draft data processing agreement for clubs: draft #328 for Legal (do not
-  merge), 25 open questions in `docs/legal/169b-privacy-draft.md` on that branch.
+  merge), 27 open questions in `docs/legal/169b-privacy-draft.md` on that branch.
 - Store buttons and the Smart App Banner on the join page stay off until the App Store and Play
   listings are public (`storeListings` in `app/web/join/join.js`, `site/config/stores.mjs`).
 
@@ -49,6 +49,17 @@ review PASS and `ci-ok`.
 
 ## Needs Peter
 
-`docs/NEEDS_PETER.md`, section "Job 169b": Legal review of #328 before the next store release,
-the join page's store links once the listings are public, the Play Data safety check for the
-install referrer, and two deliberate product calls.
+`docs/NEEDS_PETER.md`, section "Job 169b": Legal review of #328, urgent because the features are
+already live (below), the join page's store links once the listings are public, the Play Data
+safety check for the install referrer, and deliberate product calls.
+
+## Live before the privacy text (review.0)
+
+The release workflow shipped each merge to app.hummlist.com, TestFlight and Play internal:
+wave 1 on 2026-11-08 at about 21:14 CET, wave 2 (join page, group links, removal) on 2026-11-09 at
+about 00:01 CET, wave 3 at about 01:12 CET. The published privacy policy
+contradicts them until Legal approves draft #328 (NEEDS_PETER, Job 169b, item 1).
+
+A follow-up (review.0) gave households whose owner left before 169b an owner again
+(`repair_ownerless_households`, migration 20261109002905): without one, nobody there could name
+admins, make a group link, remove members or decide join requests.
