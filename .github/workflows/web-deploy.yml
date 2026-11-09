@@ -1,0 +1,194 @@
+# Builds the web app (app.hummlist.com) on a GitHub runner and deploys it to Vercel as a prebuilt
+# production deployment, so Vercel bills no Build CPU Minutes for it (docs/DEPLOY.md, "Web app").
+# Release's `Web production` job calls this after it moves `release`; a dispatch on main deploys a
+# commit by hand. The build is `vercel build`, which runs vercel.json's install and build commands
+# (scripts/vercel.sh), exactly as Vercel's own Git build did. A pull request that changes this
+# file only builds, never deploys.
+name: Web deploy
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        description: Commit to deploy (the new head of `release`)
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Commit to deploy (empty = the head of `release`; anything else must be it)
+        type: string
+        default: ''
+  pull_request:
+    paths:
+      - .github/workflows/web-deploy.yml
+
+# Production deploys queue in one group; a pull request's build check never cancels one.
+concurrency:
+  group: web-deploy-${{ github.event_name == 'pull_request' && github.ref || 'production' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  # Not secrets: the Vercel team and project of app.hummlist.com.
+  VERCEL_ORG_ID: team_IudIeLeFCx8U5zncDHnUOczr
+  VERCEL_PROJECT_ID: prj_dTZbqt1ncLhaw33BrPpA2iyCPjDr
+  # The CLI version Vercel's own builds used (65.11.0); bump on purpose.
+  VERCEL_CLI: vercel@65.11.0
+  # docs/ANALYTICS.md: the Einkauf PostHog project, for the source-map upload.
+  POSTHOG_PROJECT_ID: '319492'
+
+jobs:
+  # A pull request that changes this file: build only, with the public config and analytics off.
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            node_modules/.flutter
+            node_modules/.pub-cache
+          key: web-deploy-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml', 'app/pubspec.lock') }}
+          restore-keys: web-deploy-${{ runner.os }}-
+      - name: Build (the two steps vercel.json runs)
+        env:
+          SUPABASE_URL: https://jdwqrallbpdbshrdhenk.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_build_check_only
+        run: |
+          bash scripts/vercel.sh install
+          bash scripts/vercel.sh build
+          ls -l app/build/web/main.dart.wasm app/build/web/main.dart.js
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # POSTHOG_PROJECT_API_KEY and POSTHOG_HOST are `release` environment values (main only), as
+    # for the store builds.
+    environment: release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: release
+          fetch-depth: 0
+      # Production only ever gets the head of `release`: a rerun of an older Release run or a
+      # dispatch of an older commit deploys nothing, so production never moves back from here.
+      # The build is skipped when the app did not change since the commit production serves.
+      - name: What to deploy
+        id: plan
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          WANT: ${{ inputs.sha }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          head="$(git rev-parse HEAD)"
+          if [[ -n $WANT && $WANT != "$head" ]]; then
+            echo "::notice::${WANT:0:7} is not the head of release (${head:0:7}); nothing deployed."
+            echo "build=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "sha=$head" >> "$GITHUB_OUTPUT"
+          if [[ -z $VERCEL_TOKEN ]]; then
+            # From Release: nothing to ship, so no build. A dispatch still builds, as a check.
+            echo "::warning::No VERCEL_TOKEN secret: nothing deployed (docs/DEPLOY.md)."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "build=$([[ $EVENT == workflow_dispatch ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+          live="$(curl -fsS --max-time 10 -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/app.hummlist.com?teamId=$VERCEL_ORG_ID" \
+            | jq -r '.meta.githubCommitSha // .gitSource.sha // empty' || true)"
+          echo "live=$live" >> "$GITHUB_OUTPUT"
+          # An unknown live commit builds.
+          if [[ -n $live ]] && git cat-file -e "$live^{commit}" 2>/dev/null \
+            && git diff --quiet "$live" HEAD -- app ':!app/test' vercel.json scripts/vercel.sh scripts/join-config.sh; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "No app change since the live ${live:0:7}; app.hummlist.com stays as it is." | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        if: steps.plan.outputs.build == 'true'
+        with:
+          node-version: 22
+      # scripts/vercel.sh keeps the Flutter SDK and the pub cache in node_modules/.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        if: steps.plan.outputs.build == 'true'
+        with:
+          path: |
+            node_modules/.flutter
+            node_modules/.pub-cache
+          key: web-deploy-${{ runner.os }}-${{ hashFiles('.github/workflows/ci.yml', 'app/pubspec.lock') }}
+          restore-keys: web-deploy-${{ runner.os }}-
+      - name: Vercel project settings and production env
+        if: steps.plan.outputs.build == 'true' && steps.plan.outputs.deploy == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          npx --yes "$VERCEL_CLI" pull --yes --environment=production --token="$VERCEL_TOKEN" >/dev/null
+          # Sensitive Vercel variables come back empty; drop them so the job's env below wins.
+          sed -i -E '/^[A-Z0-9_]+=""$/d' .vercel/.env.production.local
+      - name: Build (vercel build, i.e. scripts/vercel.sh)
+        if: steps.plan.outputs.build == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DEPLOY: ${{ steps.plan.outputs.deploy }}
+          POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
+          POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
+          POSTHOG_PERSONAL_API_KEY: ${{ secrets.POSTHOG_PERSONAL_API_KEY }}
+          VERCEL_GIT_COMMIT_SHA: ${{ steps.plan.outputs.sha }}
+        run: |
+          if [[ $DEPLOY == true ]]; then
+            npx --yes "$VERCEL_CLI" build --prod --yes --token="$VERCEL_TOKEN"
+          else
+            # No token: the same two steps vercel.json runs, with the public config; nothing ships.
+            export SUPABASE_URL=https://jdwqrallbpdbshrdhenk.supabase.co
+            export SUPABASE_PUBLISHABLE_KEY=sb_publishable_build_check_only
+            unset POSTHOG_PROJECT_API_KEY POSTHOG_PERSONAL_API_KEY
+            bash scripts/vercel.sh install
+            bash scripts/vercel.sh build
+          fi
+      - name: Deploy to production
+        id: deploy
+        if: steps.plan.outputs.build == 'true' && steps.plan.outputs.deploy == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SHA: ${{ steps.plan.outputs.sha }}
+        run: |
+          url="$(npx --yes "$VERCEL_CLI" deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN")"
+          id="$(curl -fsS --max-time 10 -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID" | jq -r '.id // empty' || true)"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          echo "Deployed ${SHA:0:7} as $url" | tee -a "$GITHUB_STEP_SUMMARY"
+      # Vercel's own Git build of the same commit may take the alias too, so this checks the commit
+      # app.hummlist.com serves, not the deployment id.
+      - name: app.hummlist.com serves this commit
+        if: steps.plan.outputs.build == 'true' && steps.plan.outputs.deploy == 'true'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          SHA: ${{ steps.plan.outputs.sha }}
+          ID: ${{ steps.deploy.outputs.id }}
+        run: |
+          for _ in $(seq 1 12); do
+            live="$(curl -fsS --max-time 10 -H "Authorization: Bearer $VERCEL_TOKEN" \
+              "https://api.vercel.com/v13/deployments/app.hummlist.com?teamId=$VERCEL_ORG_ID" \
+              | jq -r '"\(.id) \(.meta.githubCommitSha // .gitSource.sha // "")"' || true)"
+            code="$(curl -s --max-time 10 -o /dev/null -w '%{http_code}' https://app.hummlist.com/ || true)"
+            if [[ $code == 200 && ( ${live#* } == "$SHA" || ( -n $ID && ${live%% *} == "$ID" ) ) ]]; then
+              echo "app.hummlist.com: HTTP 200, deployment ${live%% *}, commit ${SHA:0:7}" | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::app.hummlist.com serves '$live' (HTTP $code), expected commit $SHA"
+          exit 1

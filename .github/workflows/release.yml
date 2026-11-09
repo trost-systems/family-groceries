@@ -388,11 +388,12 @@ jobs:
   # The web app ships with every real store upload: app.hummlist.com is public and is Vercel's
   # production, whose branch is `release` (docs/DEPLOY.md, section "Web app"). When `Uploaded`
   # succeeds (automatic per-merge, schedule, or dispatch), this job moves `release` to this run's
-  # commit so Vercel builds it and assigns app.hummlist.com. That keeps the public web app on the
-  # same commit the internal testers just got, never ahead of TestFlight/Play. A rerun of an older
-  # run is a no-op, and the plain push only fast-forwards, so production never moves back from
-  # here. Pushes to `main` still build previews only (preview.app.hummlist.com, behind Vercel
-  # Authentication). No branch protection or ruleset may block github-actions from pushing `release`.
+  # commit, and `Web deploy` (web-deploy.yml) builds it on a runner and deploys it to
+  # app.hummlist.com. That keeps the public web app on the same commit the internal testers just
+  # got, never ahead of TestFlight/Play. A rerun of an older run is a no-op, and the plain push
+  # only fast-forwards, so production never moves back from here. Until the first prebuilt deploy
+  # is verified, Vercel's own Git build of `release` runs too (docs/DEPLOY.md, "Build skips").
+  # No branch protection or ruleset may block github-actions from pushing `release`.
   web:
     name: Web production
     needs: [plan, uploaded]
@@ -417,12 +418,25 @@ jobs:
             exit 0
           fi
           git push origin "$SHA:refs/heads/release"
-          echo "release: ${before:0:7} -> ${SHA:0:7}. Vercel builds it for app.hummlist.com." \
+          echo "release: ${before:0:7} -> ${SHA:0:7}. Web deploy builds it for app.hummlist.com." \
             | tee -a "$GITHUB_STEP_SUMMARY"
+
+  # A push by this workflow's token starts no workflow, so the deploy is called here. It also runs
+  # when `release` did not move, so a missed deploy catches up; it only ever deploys release's head.
+  web-deploy:
+    name: Web deploy
+    needs: [plan, web]
+    if: ${{ !cancelled() && needs.web.result == 'success' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/web-deploy.yml
+    with:
+      sha: ${{ needs.plan.outputs.sha }}
+    secrets: inherit
 
   # Not after a red or foreign CI run (plan skipped by its `if`): there is nothing to report.
   report:
-    needs: [plan, ios, android, uploaded, web]
+    needs: [plan, ios, android, uploaded, web, web-deploy]
     if: always() && needs.plan.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -445,5 +459,6 @@ jobs:
           ANDROID: ${{ needs.android.result }}
           ANDROID_UPLOADED: ${{ needs.android.outputs.uploaded }}
           UPLOADED: ${{ needs.uploaded.result }}
-          WEB: ${{ needs.web.result }}
+          # A failed or cancelled Web deploy reports as that result of Web production.
+          WEB: ${{ needs.web.result == 'success' && contains(fromJSON('["failure","cancelled"]'), needs.web-deploy.result) && needs.web-deploy.result || needs.web.result }}
         run: scripts/release/report.sh apply
