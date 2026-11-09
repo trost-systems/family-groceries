@@ -288,7 +288,8 @@ void main() {
       o.session.emit(const NeedsHousehold('peter'));
       await tester.pumpAndSettle();
       expect(o.session.creates, [('Familie Trost', 'REWE, Bäcker Kühn')]);
-      expect(o.backend.kinds, {'home': HouseholdKind.family});
+      expect(o.session.createKinds, ['family'], reason: 'with the create');
+      expect(o.backend.kinds, isEmpty, reason: 'no second write');
       expect(o.backend.items['home']?.map((i) => i.id), ['i1', 'i2']);
       expect(location(o), '/start/invite');
       expect(o.onboarding.state?.step, OnboardingStep.invite);
@@ -321,21 +322,26 @@ void main() {
       expect(o.backend.items['home'], hasLength(2));
     });
 
-    testWidgets('a kind the server refuses does not stop the setup', (
-      tester,
-    ) async {
-      final o = await pumpOnboarding(
-        tester,
-        location: '/',
-        session: const SignedOut(),
-        draft: answered(OnboardingStep.account),
-      );
-      o.backend.fail = HouseholdProblem.other;
-      o.session.emit(const NeedsHousehold('peter'));
-      await tester.pumpAndSettle();
-      expect(o.backend.kinds, isEmpty);
-      expect(o.backend.items['home'], hasLength(2));
-      expect(location(o), '/start/invite');
+    testWidgets('a household an older build made without its kind gets it '
+        'set; a refusal does not stop the setup', (tester) async {
+      for (final refused in [false, true]) {
+        final o = await pumpOnboarding(
+          tester,
+          location: '/',
+          session: const InHousehold('peter', home, [home]),
+          draft: answered(OnboardingStep.setup)
+              .copyWith(userId: 'peter', householdId: 'home'),
+          backend: FakeOnboardingBackend()
+            ..fail = refused ? HouseholdProblem.other : null,
+        );
+        expect(o.session.creates, isEmpty);
+        expect(
+          o.backend.kinds,
+          refused ? isEmpty : {'home': HouseholdKind.family},
+        );
+        expect(o.backend.items['home'], hasLength(2));
+        expect(location(o), '/start/invite');
+      }
     });
 
     testWidgets('signing in to an account with a household puts the items '

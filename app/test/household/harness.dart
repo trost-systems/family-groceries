@@ -376,6 +376,9 @@ class TestSession(super.initialState)
 
   /// Each create: the name and the stores, joined with ", ", and where.
   final creates = <(String, String)>[];
+
+  /// Each create's kind, null when none was sent.
+  final createKinds = <String?>[];
   final origins = <HouseholdOrigin>[];
 
   /// The household each create request id made.
@@ -500,13 +503,14 @@ class TestSession(super.initialState)
       return id;
     }
     creates.add((name, stores.join(', ')));
+    createKinds.add(kind);
     origins.add(from);
     await _answer();
     final id = _households.isEmpty ? 'home' : 'new-${creates.length}';
     if (requestId != null) {
       createdBy[requestId] = id;
     }
-    _show(Household(id: id, name: name));
+    _show(Household(id: id, name: name, kind: HouseholdKind.parse(kind)));
     return id;
   }
 
@@ -638,6 +642,9 @@ Future<Onboarding> pumpOnboarding(
 
   /// Whether this install answered the usage-data question already.
   bool consentAnswered = true,
+
+  /// The guided start's server calls; a fresh fake by default.
+  FakeOnboardingBackend? backend,
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -677,7 +684,7 @@ Future<Onboarding> pumpOnboarding(
   onboarding.sessionChanged(testSession.state);
   final sessions = testSession.stream.listen(onboarding.sessionChanged);
   addTearDown(sessions.cancel);
-  final backend = FakeOnboardingBackend();
+  final onboardingBackend = backend ?? FakeOnboardingBackend();
   final auth = FakeAuth();
   addTearDown(auth.close);
   final router = GoRouter(
@@ -773,7 +780,7 @@ Future<Onboarding> pumpOnboarding(
         RepositoryProvider<StorePriceReader>.value(
           value: FakeStorePrices(fakeStorePrices, manages: true),
         ),
-        RepositoryProvider<OnboardingBackend>.value(value: backend),
+        RepositoryProvider<OnboardingBackend>.value(value: onboardingBackend),
         // The account step's sign-in panel; this build offers email only.
         RepositoryProvider.value(
           value: SocialSignIn(
@@ -811,7 +818,7 @@ Future<Onboarding> pumpOnboarding(
     premium: server,
     onboarding: onboarding,
     onboardingStore: drafts,
-    backend: backend,
+    backend: onboardingBackend,
   );
 }
 

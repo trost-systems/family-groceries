@@ -10812,6 +10812,14 @@ main 6d2a193e; both features stay.
     setup passes to `create_household`, so a setup run again after an app kill gets the household
     the first run made instead of a second one. Tests: `join_approval_test.dart`, "approved during
     that guided start" and "signed in again at its account step" (same user, someone else).
+12. **The kind goes with the create** (post-merge review 0, 2026-11-09). `setUp` sent the kind in
+    a second `UPDATE` after `create_household`. W3 turns join approval on for a new club only from
+    `create_household`'s `p_kind`, so every club made through the guided start (the only app path
+    that makes one) started with approval off: its group links let anyone in. `setUp` now passes
+    the draft's kind to `createHousehold`; `setKind` stays only for a household an older build
+    made without it. e2e `guided-start.spec.ts` checks `join_approval = true` for a „Verein oder
+    Team“ start. Clubs created between the release of #331 and this fix are not backfilled: an
+    owner may have chosen the setting since, so Peter decides (docs/NEEDS_PETER.md).
 
 ## Job 169b review.0: owners for households their creator left, 2026-11-09
 

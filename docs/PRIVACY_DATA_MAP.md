@@ -100,8 +100,8 @@ list) and, once the household is made, its id and the user's id. It is the user'
 so the setup survives an app restart (TDDDG §25(2) no. 2, (b)), device only until the sign-up,
 when it becomes the household and its list on the server. It is deleted when the invite step is
 left, by „Fortschritt verwerfen“, at a sign-out or account deletion once the household exists, and
-on uninstall. The other kinds picked (`onboarding.later.<user id>`, a list of kind names) stay for
-when a user can have several households (job 169).
+on uninstall. The other kinds picked (`onboarding.later.<user id>`, a list of kind names) stay on the
+device for a later offer to set those households up too; nothing reads them yet (job 168c).
 
 The hints' log per user (job 168b, `hints.<user id>`, `app/lib/tips/usage_log.dart`): counts of
 what the user did on the list (typed adds, adds with an amount, dictation, saved edits, category
