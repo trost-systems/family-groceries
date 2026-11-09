@@ -308,6 +308,11 @@ void main() {
           'club',
           reason: 'as the server moves it',
         );
+        expect(
+          state.household.role,
+          HouseholdRole.owner,
+          reason: 'its role stays: an owner keeps the admin controls',
+        );
         expect(cache.households['peter']?.households.map((h) => h.id), [
           'club',
         ]);

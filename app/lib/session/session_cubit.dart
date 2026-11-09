@@ -616,14 +616,9 @@ class SessionCubit(
       ];
       final kept = switch (rest) {
         [final first, ...final others] when !rest.any((h) => h.isDefault) => [
-          Household(
-            id: first.id,
-            name: first.name,
-            isDefault: true,
-            memberCount: first.memberCount,
-            openCount: first.openCount,
-            kind: first.kind,
-          ),
+          // Keeps its role, kind and Premium: a failed reload after this must
+          // not hide an admin's controls.
+          first.copyWith(isDefault: true),
           ...others,
         ],
         _ => rest,
