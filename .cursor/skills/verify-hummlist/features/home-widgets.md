@@ -22,12 +22,13 @@ Preconditions:
 
 - Not on the web: the web build has no widgets and ignores the widget links. Nothing here is drivable with Playwright.
 
-- **App side.** `cd app && flutter test test/home_widget` (what the widget gets, when, and what a tap opens; 22 tests pass on 2026-11-06). **Android parser.** The CI job `android` (`scripts/gates/android.sh`) runs `WidgetPayloadTest` (6 JVM tests) and logs `android unit tests: name="com.hummlist.app.widget.WidgetPayloadTest" tests="6" …`. Details: `.cursor/skills/verify-family-groceries/features/home-widgets.md`.
+- **App side.** `cd app && flutter test test/home_widget` (what the widget gets, when, and what a tap opens; 22 tests pass on 2026-11-09). **Android parser.** The CI job `android` (`scripts/gates/android.sh`) runs `WidgetPayloadTest` (6 JVM tests) and logs `android unit tests: name="com.hummlist.app.widget.WidgetPayloadTest" tests="6" …`. Details: `.cursor/skills/verify-family-groceries/features/home-widgets.md`.
 - **Guides.** On a local or preview site build both guides show with the draft banner; production leaves them out.
 
 ## Gotchas
 
 - Unverified on devices until Peter's test (docs/NEEDS_PETER.md, job 63). Describe the widget as coming, never as released.
 - The widget follows the phone's light or dark mode, not the app's theme setting.
+- The widget shows the household the app shows and only the list whose tab was shown last, not the default household and not every list.
 - A partner's adds appear in the widget after Hummlist was open on this phone again; there is no background refresh.
 - No ticking from the widget.

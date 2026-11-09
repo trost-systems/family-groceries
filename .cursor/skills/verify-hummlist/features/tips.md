@@ -6,7 +6,7 @@ The List tab has one slot at the top of the list (job 168b, H2 trigger hints; be
 
 - `checklist` the „Erste Schritte“ card (key `list-hint`, as the gesture card it replaces). Flat, 2 px contour, no shadow. Title „Erste Schritte“, progress „1 von 3“, an X (tooltip and screen-reader name „Erste Schritte ausblenden“ / "Hide first steps", key `list-hint-dismiss`). Items, by the household's answer to „Mit wem kaufst du ein?“ (`households.kind`):
   - „Liste angelegt“ (or „Haushalt beigetreten“ for someone who joined), always done;
-  - the invite item, titled by kind („Partner einladen“, „Familie einladen“, „Mitbewohner einladen“, „Mitglieder einladen“, else „Jemanden einladen“), with „Einladen“ (opens Mehr → Einladungen). Not for „Nur ich“ (solo) and not for someone who joined. Done once a second member is in the household;
+  - the invite item, titled by kind („Partner einladen“, „Familie einladen“, „Mitbewohner einladen“, „Mitglieder einladen“, else „Jemanden einladen“), with the line „Sieht deine Artikel sofort und kann selbst etwas draufsetzen.“ (club: „Alle sehen dieselbe Liste und können selbst etwas draufsetzen.“; EN "They see your items right away and can add their own." / "Everyone sees the same list and can add to it.") and „Einladen“ (opens Mehr → Einladungen). Not for „Nur ich“ (solo) and not for someone who joined. Done once a second member is in the household;
   - „Einmal einkaufen“ with the gesture sentence „Tippen hakt ab · Halten bearbeitet“ under it. Done once the user's own tick empties the list;
   - clubs only: „KI-Assistenten verbinden“ („Mehr → Zugänge. Er setzt Dinge auf eure Liste.“) with „Öffnen“ (opens Mehr → Zugänge). Done once the user has a connected AI app, an MCP token or an API key (asked once per start while open).
   A done item is struck through and says „…, erledigt“ to a screen reader. The X hides the card for this household on this device (the gesture card's flag, `listprefs.<user>.<household>`). It also leaves once every item is done. While it is open, no hint shows.
@@ -25,7 +25,7 @@ The List tab has one slot at the top of the list (job 168b, H2 trigger hints; be
   | `add-store` | „Noch ein Laden?“ | 3 active days, no store | a store in the household | under „Anpassen“ | all |
   | `dictation` | „Sag einfach, was fehlt“ | 10 typed adds | an add by dictation | above the add field | iOS, Android |
   | `ai-assistant` | „Noch besser mit KI & Automatisierung“ + „Zugriffe verwalten“ | a club, or 7 active days on the web or a computer | an AI app, MCP token or API key | card | all |
-  | `siri` | „Mit Siri hinzufügen“ | 3 active days | (not visible to the app) | card | iOS |
+  | `siri` | „Mit Siri hinzufügen“ | 3 active days | (not visible to the app) | card | none today: iOS only once the `native-siri` hold is released (a build define the store builds leave off) |
   | `home-widget` | „Liste auf dem Home-Bildschirm“ | 5 active days | a widget placed (asked once per start) | card | iOS, Android |
   | `own-household` | „Deine eigene Liste“ + „Haushalt erstellen“ | the user joined someone's household, 3 active days | owning a household | card | all, once a second household can be made (job 169b) |
   | `second-household` | „Noch eine Liste?“ + „Haushalt erstellen“ | 14 active days | (not visible yet) | card | all, once a second household can be made (job 169b) |
@@ -45,7 +45,7 @@ Not driven yet for job 168b (hints branch: widget tests only). Preconditions: `s
 
 - **Checklist.** On a fresh account the list shows „Erste Schritte“; `page.getByText('Tippen hakt ab · Halten bearbeitet')` is visible; `page.getByRole('button', { name: 'Erste Schritte ausblenden' })` hides it.
 - **Hint.** After a reload with 5 or more open items, within 15 s the ARIA snapshot contains „Artikel bearbeiten Halte einen Artikel gedrückt …“ (title and text are one merged node). „Tipp ausblenden“ hides it and shows „Alle Tipps unter Mehr → Tipps.“; after another reload no hint comes back for 24 h.
-- **Tipps page.** `/more/tips` lists the cards (web: no `dictation`, `siri`, `home-widget`).
+- **Tipps page.** `/more/tips` lists the cards. On the web exactly six (driven 2026-11-09): „Gemeinsam einkaufen“ with „Einladen“, „Artikel bearbeiten“, „Menge gleich mittippen“, „Sortiert wie dein Laden“, „Noch ein Laden?“, „Noch besser mit KI & Automatisierung“ with „Zugriffe verwalten“ (no `dictation`, `siri`, `home-widget`; `own-household` and `second-household` are off on every platform, see Gotchas).
 - **Scripted.** `helpers/drive.sh tips [--lang en] [--dark]` (`journeys/tips.mjs`).
 - Widget and unit tests: `app/test/tips/` (`hints_test.dart` the rules and catalogue, `hints_cubit_test.dart` signals and events, `hint_views_test.dart` the flat card, X and snackbar, the checklist per kind, `tips_page_test.dart`); goldens `app/test/design/hint_card_golden_test.dart`.
 
