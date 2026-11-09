@@ -22,10 +22,10 @@ The app has two tabs, „Liste“ and „Mehr“ (EN "List", "More"): on phones 
 More entries in order (groups top to bottom; rows: DE label, EN label; no hints; one group heading, „Rechtliches“):
 
 1. „Konto“ / "Account" (opens Konto: export, deletion); „Hummlist Premium“ (both languages), only once Premium may be offered or for a household that has it (job 64).
-2. „Partner einladen“ / "Invite your partner", only when the user is in a household (opens Einladungen; see household-invites); „Anderem Haushalt beitreten“ / "Join another household" (opens the join-code page); „Archivierte Haushalte“ / "Archived households", hidden on normal builds (see Gotchas). (Job 78 moved „Kategorien verwalten“ and „Läden“ to the list header's „Anpassen“; see stores-walk-order and categories.)
+2. The household's name ("Familie Brandt"; „Haushalt“ / "Household" when it has none), only when the user is in a household, opens the household page (`/more/household`, household-invites `household-page`); „Partner einladen“ / "Invite your partner", only when the user is in a household (opens Einladungen; see household-invites); „Anderem Haushalt beitreten“ / "Join another household" (opens the join-code page); „Archivierte Haushalte“ / "Archived households", hidden on normal builds (see Gotchas). (Job 78 moved „Kategorien verwalten“ and „Läden“ to the list header's „Anpassen“; see stores-walk-order and categories.)
 3. „Zugänge“ / "Access".
 4. „Einstellungen“ / "Settings"; „Nutzungsdaten“ / "Usage data" (only where the build can send analytics).
-5. „Feedback senden“ / "Send feedback"; „Hummlist bewerten“ / "Rate Hummlist" (external-link icon, iPhone and Android apps only, opens the store page; see rate-hummlist); „Hilfe & Kontakt“ / "Help & contact" (external-link icon).
+5. „Tipps“ / "Tips" (opens `/more/tips`, every tip to read again; see tips); „Feedback senden“ / "Send feedback"; „Hummlist bewerten“ / "Rate Hummlist" (external-link icon, iPhone and Android apps only, opens the store page; see rate-hummlist); „Hilfe & Kontakt“ / "Help & contact" (external-link icon).
 6. Heading „Rechtliches“ / "Legal", then „Impressum“ / "Imprint", „Datenschutzerklärung“ / "Privacy policy", „Nutzungsbedingungen (EULA)“ / "Terms of Use (EULA)" (these three with the external-link icon), „Lizenzen“ / "Licenses".
 7. „Abmelden“ / "Sign out", alone, plain like the other rows (job 137: not red).
 8. Version line „Version {version}“ (same in EN), version plus build number in brackets when there is a build number.
@@ -40,7 +40,7 @@ The Nutzungsdaten page: only the switch „Nutzungsdaten und Fehlerberichte send
 - Usage data: „Mehr“ → „Nutzungsdaten“ → switch „Nutzungsdaten und Fehlerberichte senden“.
 - Terms: „Mehr“ → „Nutzungsbedingungen (EULA)“.
 - Guides on hummlist.com (not linked from anywhere in the app; the site's nav links the index /de/anleitungen, /en/guides and the changelog, its footer also „Chronik“ / "History" (/history, /en/history, the release timeline), the help page links the Alexa and Claude guides and, while native Siri is held, the Siri Shortcut guide; the landing page links the Siri guide): German „Hummlist per Siri: Kurzbefehl einrichten“ at /de/anleitungen/siri-kurzbefehl, „Hummlist per Alexa: Skill einrichten“ at /de/anleitungen/alexa, „Hummlist mit Claude verbinden“ at /de/anleitungen/claude; English "Hummlist with Siri (German only for now)" at /en/guides/siri-shortcut (says Siri is German-only and points to the German guide), "Hummlist with Alexa: set up the skill" at /en/guides/alexa and "Connect Hummlist to Claude" at /en/guides/claude (both full English guides). The widget guides „Hummlist auf dem Home-Bildschirm: das Widget“ / "Hummlist on your Home Screen: the widget" (/de/anleitungen/widget, /en/guides/widget) are drafts: preview builds only, not in production (`site/content/guides/`).
-- Deep links: /more, /more/access, /more/account, /more/invites, /more/lifetime, /more/settings, /more/settings/language, /more/usage-data, /more/join (the join-code page); /more/legal lands on /more.
+- Deep links: /more, /more/access, /more/account, /more/invites, /more/lifetime, /more/settings, /more/settings/language, /more/usage-data, /more/join (the join-code page), /more/household, /more/tips; /more/legal lands on /more.
 
 ## Driving it with Playwright
 
@@ -67,7 +67,7 @@ Preconditions:
 - The „Nutzungsdaten“ row and its page exist only when the build has an analytics key; without one More has no „Nutzungsdaten“ row. Production has one: the app.hummlist.com bundle carries a PostHog project key, and the store builds get it from the `release` environment secret (checked 2026-11-01). The e2e and verify-hummlist builds carry the stand-in key, so the switch shows there too.
 - More is reachable only in a household (a user without one lands on the welcome screen), so „Partner einladen“ always shows there.
 - The Premium row has no hint any more (job 85): neither „Freigeschaltet“ nor „Siri und KI-Assistenten“.
-- The household's name no longer shows anywhere in More (job 85 dropped the hint under „Partner einladen“).
+- The household's name is a row of its own (job 169b), not a hint: job 85 dropped the hint under „Partner einladen“. On the seeded household the second row reads „Familie Brandt“ (driven 2026-11-09: Konto, Familie Brandt, Partner einladen, Anderem Haushalt beitreten, Zugänge, Einstellungen, Nutzungsdaten, Tipps, Feedback senden, Hilfe & Kontakt, Rechtliches with its four rows, Abmelden).
 - On the phone the tab is role `tab`; on the rail it is role `button` named "Mehr Tab …". Use `openTab`.
 - Pages open by deep link: back goes to the More list, not out of the app.
 - Opening hummlist.com pages stays external everywhere; never an in-app browser. Real site pages are not reachable offline; stub them.

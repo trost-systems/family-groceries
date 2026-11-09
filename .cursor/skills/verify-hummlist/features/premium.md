@@ -4,7 +4,7 @@ Premium launch is on hold: nothing is sold and nothing is gated. Siri, Alexa and
 
 ## Sub-features
 
-- `prem-row` the Mehr row „Hummlist Premium“ (below „Konto“, no hint since job 85): today only for a household that has Premium (a free beta or tester unlock). Once offered, every household sees it.
+- `prem-row` the Mehr row „Hummlist Premium“ (below „Konto“, no hint since job 85): today only for a household that has Premium (a free beta or tester unlock). With several households the row and the page follow the household shown, so switching can show or hide them. Once offered, every household sees it.
 - `prem-page-web` on the web (app.hummlist.com, the preview), once sales start (`premium_offer` on), the page adds „Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.“ Not shown today, also not for an unlocked household. Nothing to buy on web, ever.
 - `prem-page-soon` in the iOS and Android store builds and on the web today (purchases build define off, `premium_offer` off) the page shows the hero only (no slogan, no refund link): no „bald verfügbar“, no note on where to buy, no cards, no prices, no buy, no restore.
 - `prem-refund-link` the link „Doppelt gekauft? So bekommst du dein Geld zurück“ (opens „Kauf zurückfordern“ help with the Apple and Google refund steps) ends the page only once sales are on, or for a household that bought Lifetime twice (Legal Review N-69). Not visible to anyone else today.

@@ -104,6 +104,8 @@ try {
 
   const sp = second.page;
   await sp.goto(`/join/${codes[1]}`);
+  // `/join/<code>` is the static invite page (app/web/join), not the app: its link opens the app with the invite.
+  await sp.getByRole('link', { name: lang === 'en' ? 'Join in the browser' : 'Im Browser beitreten' }).click();
   const secondEmail = sp.getByRole('button', { name: L('continueWithEmail') });
   await secondEmail.or(sp.getByRole('textbox', { name: L('email') })).waitFor({ timeout: 30_000 });
   if (await secondEmail.isVisible()) await secondEmail.click();

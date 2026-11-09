@@ -65,6 +65,6 @@ Preconditions:
 - A stack started before `scripts/alexa-test-ca.sh` ran does not trust the test CA: every signed request answers 400 before any intent. Restart the local stack after running the script.
 - The local function trusts the test CA only in a local stack; a hosted project refuses it, and `scripts/alexa-say.sh` cannot reach a hosted project.
 - No Premium lock: Alexa is free for good (Legal N-27). With the integration-lock switch on, Alexa still adds (`e2e/tests/integration-lock.spec.ts`), and Zugänge never shows „Pausiert“ under Amazon Alexa.
-- Each request logs one line, `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind>`, with no ids, tokens or item names (`docs/ALEXA.md`, "Request log").
+- Each request logs one line, `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind> [reason] rid=… slot=… confirm=… ended=… error=… ms=…` (`rid` is the last 12 characters of Alexa's request id, `slot` a word count), with no user ids, tokens or item names (`docs/ALEXA.md`, "Request log").
 - Every linking run adds a row „Amazon Alexa …“ to Zugänge; after a second link, match the row with `.first()` or count the rows.
 - Real Alexa voice, the Alexa app linking screens and the beta invitation cannot be checked here. unverified (needs a real device and an Amazon account).
