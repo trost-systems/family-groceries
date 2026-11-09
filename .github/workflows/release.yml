@@ -459,6 +459,6 @@ jobs:
           ANDROID: ${{ needs.android.result }}
           ANDROID_UPLOADED: ${{ needs.android.outputs.uploaded }}
           UPLOADED: ${{ needs.uploaded.result }}
-          # A failed Web deploy reports as a failed Web production.
-          WEB: ${{ needs.web.result == 'success' && needs.web-deploy.result == 'failure' && 'failure' || needs.web.result }}
+          # A failed or cancelled Web deploy reports as that result of Web production.
+          WEB: ${{ needs.web.result == 'success' && contains(fromJSON('["failure","cancelled"]'), needs.web-deploy.result) && needs.web-deploy.result || needs.web.result }}
         run: scripts/release/report.sh apply

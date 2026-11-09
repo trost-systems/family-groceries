@@ -88,6 +88,7 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           WANT: ${{ inputs.sha }}
+          EVENT: ${{ github.event_name }}
         run: |
           head="$(git rev-parse HEAD)"
           if [[ -n $WANT && $WANT != "$head" ]]; then
@@ -96,13 +97,16 @@ jobs:
           fi
           echo "sha=$head" >> "$GITHUB_OUTPUT"
           if [[ -z $VERCEL_TOKEN ]]; then
-            echo "::warning::No VERCEL_TOKEN secret: built but not deployed (docs/DEPLOY.md)."
-            echo "deploy=false" >> "$GITHUB_OUTPUT"; echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
+            # From Release: nothing to ship, so no build. A dispatch still builds, as a check.
+            echo "::warning::No VERCEL_TOKEN secret: nothing deployed (docs/DEPLOY.md)."
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "build=$([[ $EVENT == workflow_dispatch ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           echo "deploy=true" >> "$GITHUB_OUTPUT"
-          live="$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+          live="$(curl -fsS --max-time 10 -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v13/deployments/app.hummlist.com?teamId=$VERCEL_ORG_ID" \
-            | jq -r '.meta.githubCommitSha // empty' || true)"
+            | jq -r '.meta.githubCommitSha // .gitSource.sha // empty' || true)"
           echo "live=$live" >> "$GITHUB_OUTPUT"
           # An unknown live commit builds.
           if [[ -n $live ]] && git cat-file -e "$live^{commit}" 2>/dev/null \
@@ -161,7 +165,10 @@ jobs:
           SHA: ${{ steps.plan.outputs.sha }}
         run: |
           url="$(npx --yes "$VERCEL_CLI" deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN")"
+          id="$(curl -fsS --max-time 10 -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v13/deployments/${url#https://}?teamId=$VERCEL_ORG_ID" | jq -r '.id // empty' || true)"
           echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
           echo "Deployed ${SHA:0:7} as $url" | tee -a "$GITHUB_STEP_SUMMARY"
       # Vercel's own Git build of the same commit may take the alias too, so this checks the commit
       # app.hummlist.com serves, not the deployment id.
@@ -170,13 +177,14 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           SHA: ${{ steps.plan.outputs.sha }}
+          ID: ${{ steps.deploy.outputs.id }}
         run: |
           for _ in $(seq 1 12); do
-            live="$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            live="$(curl -fsS --max-time 10 -H "Authorization: Bearer $VERCEL_TOKEN" \
               "https://api.vercel.com/v13/deployments/app.hummlist.com?teamId=$VERCEL_ORG_ID" \
-              | jq -r '"\(.id) \(.meta.githubCommitSha // "")"' || true)"
-            code="$(curl -s -o /dev/null -w '%{http_code}' https://app.hummlist.com/)"
-            if [[ ${live#* } == "$SHA" && $code == 200 ]]; then
+              | jq -r '"\(.id) \(.meta.githubCommitSha // .gitSource.sha // "")"' || true)"
+            code="$(curl -s --max-time 10 -o /dev/null -w '%{http_code}' https://app.hummlist.com/ || true)"
+            if [[ $code == 200 && ( ${live#* } == "$SHA" || ( -n $ID && ${live%% *} == "$ID" ) ) ]]; then
               echo "app.hummlist.com: HTTP 200, deployment ${live%% *}, commit ${SHA:0:7}" | tee -a "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
