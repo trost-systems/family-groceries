@@ -1467,10 +1467,14 @@ Built and merged (#327, #332, #333). What only Peter can do:
    „Anpassen“ side by side: at 390 px the chip and the line share 212 px, and the line alone
    needs 124. The line now shows whole right below the household chip, floating over the top of
    the list like the sync card, until the adds are seen; on a tablet and the web it stays in the
-   bar. While it shows, it covers the left part of whatever row is under it (at the top of the
-   list, the first store divider's badge and name) for those seconds, as the sync card does; it
-   ends before the column under „Anpassen“, so a divider's count and fold key stay usable, and a
-   long partner name takes a second line before it ellipsizes. Screenshots: `docs/screenshots/173/`. Other options,
+   bar. „Seen“ means each new row has been on screen for 3 s, and new adds often sort below the
+   fold, so the line can stay until the user scrolls down to them: in the post-merge review it
+   still showed after 60 s. For that whole time it covers the left part of whatever is under it:
+   at the top of the list the first store divider's badge and name („Ohne Laden“ in the demo),
+   and once scrolled, the names of the top rows passing under it (for example „Obst & Gemüse“
+   and „Bananen“). It ends before the column under „Anpassen“, so a divider's count and fold
+   key stay usable, and taps on it do nothing. A long partner name takes a second line before
+   it ellipsizes. Screenshots: `docs/screenshots/173/`. Other options,
    if you prefer one: push the list down by the line's height while it shows (the rows jump
    twice, once when a partner adds and again when it clears); shorten the line to „1 neu“ in
    the bar on phones (who added only for screen readers); or give „Anpassen“ an icon on phones
@@ -1484,7 +1488,11 @@ Built and merged (#327, #332, #333). What only Peter can do:
    the request instead of letting them in (they would be in 11). The admin's row just goes
    away, and the requester reads „Deine Anfrage für „…“ wurde nicht angenommen.“, which sounds
    like a decline. A copy job could give both sides their own words („… ist schon in 10
-   Haushalten“). Rare: it needs a join elsewhere while the request waits.
+   Haushalten“). Rare: it needs a join elsewhere while the request waits. On the oldest builds
+   (`join_household`), asking at 10 into such a household now files no request and looks like
+   an invalid code, where before a request was filed that an approval would close anyway.
+   Restoring an archived household at 10 shows the cap text, which says „anlegst oder
+   beitrittst“ and doesn't name a restore; the same copy job could cover it.
 4. **Gaps 3-6 of vmaint-20261109 (copy items), not checked.** The verification run's summary
    (`jobs/vmaint-20261109/DONE_SUMMARY.md`) stays on the box and never reached the Hetzner runner
    this job ran on (asked on BOARD twice, no copy arrived), and PR #337 doesn't list the items. Whether they are in this file is still

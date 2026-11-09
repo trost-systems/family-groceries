@@ -10849,7 +10849,9 @@ Two product gaps from vmaint-20261109.
    at the top of the list where the sync card opens, floating over the rows as the bar does. It
    is laid out in the list screen's stack, not in the pinned header: the header clips and only
    takes taps inside its extent, so a tap on the capsule would have ticked off the row under it.
-   It shows for as long as the line does, until the adds have been seen; an offline card opening
+   It shows for as long as the line does, until the adds have been seen (each new row 3 s on
+   screen; a new row below the fold keeps it there until the user scrolls to it, covering the
+   top rows' start meanwhile; post-merge review, NEEDS_PETER job 173 item 1); an offline card opening
    there covers it for its 3 s (the capsule's left tip can show beside the card), then folds
    into the pill in the bar. Where the line fits (a
    tablet, the web at 1366 px) it stays in the bar as before. The chip keeps its width. Below the
