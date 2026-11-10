@@ -52,7 +52,7 @@ build() {
   for name in POSTHOG_PROJECT_API_KEY POSTHOG_HOST ANALYTICS_INTERNAL_HOUSEHOLDS; do
     if [[ -n ${!name:-} ]]; then analytics+=("--dart-define=$name=${!name}"); fi
   done
-  # Preview deployments (main on preview.app.hummlist.com) are ours: every event internal.
+  # Preview deployments (main on preview.app.snacklist.app) are ours: every event internal.
   if [[ ${VERCEL_ENV:-} != production ]]; then analytics+=(--dart-define=ANALYTICS_INTERNAL_BUILD=true); fi
   echo "vercel.sh: analytics $([[ -n ${POSTHOG_PROJECT_API_KEY:-} ]] && echo on || echo off)"
   # Job 67 (docs/PAYWALL_RELEASE.md): the integration settings' Premium card, when the Vercel
@@ -77,7 +77,7 @@ build() {
     # A failed upload does not stop the deploy: the traces just stay minified.
     if ! POSTHOG_CLI_API_KEY="$POSTHOG_PERSONAL_API_KEY" POSTHOG_CLI_PROJECT_ID="$POSTHOG_PROJECT_ID" \
       npx --yes @posthog/cli@0.19.0 --host https://eu.posthog.com sourcemap process \
-      --directory build/web --release-name hummlist-web \
+      --directory build/web --release-name snacklist-web \
       --release-version "${VERCEL_GIT_COMMIT_SHA:-local}" --delete-after; then
       echo "vercel.sh: source map upload to PostHog failed; web stack traces stay minified" >&2
     fi

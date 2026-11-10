@@ -101,7 +101,7 @@ const contextRules: Record<string, Rule> = {
   'is_internal': (v) => typeof v === 'boolean',
   '$geoip_disable': (v) => v === true,
   '$process_person_profile': (v) => v === false,
-  $lib: oneOf('hummlist-edge'),
+  $lib: oneOf('snacklist-edge'),
 };
 
 export class RefusedEvent extends Error {}
@@ -162,7 +162,7 @@ export class Telemetry {
           $exception_list: exceptionList(error, handled),
           $geoip_disable: true,
           $process_person_profile: false,
-          $lib: 'hummlist-edge',
+          $lib: 'snacklist-edge',
         },
       });
     } catch (e) {
@@ -186,7 +186,7 @@ export class Telemetry {
       'is_internal': this.config.internal || subject.internal === true,
       '$geoip_disable': true,
       '$process_person_profile': false,
-      $lib: 'hummlist-edge',
+      $lib: 'snacklist-edge',
     };
     try {
       checkServerEvent(event, all);

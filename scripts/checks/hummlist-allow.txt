@@ -1,0 +1,151 @@
+# Files that may still name Hummlist (scripts/checks/no-hummlist.sh). One git pathspec glob per
+# line, then two spaces and `# <exception n>: <reason>`. Numbers are the rename sweep's exceptions:
+# 1 hummlist.com redirects, 2 the waitlist's old unsubscribe origin, 3 the hello+…@hummlist.com
+# test allow-list, 4 Supabase Auth and Alexa redirect URLs and the old web app host, 5 applied
+# migrations, 6 old store and bundle ids and app links, 7 history, 8 names installed Hummlist
+# builds send or say, 9 guards that the old name is gone, 10 external names that keep it (Vercel
+# projects hummlist-site/-mcp/-nexus, box paths under /workspace/hummlist).
+# History lists directories; everything else lists files, so the list shrinks as each one retires.
+
+# 9: guards that the old name is gone
+scripts/checks/no-hummlist.sh  # 9: the guard greps for the name
+scripts/checks/no-hummlist-test.sh  # 9: the guard's test fixtures
+scripts/checks/hummlist-allow.txt  # 9: this list
+scripts/lint.sh  # 9: runs the guard by its file name
+AGENTS.md  # 9, 1, 4, 10: the guard's lint row; hummlist.com redirect, app.hummlist.com until R1, Vercel project hummlist-mcp
+supabase/deploy/auth_mail_test.ts  # 9: asserts the auth mails never name Hummlist
+supabase/functions/alexa/handler_test.ts  # 9: asserts no reply names Hummlist
+supabase/functions/alexa/skill_package_test.ts  # 9, 4: no Hummlist in the package; app.hummlist.com linking domain
+
+# 7: history
+docs/done/**  # 7: finished jobs describe the past
+docs/screenshots/**  # 7: dated proof screenshots and notes
+docs/consent/**  # 7: dated consent records
+docs/voice/TEST-SESSION-*  # 7: dated test sessions
+tool/hillclimb/**/attempts/**  # 7: hill-climb attempt patches
+docs/DECISIONS.md  # 7: decision log, sentences about the rename and past facts
+docs/NEEDS_LEAD.md  # 7: log, sentences about the rename and past facts
+docs/NEEDS_PETER.md  # 7: log, sentences about the rename and past facts
+
+# docs that keep the old name for the exceptions above (per file)
+docs/ALEXA.md  # 4, 6, 7: account-linking keeps app.hummlist.com; Hummlist skill id in ALEXA_SKILL_ID; S4 invocation history
+docs/ALEXA_CERTIFICATION.md  # 7: dated 2026-11-02 certification run (manifest „Hummlist“); infra name: box path /workspace/hummlist/alexa-cert/
+docs/ANALYTICS.md  # 6, 7: Hummlist builds' product ids and consent version; $lib hummlist-app before job 44
+docs/AUTH.md  # 4, 6: com.hummlist.app://login-callback and app.hummlist.com in the redirect allow list; Hummlist Apple/Google client ids until R1
+docs/DEEP_LINKS.md  # 6: app.hummlist.com App Links/associated domains and com.hummlist.app AASA/assetlinks entries until R1
+docs/DEPLOY.md  # 1, 4: hummlist.com host redirects, app.hummlist.com and preview.app.hummlist.com domains (no preview.app.snacklist.app yet); infra name: Vercel project hummlist-site
+docs/FEATURE_MAP.md  # 7: infra name: box directories /workspace/hummlist/feature-map and clips
+docs/MCP.md  # 8: mcp.hummlist.com and via=mcp-hummlist stay served for clients set up before the rename; dated 2026-10-31 measurements; infra name: Vercel project hummlist-mcp
+docs/PAYWALL_RELEASE.md  # 6: Hummlist's store products and RevenueCat apps until R1
+docs/PRIVACY_DATA_MAP.md  # 1, 8: Vercel still serves (and logs) hummlist.com, app.hummlist.com, mcp.hummlist.com
+docs/PURCHASES.md  # 6: com.hummlist.app.* product ids, hummlistProductIds, Hummlist RevenueCat apps and subscription group until R1
+docs/RELEASE.md  # 6, 7: Hummlist store apps, upload key CN=Hummlist, assetlinks fingerprints, hummlist-maint branch; past release notes; preview.app.hummlist.com
+docs/SIRI_SHORTCUT.md  # 7, 8: x-hummlist-client from installed Hummlist builds; job 97/92 spoken-name history
+docs/SPEC.md  # 7: the app's earlier identifiers (Hummlist, com.hummlist.app)
+docs/WAITLIST.md  # 1, 2, 3: hummlist.com redirect, its old unsubscribe origin, hello+…@hummlist.com test allow-list; infra name: hummlist-site preview origin
+docs/hillclimb/hc-strictness.md  # 7: dated hill-climb record naming verify-hummlist before the skill rename
+docs/hillclimb/hc-ui-app.md  # 7: dated hill-climb record naming verify-hummlist before the skill rename
+DONE_SUMMARY.md  # 7, 6: summary of past jobs; com.hummlist.app.lifetime
+site/content/legal/consent/waitlist-de-v1.md  # 7: consent text sign-ups agreed to; proofs store its version
+site/content/legal/consent/waitlist-en-v1.md  # 7: consent text sign-ups agreed to; proofs store its version
+site/content/legal/consent/waitlist-de-v2.md  # 7: consent text sign-ups agreed to; proofs store its version
+site/content/legal/consent/waitlist-en-v2.md  # 7: consent text sign-ups agreed to; proofs store its version
+site/content/legal/consent/waitlist-confirm-de-v1.md  # 7: consent text confirmations agreed to; proofs store its version
+site/content/legal/consent/waitlist-confirm-en-v1.md  # 7: consent text confirmations agreed to; proofs store its version
+.cursor/skills/verify-snacklist/features/alexa.md  # 7: Hummlist's old invocation; the icon still has the Hummlist design
+.cursor/skills/verify-snacklist/features/privacy-consent.md  # 7, 8: yes answers from Hummlist builds
+.cursor/skills/verify-snacklist/features/siri.md  # 7, 8: Hummlist's old spellings the parser drops
+.cursor/skills/verify-snacklist/features/FEATURES-FOR-WRITERS.md  # 7, 1, 4, 10: the rename, dated records, the old hosts, box path
+
+# 5: applied migrations
+supabase/migrations/**  # 5: production already ran them; never edited
+
+# 1: hummlist.com and subdomain redirects
+site/vercel.json  # 1: hummlist.com and www host redirects
+site/scripts/preview.mjs  # 1: preview server's host-redirect handling
+site/test/preview.test.mjs  # 1: tests of the host redirects
+site/test/redirect.test.mjs  # 1: tests of the host redirects
+nexus/scripts/setup-vercel.sh  # 1, 10: keeps nexus.hummlist.com a 308 redirect; Vercel project hummlist-nexus
+nexus/README.md  # 1, 10: nexus.hummlist.com redirect; Vercel project hummlist-nexus
+.cursor/skills/verify-family-groceries/features/guides.md  # 1: hummlist.com redirects to snacklist.app
+.cursor/skills/verify-snacklist/features/waitlist.md  # 1, 3, 4: hummlist.com redirect, the old test allow-list, no link to app.hummlist.com
+
+# 2: the waitlist accepts https://hummlist.com (one-click unsubscribe links in mails already sent)
+supabase/functions/waitlist/mail.ts  # 2, 3, 10: old origin, hummlist-site previews and the hello+ test allow-list
+supabase/functions/waitlist/mail_test.ts  # 2, 3, 9: old origin, the hello+ allow-list entry, no mail names Hummlist
+supabase/functions/waitlist/handler_test.ts  # 2, 3, 10: old origin and hummlist-site previews; the hello+ allow-list entry
+site/test/api.test.mjs  # 2, 10: posts from a hummlist-site preview origin
+site/test/agent.test.mjs  # 4: no site page names app.hummlist.com either
+site/test/waitlist.test.mjs  # 4: no site page links app.hummlist.com either
+
+# 3: hello+…@hummlist.com test allow-list (removed after the weekend)
+.env.example  # 3, 6: describes the test allow-list; Hummlist Apple client id
+
+# 4: Supabase Auth and Alexa redirect URLs, the old web app host, kept until R1
+supabase/config.toml  # 4: additional_redirect_urls for app.hummlist.com and com.hummlist.app
+supabase/deploy/auth_urls.ts  # 4: deployed redirect allow-list
+supabase/deploy/auth_urls_test.ts  # 4: tests of the redirect allow-list
+alexa/account-linking.json  # 4: account-linking domains
+.cursor/skills/verify-family-groceries/features/auth.md  # 4: com.hummlist.app://login-callback of Hummlist builds
+.cursor/skills/verify-family-groceries/features/web-hosting.md  # 4: app.hummlist.com still serves the web app
+.cursor/skills/verify-snacklist/SKILL.md  # 4, 10: app.hummlist.com still serves the web app; box path
+.cursor/skills/verify-snacklist/features/account-deletion.md  # 4: the page is on app.hummlist.com too
+.cursor/skills/verify-snacklist/features/premium.md  # 4: the web page on app.hummlist.com too
+
+# 6: old store and bundle ids and app links, kept until R1 retires the Hummlist apps
+app/web/.well-known/apple-app-site-association  # 6: VCZSHMZY25.com.hummlist.app
+app/web/.well-known/assetlinks.json  # 6: com.hummlist.app App Links
+app/android/app/src/main/AndroidManifest.xml  # 6: App Links for app.hummlist.com invite links
+app/ios/Runner/Runner.entitlements  # 6: applinks:app.hummlist.com invite links
+app/test/app/deep_links_config_test.dart  # 6: tests of the old ids and host
+app/test/household/pending_invite_test.dart  # 6: an invite link sent from a Hummlist build
+e2e/web-smoke.mjs  # 6: checks the served AASA and assetlinks
+scripts/configure-social-auth.mjs  # 6: Apple client ids of the Hummlist builds
+scripts/backup/fixtures.sql  # 6: com.hummlist.app.lifetime purchase
+supabase/functions/account/apple.ts  # 6: appleBundleIds
+supabase/functions/account/apple_test.ts  # 6: tests of appleBundleIds
+supabase/functions/purchases/types.ts  # 6: com.hummlist.app product ids
+supabase/functions/purchases/revenuecat_test.ts  # 6: tests of the old product ids
+analytics/fixtures.ts  # 6: events with the old product ids
+analytics/metrics.ts  # 6: counts the old yearly id
+analytics/queries/paying_households_d35.sql  # 6: old product ids
+analytics/queries/paying_share_wah.sql  # 6: old product ids
+supabase/tests/account_deletion.test.sql  # 6: old product ids
+supabase/tests/household_bound.test.sql  # 6: old product ids
+supabase/tests/integration_lock.test.sql  # 6: old product ids
+supabase/tests/leaves_unlocked.test.sql  # 6: old product ids
+supabase/tests/premium_yearly.test.sql  # 6: old product ids
+supabase/tests/purchase_legal_fixes.test.sql  # 6: old product ids
+supabase/tests/purchases.test.sql  # 6: old product ids
+supabase/tests/revenuecat_promotional.test.sql  # 6: old product ids
+.cursor/skills/verify-family-groceries/features/purchases.md  # 6: Hummlist's com.hummlist.app product ids
+.cursor/skills/verify-family-groceries/features/household.md  # 6: app.hummlist.com invite links
+.cursor/skills/verify-snacklist/features/README.md  # 6, 7: app.hummlist.com links; evidence under the old id rate-hummlist
+.cursor/skills/verify-snacklist/features/app-links.md  # 6: app.hummlist.com links
+.cursor/skills/verify-snacklist/features/household-invites.md  # 6: Hummlist builds' invite host
+
+# 8: names installed Hummlist builds send or say; the server keeps accepting them
+app/android/app/src/main/kotlin/com/snacklist/app/widget/WidgetPayload.kt  # 8: reads the widget key builds before the rename wrote
+app/ios/HomeWidget/ListSnapshot.swift  # 8: reads the widget key builds before the rename wrote
+mcp-proxy/vercel.json  # 8: via=mcp-hummlist for the mcp.hummlist.com host
+mcp-proxy/public/static/page.css  # 8: the page is served on mcp.hummlist.com too
+mcp-proxy/README.md  # 8, 10: mcp.hummlist.com host and via=mcp-hummlist; Vercel project hummlist-mcp
+scripts/mcp-proxy-routes_test.ts  # 8: tests the mcp.hummlist.com host routing
+supabase/functions/mcp/handler.ts  # 8: maps via=mcp-hummlist to mcp.hummlist.com
+supabase/functions/mcp/handler_test.ts  # 8: tests of the old host mapping
+supabase/functions/voice/handler.ts  # 8: reads x-hummlist-client from old builds
+supabase/functions/voice/request_line_test.ts  # 8: old header test
+supabase/functions/voice/parse.ts  # 8: Siri on Hummlist builds still says Hummlist/Hummliste
+supabase/functions/voice/parse_en.ts  # 8: Siri on Hummlist builds still says Hummlist
+supabase/functions/voice/parse_test.ts  # 8: tests of the old app names in sentences
+supabase/functions/voice/parse_en_test.ts  # 8: tests of the old app name in sentences
+e2e/tests/voice.spec.ts  # 8: a Hummliste sentence from an old build
+supabase/functions/_shared/consent_version.ts  # 8: Hummlist builds' analytics consent version
+supabase/functions/alexa/index.ts  # 8: also serves the Hummlist skill until S5
+supabase/functions/alexa/handler.ts  # 8: also serves the Hummlist skill until S5
+supabase/functions/alexa/store_integration_test.ts  # 8: consent under Hummlist's text version
+
+# 10: external names that keep the old name
+.cursor/skills/snacklist-howto-clips/SKILL.md  # 10: box path /workspace/hummlist
+.cursor/skills/snacklist-howto-clips/clip.mjs  # 10: box path /workspace/hummlist
+.cursor/skills/verify-family-groceries/features/hosted-backend.md  # 10: Vercel project hummlist-mcp

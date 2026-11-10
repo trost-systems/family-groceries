@@ -72,16 +72,16 @@ xcrun simctl boot "$udid" 2>/dev/null || true
 xcrun simctl bootstatus "$udid" -b
 
 log "phase tests"
-result=/tmp/hummlist-runner-tests.xcresult
+result=/tmp/snacklist-runner-tests.xcresult
 rm -rf "$result"
 xcodebuild test-without-building -workspace ios/Runner.xcworkspace -scheme Runner \
   -destination "id=$udid" -derivedDataPath "$derived" -skip-testing:RunnerTests/LifetimeStoreKitTests -parallel-testing-enabled NO \
   -resultBundlePath "$result" || status=$?
 [[ -d $result ]] || exit "${status:-1}"
-xcrun xcresulttool get test-results summary --path "$result" | tee /tmp/hummlist-runner-tests.json
+xcrun xcresulttool get test-results summary --path "$result" | tee /tmp/snacklist-runner-tests.json
 python3 -c '
 import json, sys
-s = json.load(open("/tmp/hummlist-runner-tests.json"))
+s = json.load(open("/tmp/snacklist-runner-tests.json"))
 print("passed %s, failed %s, skipped %s" % (s.get("passedTests"), s.get("failedTests"), s.get("skippedTests")))
 sys.exit(0 if s.get("result") == "Passed" and s.get("passedTests", 0) > 0 else 1)'
 [[ -z ${status:-} ]] || exit "$status"
@@ -111,8 +111,8 @@ xcrun simctl boot "$storekit_udid"
 xcrun simctl bootstatus "$storekit_udid" -b
 
 log "phase storekit_tests"
-storekit_result=/tmp/hummlist-storekit-tests.xcresult
-storekit_log=/tmp/hummlist-storekit-tests.log
+storekit_result=/tmp/snacklist-storekit-tests.xcresult
+storekit_log=/tmp/snacklist-storekit-tests.log
 rm -rf "$storekit_result"
 # Minutes after this first boot of the runtime, an xcodebuild started on the loaded runner can see
 # no simulator at all, while simctl lists this one. The default search gave up after about a
@@ -128,7 +128,7 @@ if grep -q "Unable to find a device matching the provided destination specifier"
   exit 1
 fi
 [[ -d $storekit_result ]] || exit "${status:-1}"
-xcrun xcresulttool get test-results tests --path "$storekit_result" >/tmp/hummlist-storekit-tests.json
+xcrun xcresulttool get test-results tests --path "$storekit_result" >/tmp/snacklist-storekit-tests.json
 python3 - "$storekit_ios" <<'PY'
 import json, sys
 cases = []
@@ -137,7 +137,7 @@ def walk(node):
         cases.append(node)
     for child in node.get("children", []):
         walk(child)
-for node in json.load(open("/tmp/hummlist-storekit-tests.json"))["testNodes"]:
+for node in json.load(open("/tmp/snacklist-storekit-tests.json"))["testNodes"]:
     walk(node)
 for case in cases:
     why = "; ".join(c.get("name", "") for c in case.get("children", [])) if case.get("result") != "Passed" else ""

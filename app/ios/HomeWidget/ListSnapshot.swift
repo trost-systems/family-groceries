@@ -9,10 +9,13 @@ enum ListSnapshot: Equatable {
   case noData
 
   static let appGroup = "group.com.snacklist.app"
-  static let payloadKey = "hummlist_widget"
+  static let payloadKey = "snacklist_widget"
+  /// The key before the rename: builds installed before it wrote this one, read until the app writes the new key.
+  static let legacyPayloadKey = "hummlist_widget"
 
   static func read() -> ListSnapshot {
-    parse(UserDefaults(suiteName: appGroup)?.string(forKey: payloadKey))
+    let defaults = UserDefaults(suiteName: appGroup)
+    return parse(defaults?.string(forKey: payloadKey) ?? defaults?.string(forKey: legacyPayloadKey))
   }
 
   static func parse(_ json: String?) -> ListSnapshot {

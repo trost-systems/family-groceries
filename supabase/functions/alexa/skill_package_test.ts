@@ -98,7 +98,7 @@ Deno.test('the testing instructions cover every language and hold no credentials
   }
   assertFalse(/passw(?:or)?t?\s*[:=]\s*[^\s<]/i.test(text), 'no password in the repo');
   assertFalse(
-    /@(?!(?:hummlist\.com|snacklist\.app)\b)[\w-]+\.\w+/.test(text),
+    /@(?!snacklist\.app\b)[\w-]+\.\w+/.test(text),
     'no test account address',
   );
 });

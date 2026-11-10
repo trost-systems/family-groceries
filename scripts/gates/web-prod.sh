@@ -24,7 +24,7 @@ for script in scripts/vercel.sh scripts/gates/e2e.sh .cursor/skills/verify-famil
     || { echo "web-prod: $script builds the web app without --wasm" >&2; exit 1; }
 done
 
-# Job 22 and 66: universal links and App Links read these two from app.hummlist.com/.well-known/;
+# Job 22 and 66: universal links and App Links read these two from app.snacklist.app/.well-known/;
 # the build must copy them unchanged (vercel.json serves them as JSON), and Apple and Google
 # drop a file that does not parse (test/app/deep_links_config_test.dart checks the contents).
 for file in .well-known/apple-app-site-association .well-known/assetlinks.json; do

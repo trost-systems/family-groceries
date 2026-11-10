@@ -21,7 +21,7 @@
     {
       "timestamp": "2026-11-03T07:20:59.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.54\", \"request_id\": \"req-7c1e9a2b3d4f\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"lz2tq7xk4mfvb3np8rcd6wye\", \"client_id\": \"c5150a1e-7a3b-4c2d-9e8f-0a1b2c3d4e5f\", \"method\": \"GET\", \"path\": \"/oauth/authorize\", \"status\": 302}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.54\", \"request_id\": \"req-7c1e9a2b3d4f\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"lz2tq7xk4mfvb3np8rcd6wye\", \"client_id\": \"c5150a1e-7a3b-4c2d-9e8f-0a1b2c3d4e5f\", \"method\": \"GET\", \"path\": \"/oauth/authorize\", \"status\": 302}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -30,7 +30,7 @@
     {
       "timestamp": "2026-11-03T07:21:00.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.54\", \"request_id\": \"req-wk-1\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"method\": \"GET\", \"path\": \"/.well-known/oauth-authorization-server\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.54\", \"request_id\": \"req-wk-1\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"method\": \"GET\", \"path\": \"/.well-known/oauth-authorization-server\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -39,7 +39,7 @@
     {
       "timestamp": "2026-11-03T07:21:01.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.54\", \"request_id\": \"req-8d2f0b3c4e5a\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"error\": \"token has invalid claims: token is expired\", \"error_code\": \"bad_jwt\", \"method\": \"GET\", \"path\": \"/oauth/authorizations/lz2tq7xk4mfvb3np8rcd6wye\", \"status\": 403}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.54\", \"request_id\": \"req-8d2f0b3c4e5a\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"error\": \"token has invalid claims: token is expired\", \"error_code\": \"bad_jwt\", \"method\": \"GET\", \"path\": \"/oauth/authorizations/lz2tq7xk4mfvb3np8rcd6wye\", \"status\": 403}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -48,7 +48,7 @@
     {
       "timestamp": "2026-11-03T07:21:12.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.55\", \"request_id\": \"req-9e3a1c4d5f6b\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"5larh2kq9vtx6mbn3cfz8pdw\", \"client_id\": \"c5150a1e-7a3b-4c2d-9e8f-0a1b2c3d4e5f\", \"method\": \"GET\", \"path\": \"/oauth/authorizations/5larh2kq9vtx6mbn3cfz8pdw\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.55\", \"request_id\": \"req-9e3a1c4d5f6b\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"5larh2kq9vtx6mbn3cfz8pdw\", \"client_id\": \"c5150a1e-7a3b-4c2d-9e8f-0a1b2c3d4e5f\", \"method\": \"GET\", \"path\": \"/oauth/authorizations/5larh2kq9vtx6mbn3cfz8pdw\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -57,7 +57,7 @@
     {
       "timestamp": "2026-11-03T07:21:12.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.55\", \"request_id\": \"req-0f4b2d5e6a7c\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"5larh2kq9vtx6mbn3cfz8pdw\", \"client_id\": \"c5150a1e-7a3b-4c2d-9e8f-0a1b2c3d4e5f\", \"method\": \"GET\", \"path\": \"/oauth/authorize\", \"status\": 302}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.55\", \"request_id\": \"req-0f4b2d5e6a7c\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"5larh2kq9vtx6mbn3cfz8pdw\", \"client_id\": \"c5150a1e-7a3b-4c2d-9e8f-0a1b2c3d4e5f\", \"method\": \"GET\", \"path\": \"/oauth/authorize\", \"status\": 302}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -66,7 +66,7 @@
     {
       "timestamp": "2026-11-03T07:21:13.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.55\", \"request_id\": \"req-1a5c3e6f7b8d\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"5larh2kq9vtx6mbn3cfz8pdw\", \"method\": \"POST\", \"oauth_consent_action\": \"approve\", \"path\": \"/oauth/authorizations/5larh2kq9vtx6mbn3cfz8pdw/consent\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.55\", \"request_id\": \"req-1a5c3e6f7b8d\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"5larh2kq9vtx6mbn3cfz8pdw\", \"method\": \"POST\", \"oauth_consent_action\": \"approve\", \"path\": \"/oauth/authorizations/5larh2kq9vtx6mbn3cfz8pdw/consent\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -75,7 +75,7 @@
     {
       "timestamp": "2026-11-03T07:21:15.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"192.0.2.177\", \"request_id\": \"req-2b6d4f7a8c9e\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"login\", \"actor_id\": \"0162a7b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b\", \"actor_name\": \"Lea Trostmann\", \"actor_username\": \"lea@example.invalid\", \"log_type\": \"account\", \"traits\": {\"client_id\": \"c5150a1e-7a3b-4c2d-9e8f-0a1b2c3d4e5f\", \"provider_type\": \"oauth_provider_authorization_code\"}}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"192.0.2.177\", \"request_id\": \"req-2b6d4f7a8c9e\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"login\", \"actor_id\": \"0162a7b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b\", \"actor_name\": \"Lea Trostmann\", \"actor_username\": \"lea@example.invalid\", \"log_type\": \"account\", \"traits\": {\"client_id\": \"c5150a1e-7a3b-4c2d-9e8f-0a1b2c3d4e5f\", \"provider_type\": \"oauth_provider_authorization_code\"}}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -102,7 +102,7 @@
     {
       "timestamp": "2026-11-03T07:30:00.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"198.51.100.23\", \"request_id\": \"req-3c7e5a8b9d0f\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"mcpz8x7c6v5b4n3m2a1s9d0f\", \"client_id\": \"9d1c0ffe-1234-4abc-8def-112233445566\", \"method\": \"GET\", \"path\": \"/oauth/authorize\", \"status\": 302}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"198.51.100.23\", \"request_id\": \"req-3c7e5a8b9d0f\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"mcpz8x7c6v5b4n3m2a1s9d0f\", \"client_id\": \"9d1c0ffe-1234-4abc-8def-112233445566\", \"method\": \"GET\", \"path\": \"/oauth/authorize\", \"status\": 302}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -111,7 +111,7 @@
     {
       "timestamp": "2026-11-03T07:30:05.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"198.51.100.23\", \"request_id\": \"req-4d8f6b9c0e1a\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"mcpz8x7c6v5b4n3m2a1s9d0f\", \"method\": \"POST\", \"oauth_consent_action\": \"approve\", \"path\": \"/oauth/authorizations/mcpz8x7c6v5b4n3m2a1s9d0f/consent\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"198.51.100.23\", \"request_id\": \"req-4d8f6b9c0e1a\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"authorization_id\": \"mcpz8x7c6v5b4n3m2a1s9d0f\", \"method\": \"POST\", \"oauth_consent_action\": \"approve\", \"path\": \"/oauth/authorizations/mcpz8x7c6v5b4n3m2a1s9d0f/consent\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -120,7 +120,7 @@
     {
       "timestamp": "2026-11-03T07:30:07.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"198.51.100.23\", \"request_id\": \"req-5e9a7c0d1f2b\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"login\", \"actor_id\": \"5cba9e8d-7f6a-4b5c-9d4e-3f2a1b0c9d8e\", \"actor_name\": \"Max Mustermann\", \"actor_username\": \"max@example.invalid\", \"log_type\": \"account\", \"traits\": {\"client_id\": \"9d1c0ffe-1234-4abc-8def-112233445566\", \"provider_type\": \"oauth_provider_authorization_code\"}}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"198.51.100.23\", \"request_id\": \"req-5e9a7c0d1f2b\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"login\", \"actor_id\": \"5cba9e8d-7f6a-4b5c-9d4e-3f2a1b0c9d8e\", \"actor_name\": \"Max Mustermann\", \"actor_username\": \"max@example.invalid\", \"log_type\": \"account\", \"traits\": {\"client_id\": \"9d1c0ffe-1234-4abc-8def-112233445566\", \"provider_type\": \"oauth_provider_authorization_code\"}}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -129,7 +129,7 @@
     {
       "timestamp": "2026-11-03T08:22:00.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"198.51.100.23\", \"request_id\": \"req-6f0b8d1e2a3c\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"token_revoked\", \"actor_id\": \"5cba9e8d-7f6a-4b5c-9d4e-3f2a1b0c9d8e\", \"actor_username\": \"max@example.invalid\", \"log_type\": \"token\"}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"198.51.100.23\", \"request_id\": \"req-6f0b8d1e2a3c\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"token_revoked\", \"actor_id\": \"5cba9e8d-7f6a-4b5c-9d4e-3f2a1b0c9d8e\", \"actor_username\": \"max@example.invalid\", \"log_type\": \"token\"}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -138,7 +138,7 @@
     {
       "timestamp": "2026-11-03T08:21:15.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"192.0.2.178\", \"request_id\": \"req-7a1c9e2f3b4d\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"token_refreshed\", \"actor_id\": \"0162a7b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b\", \"actor_name\": \"Lea Trostmann\", \"actor_username\": \"lea@example.invalid\", \"log_type\": \"token\"}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"192.0.2.178\", \"request_id\": \"req-7a1c9e2f3b4d\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"token_refreshed\", \"actor_id\": \"0162a7b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b\", \"actor_name\": \"Lea Trostmann\", \"actor_username\": \"lea@example.invalid\", \"log_type\": \"token\"}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -147,7 +147,7 @@
     {
       "timestamp": "2026-11-03T08:21:16.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"192.0.2.178\", \"request_id\": \"req-8b2d0f3a4c5e\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"token_revoked\", \"actor_id\": \"0162a7b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b\", \"actor_username\": \"lea@example.invalid\", \"log_type\": \"token\"}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"192.0.2.178\", \"request_id\": \"req-8b2d0f3a4c5e\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"auth_event\": {\"action\": \"token_revoked\", \"actor_id\": \"0162a7b4-5c6d-4e7f-8a9b-0c1d2e3f4a5b\", \"actor_username\": \"lea@example.invalid\", \"log_type\": \"token\"}, \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -156,7 +156,7 @@
     {
       "timestamp": "2026-11-03T09:00:01.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"192.0.2.179\", \"request_id\": \"req-9c3e1a4b5d6f\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"error\": \"Invalid Refresh Token: Already Used\", \"error_code\": \"refresh_token_already_used\", \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 400}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"192.0.2.179\", \"request_id\": \"req-9c3e1a4b5d6f\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"error\": \"Invalid Refresh Token: Already Used\", \"error_code\": \"refresh_token_already_used\", \"method\": \"POST\", \"path\": \"/oauth/token\", \"status\": 400}",
       "execution_id": "",
       "status": "",
       "ms": "",
@@ -165,7 +165,7 @@
     {
       "timestamp": "2026-11-03T09:05:00.000000",
       "source": "auth_logs",
-      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.hummlist.com/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.54\", \"request_id\": \"req-0d4f2b5c6e7a\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"method\": \"GET\", \"path\": \"/user/oauth/grants\", \"status\": 200}",
+      "event_message": "{\"component\": \"api\", \"level\": \"info\", \"msg\": \"request completed\", \"referer\": \"https://app.snacklist.app/oauth/consent?authorization_id=x\", \"remote_addr\": \"203.0.113.54\", \"request_id\": \"req-0d4f2b5c6e7a\", \"duration\": 1234567, \"time\": \"2026-11-03T07:21:00Z\", \"method\": \"GET\", \"path\": \"/user/oauth/grants\", \"status\": 200}",
       "execution_id": "",
       "status": "",
       "ms": "",

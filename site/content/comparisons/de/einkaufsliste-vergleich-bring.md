@@ -92,7 +92,7 @@ Snacklist kommt für iPhone und Android. Die Beta startet am 15. November 2026 f
 
 - Stand: 05.11.2026. Nächste Prüfung: spätestens 04.05.2027.
 - Alle Angaben zu Bring! stammen aus dem oben genannten Store-Eintrag vom 04.11.2026. Funktionen und Angebote können sich seitdem geändert haben.
-- Etwas stimmt nicht mehr? Schreib uns an hello@hummlist.com – wir prüfen und korrigieren.
+- Etwas stimmt nicht mehr? Schreib uns an hello@snacklist.app – wir prüfen und korrigieren.
 
 Alle genannten Marken gehören ihren jeweiligen Inhabern. Snacklist ist ein unabhängiges Angebot. Keines dieser Unternehmen unterstützt, sponsert oder empfiehlt Snacklist.
 
@@ -120,4 +120,4 @@ Ja, mit KI-Assistenten, die MCP unterstützen. Sie können deine offenen Artikel
 Ja. Die Ladenreihenfolge gehört dem Haushalt und gilt für alle, die dazugehören.
 
 **Wie aktuell ist dieser Vergleich?**
-Stand ist der 05.11.2026. Die nächste Prüfung ist spätestens am 04.05.2027. Etwas stimmt nicht mehr? Schreib uns an hello@hummlist.com – wir prüfen und korrigieren.
+Stand ist der 05.11.2026. Die nächste Prüfung ist spätestens am 04.05.2027. Etwas stimmt nicht mehr? Schreib uns an hello@snacklist.app – wir prüfen und korrigieren.

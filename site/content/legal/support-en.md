@@ -15,7 +15,7 @@ Snacklist is a shared shopping list for one household. Whatever one person adds,
 ## How to get help
 
 - **In the app:** tap **More**, then **Send feedback**. Describe what happened or what you are missing. The app version, device, language and the screen you are on are sent along, but no list items. This is the fastest way.
-- **By email:** [support@hummlist.com](mailto:support@hummlist.com). Please say which device you use (iPhone, Android or browser).
+- **By email:** [support@snacklist.app](mailto:support@snacklist.app). Please say which device you use (iPhone, Android or browser).
 
 Who is responsible for Snacklist is in the [imprint](/en/imprint). How Snacklist handles your data is in the [privacy policy](/en/privacy).
 
@@ -39,7 +39,7 @@ The invite only works with the email of your Apple ID (iPhone) or Google account
 
 ### My invite hasn't arrived. What can I do?
 
-Check your spam folder, and in Gmail the Promotions tab too. We send invites in waves. On iPhone, the TestFlight email comes from Apple, not from Snacklist. If it's still missing, write to [support@hummlist.com](mailto:support@hummlist.com).
+Check your spam folder, and in Gmail the Promotions tab too. We send invites in waves. On iPhone, the TestFlight email comes from Apple, not from Snacklist. If it's still missing, write to [support@snacklist.app](mailto:support@snacklist.app).
 
 ### How do I invite my partner?
 
@@ -57,7 +57,7 @@ Tap **More**, then **Account** and **Export my data**. You get everything stored
 
 Tap **More**, then **Account** and **Delete account**, and confirm by typing DELETE. Your account, your profile, your access tokens and connected apps are deleted right away. If others stay in the household, they keep the list; your items stay there without your name. If you are the last member, the whole household is deleted, Snacklist Lifetime included; the purchase can't be moved to another household. Whether you can get your money back is under "Can I get a refund for Snacklist Lifetime?". Households you archived are deleted too. If others stay in the household, Snacklist Lifetime stays with them. Deleted data stays in our encrypted backups for up to 90 more days, then it is gone there too.
 
-Without the app: write to [support@hummlist.com](mailto:support@hummlist.com).
+Without the app: write to [support@snacklist.app](mailto:support@snacklist.app).
 
 ### What happens to Snacklist Lifetime if I leave a household as its last member?
 
@@ -68,7 +68,7 @@ Snacklist Lifetime belongs to the household and does not move with you. If you l
 You buy Snacklist Lifetime from Apple or Google, not from us. So:
 
 - **iPhone (App Store):** only Apple can refund. Request it at [reportaproblem.apple.com](https://reportaproblem.apple.com) ("I'd like to" › "Request a refund"); how it works: [Apple Support](https://support.apple.com/en-us/118223). We can't refund App Store purchases ourselves.
-- **Android (Google Play):** within 48 hours of buying, request the refund from Google directly; Google decides ([Google Play refund policies](https://support.google.com/googleplay/answer/15574908?hl=en)). After that, email us at [support@hummlist.com](mailto:support@hummlist.com) with the order number from Google's purchase confirmation (it starts with "GPA.") or the email address of your Google account. We look at each request individually and, where we agree, refund through Google Play.
+- **Android (Google Play):** within 48 hours of buying, request the refund from Google directly; Google decides ([Google Play refund policies](https://support.google.com/googleplay/answer/15574908?hl=en)). After that, email us at [support@snacklist.app](mailto:support@snacklist.app) with the order number from Google's purchase confirmation (it starts with "GPA.") or the email address of your Google account. We look at each request individually and, where we agree, refund through Google Play.
 
 If a purchase is refunded, the unlock ends for the household it was bought for, for all its members, unless the household bought Snacklist Lifetime more than once.
 
@@ -90,7 +90,7 @@ Yes. On iPhone with iOS 17 or later you can do it directly with the Snacklist ap
 
 ### Can I add items with Alexa?
 
-Yes, with the Hummlist skill for Amazon Alexa. Enable it in the Alexa app and link it to your Snacklist account. Then say, for example, "Alexa, ask Hummlist to add milk and eggs" or "Alexa, ask Hummlist what's on the list". The skill understands English and German, depending on the language your Alexa device is set to. To end the connection, disable the skill in the Alexa app or disconnect **Amazon Alexa** in Snacklist under **More** → **Access**. The skill is still in a beta test and not yet available to everyone; Peter sends you the invitation link. The guide [Hummlist with Alexa](/en/guides/alexa) explains more.
+Yes, with the Snacklist skill for Amazon Alexa. Enable it in the Alexa app and link it to your Snacklist account. Then say, for example, "Alexa, ask Snacklist to add milk and eggs" or "Alexa, ask Snacklist what's on the list". The skill understands English and German, depending on the language your Alexa device is set to. To end the connection, disable the skill in the Alexa app or disconnect **Amazon Alexa** in Snacklist under **More** → **Access**. The skill is still in a beta test and not yet available to everyone; Peter sends you the invitation link. The guide [Snacklist with Alexa](/en/guides/alexa) explains more.
 
 ### Can I use Snacklist with an AI assistant?
 

@@ -1,6 +1,6 @@
 # The in_app_review plugin is used in one file, app/lib/review/store_review.dart (job 155): its
 # StoreReview is what ReviewPrompt asks after the gates (review_gates.dart) and what More's
-# "Hummlist bewerten" opens the listing through. A second file with InAppReview.instance at hand
+# "Snacklist bewerten" opens the listing through. A second file with InAppReview.instance at hand
 # could ask the store for its prompt past the gates, or from a button, which Apple refuses.
 #
 # Matched on the import or export URI, conditional ones included.

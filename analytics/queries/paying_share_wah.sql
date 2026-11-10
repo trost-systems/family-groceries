@@ -1,5 +1,5 @@
 -- Jobs 43 and 49, the kill gate: per Berlin week, the weekly active households (exactly wah.sql:
--- an add or a tick that week) and how many of them have Hummlist Premium in that week. Premium
+-- an add or a tick that week) and how many of them have Snacklist Premium in that week. Premium
 -- comes from a purchase_completed for the household, Lifetime or Yearly. Lifetime (premium_source
 -- 'lifetime', or none: events before job 49) counts in every week from the purchase's week on.
 -- Yearly (premium_source 'yearly' or the yearly product_id) counts from the purchase's week through

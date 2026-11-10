@@ -5,12 +5,12 @@
     "sessionId": "amzn1.echo-api.session.SMOKE",
     "application": { "applicationId": "SKILL_ID" },
     "attributes": {},
-    "user": { "userId": "amzn1.ask.account.HUMMLIST-SMOKE" }
+    "user": { "userId": "amzn1.ask.account.SNACKLIST-SMOKE" }
   },
   "context": {
     "System": {
       "application": { "applicationId": "SKILL_ID" },
-      "user": { "userId": "amzn1.ask.account.HUMMLIST-SMOKE" },
+      "user": { "userId": "amzn1.ask.account.SNACKLIST-SMOKE" },
       "apiEndpoint": "https://api.eu.amazonalexa.com"
     }
   },

@@ -5,7 +5,7 @@ import {
   openEmailSignIn,
 } from './helpers';
 
-// Job 66 (docs/DEEP_LINKS.md): app.hummlist.com links. Where the app is not installed they open the
+// Job 66 (docs/DEEP_LINKS.md): app.snacklist.app links. Where the app is not installed they open the
 // web app, which routes them as the apps do.
 
 async function signIn(page: Page, email: string): Promise<void> {

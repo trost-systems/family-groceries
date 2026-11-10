@@ -139,7 +139,7 @@ abstract final class Environment() {
   /// a Vercel proxy to the edge function (docs/MCP.md); for any other
   /// project (the local stack) the edge function itself.
   static const mcpUrl = supabaseUrl == _productionUrl
-      ? 'https://mcp.hummlist.com'
+      ? 'https://mcp.snacklist.app'
       : '$supabaseUrl/functions/v1/mcp';
 
   /// The public REST API's base URL (job 73, docs/API.md "Base URL").

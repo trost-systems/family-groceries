@@ -514,7 +514,7 @@ void main() {
         'Snacklist Lifetime gehört immer zu dem Haushalt, in dem es gekauft '
         'wurde. Käufe im App Store erstattet nur Apple. Bei Google Play '
         'beantragst du die Erstattung in den ersten 48 Stunden bei Google; '
-        'danach schreib uns an support@hummlist.com, wir prüfen jede Anfrage '
+        'danach schreib uns an support@snacklist.app, wir prüfen jede Anfrage '
         'einzeln. Deine gesetzlichen Rechte bleiben unberührt.',
       ),
       findsOneWidget,
@@ -587,7 +587,7 @@ void main() {
         'Snacklist Lifetime always belongs to the household it was bought in. '
         'Only Apple refunds App Store purchases. For Google Play, ask Google '
         'within 48 hours of buying; after that, email us at '
-        "support@hummlist.com and we'll look at your request. Your statutory "
+        "support@snacklist.app and we'll look at your request. Your statutory "
         'rights are not affected.',
       ),
       findsOneWidget,

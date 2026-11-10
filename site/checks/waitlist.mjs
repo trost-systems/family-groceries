@@ -112,11 +112,11 @@ for (const [locale, anchor, email, platform, sent] of [
   expect(!(await visible(page, '#wl-platform-error')), `${path}: platform error stays after choosing`);
   expect(calls.length === before, `${path}: an invalid form reached the server`);
 
-  await page.getByLabel(email).fill('hello+waitlisttest+down@hummlist.com');
+  await page.getByLabel(email).fill('test+waitlisttest+down@snacklist.app');
   await page.locator('.wl-submit').click();
   await page.locator('.wl-status').filter({ hasText: /gerade nicht|just now/ }).waitFor();
 
-  await page.getByLabel(email).fill(`hello+waitlisttest-${locale}@hummlist.com`);
+  await page.getByLabel(email).fill(`test+waitlisttest-${locale}@snacklist.app`);
   await page.locator('.wl-submit').click();
   await page.locator('.wl-done').waitFor();
   expect((await page.locator('.wl-done h2').textContent()).includes(sent), `${path}: success state`);
@@ -124,14 +124,14 @@ for (const [locale, anchor, email, platform, sent] of [
   const signup = calls.at(-1);
   expect(signup.path === '/signup' && signup.secret === 'check-secret' && signup.region === 'eu-central-1', `${path}: upstream call ${JSON.stringify(signup)}`);
   const { body } = signup;
-  expect(body.email === `hello+waitlisttest-${locale}@hummlist.com` && body.platform === (platform === 'iPhone' ? 'ios' : 'android') && body.locale === locale
-    && !('launch_news' in body) && body.consent_version === `waitlist-${locale}-v2` && body.website === '' && Number.isInteger(body.elapsed_ms) && body.elapsed_ms > 0,
+  expect(body.email === `test+waitlisttest-${locale}@snacklist.app` && body.platform === (platform === 'iPhone' ? 'ios' : 'android') && body.locale === locale
+    && !('launch_news' in body) && body.consent_version === `waitlist-${locale}-v3` && body.website === '' && Number.isInteger(body.elapsed_ms) && body.elapsed_ms > 0,
   `${path}: sign-up body ${JSON.stringify(body)}`);
   await shot(card, `form-success-${locale}`);
   await done();
 
   const bot = await open(path);
-  await bot.page.getByLabel(email).fill('hello+waitlisttest-bot@hummlist.com');
+  await bot.page.getByLabel(email).fill('test+waitlisttest-bot@snacklist.app');
   await bot.page.getByLabel(platform, { exact: true }).check();
   await bot.page.locator('#wl-website').evaluate((el) => { el.value = 'https://spam.example'; });
   await bot.page.locator('.wl-submit').click();
@@ -166,7 +166,7 @@ for (const [path, kind, good, bad, done, name] of [
       expect(sent.path === `/${kind}` && calls.length === before + 1, `${path}${fragment}: button sent ${JSON.stringify(sent)}`);
       if (kind === 'confirm') {
         const locale = path.slice(1, 3);
-        expect(sent.body.confirm_version === `waitlist-confirm-${locale}-v1` && sent.body.launch_news === tick, `${path}${fragment}: consent sent ${JSON.stringify(sent.body)}`);
+        expect(sent.body.confirm_version === `waitlist-confirm-${locale}-v2` && sent.body.launch_news === tick, `${path}${fragment}: consent sent ${JSON.stringify(sent.body)}`);
       }
       const shown = (await page.locator('#wl-heading').innerText()).trim();
       if (heading) {

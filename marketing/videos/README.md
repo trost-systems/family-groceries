@@ -1,11 +1,11 @@
-# Demo videos for hummlist.com
+# Demo videos for snacklist.app
 
 The four silent, captioned loops on the landing pages `/de` and `/en`: `add-tick`,
 `household-sync` and `mcp-chat` (job 54) and `voice-add` (job 150), each in German and English, wide (1920 × 1080) and compact
 (1080 × 1350). The finished files live in `site/public/media/` under the names
 `site/public/media/README.md` asks for; this folder holds everything that makes them.
 
-Every picture of the app is the real Hummlist app: the Linux build, driven with real input
+Every picture of the app is the real Snacklist app: the Linux build, driven with real input
 against a local Supabase stack seeded with fictional test households. Nothing in the app is drawn.
 What is drawn (captions, name tags, touch dots, the phone body and the generic AI chat) follows
 the snacklist-ui-craft skill (`.claude/skills/snacklist-ui-craft/`).
@@ -55,7 +55,7 @@ in the app or its design needs new takes.
 - `build.mjs` writes the projects to `out/` (with GSAP, tokens and fonts copied in, nothing
   fetched), runs `hyperframes check`, renders, encodes WebM (VP9) and MP4 (H.264, `yuv420p`,
   `+faststart`, no audio), the poster WebP and the WebVTT captions, and writes a review set per
-  cut to `out/<name>/review/`. It fails when a source or page shortens the name "Hummlist".
+  cut to `out/<name>/review/`. It fails when a source or page splits the name "Snacklist" or still uses the old name (`build.mjs` holds the pattern).
 
 ## The test data
 

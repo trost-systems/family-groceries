@@ -1,4 +1,4 @@
--- Job 49: Hummlist Premium, yearly and Lifetime under one kind (migration
+-- Job 49: Snacklist Premium, yearly and Lifetime under one kind (migration
 -- 20261031214500_premium_yearly.sql). Pia and Paul share a household, Quinn has her own, Tara is a
 -- tester. Premium is active at read time; lifetime and endless promotional grants beat yearly; expiry deletes
 -- nothing; only the subscriber learns of a billing problem.

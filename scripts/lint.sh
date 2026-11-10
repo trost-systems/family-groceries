@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Structural lints for mistakes this project already made (CLAUDE.md, "Lint rules"): the ast-grep
-# rules and their tests, then the migration and RLS guards. Runs in CI and in verify.sh.
+# Structural lints for mistakes this project already made (CLAUDE.md, "Lint rules"): the Hummlist
+# name guard, the ast-grep rules and their tests, then the migration and RLS guards. Runs in CI and
+# in verify.sh.
 # Usage: scripts/lint.sh [base-ref]   (default origin/main, fetched when missing)
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
@@ -24,6 +25,11 @@ if git grep -nE '^(<<<<<<<|>>>>>>>)( |$)' -- . ':!*.png' ':!*.jpg' ':!*.gif' ':!
   echo "lint: merge conflict markers above: resolve them (keep both sides' meaning), then git add" >&2
   exit 1
 fi
+log "no Hummlist"
+# The product is Snacklist (job 174); scripts/checks/hummlist-allow.txt lists the files that keep
+# the old name and why.
+scripts/checks/no-hummlist-test.sh
+scripts/checks/no-hummlist.sh
 log "ast-grep rule tests"
 scripts/ast-grep.sh test
 log "ast-grep scan"
@@ -47,7 +53,7 @@ python3 scripts/app-shortcuts-bundle-test.py
 log "AI brand names"
 deno run --allow-read scripts/brand-names.ts
 deno test -q --config scripts/deno.json --allow-read --allow-write scripts/brand-names_test.ts
-log "mcp.hummlist.com routes"
+log "mcp.snacklist.app routes"
 deno test -q --config scripts/deno.json --allow-read scripts/mcp-proxy-routes_test.ts
 
 log "schema check against $base"

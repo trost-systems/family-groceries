@@ -25,7 +25,7 @@ export const hummlistProductIds = {
 } as const;
 
 /**
- * The Play subscription's base plan (Hummlist Ops, 2026-10-31). RevenueCat names a Play
+ * The Play subscription's base plan (Snacklist Ops, 2026-10-31). RevenueCat names a Play
  * subscription `<subscription id>:<base plan id>` in webhooks and the SDK.
  */
 export const playBasePlanId = 'yearly';

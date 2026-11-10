@@ -1,11 +1,11 @@
--- Job 82: the hummlist.com waitlist (migrations 20261102213606_waitlist.sql and
+-- Job 82: the snacklist.app waitlist (migrations 20261102213606_waitlist.sql and
 -- 20261105210254_waitlist_confirm_consent.sql, docs/WAITLIST.md).
 -- anon and authenticated reach nothing; a sign-up is one row per address in any letter case, a
 -- known unconfirmed one is re-sent at most once per 24 h, a confirmed one never; a token confirms
 -- once within 48 h and records the confirmation text and the launch-news box of that press, while
 -- a sign-up never sets launch news (Legal Review 2026-11-04, N-73/N-74); unsubscribing deletes and leaves proof only for confirmed rows; the purge
 -- keeps every retention period to the minute; the rate counters hold their limits.
--- Addresses: hello+…@hummlist.com only.
+-- Addresses: test+…@snacklist.app only.
 begin;
 select plan(122);
 
@@ -117,20 +117,20 @@ select is(
 select ok(obj_description('public.waitlist_confirm(text, timestamptz)'::regprocedure, 'pg_proc') like 'Superseded by%',
   'and says it is superseded');
 
-select pg_temp.seed('hello+ac7@hummlist.com', '2026-11-10 10:00+00');
+select pg_temp.seed('test+ac7@snacklist.app', '2026-11-10 10:00+00');
 
 set local role anon;
 select throws_ok('select * from public.waitlist', '42501', null, 'AC7: anon cannot select sign-ups');
 select throws_ok('select * from public.waitlist_consent_proof', '42501', null, 'AC7: anon cannot select proof records');
 select throws_ok('select * from public.waitlist_rate', '42501', null, 'AC7: anon cannot select rate counters');
 select throws_ok($$insert into public.waitlist (email, email_hmac, platform, locale, consent_text_version)
-  values ('hello+anon@hummlist.com', repeat('a', 64), 'ios', 'de', 'waitlist-de-v1')$$,
+  values ('test+anon@snacklist.app', repeat('a', 64), 'ios', 'de', 'waitlist-de-v1')$$,
   '42501', null, 'AC7: anon cannot insert a sign-up');
 select throws_ok($$update public.waitlist set platform = 'android'$$, '42501', null, 'AC7: anon cannot update');
 select throws_ok($$delete from public.waitlist$$, '42501', null, 'AC7: anon cannot delete');
 select throws_ok($$insert into public.waitlist_rate values ('all', now(), 0)$$, '42501', null,
   'AC7: anon cannot touch the rate counters');
-select throws_ok($$select * from public.waitlist_signup('hello+anon@hummlist.com', repeat('a', 64), 'ios',
+select throws_ok($$select * from public.waitlist_signup('test+anon@snacklist.app', repeat('a', 64), 'ios',
   'de', false, 'waitlist-de-v1', repeat('b', 64), now())$$, '42501', null, 'AC7: anon cannot call the sign-up');
 select throws_ok($$select * from public.waitlist_batch_rows('2026-W47')$$, '42501', null,
   'AC7: anon cannot read a batch');
@@ -144,7 +144,7 @@ select throws_ok('select * from public.waitlist', '42501', null, 'AC7: authentic
 select throws_ok('select * from public.waitlist_consent_proof', '42501', null, 'AC7: authenticated cannot select proof records');
 select throws_ok('select * from public.waitlist_rate', '42501', null, 'AC7: authenticated cannot select rate counters');
 select throws_ok($$insert into public.waitlist (email, email_hmac, platform, locale, consent_text_version)
-  values ('hello+auth@hummlist.com', repeat('a', 64), 'ios', 'de', 'waitlist-de-v1')$$,
+  values ('test+auth@snacklist.app', repeat('a', 64), 'ios', 'de', 'waitlist-de-v1')$$,
   '42501', null, 'AC7: authenticated cannot insert a sign-up');
 select throws_ok($$update public.waitlist set platform = 'android'$$, '42501', null, 'AC7: authenticated cannot update');
 select throws_ok($$delete from public.waitlist$$, '42501', null, 'AC7: authenticated cannot delete');
@@ -159,40 +159,40 @@ select throws_ok($$select public.purge_waitlist(now())$$, '42501', null,
 reset role;
 select set_config('request.jwt.claims', '', true);
 
-select ok(pg_temp.exists_('hello+ac7@hummlist.com'), 'the row is still there after all of that');
+select ok(pg_temp.exists_('test+ac7@snacklist.app'), 'the row is still there after all of that');
 delete from public.waitlist;
 
 -- Sign-up (AC6) -----------------------------------------------------------------------------------
 
-select is((select count(*)::integer from pg_temp.signup('hello+wl1@hummlist.com', '2026-11-10 10:00+00', 'tok-a', p_news => true)),
+select is((select count(*)::integer from pg_temp.signup('test+wl1@snacklist.app', '2026-11-10 10:00+00', 'tok-a', p_news => true)),
   1, 'a new address is stored and its confirmation goes out');
-select is((pg_temp.row_of('hello+wl1@hummlist.com')).launch_news, false,
+select is((pg_temp.row_of('test+wl1@snacklist.app')).launch_news, false,
   'N-74: launch news passed at sign-up is not stored (the form may be an assistant''s)');
-select ok((pg_temp.row_of('hello+wl1@hummlist.com')).confirm_text_version is null, 'no confirmation text before the press');
-select is((pg_temp.row_of('hello+wl1@hummlist.com')).confirm_expires_at, '2026-11-12 10:00+00'::timestamptz,
+select ok((pg_temp.row_of('test+wl1@snacklist.app')).confirm_text_version is null, 'no confirmation text before the press');
+select is((pg_temp.row_of('test+wl1@snacklist.app')).confirm_expires_at, '2026-11-12 10:00+00'::timestamptz,
   'its link expires 48 h after the mail');
-select is((pg_temp.row_of('hello+wl1@hummlist.com')).last_mail_at, '2026-11-10 10:00+00'::timestamptz,
+select is((pg_temp.row_of('test+wl1@snacklist.app')).last_mail_at, '2026-11-10 10:00+00'::timestamptz,
   'and last_mail_at says the mail went out');
-select is((select count(*)::integer from pg_temp.signup('Hello+WL1@hummlist.com', '2026-11-11 09:59+00', 'tok-b', 'android')),
+select is((select count(*)::integer from pg_temp.signup('Test+WL1@snacklist.app', '2026-11-11 09:59+00', 'tok-b', 'android')),
   0, 'the same address in other letters 23:59 h later sends nothing');
-select is((select count(*)::integer from public.waitlist where lower(email) = 'hello+wl1@hummlist.com'), 1,
+select is((select count(*)::integer from public.waitlist where lower(email) = 'test+wl1@snacklist.app'), 1,
   'and makes no second row');
-select is((pg_temp.row_of('hello+wl1@hummlist.com')).platform, 'ios', 'nor changes the first one');
-select is((select count(*)::integer from pg_temp.signup('HELLO+wl1@hummlist.com', '2026-11-11 10:00+00', 'tok-b', 'android', 'en', true)),
+select is((pg_temp.row_of('test+wl1@snacklist.app')).platform, 'ios', 'nor changes the first one');
+select is((select count(*)::integer from pg_temp.signup('TEST+wl1@snacklist.app', '2026-11-11 10:00+00', 'tok-b', 'android', 'en', true)),
   1, 'after 24 h the confirmation goes out again');
 select is(
   (select row(email, platform, locale, launch_news, consent_text_version, confirm_token_hash,
               confirm_expires_at, last_mail_at)::text
-   from public.waitlist where lower(email) = 'hello+wl1@hummlist.com'),
-  row('hello+wl1@hummlist.com', 'android', 'en', false, 'waitlist-en-v1', pg_temp.hex('tok-b'),
+   from public.waitlist where lower(email) = 'test+wl1@snacklist.app'),
+  row('test+wl1@snacklist.app', 'android', 'en', false, 'waitlist-en-v1', pg_temp.hex('tok-b'),
       '2026-11-13 10:00+00'::timestamptz, '2026-11-11 10:00+00'::timestamptz)::text,
   'with the new answers and a new token, the address as first typed, and launch news still off (N-74)');
 select throws_ok($$insert into public.waitlist (email, email_hmac, platform, locale, consent_text_version, confirm_token_hash, confirm_expires_at)
-  values ('hello+WL1@hummlist.com', repeat('a', 64), 'ios', 'de', 'waitlist-de-v1', repeat('c', 64), now())$$,
+  values ('test+WL1@snacklist.app', repeat('a', 64), 'ios', 'de', 'waitlist-de-v1', repeat('c', 64), now())$$,
   '23505', null, 'Foo@x and foo@x are one row: the unique index is on lower(email)');
-select is((select count(*)::integer from pg_temp.signup(' hello+wl3@hummlist.com ', '2026-11-10 10:00+00', 'tok-c')),
+select is((select count(*)::integer from pg_temp.signup(' test+wl3@snacklist.app ', '2026-11-10 10:00+00', 'tok-c')),
   1, 'a padded address is stored');
-select ok(pg_temp.exists_('hello+wl3@hummlist.com') and (pg_temp.row_of('hello+wl3@hummlist.com')).email = 'hello+wl3@hummlist.com',
+select ok(pg_temp.exists_('test+wl3@snacklist.app') and (pg_temp.row_of('test+wl3@snacklist.app')).email = 'test+wl3@snacklist.app',
   'trimmed');
 
 -- Confirm (AC11) ----------------------------------------------------------------------------------
@@ -203,82 +203,82 @@ select is((select count(*)::integer from pg_temp.confirm('tok-unknown', '2026-11
   'an unknown token confirms nothing');
 select is((select count(*)::integer from pg_temp.confirm('tok-b', '2026-11-13 10:00+00')), 0,
   'a token at its 48 h mark confirms nothing');
-select ok((pg_temp.row_of('hello+wl1@hummlist.com')).confirmed_at is null, 'the row is still unconfirmed');
+select ok((pg_temp.row_of('test+wl1@snacklist.app')).confirmed_at is null, 'the row is still unconfirmed');
 select is((select row(w.email, w.locale, w.launch_news)::text
            from public.waitlist_confirm(pg_temp.hex('tok-b'), '2026-11-13 09:59+00', 'waitlist-confirm-en-v1', true) w),
-  row('hello+wl1@hummlist.com', 'en', true)::text,
+  row('test+wl1@snacklist.app', 'en', true)::text,
   'a minute earlier it confirms, with the box ticked on the page, and returns what the welcome mail needs');
 select is(
   (select row(confirmed_at, confirm_token_hash, confirm_expires_at, confirm_text_version, launch_news)::text
-   from public.waitlist where lower(email) = 'hello+wl1@hummlist.com'),
+   from public.waitlist where lower(email) = 'test+wl1@snacklist.app'),
   row('2026-11-13 09:59+00'::timestamptz, null::text, null::timestamptz, 'waitlist-confirm-en-v1', true)::text,
   'N-73: confirmed_at, the confirmation text and launch news are set at the press, and the token is gone');
 select is((select count(*)::integer from pg_temp.confirm('tok-b', '2026-11-13 09:59:30+00', 'waitlist-confirm-de-v1', false)), 0,
   'the same token a second time confirms nothing');
 select is(
   (select row(confirmed_at, confirm_text_version, launch_news)::text from public.waitlist
-   where lower(email) = 'hello+wl1@hummlist.com'),
+   where lower(email) = 'test+wl1@snacklist.app'),
   row('2026-11-13 09:59+00'::timestamptz, 'waitlist-confirm-en-v1', true)::text,
   'and leaves the first press as it was');
-select is((select count(*)::integer from pg_temp.signup('hello+wl4@hummlist.com', '2026-11-10 10:00+00', 'tok-e', p_news => true)),
+select is((select count(*)::integer from pg_temp.signup('test+wl4@snacklist.app', '2026-11-10 10:00+00', 'tok-e', p_news => true)),
   1, 'another sign-up, launch news passed');
 select is((select count(*)::integer from pg_temp.confirm('tok-e', '2026-11-10 11:00+00')), 1,
   'confirmed with the box left unticked');
 select is(
-  (select row(confirm_text_version, launch_news)::text from public.waitlist where lower(email) = 'hello+wl4@hummlist.com'),
+  (select row(confirm_text_version, launch_news)::text from public.waitlist where lower(email) = 'test+wl4@snacklist.app'),
   row('waitlist-confirm-de-v1', false)::text,
   'N-74: launch news stays off, the confirmation text is recorded');
 select throws_ok($$select public.waitlist_confirm(pg_temp.hex('tok-c'), '2026-11-10 11:00+00', 'waitlist-de-v2', true)$$,
   '23514', null, 'a form text version is no confirmation text (the handler refuses it before that)');
-select ok((pg_temp.row_of('hello+wl3@hummlist.com')).confirmed_at is null, 'and that press confirmed nothing');
-select is((select count(*)::integer from pg_temp.signup('hello+wl5@hummlist.com', '2026-11-10 10:00+00', 'tok-f')),
+select ok((pg_temp.row_of('test+wl3@snacklist.app')).confirmed_at is null, 'and that press confirmed nothing');
+select is((select count(*)::integer from pg_temp.signup('test+wl5@snacklist.app', '2026-11-10 10:00+00', 'tok-f')),
   1, 'a sign-up confirmed through the old overload');
 select is((select count(*)::integer from public.waitlist_confirm(pg_temp.hex('tok-f'), '2026-11-10 11:00+00')), 1,
   'the old two-argument confirm still confirms');
 select is(
-  (select row(confirmed_at, confirm_text_version, launch_news)::text from public.waitlist where lower(email) = 'hello+wl5@hummlist.com'),
+  (select row(confirmed_at, confirm_text_version, launch_news)::text from public.waitlist where lower(email) = 'test+wl5@snacklist.app'),
   row('2026-11-10 11:00+00'::timestamptz, null::text, false)::text,
   'without a confirmation text and with launch news off');
-delete from public.waitlist where lower(email) in ('hello+wl4@hummlist.com', 'hello+wl5@hummlist.com');
-select is((select count(*)::integer from pg_temp.signup('hello+wl1@hummlist.com', '2026-12-20 10:00+00', 'tok-d', 'ios')),
+delete from public.waitlist where lower(email) in ('test+wl4@snacklist.app', 'test+wl5@snacklist.app');
+select is((select count(*)::integer from pg_temp.signup('test+wl1@snacklist.app', '2026-12-20 10:00+00', 'tok-d', 'ios')),
   0, 'a confirmed address signing up again sends nothing');
-select is((select row(platform, confirmed_at)::text from public.waitlist where lower(email) = 'hello+wl1@hummlist.com'),
+select is((select row(platform, confirmed_at)::text from public.waitlist where lower(email) = 'test+wl1@snacklist.app'),
   row('android', '2026-11-13 09:59+00'::timestamptz)::text, 'and changes nothing');
 select throws_ok($$update public.waitlist set confirm_token_hash = repeat('e', 64), confirm_expires_at = now()
-  where lower(email) = 'hello+wl1@hummlist.com'$$, '23514', null, 'a confirmed row cannot hold a token');
+  where lower(email) = 'test+wl1@snacklist.app'$$, '23514', null, 'a confirmed row cannot hold a token');
 
 -- Mails ---------------------------------------------------------------------------------------------
 
-select ok(public.waitlist_mailed((pg_temp.row_of('hello+wl1@hummlist.com')).id, 'welcome', '2026-11-13 10:00+00'),
+select ok(public.waitlist_mailed((pg_temp.row_of('test+wl1@snacklist.app')).id, 'welcome', '2026-11-13 10:00+00'),
   'the welcome mail is recorded');
-select is((select row(last_mail_at, invite_sent_at)::text from public.waitlist where lower(email) = 'hello+wl1@hummlist.com'),
+select is((select row(last_mail_at, invite_sent_at)::text from public.waitlist where lower(email) = 'test+wl1@snacklist.app'),
   row('2026-11-13 10:00+00'::timestamptz, null::timestamptz)::text, 'as last_mail_at only');
-select ok(public.waitlist_mailed((pg_temp.row_of('hello+wl1@hummlist.com')).id, 'invite', '2026-11-20 10:00+00'),
+select ok(public.waitlist_mailed((pg_temp.row_of('test+wl1@snacklist.app')).id, 'invite', '2026-11-20 10:00+00'),
   'the invite is recorded');
-select ok(public.waitlist_mailed((pg_temp.row_of('hello+wl1@hummlist.com')).id, 'invite', '2026-11-21 10:00+00'),
+select ok(public.waitlist_mailed((pg_temp.row_of('test+wl1@snacklist.app')).id, 'invite', '2026-11-21 10:00+00'),
   'a repeated invite too');
-select is((select row(last_mail_at, invite_sent_at)::text from public.waitlist where lower(email) = 'hello+wl1@hummlist.com'),
+select is((select row(last_mail_at, invite_sent_at)::text from public.waitlist where lower(email) = 'test+wl1@snacklist.app'),
   row('2026-11-21 10:00+00'::timestamptz, '2026-11-20 10:00+00'::timestamptz)::text,
   'invite_sent_at keeps the first invite, last_mail_at the latest mail');
-select ok(not public.waitlist_mailed((pg_temp.row_of('hello+wl3@hummlist.com')).id, 'invite', '2026-11-20 10:00+00'),
+select ok(not public.waitlist_mailed((pg_temp.row_of('test+wl3@snacklist.app')).id, 'invite', '2026-11-20 10:00+00'),
   'an unconfirmed row takes no mail');
-select ok((pg_temp.row_of('hello+wl3@hummlist.com')).invite_sent_at is null, 'and is not invited');
+select ok((pg_temp.row_of('test+wl3@snacklist.app')).invite_sent_at is null, 'and is not invited');
 select throws_ok($$select public.waitlist_mailed(gen_random_uuid(), 'launch', now())$$, '22023', null,
   'only welcome and invite are known');
 
 -- Unsubscribe (AC12) ------------------------------------------------------------------------------
 
-select ok(public.waitlist_unsubscribe((pg_temp.row_of('hello+wl3@hummlist.com')).id, '2026-11-11 12:00+00'),
+select ok(public.waitlist_unsubscribe((pg_temp.row_of('test+wl3@snacklist.app')).id, '2026-11-11 12:00+00'),
   'an unconfirmed row unsubscribes');
-select ok(not pg_temp.exists_('hello+wl3@hummlist.com'), 'and is gone');
-select is((select count(*)::integer from pg_temp.proofs('hello+wl3@hummlist.com')), 0, 'without a proof record');
-select ok(public.waitlist_unsubscribe((pg_temp.row_of('hello+wl1@hummlist.com')).id, '2026-11-25 12:00+00'),
+select ok(not pg_temp.exists_('test+wl3@snacklist.app'), 'and is gone');
+select is((select count(*)::integer from pg_temp.proofs('test+wl3@snacklist.app')), 0, 'without a proof record');
+select ok(public.waitlist_unsubscribe((pg_temp.row_of('test+wl1@snacklist.app')).id, '2026-11-25 12:00+00'),
   'a confirmed row unsubscribes');
-select ok(not pg_temp.exists_('hello+wl1@hummlist.com'), 'and is gone at once');
+select ok(not pg_temp.exists_('test+wl1@snacklist.app'), 'and is gone at once');
 select is(
   (select row(consent_text_version, confirm_text_version, locale, launch_news, created_at, confirmed_at,
               last_mail_at, ended_at, end_reason)::text
-   from public.waitlist_consent_proof where email_hmac = pg_temp.hex('hello+wl1@hummlist.com')),
+   from public.waitlist_consent_proof where email_hmac = pg_temp.hex('test+wl1@snacklist.app')),
   row('waitlist-en-v1', 'waitlist-confirm-en-v1', 'en', true, '2026-11-10 10:00+00'::timestamptz,
       '2026-11-13 09:59+00'::timestamptz, '2026-11-21 10:00+00'::timestamptz,
       '2026-11-25 12:00+00'::timestamptz, 'unsubscribed')::text,
@@ -291,50 +291,50 @@ select ok(not public.waitlist_unsubscribe(gen_random_uuid(), '2026-11-25 12:00+0
 delete from public.waitlist;
 delete from public.waitlist_consent_proof;
 delete from public.waitlist_rate;
-select pg_temp.seed('hello+unc-old@hummlist.com', timestamptz '2027-06-01 12:00+00' - interval '7 days 1 minute');
-select pg_temp.seed('hello+unc-new@hummlist.com', timestamptz '2027-06-01 12:00+00' - interval '7 days' + interval '1 minute');
-select pg_temp.seed('hello+inv-old@hummlist.com', '2027-01-01 00:00+00', '2027-01-02 00:00+00', false,
+select pg_temp.seed('test+unc-old@snacklist.app', timestamptz '2027-06-01 12:00+00' - interval '7 days 1 minute');
+select pg_temp.seed('test+unc-new@snacklist.app', timestamptz '2027-06-01 12:00+00' - interval '7 days' + interval '1 minute');
+select pg_temp.seed('test+inv-old@snacklist.app', '2027-01-01 00:00+00', '2027-01-02 00:00+00', false,
   timestamptz '2027-06-01 12:00+00' - interval '3 months 1 minute');
-select pg_temp.seed('hello+inv-new@hummlist.com', '2027-01-01 00:00+00', '2027-01-02 00:00+00', false,
+select pg_temp.seed('test+inv-new@snacklist.app', '2027-01-01 00:00+00', '2027-01-02 00:00+00', false,
   timestamptz '2027-06-01 12:00+00' - interval '3 months' + interval '1 minute');
-select pg_temp.seed('hello+waiting@hummlist.com', '2026-11-15 00:00+00', '2026-11-16 00:00+00');
-select pg_temp.seed('hello+news-old@hummlist.com', '2027-01-01 00:00+00', '2027-01-02 00:00+00', true,
+select pg_temp.seed('test+waiting@snacklist.app', '2026-11-15 00:00+00', '2026-11-16 00:00+00');
+select pg_temp.seed('test+news-old@snacklist.app', '2027-01-01 00:00+00', '2027-01-02 00:00+00', true,
   '2027-01-10 00:00+00', timestamptz '2027-06-01 12:00+00' - interval '30 days 1 minute');
-select pg_temp.seed('hello+news-new@hummlist.com', '2027-01-01 00:00+00', '2027-01-02 00:00+00', true,
+select pg_temp.seed('test+news-new@snacklist.app', '2027-01-01 00:00+00', '2027-01-02 00:00+00', true,
   '2027-01-10 00:00+00', timestamptz '2027-06-01 12:00+00' - interval '30 days' + interval '1 minute');
-select pg_temp.seed('hello+news-invited@hummlist.com', '2026-11-15 00:00+00', '2026-11-16 00:00+00', true,
+select pg_temp.seed('test+news-invited@snacklist.app', '2026-11-15 00:00+00', '2026-11-16 00:00+00', true,
   '2026-11-20 00:00+00');
 insert into public.waitlist_consent_proof (email_hmac, consent_text_version, locale, launch_news,
   created_at, confirmed_at, last_mail_at, ended_at, end_reason) values
-  (pg_temp.hex('hello+proof-old@hummlist.com'), 'waitlist-de-v1', 'de', false, '2024-01-01+00', '2024-01-01+00',
+  (pg_temp.hex('test+proof-old@snacklist.app'), 'waitlist-de-v1', 'de', false, '2024-01-01+00', '2024-01-01+00',
    timestamptz '2027-06-01 12:00+00' - interval '3 years 1 minute',
    timestamptz '2027-06-01 12:00+00' - interval '3 years 2 minutes', 'unsubscribed'),
-  (pg_temp.hex('hello+proof-ended@hummlist.com'), 'waitlist-de-v1', 'de', false, '2024-01-01+00', '2024-01-01+00',
+  (pg_temp.hex('test+proof-ended@snacklist.app'), 'waitlist-de-v1', 'de', false, '2024-01-01+00', '2024-01-01+00',
    '2024-01-02+00', timestamptz '2027-06-01 12:00+00' - interval '3 years' + interval '1 minute', 'deletion_request'),
-  (pg_temp.hex('hello+proof-mailed@hummlist.com'), 'waitlist-de-v1', 'de', false, '2024-01-01+00', '2024-01-01+00',
+  (pg_temp.hex('test+proof-mailed@snacklist.app'), 'waitlist-de-v1', 'de', false, '2024-01-01+00', '2024-01-01+00',
    timestamptz '2027-06-01 12:00+00' - interval '3 years' + interval '1 minute', '2024-01-02+00', 'purpose_done');
 insert into public.waitlist_rate values
   (pg_temp.hex('client-old'), timestamptz '2027-06-01 12:00+00' - interval '2 hours 1 second', 3),
   (pg_temp.hex('client-new'), timestamptz '2027-06-01 12:00+00' - interval '2 hours' + interval '1 second', 3);
 
 select is(public.purge_waitlist('2027-06-01 12:00+00'), 5, 'the purge removes five rows');
-select ok(not pg_temp.exists_('hello+unc-old@hummlist.com'), 'AC13: an unconfirmed row older than 7 days is gone');
-select is((select count(*)::integer from pg_temp.proofs('hello+unc-old@hummlist.com')), 0, 'without a proof record');
-select ok(pg_temp.exists_('hello+unc-new@hummlist.com'), 'AC13: one a minute younger stays');
-select ok(not pg_temp.exists_('hello+inv-old@hummlist.com'), 'confirmed without launch news, invited over 3 months ago: gone');
-select is(array(select pg_temp.proofs('hello+inv-old@hummlist.com')), array['purpose_done'],
+select ok(not pg_temp.exists_('test+unc-old@snacklist.app'), 'AC13: an unconfirmed row older than 7 days is gone');
+select is((select count(*)::integer from pg_temp.proofs('test+unc-old@snacklist.app')), 0, 'without a proof record');
+select ok(pg_temp.exists_('test+unc-new@snacklist.app'), 'AC13: one a minute younger stays');
+select ok(not pg_temp.exists_('test+inv-old@snacklist.app'), 'confirmed without launch news, invited over 3 months ago: gone');
+select is(array(select pg_temp.proofs('test+inv-old@snacklist.app')), array['purpose_done'],
   'with a proof record (purpose_done)');
-select ok(pg_temp.exists_('hello+inv-new@hummlist.com'), 'invited a minute under 3 months ago: stays');
-select ok(pg_temp.exists_('hello+waiting@hummlist.com'), 'confirmed and not yet invited: stays');
-select ok(not pg_temp.exists_('hello+news-old@hummlist.com'), 'with launch news, launch mail over 30 days ago: gone');
-select is(array(select pg_temp.proofs('hello+news-old@hummlist.com')), array['purpose_done'], 'with a proof record');
-select ok(pg_temp.exists_('hello+news-new@hummlist.com'), 'launch mail a minute under 30 days ago: stays');
-select ok(pg_temp.exists_('hello+news-invited@hummlist.com'), 'with launch news, invited but no launch mail yet: stays');
-select is((select count(*)::integer from pg_temp.proofs('hello+proof-old@hummlist.com')), 0,
+select ok(pg_temp.exists_('test+inv-new@snacklist.app'), 'invited a minute under 3 months ago: stays');
+select ok(pg_temp.exists_('test+waiting@snacklist.app'), 'confirmed and not yet invited: stays');
+select ok(not pg_temp.exists_('test+news-old@snacklist.app'), 'with launch news, launch mail over 30 days ago: gone');
+select is(array(select pg_temp.proofs('test+news-old@snacklist.app')), array['purpose_done'], 'with a proof record');
+select ok(pg_temp.exists_('test+news-new@snacklist.app'), 'launch mail a minute under 30 days ago: stays');
+select ok(pg_temp.exists_('test+news-invited@snacklist.app'), 'with launch news, invited but no launch mail yet: stays');
+select is((select count(*)::integer from pg_temp.proofs('test+proof-old@snacklist.app')), 0,
   'a proof record whose last mail and end are over 3 years ago is gone');
-select is((select count(*)::integer from pg_temp.proofs('hello+proof-ended@hummlist.com')), 1,
+select is((select count(*)::integer from pg_temp.proofs('test+proof-ended@snacklist.app')), 1,
   'one that ended a minute under 3 years ago stays');
-select is((select count(*)::integer from pg_temp.proofs('hello+proof-mailed@hummlist.com')), 1,
+select is((select count(*)::integer from pg_temp.proofs('test+proof-mailed@snacklist.app')), 1,
   'one whose last mail is a minute under 3 years old stays');
 select is((select count(*)::integer from public.waitlist_rate where key_hash = pg_temp.hex('client-old')), 0,
   'a rate counter over 2 hours old is gone');
@@ -345,20 +345,20 @@ select is(public.purge_waitlist('2027-06-01 12:00+00'), 0, 'a second run finds n
 delete from public.waitlist;
 delete from public.waitlist_consent_proof;
 delete from public.waitlist_rate;
-select pg_temp.seed('hello+end-conf@hummlist.com', '2027-12-01 00:00+00', '2027-12-01 01:00+00');
-select pg_temp.seed('hello+end-news@hummlist.com', '2027-12-01 00:00+00', '2027-12-01 01:00+00', true,
+select pg_temp.seed('test+end-conf@snacklist.app', '2027-12-01 00:00+00', '2027-12-01 01:00+00');
+select pg_temp.seed('test+end-news@snacklist.app', '2027-12-01 00:00+00', '2027-12-01 01:00+00', true,
   '2027-12-20 00:00+00');
-select pg_temp.seed('hello+end-unc@hummlist.com', '2027-12-30 22:00+00');
+select pg_temp.seed('test+end-unc@snacklist.app', '2027-12-30 22:00+00');
 select is(public.purge_waitlist('2027-12-30 22:59+00'), 0,
   'a minute before 2027-12-31 in Berlin the rows stay');
 select is(public.purge_waitlist('2027-12-30 23:00+00'), 3, 'on 2027-12-31 (Berlin) the purge ends them all');
 select is((select count(*)::integer from public.waitlist), 0, 'confirmed or not, nothing stays');
 select is(
   (select count(*)::integer from public.waitlist_consent_proof
-   where email_hmac in (pg_temp.hex('hello+end-conf@hummlist.com'), pg_temp.hex('hello+end-news@hummlist.com'))
+   where email_hmac in (pg_temp.hex('test+end-conf@snacklist.app'), pg_temp.hex('test+end-news@snacklist.app'))
      and end_reason = 'purpose_done' and ended_at = '2027-12-30 23:00+00'),
   2, 'both confirmed rows left their proof record');
-select is((select count(*)::integer from pg_temp.proofs('hello+end-unc@hummlist.com')), 0,
+select is((select count(*)::integer from pg_temp.proofs('test+end-unc@snacklist.app')), 0,
   'the unconfirmed one none');
 
 -- Rate counters (AC9) ------------------------------------------------------------------------------
@@ -394,12 +394,12 @@ select throws_ok($$select public.waitlist_batch_window('2025-W53')$$, '22023', n
 select throws_ok($$select public.waitlist_batch_window('2026-47')$$, '22023', null, 'a batch id looks like 2026-W47');
 
 delete from public.waitlist;
-select pg_temp.seed('hello+b1@hummlist.com', '2026-11-15 20:00+00', '2026-11-15 22:59+00');
-select pg_temp.seed('hello+b2@hummlist.com', '2026-11-16 08:00+00', '2026-11-16 09:00+00');
-select pg_temp.seed('hello+b3@hummlist.com', '2026-11-16 08:00+00', '2026-11-22 22:59+00', false, '2026-11-23 10:00+00');
-select pg_temp.seed('hello+b4@hummlist.com', '2026-11-22 22:00+00', '2026-11-22 23:00+00');
-select pg_temp.seed('hello+b5@hummlist.com', '2026-11-20 08:00+00');
-update public.waitlist set platform = 'ios', locale = 'de' where email = 'hello+b2@hummlist.com';
+select pg_temp.seed('test+b1@snacklist.app', '2026-11-15 20:00+00', '2026-11-15 22:59+00');
+select pg_temp.seed('test+b2@snacklist.app', '2026-11-16 08:00+00', '2026-11-16 09:00+00');
+select pg_temp.seed('test+b3@snacklist.app', '2026-11-16 08:00+00', '2026-11-22 22:59+00', false, '2026-11-23 10:00+00');
+select pg_temp.seed('test+b4@snacklist.app', '2026-11-22 22:00+00', '2026-11-22 23:00+00');
+select pg_temp.seed('test+b5@snacklist.app', '2026-11-20 08:00+00');
+update public.waitlist set platform = 'ios', locale = 'de' where email = 'test+b2@snacklist.app';
 
 select is(
   (select array_agg(row(platform, locale, confirmed, invited, to_invite)::text order by platform, locale)
@@ -408,11 +408,11 @@ select is(
   'the dry run counts the week''s confirmed rows (Berlin time) per platform and locale');
 select is(
   (select array_agg(email order by email) from public.waitlist_batch_rows('2026-W47')),
-  array['hello+b2@hummlist.com'],
+  array['test+b2@snacklist.app'],
   'the batch rows are the week''s confirmed, uninvited ones');
 select is(
   (select array_agg(email order by email) from public.waitlist_batch_rows('2026-W48')),
-  array['hello+b4@hummlist.com'],
+  array['test+b4@snacklist.app'],
   'Sunday 23:00 UTC is Monday in Berlin: the next batch');
 
 select * from finish();

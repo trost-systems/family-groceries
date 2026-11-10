@@ -1,5 +1,5 @@
 -- Job 50 (Spec #4 AC7): households a locked integration refused, per Berlin week, and how many of
--- them bought Hummlist Premium within 14 days (14 * 24 h) after their first refusal that week.
+-- them bought Snacklist Premium within 14 days (14 * 24 h) after their first refusal that week.
 -- integration_blocked comes from the edge functions at most once an hour per household and
 -- integration, only for a caller whose analytics answer is yes, so the counts are lower bounds; a
 -- household counts once per week overall and once per integration. A purchase the store refunded

@@ -541,7 +541,7 @@ waitlist.unsubscribe.invalid-title:
   status: draft
   source: "New draft."
 waitlist.unsubscribe.invalid-body:
-  de: "Vielleicht ist dein Eintrag schon gelöscht. Bekommst du trotzdem noch Mails, schreib an [support@hummlist.com](mailto:support@hummlist.com)."
-  en: "Your sign-up may be deleted already. If you still get emails, write to [support@hummlist.com](mailto:support@hummlist.com)."
+  de: "Vielleicht ist dein Eintrag schon gelöscht. Bekommst du trotzdem noch Mails, schreib an [support@snacklist.app](mailto:support@snacklist.app)."
+  en: "Your sign-up may be deleted already. If you still get emails, write to [support@snacklist.app](mailto:support@snacklist.app)."
   status: draft
   source: "New draft."

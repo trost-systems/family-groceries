@@ -492,7 +492,7 @@ verify_jwt = false
 
 [functions.waitlist]
 import_map = "./functions/deno.json"
-# Only the hummlist.com Vercel function calls it, with its shared secret (docs/WAITLIST.md).
+# Only the snacklist.app Vercel function calls it, with its shared secret (docs/WAITLIST.md).
 verify_jwt = false
 
 [functions.voice]

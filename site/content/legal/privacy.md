@@ -16,7 +16,7 @@ This page explains which personal data Snacklist processes, why, on what legal b
 
 ## 1. Controller
 
-Peter Trost, Yalovastr. 5, 72108 Rottenburg am Neckar, Germany. E-mail: [support@hummlist.com](mailto:support@hummlist.com). No data protection officer has been appointed.
+Peter Trost, Yalovastr. 5, 72108 Rottenburg am Neckar, Germany. E-mail: [support@snacklist.app](mailto:support@snacklist.app). No data protection officer has been appointed.
 
 ## 2. Website snacklist.app
 
@@ -37,7 +37,7 @@ We invite in weekly groups: everyone who confirmed in the same calendar week. We
 
 Service providers: the form is received by our host Vercel; the server function runs in Frankfurt am Main, and Vercel sees your IP address as with every visit (section 2). Sign-ups are stored at Supabase in the database in Frankfurt am Main. Emails are sent by Resend from Ireland; Resend stores the emails and delivery logs in the USA and deletes them after 30 days (sections 12 and 13). Our emails contain no tracking pixels, and links are not redirected to count clicks.
 
-Unsubscribe and objection: every email has an unsubscribe link; one click is enough, no sign-in. You can also write to support@hummlist.com. This withdraws your consent for the future and objects to the use for these emails (Art. 21(2) GDPR); we delete your sign-up at once.
+Unsubscribe and objection: every email has an unsubscribe link; one click is enough, no sign-in. You can also write to support@snacklist.app. This withdraws your consent for the future and objects to the use for these emails (Art. 21(2) GDPR); we delete your sign-up at once.
 
 Retention: without the launch email, we delete your sign-up 3 months after the beta invite is sent; with it, 30 days after that email is sent, and in any case by 31 December 2027.
 
@@ -73,7 +73,7 @@ Legal basis: Art. 6(1)(b) GDPR.
 
 ## 7. Siri, Alexa and AI assistants
 
-You can connect Snacklist to AI assistants (for example through the Model Context Protocol at mcp.hummlist.com) or to Siri through a shortcut you set up yourself. This only happens if you create an access token or approve a connection yourself. For Siri directly in the iPhone app, see "Siri on iPhone" below. The connected service can then read and change your list items, and its provider processes that content under its own privacy terms. For each token we store a name, a hash, its last four characters and when it was last used. When a token ends, for example because you revoke it or leave the household, we delete this data at the next daily clean-up 30 days later. You can revoke tokens and connections in the app at any time.
+You can connect Snacklist to AI assistants (for example through the Model Context Protocol at mcp.snacklist.app) or to Siri through a shortcut you set up yourself. This only happens if you create an access token or approve a connection yourself. For Siri directly in the iPhone app, see "Siri on iPhone" below. The connected service can then read and change your list items, and its provider processes that content under its own privacy terms. For each token we store a name, a hash, its last four characters and when it was last used. When a token ends, for example because you revoke it or leave the household, we delete this data at the next daily clean-up 30 days later. You can revoke tokens and connections in the app at any time.
 Legal basis: Art. 6(1)(b) GDPR.
 
 ### Siri on iPhone
@@ -89,7 +89,7 @@ Legal basis: Art. 6(1)(b) GDPR.
 
 ### Amazon Alexa
 
-You can enable the Alexa skill "Hummlist" in the Alexa app and link it to your Snacklist account. To do so, you sign in to Snacklist and allow "Amazon Alexa" to access your list. Amazon receives an access token and a refresh token for this and keeps them.
+You can enable the Alexa skill "Snacklist" in the Alexa app and link it to your Snacklist account. To do so, you sign in to Snacklist and allow "Amazon Alexa" to access your list. Amazon receives an access token and a refresh token for this and keeps them.
 
 When you ask Alexa to add something to your list or read it out, Amazon records your speech and turns it into text. We do not receive a voice recording from Amazon, only the recognised text (for example "milk and eggs"), the kind of request, the access token, an ID of your Alexa account and technical details about the device and language. We do not use the device ID. We add the items to the list of your current household, just as if you had entered them in the app; the other members see them. In our reply we send Amazon the item names, which Alexa reads out to you and shows as a card in the Alexa app: the items just added, or up to 10 open items on your list.
 
@@ -113,7 +113,7 @@ Separately, our servers report errors in server functions to PostHog. Such a rep
 
 ## 10. Contact and support
 
-If you write to support@hummlist.com, hello@hummlist.com or feedback@hummlist.com, we process your e-mail address and your message to reply. Google hosts these mailboxes (Google Workspace, see sections 12 and 13). Peter Trost writes and sends every reply himself.
+If you write to support@snacklist.app, hello@snacklist.app or feedback@snacklist.app, we process your e-mail address and your message to reply. Google hosts these mailboxes (Google Workspace, see sections 12 and 13). Peter Trost writes and sends every reply himself.
 Legal basis: Art. 6(1)(b) GDPR where it concerns your account, otherwise Art. 6(1)(f) GDPR (legitimate interest in answering requests). Support e-mails are deleted 6 months after the request is closed.
 
 If you send us feedback in the app, we store your message (up to 2,000 characters), the category if you choose one, whether we may contact you about it, app version and build, platform, operating system version (in the browser: browser and operating system), language and the screen you wrote from, together with your user and household ID, at Supabase (servers in the EU). Other members of your household can't see your feedback; only Peter Trost can read it. We use it to fix bugs and improve Snacklist. If you allow it, we reply to your account's e-mail address. We delete feedback automatically after 12 months, and at once if you delete your account. Legal basis: Art. 6(1)(f) GDPR (our legitimate interest in a bug-free, better app).
@@ -130,7 +130,7 @@ These service providers process data on our behalf and on our instructions (Art.
 - Supabase Pte. Ltd., Singapore (database, sign-in, sending the sign-in e-mails, server functions; the database is in a data centre in Frankfurt am Main, the server functions run at the location nearest the request, including outside the EU; the server function for purchases always runs in Frankfurt am Main)
 - Plus Five Five, Inc. ("Resend"), San Francisco, USA (sending our emails, including for the waitlist; sent from Ireland, stores emails and delivery logs in the USA and deletes them after 30 days)
 - RevenueCat, Inc., Brandon (Florida), USA (free Snacklist Premium unlock for testers and for app review (section 5), and, once Snacklist Premium is sold, in-app purchases: checking and managing the unlock; servers at Amazon Web Services in the USA)
-- Vercel Inc. (hosting of snacklist.app, app.snacklist.app and mcp.hummlist.com; domain and DNS)
+- Vercel Inc. (hosting of snacklist.app, app.snacklist.app and mcp.snacklist.app; domain and DNS)
 - PostHog Inc. (usage data and error reports, servers in the EU; only as described in section 9)
 - GitHub Inc. (encrypted backups)
 - Google Cloud EMEA Limited, Dublin, Ireland (Google Workspace, e-mail)
@@ -147,7 +147,7 @@ Some providers are based in the USA or belong to US companies. Supabase's server
 - RevenueCat, Inc. (USA) is not certified under the EU-US Data Privacy Framework. The European Commission's Standard Contractual Clauses apply (Art. 46(2)(c) GDPR); they are part of RevenueCat's data processing agreement. RevenueCat stores the data at Amazon Web Services in the USA and uses further sub-processors in the USA that are bound by equivalent obligations. To check a purchase, RevenueCat sends the receipt and your household's ID (to Google a hash value made from it) to Apple or Google. For the free unlock (section 5), RevenueCat receives only your household's ID and the details of the unlock.
 - Amazon (Alexa) receives our replies as an independent controller (section 7). Where Amazon passes them to Amazon companies in the USA, Amazon.com, Inc. (including Amazon.com Services LLC) is certified under the EU-US Data Privacy Framework (Art. 45 GDPR); where no adequacy decision applies, Amazon's developer agreement provides for controller-to-controller Standard Contractual Clauses.
 
-You can get a copy of the safeguards from support@hummlist.com.
+You can get a copy of the safeguards from support@snacklist.app.
 
 ## 14. Retention
 
@@ -155,7 +155,7 @@ We keep your data as long as you have an account. When you delete your account, 
 
 ## 15. Your rights {#rights}
 
-You have the right of access (Art. 15 GDPR), rectification (Art. 16), erasure (Art. 17), restriction of processing (Art. 18), data portability (Art. 20), and to withdraw any consent with effect for the future (Art. 7(3)). Write to [support@hummlist.com](mailto:support@hummlist.com).
+You have the right of access (Art. 15 GDPR), rectification (Art. 16), erasure (Art. 17), restriction of processing (Art. 18), data portability (Art. 20), and to withdraw any consent with effect for the future (Art. 7(3)). Write to [support@snacklist.app](mailto:support@snacklist.app).
 
 **Right to object (Art. 21 GDPR):** Where we process data on the basis of legitimate interests (Art. 6(1)(f) GDPR), you may object at any time on grounds relating to your particular situation.
 

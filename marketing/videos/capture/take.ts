@@ -26,7 +26,7 @@ const fg = Deno.env.get('FG') ?? `${repo}scripts/fg`;
 const bundle = Deno.env.get('CAPTURE_BUNDLE') ?? `${repo}app/build/linux/x64/profile/bundle/family_groceries`;
 const prefix = Deno.env.get('FG_PORT_PREFIX') ?? '577';
 const out = `${here}../${video}/footage/${lang}`;
-const work = `/tmp/hummlist-capture-${prefix}/${video}-${lang}`;
+const work = `/tmp/snacklist-capture-${prefix}/${video}-${lang}`;
 
 async function fgJson(args: string[]) {
   const o = await new Deno.Command(fg, { args, stdout: 'piped', stderr: 'inherit' }).output();

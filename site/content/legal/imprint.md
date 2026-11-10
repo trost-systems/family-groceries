@@ -24,7 +24,7 @@ VAT ID pursuant to § 27a UStG: DE369514299
 
 ## Contact
 
-Email: [support@hummlist.com](mailto:support@hummlist.com)
+Email: [support@snacklist.app](mailto:support@snacklist.app)
 
 ## Responsible for content pursuant to § 18 (2) MStV (German Interstate Media Treaty)
 

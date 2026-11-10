@@ -1,4 +1,4 @@
--- Jobs 43 and 49: share of each household cohort with Hummlist Premium by day 35. A household
+-- Jobs 43 and 49: share of each household cohort with Snacklist Premium by day 35. A household
 -- starts with its first event (household_created, invite_accepted, an add or a tick), as in
 -- retention_weekly.sql; its cohort is the Berlin week of that start. It is paying when a
 -- purchase_completed for it arrived within 35 days (35 * 24 h) of the start, for either product

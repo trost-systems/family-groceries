@@ -79,13 +79,13 @@ Settings, help and account
 - [theme](./theme.md): light, dark or device theme under Mehr → Einstellungen.
 - [language](./language.md): German, English or the device's language, and which texts stay German.
 - [feedback](./feedback.md): Mehr → „Feedback senden“.
-- [rate-hummlist](./rate-hummlist.md): Mehr → „Snacklist bewerten“ (iPhone and Android apps) and the system rating dialog after a completed trip in public store builds. The id keeps the old name until the S5 cleanup, so `drive.sh rate-hummlist` and old evidence still match.
+- [rate-snacklist](./rate-snacklist.md): Mehr → „Snacklist bewerten“ (iPhone and Android apps) and the system rating dialog after a completed trip in public store builds. Evidence from before the sweep is filed under the old id `rate-hummlist`.
 - [more-help](./more-help.md): the tabs, every Mehr entry in order, help and contact, guides on snacklist.app (Siri, Alexa, Claude), the Nutzungsdaten page and the Rechtliches rows (imprint, privacy policy, terms, licenses), version.
 - [account-deletion](./account-deletion.md): Mehr → Konto: data export, account deletion, deleting single data without deleting the account.
 
 Connections and Premium
 
-- [ai-assistants](./ai-assistants.md): connecting an AI assistant through MCP (https://mcp.hummlist.com), the consent page, Mehr → Zugänge with access tokens and connected apps.
+- [ai-assistants](./ai-assistants.md): connecting an AI assistant through MCP (https://mcp.snacklist.app), the consent page, Mehr → Zugänge with access tokens and connected apps.
 - [siri](./siri.md): the Siri Shortcut today, native Siri (built, announcement held), Siri keys.
 - [home-widgets](./home-widgets.md): the iPhone and Android Home Screen widget (built, announcement held).
 - [alexa](./alexa.md): the Alexa skill (beta, not certified): linking, adding and reading by voice.

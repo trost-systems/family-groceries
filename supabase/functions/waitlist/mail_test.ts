@@ -166,7 +166,7 @@ Deno.test('no template carries a ⟦…⟧ marker: every mail passes the placeho
       assert(!part.includes('⟦') && !part.includes('⟧'), `${mail.subject}: no marker`);
     }
     assertEquals(
-      refusal('hello+x@hummlist.com', mail, { allow: 'test', allowPlaceholders: false }),
+      refusal('test+x@snacklist.app', mail, { allow: 'test', allowPlaceholders: false }),
       null,
     );
   }
@@ -256,9 +256,9 @@ Deno.test('refusal: test addresses only unless *, and no draft text without the 
   assert(recipientAllowed('peter@example.com', 'all'));
   const test = { allow: 'test' as const, allowPlaceholders: false };
   assertEquals(refusal('peter@example.com', approved, test), 'recipient');
-  assertEquals(refusal('hello+x@hummlist.com', draft, test), 'placeholder');
-  assertEquals(refusal('hello+x@hummlist.com', draft, { ...test, allowPlaceholders: true }), null);
-  assertEquals(refusal('hello+x@hummlist.com', approved, test), null);
+  assertEquals(refusal('test+x@snacklist.app', draft, test), 'placeholder');
+  assertEquals(refusal('test+x@snacklist.app', draft, { ...test, allowPlaceholders: true }), null);
+  assertEquals(refusal('test+x@snacklist.app', approved, test), null);
   assertEquals(refusal('test@snacklist.app', approved, test), null);
   assertEquals(refusal('test+x@snacklist.app', approved, test), null);
   assertEquals(refusal('test@snacklist.app', draft, test), 'placeholder');
@@ -291,7 +291,7 @@ Deno.test('From is the language-neutral Peter · Snacklist (U+00B7) for DE and E
     requests.push(new Request(input, init));
     return Promise.resolve(new Response('{"id":"x"}', { status: 200 }));
   });
-  await mailer.send('hello+resend@hummlist.com', en, 'confirm/from');
+  await mailer.send('test+resend@snacklist.app', en, 'confirm/from');
   assertEquals(requests.length, 1);
   const [req] = requests;
   assertExists(req, 'the request');
@@ -319,7 +319,7 @@ Deno.test('Resend: one single send with an idempotency key, reply-to and the mai
     return Promise.resolve(new Response('{"id":"x"}', { status: 200 }));
   });
   const mail = welcomeMail('de', { unsubscribe, launchNews: false });
-  await mailer.send('hello+resend@hummlist.com', mail, `welcome/${ID}`);
+  await mailer.send('test+resend@snacklist.app', mail, `welcome/${ID}`);
   assertEquals(requests.length, 1);
   const [req] = requests;
   assertExists(req, 'the request');
@@ -328,7 +328,7 @@ Deno.test('Resend: one single send with an idempotency key, reply-to and the mai
   assertEquals(req.headers.get('idempotency-key'), `welcome/${ID}`);
   assertEquals(await req.json(), {
     from: '"Peter · Snacklist" <hello@snacklist.app>',
-    to: ['hello+resend@hummlist.com'],
+    to: ['test+resend@snacklist.app'],
     reply_to: 'hello@snacklist.app',
     subject: mail.subject,
     html: mail.html,
@@ -340,7 +340,7 @@ Deno.test('Resend: one single send with an idempotency key, reply-to and the mai
     confirmUrl: 'https://snacklist.app/x',
     unsubscribe,
   });
-  await mailer.send('hello+resend@hummlist.com', confirmation, 'confirm/x');
+  await mailer.send('test+resend@snacklist.app', confirmation, 'confirm/x');
   const second = requests[1];
   assertExists(second, 'the second request');
   assertEquals(Object.keys(await second.json()).sort(), [
@@ -359,13 +359,13 @@ Deno.test('Resend: a refusal names the status, never the answer', async () => {
     undefined,
     () =>
       Promise.resolve(
-        new Response('{"message":"hello+x@hummlist.com is invalid"}', { status: 422 }),
+        new Response('{"message":"test+x@snacklist.app is invalid"}', { status: 422 }),
       ),
   );
   const e = await assertRejects(
     () =>
       mailer.send(
-        'hello+x@hummlist.com',
+        'test+x@snacklist.app',
         welcomeMail('en', { unsubscribe: unsubscribeEn, launchNews: false }),
         'k',
       ),

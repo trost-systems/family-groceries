@@ -171,7 +171,7 @@ export const payingEvents: Event[] = [
   ev('purchase_completed', '2027-01-10T23:30:00Z', id(15), H14, lifetime('j')),
   ev('item_ticked', '2027-01-12T10:00:00Z', id(15), H14),
 
-  // H15: the second member bought Hummlist Lifetime but declined analytics, so the purchases
+  // H15: the second member bought Snacklist Lifetime but declined analytics, so the purchases
   // function sent no purchase_completed. The household is active and never paying: the known
   // undercount (docs/ANALYTICS.md), why the share is a lower bound.
   ev('first_open', '2027-01-05T12:00:00Z', id(16), null),
@@ -179,7 +179,7 @@ export const payingEvents: Event[] = [
   ev('item_added', '2027-01-05T12:02:00Z', id(16), H15, { source: 'typed' }),
 ];
 
-// Job 49, Hummlist Premium as two products (yearly, lifetime) under one entitlement. Its own
+// Job 49, Snacklist Premium as two products (yearly, lifetime) under one entitlement. Its own
 // weeks from Monday 1 March 2027 and, a year on, the weeks of 13 and 20 March 2028. A Yearly
 // purchase on 2 or 3 March 2027 counts through the week that contains it + 379 days (15 or 16
 // March 2028): paying in the week of 13 March 2028, no longer in the week of 20 March.

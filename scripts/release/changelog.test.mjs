@@ -129,7 +129,7 @@ describe('store texts', () => {
   test('emoji and "<" are stripped, as Apple rejects them; text symbols stay', () => {
     assert.equal(sanitize('Neue Listen 🎉 für 👨‍👩‍👧 und 🇩🇪 <3'), 'Neue Listen für und 3');
     assert.equal(sanitize('Milch 🥛. Haken ✔️ und 1️⃣'), 'Milch. Haken und 1');
-    assert.equal(sanitize('© 2026 Hummlist™ ↔ ✔'), '© 2026 Hummlist™ ↔ ✔');
+    assert.equal(sanitize('© 2026 Snacklist™ ↔ ✔'), '© 2026 Snacklist™ ↔ ✔');
     const c = changelog({ fixed: 1 }, () => 'Fixed ✅ the <b> tag 👍🏽.');
     assert.equal(storeText(c, 'play', 'en', '1.0.0'), 'Fixed:\n• Fixed the b> tag.');
     const onlyEmoji = changelog({ new: 2 }, (_, i) => (i === 0 ? '🎉' : 'Real.'));
@@ -551,7 +551,7 @@ describe('gated items, pending.json and the override', () => {
   });
 
   test('an override replaces title and store texts; status: draft blocks the public release until removed', () => {
-    const text = (de, en) => `# Hummlist 1.3.0\nstatus: draft — pending Peter's review\n\n## de\ntitle: Willkommen\n\n${de}\n\n## en\ntitle: Welcome\n\n${en}\n`;
+    const text = (de, en) => `# Snacklist 1.3.0\nstatus: draft — pending Peter's review\n\n## de\ntitle: Willkommen\n\n${de}\n\n## en\ntitle: Welcome\n\n${en}\n`;
     writeFileSync(path('1.3.0.override.md'), text('Deine Liste, mit allen geteilt.\n\n• Sofort synchron', 'Your list, shared.\n\n• Syncs instantly'));
     let r = run('draft', '--version', '1.3.0', '--sha', 'main', '--dry-run');
     assert.equal(r.code, 0, r.stderr);
@@ -609,7 +609,7 @@ describe('two holds on one item', () => {
       'new-design': { released: true, note: '' },
     },
   });
-  const lock = { category: 'new', de: 'Siri gehört zu Hummlist Premium.', en: 'Siri is part of Hummlist Premium.', hold: 'integration-lock' };
+  const lock = { category: 'new', de: 'Siri gehört zu Snacklist Premium.', en: 'Siri is part of Snacklist Premium.', hold: 'integration-lock' };
 
   test('an item whose own hold is closed may name another held word; a released or missing hold may not', () => {
     assert.doesNotThrow(() => checkGates([lock], gates()));
@@ -700,9 +700,9 @@ describe('internal commits stay out of the notes and the draft', () => {
     mkdirSync(join(repo, 'releases'));
     writeFileSync(join(repo, 'releases/releases.json'), realRecord);
     writeFileSync(join(repo, 'releases/flags.json'), realFlags);
-    commit('Job 20: rename the app to Hummlist (com.hummlist.app) (#46)', '', 'app/lib/main.dart');
+    commit('Job 20: rename the app to Snacklist (com.snacklist.app) (#46)', '', 'app/lib/main.dart');
     commit('Job 21: feedback button on the list (#60)', '', 'app/lib/feedback.dart');
-    commit('nexus.hummlist.com: ops control room dashboard (#305)', note('none'), 'nexus/index.html', 'scripts/nexus/publish.sh');
+    commit('nexus.snacklist.app: ops control room dashboard (#305)', note('none'), 'nexus/index.html', 'scripts/nexus/publish.sh');
     commit('Nexus status page (#306)', note(item('new', 'Ein Dashboard für den Betrieb.', 'An ops dashboard.')), 'nexus/status.html', '.github/workflows/nexus.yml');
     commit('privacy §14 last-member (#313)', note('none'), 'site/content/legal/privacy.md');
     commit('Store links wait for the server; the e2e proves the tap retries (#314)', note(item('fixed', 'Ein Link zu einem Laden öffnet ihn wieder.', 'A store link opens that store again.')), 'app/lib/router.dart', 'e2e/tests/deep-links.spec.ts');
@@ -732,7 +732,7 @@ describe('internal commits stay out of the notes and the draft', () => {
 
   test('an unknown previous commit (the first upload) takes the recent history, filtered the same way', () => {
     const out = notes('en', '0000000000000000000000000000000000000000');
-    assert.match(out, /- rename the app to Hummlist \(com\.hummlist\.app\)$/);
+    assert.match(out, /- rename the app to Snacklist \(com\.snacklist\.app\)$/);
     assert.doesNotMatch(out, /Nexus|nexus|dashboard|privacy|ci:|docs|Tests\.|overlay|@|#\d|Job \d/);
   });
 

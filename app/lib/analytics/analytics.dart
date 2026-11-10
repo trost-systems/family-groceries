@@ -607,7 +607,7 @@ class Analytics(
 
 /// Where [Analytics.captureException] hands the scrubbed type and message
 /// to [Analytics._admit]; never sent.
-const _reportKey = 'hummlist_report';
+const _reportKey = 'snacklist_report';
 
 /// The properties every event carries ([contextKeys]), and only those.
 /// Throws [RefusedEvent] for an unknown key, a value of the wrong shape or

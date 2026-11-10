@@ -241,7 +241,7 @@ function add(argv) {
   } else if (override) {
     refuse(`${override.label} has the store texts of ${version}, but there is no ${draftLabel}; run: node scripts/release/changelog.mjs draft --version ${version} --sha ${sha}`);
   } else {
-    console.warn(`warning: no ${draftLabel}, so ${version} has no changelog (hummlist.com shows "Bug fixes and improvements.")`);
+    console.warn(`warning: no ${draftLabel}, so ${version} has no changelog (snacklist.app shows "Bug fixes and improvements.")`);
   }
 
   const pendingAfter = heldAfter({ draft, draftLabel, pendingBefore, previousSha, sha, gates });

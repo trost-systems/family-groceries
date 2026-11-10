@@ -4,7 +4,7 @@ The iOS and Android apps put the household's list on the Home Screen: the open c
 
 ## Sub-features
 
-- `widget-payload` the app writes one JSON string, key `hummlist_widget`, version 1: `state` (`ready`, `signedOut`, `noHousehold`), `open`, the first six open `items` (name, quantity, the store's full name or null) in the List tab's order, `updatedAt`.
+- `widget-payload` the app writes one JSON string, key `snacklist_widget`, version 1: `state` (`ready`, `signedOut`, `noHousehold`), `open`, the first six open `items` (name, quantity, the store's full name or null) in the List tab's order, `updatedAt`.
 - `widget-sync` `HomeWidgetSync` (`app/lib/home_widget/`) follows the session and the household's list cubit, writes at most once a second and only when the payload changed, never a list of another household than the session's. Offline, the cached list goes out at start.
 - `widget-small` iOS systemSmall / Android 2x2: count, up to three rows without store pills (fewer when the height is short), „+N weitere“/"+N more"; the whole widget opens the list.
 - `widget-medium` iOS systemMedium / Android 4x2 (from 250 dp wide): count, up to five rows, a store pill on the first row of each store run (`ListRow.rows`, `widgetRows`), „Hinzufügen“/"Add", „+N weitere“/"+N more".

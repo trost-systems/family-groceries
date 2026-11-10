@@ -1,4 +1,4 @@
-// Video 3, mcp-chat: a generic AI chat in Hummlist's own style asks Hummlist's MCP server to add
+// Video 3, mcp-chat: a generic AI chat in Snacklist's own style asks Snacklist's MCP server to add
 // two items, then, by voice, to tick them off. The chat shows the real tool results of the take
 // (capture/shots.ts calls the local mcp function with Sam's token) at the times they came back;
 // Sam's real app shows the rows arrive and leave. The thread exits upwards at the end, so the
@@ -104,7 +104,7 @@ export function compose({ fmt, lang, p }) {
   // Scrolls the thread so the second request sits at the top (measured from the laid-out page).
   const shift = (at) => tw.push(`tl.to('#thread', { y: () => -document.getElementById('m2').offsetTop, duration: 0.32, ease: 'power2.inOut' }, ${at.toFixed(3)});`);
   const rows = (items, done) => items.map((i) => `<li><span class="hxp hxp--mint ok"><b>${mi('check')}</b></span><span class="nm${done ? ' nm--done' : ''}">${esc(i.name)}</span>${i.category ? `<span class="cat">${esc(i.category)}</span>` : ''}</li>`).join('');
-  const card = (id, title, items, done) => `<div class="msg card" id="${id}"><p class="card-h"><img src="assets/hummlist-icon.svg" alt=""><b>Hummlist</b><span>${esc(title)}</span></p><ul>${rows(items, done)}</ul></div>`;
+  const card = (id, title, items, done) => `<div class="msg card" id="${id}"><p class="card-h"><img src="assets/snacklist-icon.svg" alt=""><b>Snacklist</b><span>${esc(title)}</span></p><ul>${rows(items, done)}</ul></div>`;
   const thread = `
   <div class="thread" id="thread">
     <p class="msg me" id="m1">${esc(req1)}</p>

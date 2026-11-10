@@ -36,7 +36,7 @@ export async function makeTestCa(options: LeafOptions = {}): Promise<TestCa> {
   const rootKeys = await keys();
   const root = await x509.X509CertificateGenerator.createSelfSigned({
     serialNumber: '01',
-    name: 'CN=Hummlist Test Root',
+    name: 'CN=Snacklist Test Root',
     notBefore: new Date(now - day),
     notAfter: new Date(now + 30 * day),
     signingAlgorithm: rsa,
@@ -46,7 +46,7 @@ export async function makeTestCa(options: LeafOptions = {}): Promise<TestCa> {
   const midKeys = await keys();
   const intermediate = await x509.X509CertificateGenerator.create({
     serialNumber: '02',
-    subject: 'CN=Hummlist Test Intermediate',
+    subject: 'CN=Snacklist Test Intermediate',
     issuer: root.subject,
     notBefore: new Date(now - day),
     notAfter: new Date(now + 30 * day),

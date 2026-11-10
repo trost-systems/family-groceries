@@ -15,7 +15,7 @@ Snacklist ist eine gemeinsame Einkaufsliste für einen Haushalt. Was einer eintr
 ## So bekommst du Hilfe
 
 - **In der App:** Tippe auf **Mehr** und dann auf **Feedback senden**. Schreib, was passiert ist oder was dir fehlt. Mitgeschickt werden App-Version, Gerät, Sprache und der Bildschirm, auf dem du gerade bist, aber keine Listeneinträge. Das ist der schnellste Weg.
-- **Per E-Mail:** [support@hummlist.com](mailto:support@hummlist.com). Schreib bitte dazu, welches Gerät du nutzt (iPhone, Android oder Browser).
+- **Per E-Mail:** [support@snacklist.app](mailto:support@snacklist.app). Schreib bitte dazu, welches Gerät du nutzt (iPhone, Android oder Browser).
 
 Wer für Snacklist verantwortlich ist, steht im [Impressum](/impressum). Wie Snacklist mit deinen Daten umgeht, steht in der [Datenschutzerklärung](/datenschutz).
 
@@ -39,7 +39,7 @@ Die Einladung klappt nur mit der E-Mail deiner Apple-ID (iPhone) bzw. deines Goo
 
 ### Meine Einladung ist nicht angekommen. Was kann ich tun?
 
-Schau im Spam-Ordner nach und bei Gmail auch im Tab „Werbung“. Wir verschicken die Einladungen in Wellen. Auf dem iPhone kommt die TestFlight-Mail von Apple, nicht von Snacklist. Fehlt sie dann immer noch, schreib an [support@hummlist.com](mailto:support@hummlist.com).
+Schau im Spam-Ordner nach und bei Gmail auch im Tab „Werbung“. Wir verschicken die Einladungen in Wellen. Auf dem iPhone kommt die TestFlight-Mail von Apple, nicht von Snacklist. Fehlt sie dann immer noch, schreib an [support@snacklist.app](mailto:support@snacklist.app).
 
 ### Wie lade ich meinen Partner oder meine Partnerin ein?
 
@@ -57,7 +57,7 @@ Tippe auf **Mehr**, dann auf **Konto** und auf **Meine Daten exportieren**. Du b
 
 Tippe auf **Mehr**, dann auf **Konto** und auf **Konto löschen**, und bestätige mit dem Wort LÖSCHEN. Dein Konto, dein Profil, deine Zugriffstoken und verbundenen Apps werden sofort gelöscht. Bleiben andere im Haushalt, behalten sie die Liste; deine Einträge stehen dort ohne deinen Namen. Bist du das letzte Mitglied, wird der ganze Haushalt gelöscht, auch mit Snacklist Lifetime; der Kauf lässt sich nicht auf einen anderen Haushalt übertragen. Ob du dein Geld zurückbekommen kannst, steht unter „Kann ich Snacklist Lifetime zurückgeben?“. Auch Haushalte, die du archiviert hast, werden gelöscht. Bleiben andere im Haushalt, bleibt Snacklist Lifetime bei ihnen. In unseren verschlüsselten Sicherungen bleiben gelöschte Daten noch bis zu 90 Tage, danach sind sie auch dort weg.
 
-Ohne App geht es auch: Schreib an [support@hummlist.com](mailto:support@hummlist.com).
+Ohne App geht es auch: Schreib an [support@snacklist.app](mailto:support@snacklist.app).
 
 ### Was passiert mit Snacklist Lifetime, wenn ich als letztes Mitglied einen Haushalt verlasse?
 
@@ -68,7 +68,7 @@ Snacklist Lifetime gehört zum Haushalt und zieht nicht mit um. Verlässt du ein
 Snacklist Lifetime kaufst du bei Apple oder Google, nicht bei uns. Deshalb gilt:
 
 - **iPhone (App Store):** Erstattungen macht nur Apple. Beantrage sie unter [reportaproblem.apple.com](https://reportaproblem.apple.com) („Ich möchte“ › „Eine Rückerstattung beantragen“); so geht's: [Apple Support](https://support.apple.com/de-de/118223). Wir selbst können Käufe im App Store nicht erstatten.
-- **Android (Google Play):** In den ersten 48 Stunden nach dem Kauf beantragst du die Erstattung direkt bei Google; Google entscheidet darüber ([Erstattungsrichtlinien von Google Play](https://support.google.com/googleplay/answer/15574908?hl=de)). Danach schreib uns an [support@hummlist.com](mailto:support@hummlist.com) und nenne die Bestellnummer aus der Kaufbestätigung von Google (sie beginnt mit „GPA.“) oder die E-Mail-Adresse deines Google-Kontos. Wir prüfen jede Anfrage einzeln und erstatten gegebenenfalls über Google Play.
+- **Android (Google Play):** In den ersten 48 Stunden nach dem Kauf beantragst du die Erstattung direkt bei Google; Google entscheidet darüber ([Erstattungsrichtlinien von Google Play](https://support.google.com/googleplay/answer/15574908?hl=de)). Danach schreib uns an [support@snacklist.app](mailto:support@snacklist.app) und nenne die Bestellnummer aus der Kaufbestätigung von Google (sie beginnt mit „GPA.“) oder die E-Mail-Adresse deines Google-Kontos. Wir prüfen jede Anfrage einzeln und erstatten gegebenenfalls über Google Play.
 
 Wird ein Kauf erstattet, endet die Freischaltung des Haushalts, für den er gekauft wurde, für alle Mitglieder, außer der Haushalt hat Snacklist Lifetime ein weiteres Mal gekauft.
 
@@ -90,7 +90,7 @@ Ja. Auf dem iPhone geht das ab iOS 17 direkt mit der Snacklist-App, ohne eigenen
 
 ### Kann ich Sachen per Alexa auf die Liste setzen?
 
-Ja, mit dem Hummlist-Skill für Amazon Alexa. Aktiviere ihn in der Alexa-App und verknüpfe ihn mit deinem Snacklist-Konto. Dann geht zum Beispiel „Alexa, sag Hummlist, füg Milch und Eier hinzu“ oder „Alexa, frag Hummlist, was auf der Liste steht“. Der Skill versteht Deutsch und Englisch, je nachdem, auf welche Sprache dein Alexa-Gerät eingestellt ist. Die Verbindung beendest du, indem du den Skill in der Alexa-App deaktivierst oder in Snacklist unter **Mehr** → **Zugänge** „Amazon Alexa“ trennst. Der Skill ist noch im Beta-Test und noch nicht für alle verfügbar; den Einladungslink bekommst du von Peter. Wie du ihn einrichtest, steht in der Anleitung [Hummlist per Alexa: Skill einrichten](/de/anleitungen/alexa).
+Ja, mit dem Snacklist-Skill für Amazon Alexa. Aktiviere ihn in der Alexa-App und verknüpfe ihn mit deinem Snacklist-Konto. Dann geht zum Beispiel „Alexa, sag Snacklist, füg Milch und Eier hinzu“ oder „Alexa, frag Snacklist, was auf der Liste steht“. Der Skill versteht Deutsch und Englisch, je nachdem, auf welche Sprache dein Alexa-Gerät eingestellt ist. Die Verbindung beendest du, indem du den Skill in der Alexa-App deaktivierst oder in Snacklist unter **Mehr** → **Zugänge** „Amazon Alexa“ trennst. Der Skill ist noch im Beta-Test und noch nicht für alle verfügbar; den Einladungslink bekommst du von Peter. Wie du ihn einrichtest, steht in der Anleitung [Snacklist per Alexa: Skill einrichten](/de/anleitungen/alexa).
 
 ### Kann ich Snacklist mit einem KI-Assistenten nutzen?
 

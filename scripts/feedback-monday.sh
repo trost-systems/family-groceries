@@ -37,8 +37,8 @@ cleanup
 log "seed fake notes"
 sql -q >/dev/null <<'SQL'
 insert into auth.users (id, email) values
-  ('00000000-0000-4000-8000-00000000fe01', 'max.beta@hummlist-tester.de'),
-  ('00000000-0000-4000-8000-00000000fe02', 'barbie.beta@hummlist-tester.de'),
+  ('00000000-0000-4000-8000-00000000fe01', 'max.beta@snacklist-tester.de'),
+  ('00000000-0000-4000-8000-00000000fe02', 'barbie.beta@snacklist-tester.de'),
   ('00000000-0000-4000-8000-00000000fe03', 'peter@fg.test');
 insert into public.households (id, name, created_by) values
   ('00000000-0000-4000-8000-00000000fa01', 'Max und Barbie', '00000000-0000-4000-8000-00000000fe01'),
@@ -97,7 +97,7 @@ got_counts="$(run counts -At -F ' ' | tr '\n' ';')"
 want_counts="external category bug 1;external category idea 1;external category none 1;external platform android 2;external platform web 1;internal category other 1;internal platform ios 1;"
 [[ $got_counts == "$want_counts" ]] || fail "counts: got $got_counts, want $want_counts"
 contact="$(block contact | sql -At -v feedback_id=00000000-0000-4000-8000-0000000fb002 -f -)"
-[[ $contact == "max.beta@hummlist-tester.de" ]] || fail "the contact lookup answered '$contact'"
+[[ $contact == "max.beta@snacklist-tester.de" ]] || fail "the contact lookup answered '$contact'"
 no_contact="$(block contact | sql -At -v feedback_id=00000000-0000-4000-8000-0000000fb003 -f -)"
 [[ -z $no_contact ]] || fail "the contact lookup answered for a note without contact_ok"
 echo "feedback-monday: PASS: notes, counts and the contact lookup as docs/FEEDBACK.md has them" >&2

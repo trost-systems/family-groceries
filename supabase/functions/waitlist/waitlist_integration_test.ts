@@ -71,7 +71,7 @@ Deno.test({
   ignore: !enabled,
   async fn() {
     const sql = postgres(databaseUrl(), { max: 2, prepare: false });
-    const email = `hello+it-${crypto.randomUUID()}@hummlist.com`;
+    const email = `test+it-${crypto.randomUUID()}@snacklist.app`;
     const proofKey = await hmacHex(HMAC, email.toLowerCase());
     const client = crypto.randomUUID();
     try {
@@ -96,7 +96,7 @@ Deno.test({
 
       const pressed = { token, 'confirm_version': CONFIRM_VERSIONS.en, 'launch_news': true };
       assertEquals(
-        (await call('confirm', { ...pressed, confirm_version: 'waitlist-en-v2' })).status,
+        (await call('confirm', { ...pressed, confirm_version: CONSENT_VERSIONS.en })).status,
         400,
       );
       assertEquals(await (await call('confirm', pressed)).json(), { status: 'confirmed' });
@@ -117,7 +117,7 @@ Deno.test({
       assertEquals(row, {
         confirmed: true,
         mailed: true,
-        confirm_text_version: 'waitlist-confirm-en-v1',
+        confirm_text_version: CONFIRM_VERSIONS.en,
         launch_news: true,
       });
 
@@ -134,8 +134,8 @@ Deno.test({
         select (select count(*)::int from public.waitlist where lower(email) = ${email}) as rows,
                (select count(*)::int from public.waitlist_consent_proof
                 where email_hmac = ${proofKey} and end_reason = 'unsubscribed'
-                  and launch_news and locale = 'en' and consent_text_version = 'waitlist-en-v2'
-                  and confirm_text_version = 'waitlist-confirm-en-v1') as proofs`;
+                  and launch_news and locale = 'en' and consent_text_version = ${CONSENT_VERSIONS.en}
+                  and confirm_text_version = ${CONFIRM_VERSIONS.en}) as proofs`;
       assertEquals(left, { rows: 0, proofs: 1 });
       assertEquals(await (await call('unsubscribe', { id, sig })).json(), { status: 'deleted' });
     } finally {
@@ -153,13 +153,13 @@ Deno.test({
   async fn() {
     const sql = postgres(databaseUrl(), { max: 2, prepare: false });
     const client = crypto.randomUUID();
-    const over = `hello+it-rate-${crypto.randomUUID()}@hummlist.com`;
+    const over = `test+it-rate-${crypto.randomUUID()}@snacklist.app`;
     try {
       const { call, flush, sent } = harness(sql);
       const answers = [];
       for (let i = 0; i < LIMITS.perKey; i++) {
         const res = await call('signup', {
-          ...form('hello+it-rate-bot@hummlist.com'),
+          ...form('test+it-rate-bot@snacklist.app'),
           website: 'bot',
         }, client);
         answers.push(`${res.status} ${await res.text()}`);

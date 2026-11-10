@@ -46,7 +46,7 @@ function assets(dir) {
   copyFileSync(join(repo, 'site/public/tokens.css'), join(a, 'tokens.css'));
   copyFileSync(join(here, 'video.css'), join(a, 'video.css'));
   copyFileSync(join(repo, 'site/public/hex/hex-pointy.svg'), join(a, 'hex-pointy.svg'));
-  copyFileSync(join(repo, 'site/public/favicon.svg'), join(a, 'hummlist-icon.svg'));
+  copyFileSync(join(repo, 'site/public/favicon.svg'), join(a, 'snacklist-icon.svg'));
   copyFileSync(join(here, 'node_modules/gsap/dist/gsap.min.js'), join(a, 'gsap.min.js'));
   for (const f of ['bricolage-grotesque-latin-standard-normal.woff2', 'inter-latin-wght-normal.woff2']) {
     copyFileSync(join(repo, 'site/public/fonts', f), join(a, 'fonts', f));
@@ -125,15 +125,15 @@ function review(video, lang, fmt, dir, p) {
   writeFileSync(join(r, 'summary.json'), JSON.stringify(summary, null, 1));
 }
 
-/** The name is always "Hummlist" in full (research pitfall 19), in every source and page. This file holds the pattern and is not scanned. */
+/** The name is always "Snacklist", one word (research pitfall 19), in every source and page, and the old name (any "humm") is gone. This file holds the pattern and is not scanned. */
 function brandGate(files) {
   const bad = [];
   for (const f of files) {
     readFileSync(f, 'utf8').split('\n').forEach((line, i) => {
-      if (/humm(?!list)/i.test(line) || /HummList|Hum list/.test(line)) bad.push(`${f.replace(`${repo}/`, '')}:${i + 1}: ${line.trim()}`);
+      if (/humm/i.test(line) || /SnackList/.test(line) || /\bsnack[ -]list/i.test(line)) bad.push(`${f.replace(`${repo}/`, '')}:${i + 1}: ${line.trim()}`);
     });
   }
-  if (bad.length) throw new Error(`brand gate: write "Hummlist" in full\n${bad.join('\n')}`);
+  if (bad.length) throw new Error(`brand gate: write "Snacklist" as one word\n${bad.join('\n')}`);
 }
 
 const sources = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) =>

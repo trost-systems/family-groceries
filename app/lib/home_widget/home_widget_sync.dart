@@ -17,7 +17,7 @@ abstract interface class WidgetPublisher() {
 class const PluginWidgetPublisher() implements WidgetPublisher {
   /// Shared with the iOS extension (both entitlements files).
   static const appGroup = 'group.com.snacklist.app';
-  static const key = 'hummlist_widget';
+  static const key = 'snacklist_widget';
 
   /// The WidgetKit kind (`app/ios/HomeWidget/HomeWidget.swift`).
   static const iOSKind = 'HomeWidget';

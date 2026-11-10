@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../scenario.schema.json
 name: demo-family-en
-summary: The fictional Brandt family for the hummlist.com demo videos (job 54), in English; the same tidy list as demo-familie with English item names and English-speaking members.
+summary: The fictional Brandt family for the snacklist.app demo videos (job 54), in English; the same tidy list as demo-familie with English item names and English-speaking members.
 goodFor:
   - filming the English demo videos (marketing/videos/capture)
   - English item names through the classifier's synonyms

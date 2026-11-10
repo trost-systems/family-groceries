@@ -1,6 +1,6 @@
 # Nexus
 
-Nexus is the control room for Hummlist engineering at `nexus.hummlist.com`. It shows one page with these
+Nexus is the control room for Snacklist engineering at `nexus.snacklist.app`. It shows one page with these
 parts:
 
 - **Summary row:** running jobs against lanes, the queue, items for the lead, merges in 7 days, the CI pass
@@ -16,9 +16,10 @@ parts:
 Click a job to open a drawer with its timeline: queued, each step with its duration, the review verdicts, and
 the merge. On a phone the drawer fills the screen. Press Escape to close it, and focus returns to the job.
 
-The site is static. A cron job on hz builds a snapshot every 10 minutes and deploys it. The page fetches
-`/data/snapshot.json` every 60 s while the tab is visible. The header says how old the snapshot is. After 30
-minutes the page shows a `stale` label and dims. After 2 hours the label says `outdated`.
+The site is static. A cron job on hz builds a snapshot and deploys it once a night, in the 03:00 hour
+(Europe/Berlin). The page fetches `/data/snapshot.json` every 60 s while the tab is visible. The header says
+how old the snapshot is. After 25 hours (a missed night) the page shows a `stale` label and dims. After 49
+hours the label says `outdated`.
 
 ## Layout
 
@@ -108,9 +109,10 @@ cache headers as production. To run the tests, use `scripts/verify.sh --only nex
 
 ## Deploy and setup
 
-The Vercel project `hummlist-nexus` is not connected to git. The publisher deploys prebuilt output (Build
-Output API v3: `.vercel/output/config.json` with the header routes, and the files in `static/`) with
-`vercel deploy --prebuilt --prod`. The production domain `nexus.hummlist.com` follows each deploy.
+The Vercel project `hummlist-nexus` (it keeps its pre-Snacklist name) is not connected to git. The publisher
+deploys prebuilt output (Build Output API v3: `.vercel/output/config.json` with the header routes, and the
+files in `static/`) with `vercel deploy --prebuilt --prod`. The production domain `nexus.snacklist.app`
+follows each deploy; the old `nexus.hummlist.com` is a 308 redirect to it.
 
 - **Headers:** every response gets a strict CSP (`default-src 'none'`, `script-src 'self'`,
   `style-src 'self'`, `connect-src 'self'`, no inline script or style) and `X-Robots-Tag: noindex, nofollow`.
@@ -118,10 +120,11 @@ Output API v3: `.vercel/output/config.json` with the header routes, and the file
 - **Protection:** Vercel Authentication on all deployments (`ssoProtection.deploymentType: "all"`). This
   option has been free on every plan since 2026-09-09.
 - **One-time setup** (needs `VERCEL_TOKEN`, plus `VERCEL_ORG_ID`, the team id, for a team project):
-  `scripts/setup-vercel.sh`. It creates the project if it is missing, adds the domain and turns on the
-  protection. It ends with a logged-out `curl` that must return 401 or a redirect to the Vercel login. Run it
-  again at any time. It prints `VERCEL_PROJECT_ID`. DNS needs no record: hummlist.com is on Vercel's
-  nameservers with a wildcard, so the domain resolves as soon as the project holds it.
+  `scripts/setup-vercel.sh`. It creates the project if it is missing, adds the domain, keeps
+  `nexus.hummlist.com` a 308 redirect to it and turns on the protection. It ends with a logged-out `curl` that
+  must return 401 or a redirect to the Vercel login. Run it again at any time. It prints `VERCEL_PROJECT_ID`.
+  DNS needs no record: snacklist.app and hummlist.com are on Vercel's nameservers with a wildcard, so the
+  domain resolves as soon as the project holds it.
 - **Publisher on hz:** a shallow clone at `~/nexus-publisher` and this crontab line (installed):
 
   ```text
@@ -130,18 +133,20 @@ Output API v3: `.vercel/output/config.json` with the header routes, and the file
 
   The line moves the clone to main's head with a fetch and a hard reset (a `pull` refuses to fast-forward a
   depth-1 clone once main moved) and runs `cron.sh` once main has it. `cron.sh` runs under
-  `flock -n /tmp/nexus-publish.lock`, resets the clone to `origin/main` and runs `publish.sh --deploy`. Only
-  `--deploy` deploys: without it `publish.sh` never reads the secrets. With it `publish.sh` reads
-  `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` from `~/.config/agents/nexus.env` (mode 600) for the
-  deploy step only, and refuses to deploy unless the project's protection is `all`. Without that file, a
-  `--deploy` run builds and prints `skip deploy: no VERCEL_TOKEN`.
+  `flock -n /tmp/nexus-publish.lock`. It returns at once unless it is the 03:00 hour Europe/Berlin and no
+  publish succeeded yet that day (stamp `~/.cache/nexus-last-publish`; `NEXUS_FORCE=1` publishes now), so the
+  ticks every 10 minutes deploy at most once a night (Peter, 2026-11-10). Then it resets the clone to
+  `origin/main` and runs `publish.sh --deploy`. Only `--deploy` deploys: without it `publish.sh` never reads
+  the secrets. With it `publish.sh` reads `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` from
+  `~/.config/agents/nexus.env` (mode 600) for the deploy step only, and refuses to deploy unless the project's
+  protection is `all`. Without that file, a `--deploy` run builds and prints `skip deploy: no VERCEL_TOKEN`.
 
 ## Cost
 
-| Item                                                                                                         | Cost                             |
-| ------------------------------------------------------------------------------------------------------------ | -------------------------------- |
-| Vercel project with a static deploy every 10 min (144 a day; Pro allows 6000 a day and 450 an hour per team) | €0, included in Pro              |
-| Vercel Authentication on all deployments                                                                     | €0 since 2026-09-09              |
-| Bandwidth (one ~120 KB snapshot a minute per open tab)                                                       | €0, within the included transfer |
-| Cron and build on hz (about 10 s a run)                                                                      | €0, existing host                |
-| `gh` API calls (about 18 a run)                                                                              | €0, within the bot's rate limit  |
+| Item                                                                                                    | Cost                             |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Vercel project with one static deploy a night (was 144 a day; no git connection, so pushes never build) | €0, included in Pro              |
+| Vercel Authentication on all deployments                                                                | €0 since 2026-09-09              |
+| Bandwidth (one ~120 KB snapshot a minute per open tab)                                                  | €0, within the included transfer |
+| Cron and build on hz (about 10 s a run)                                                                 | €0, existing host                |
+| `gh` API calls (about 18 a run)                                                                         | €0, within the bot's rate limit  |

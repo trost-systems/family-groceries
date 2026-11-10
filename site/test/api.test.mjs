@@ -10,7 +10,7 @@ import * as unsubscribeRoute from '../api/waitlist/unsubscribe.mjs';
 const ENV = { WAITLIST_UPSTREAM_URL: 'https://ref.supabase.co/functions/v1/waitlist/', WAITLIST_PROXY_SECRET: 'proxy-secret' };
 const NOW = new Date('2026-11-02T23:59:59Z');
 const IP = '203.0.113.7';
-const EMAIL = 'hello+waitlisttest@hummlist.com';
+const EMAIL = 'test+waitlisttest@snacklist.app';
 const SIGNUP = { email: EMAIL, platform: 'ios', locale: 'de', 'launch_news': false, 'consent_version': 'waitlist-de-v1', website: '', 'elapsed_ms': 5000 };
 
 const log = mock.method(console, 'log', () => {});
@@ -27,7 +27,7 @@ function upstream(status = 202, text = '{"status":"ok"}') {
 
 const PATHS = { signup: '/api/waitlist', confirm: '/api/waitlist/confirm', unsubscribe: '/api/waitlist/unsubscribe' };
 
-function request(route, { method = 'POST', body = SIGNUP, query = '', host = 'hummlist.com', headers = { 'x-real-ip': IP } } = {}) {
+function request(route, { method = 'POST', body = SIGNUP, query = '', host = 'snacklist.app', headers = { 'x-real-ip': IP } } = {}) {
   const text = body === undefined || typeof body === 'string' ? body : JSON.stringify(body);
   return new Request(`https://${host}${PATHS[route]}${query}`, {
     method,
@@ -79,7 +79,7 @@ test('a sign-up goes to <upstream>/signup with the secret, the hashed client, th
         'content-type': 'application/json',
         'x-waitlist-proxy-secret': 'proxy-secret',
         'x-waitlist-client': clientKey(IP),
-        'x-waitlist-origin': 'https://hummlist.com',
+        'x-waitlist-origin': 'https://snacklist.app',
         'x-region': 'eu-central-1',
       },
       body: SIGNUP,
@@ -204,7 +204,7 @@ test('a body that streams past 2 KB without a content-length is cut off', async 
     },
   });
   const up = upstream();
-  const req = new Request('https://hummlist.com/api/waitlist', { method: 'POST', body, duplex: 'half', headers: { host: 'hummlist.com' } });
+  const req = new Request('https://snacklist.app/api/waitlist', { method: 'POST', body, duplex: 'half', headers: { host: 'snacklist.app' } });
   const res = await handle('signup', req, { env: ENV, fetch: up.fetch, now: NOW });
   assert.equal(res.status, 400);
   assert.equal(up.calls.length, 0);

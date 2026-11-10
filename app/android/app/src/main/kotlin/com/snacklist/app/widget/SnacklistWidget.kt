@@ -75,7 +75,9 @@ class SnacklistWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             val preferences = currentState<HomeWidgetGlanceState>().preferences
-            Content(WidgetPayload.parse(preferences.getString(WidgetPayload.KEY, null)))
+            val payload = preferences.getString(WidgetPayload.KEY, null)
+                ?: preferences.getString(WidgetPayload.LEGACY_KEY, null)
+            Content(WidgetPayload.parse(payload))
         }
     }
 

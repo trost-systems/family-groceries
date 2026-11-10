@@ -19,7 +19,7 @@ Every signed-in user can export their data and delete their account. Both live o
 
 - Tap "Mehr" in the tab bar, scroll down and tap "Konto". Zugänge is a separate page without these actions.
 - Signed in without a household, the welcome screen shows "Konto löschen" below its two choices.
-- The public page `/konto-loeschen.html` on the web build explains the steps for Google Play (published since job 33a: no ENTWURF banner, no noindex; contact support@hummlist.com, links the privacy policy).
+- The public page `/konto-loeschen.html` on the web build explains the steps for Google Play (published since job 33a: no ENTWURF banner, no noindex; contact support@snacklist.app, links the privacy policy).
 
 ## Driving it with fg
 

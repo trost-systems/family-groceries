@@ -40,7 +40,7 @@ sql() {
 echo "== Server ($base)"
 nonce="health-$(date +%s)"
 status="$(curl -sS -o /tmp/voice-health.$$ -w '%{http_code}' --max-time 15 -X POST "$base/functions/v1/voice" \
-  -H 'content-type: application/json' -H "x-hummlist-client: $nonce" -d '{"mode":"read","lang":"de"}')"
+  -H 'content-type: application/json' -H "x-snacklist-client: $nonce" -d '{"mode":"read","lang":"de"}')"
 if [[ $status == 401 ]] && jq -e '.outcome == "unauthorized"' /tmp/voice-health.$$ >/dev/null 2>&1; then
   pass "voice answers an unsigned call with 401 unauthorized"
 else

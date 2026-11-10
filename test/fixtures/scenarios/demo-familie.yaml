@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../scenario.schema.json
 name: demo-familie
-summary: The fictional Brandt family for the hummlist.com demo videos (job 54), in German; a tidy list with no store tags, so no retailer appears on screen.
+summary: The fictional Brandt family for the snacklist.app demo videos (job 54), in German; a tidy list with no store tags, so no retailer appears on screen.
 goodFor:
   - filming the demo videos (marketing/videos/capture)
   - adding and ticking off in one tidy household

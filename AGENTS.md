@@ -26,8 +26,8 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   from secrets (`docs/RELEASE.md`).
 - `vercel.json`, `scripts/vercel.sh`: Vercel builds the web app on every push
   (`scripts/vercel-local.sh` runs the same build in Vercel's base image).
-  `main` goes to `preview.app.hummlist.com` (Vercel login); production
-  (`app.snacklist.app`, also `app.hummlist.com`) moves when a `release.yml`
+  `main` goes to `preview.app.snacklist.app` (Vercel login); production
+  (`app.snacklist.app`; `app.hummlist.com` serves it too until R1, for old links) moves when a `release.yml`
   run uploads to a store and pushes the `release` branch (`docs/DEPLOY.md`,
   section "Web app").
   `supabase-deploy.yml` deploys migrations (`supabase/deploy/`, Management
@@ -35,7 +35,7 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   `scripts/smoke-remote.sh`; its `ref` input rolls functions back.
   `keepalive.yml` reads through `health` daily so the free project doesn't
   pause. Runbook: `docs/DEPLOY.md`.
-- `site/`: the public site on snacklist.app, also served on hummlist.com
+- `site/`: the public site on snacklist.app (hummlist.com redirects there)
   (landing pages `/de` and `/en`, guides, changelog, legal pages), its own Vercel project (Root Directory
   `site`), static HTML from Markdown and `site/content/landing/copy.yml`;
   `site/README.md` explains adding a guide and the landing copy and media. Separate from the app's build.
@@ -54,7 +54,7 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   `docs/API.md`, contract `docs/api/openapi.yaml` (checked by the lint gate against
   `api/routes.ts`). Its key UI sits behind the PostHog flag `public-api`.
 - `mcp-proxy/`: the Vercel project `hummlist-mcp`, serving the `mcp` function
-  at `https://mcp.hummlist.com` by rewrites, and a static page for browsers
+  at `https://mcp.snacklist.app` by rewrites, and a static page for browsers
   (`public/`, routes tested by `scripts/mcp-proxy-routes_test.ts`). `scripts/mcp-smoke.sh <url>`
   checks MCP discovery on either URL (`docs/MCP.md`).
 - `supabase/functions/voice/`: the Siri and in-app dictation endpoint; the
@@ -193,4 +193,5 @@ line above it, with the reason: `// ast-grep-ignore: <rule-id> -- <reason>` or
 | squawk compat rules | Dropping or renaming a column or table, NOT NULL without default, type changes, dropping a function or view | TestFlight and Play builds lag `main`; old apps must keep working |
 | `brand-names` | ChatGPT, OpenAI, Claude or Anthropic in site/content, site/public, mcp-proxy/public or an ARB value, outside `scripts/brand-names.allow.json` (or a stale entry there) | Legal N-80..N-86: brand names only in functional help and the trademark notice |
 | merge conflict markers | A tracked file with a line starting `<<<<<<< ` or `>>>>>>> ` | A 3-way apply that stopped left them staged in two feature docs (job 169b W2); no other gate reads those files |
+| `no-hummlist` | A tracked file naming Hummlist (any case) that `scripts/checks/hummlist-allow.txt` does not list with its exception and reason | The product is Snacklist (job 174); only redirects, old builds' ids and wire names, and history keep the old name, each until it retires |
 | `ignore-needs-reason`, schema check: ignores | An `ast-grep-ignore` or `squawk-ignore` without ` -- <reason>` | An exception a reviewer cannot judge gets copied |

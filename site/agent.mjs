@@ -13,7 +13,7 @@ import { matchesSource } from './scripts/preview.mjs';
 
 const SITE_DIR = dirname(fileURLToPath(import.meta.url));
 const SITE_NAME = 'Snacklist';
-const MCP_URL = 'https://mcp.hummlist.com';
+const MCP_URL = 'https://mcp.snacklist.app';
 const STAGES = ['waitlist', 'beta', 'launch'];
 const API_OFF = 'public-api rollout is off in releases/flags.json';
 

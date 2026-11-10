@@ -75,7 +75,7 @@ Deno.test('--dry-run prints both bodies and ask lines, without ask or a skill id
   const [unlinked, linked] = bodiesOf(r.stdout);
   assertEquals(unlinked.request.type, 'LaunchRequest');
   assertEquals(unlinked.request.locale, 'de-DE');
-  assertEquals(unlinked.context.System.user.userId, 'amzn1.ask.account.HUMMLIST-SMOKE');
+  assertEquals(unlinked.context.System.user.userId, 'amzn1.ask.account.SNACKLIST-SMOKE');
   assertEquals(unlinked.context.System.user.accessToken, undefined, 'unlinked has no token');
   assertEquals(linked.context.System.user.accessToken, '<ALEXA_SMOKE_TOKEN>');
   assertEquals(linked.session.user.accessToken, '<ALEXA_SMOKE_TOKEN>');

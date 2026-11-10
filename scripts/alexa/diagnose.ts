@@ -103,9 +103,9 @@ export const linkReasons: Record<InvalidTokenDetail, string> = {
     'account deleted, or a reused refresh token revoked it). Link the skill again.',
   expired: 'Alexa sent an access token past its expiry, so its refresh failed. Look for a ' +
     'token refresh_token row with an error below (refresh_token_already_used: link again).',
-  not_oauth: 'a valid Hummlist token, but an app session or API key, not an OAuth token. Check ' +
+  not_oauth: 'a valid Snacklist token, but an app session or API key, not an OAuth token. Check ' +
     "the skill's Client ID is the Amazon Alexa client (health.sh), then link again.",
-  unknown_key: 'an API key or Siri credential Hummlist does not know. Check the Client ID and ' +
+  unknown_key: 'an API key or Siri credential Snacklist does not know. Check the Client ID and ' +
     'Access Token URI in the skill (docs/ALEXA.md, Account linking), then link again.',
   issuer: "the token comes from another auth server: the skill's Access Token URI points at " +
     'another project or host. Fix the URIs (docs/ALEXA.md, Account linking), then link again.',

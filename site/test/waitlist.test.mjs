@@ -100,7 +100,7 @@ test('the sign-up form: one email field with its hint, iPhone or Android, no lau
       assert.ok(doc.querySelector('script[src="/waitlist.js"]'));
     }
   }
-  assert.equal(versionsOf('CONSENT_VERSIONS').de, 'waitlist-de-v2');
+  assert.equal(versionsOf('CONSENT_VERSIONS').de, 'waitlist-de-v3');
 });
 
 test('the confirmation page carries the consent: Legal\'s text, the launch-news box unticked, one button (N-73, N-74)', () => {
@@ -126,7 +126,7 @@ test('the confirmation page carries the consent: Legal\'s text, the launch-news 
     assert.equal(ready.querySelector('[data-copy-id="waitlist.confirm.not-you"]').text, notYou);
     assert.match(ready.querySelector('[data-copy-id="waitlist.confirm.body"]').text, /KI-Assistenten|AI assistant/);
   }
-  assert.equal(versions.de, 'waitlist-confirm-de-v1');
+  assert.equal(versions.de, 'waitlist-confirm-de-v2');
   for (const route of ['/de/warteliste/abmelden', '/en/waitlist/unsubscribe']) {
     assert.equal(waitlist.page(route).querySelectorAll('[data-legal], input').length, 0, `${route}: deleting needs no consent`);
   }
@@ -173,8 +173,8 @@ test('noindex: every page says it by header or in the page until the launch PR l
 // The privacy policy names the web app in its wording (sections 1, 3 and 12, and the deletion page
 // in section 8); Legal decides those sentences, so only the links went.
 const LEGAL_MENTIONS = {
-  '/datenschutz': ['(app.snacklist.app)', 'Web-App app.snacklist.app', 'https://app.snacklist.app/konto-loeschen.html', 'snacklist.app, app.snacklist.app, mcp.hummlist.com'],
-  '/en/privacy': ['(app.snacklist.app)', 'Web app app.snacklist.app', 'https://app.snacklist.app/konto-loeschen.html', 'snacklist.app, app.snacklist.app and mcp.hummlist.com'],
+  '/datenschutz': ['(app.snacklist.app)', 'Web-App app.snacklist.app', 'https://app.snacklist.app/konto-loeschen.html', 'snacklist.app, app.snacklist.app, mcp.snacklist.app'],
+  '/en/privacy': ['(app.snacklist.app)', 'Web app app.snacklist.app', 'https://app.snacklist.app/konto-loeschen.html', 'snacklist.app, app.snacklist.app and mcp.snacklist.app'],
 };
 
 test('in no stage does a page link, load or name a URL of app.snacklist.app, and nothing comes from another server', () => {

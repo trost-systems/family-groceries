@@ -4,11 +4,12 @@ import { change, duration, freshness, score } from '../web/format.ts';
 const now = new Date('2026-11-07T10:00:00Z');
 const before = (min: number): string => new Date(now.getTime() - min * 60_000).toISOString();
 
-Deno.test('freshness: fresh up to 30 min, stale to 2 h, outdated after', () => {
+Deno.test('freshness: published nightly, fresh up to 25 h, stale to 49 h, outdated after', () => {
   assertEquals(freshness(before(0.5), now), { level: 'fresh', label: 'updated just now' });
   assertEquals(freshness(before(4), now), { level: 'fresh', label: 'updated 4 min ago' });
-  assertEquals(freshness(before(31), now).level, 'stale');
-  assertEquals(freshness(before(121), now), { level: 'outdated', label: 'updated 2 h 1 min ago' });
+  assertEquals(freshness(before(24 * 60), now).level, 'fresh');
+  assertEquals(freshness(before(25 * 60 + 1), now).level, 'stale');
+  assertEquals(freshness(before(49 * 60 + 1), now).level, 'outdated');
 });
 
 Deno.test('durations', () => {

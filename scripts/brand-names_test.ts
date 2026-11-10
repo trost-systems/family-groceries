@@ -34,7 +34,7 @@ Deno.test('a brand in a text file of site/public fails, a binary is skipped', ()
   assert(problems[0]?.startsWith('site/public/x.svg:1:'));
 });
 
-Deno.test('a brand on the mcp.hummlist.com page fails', () => {
+Deno.test('a brand on the mcp.snacklist.app page fails', () => {
   const problems = check(repo({ ...clean, 'mcp-proxy/public/de.html': '<p>ChatGPT</p>' }));
   assertEquals(problems.length, 1);
   assert(problems[0]?.startsWith('mcp-proxy/public/de.html:1: names "ChatGPT"'));

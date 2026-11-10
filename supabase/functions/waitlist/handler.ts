@@ -11,7 +11,12 @@
 // while WAITLIST_PROXY_SECRET or WAITLIST_HMAC_SECRET is unset.
 // Logs are fixed outcome codes ("waitlist: signup_stored"): never an address, token, body, header
 // value or a Postgres message (a unique violation's detail names the address).
-import { CONFIRM_VERSIONS, CONSENT_VERSIONS } from './consent.ts';
+import {
+  CONFIRM_VERSIONS,
+  CONSENT_VERSIONS,
+  PREVIOUS_CONFIRM_VERSIONS,
+  PREVIOUS_CONSENT_VERSIONS,
+} from './consent.ts';
 import { confirmToken, emailHmac, sameSecret, sha256Hex, unsubscribeSig } from './crypto.ts';
 import {
   confirmationMail,
@@ -152,19 +157,23 @@ export function parseSignup(
   if (email.length > 254 || !EMAIL.test(email) || CONTROL.test(email)) return 'invalid_email';
   if (b.platform !== 'ios' && b.platform !== 'android') return 'invalid_platform';
   if (b.locale !== 'de' && b.locale !== 'en') return 'invalid_request';
-  if (b.consent_version !== CONSENT_VERSIONS[b.locale]) return 'invalid_request';
+  const consentVersion = [CONSENT_VERSIONS[b.locale], PREVIOUS_CONSENT_VERSIONS[b.locale]]
+    .find((v) => v === b.consent_version);
+  if (consentVersion === undefined) return 'invalid_request';
   const honeypot = b.website !== undefined && b.website !== '';
   const elapsed = typeof b.elapsed_ms === 'number' ? b.elapsed_ms : 0;
   return {
     email,
     platform: b.platform,
     locale: b.locale,
-    consentVersion: CONSENT_VERSIONS[b.locale],
+    consentVersion,
     bot: honeypot ? 'honeypot' : elapsed < MIN_ELAPSED_MS ? 'too_fast' : null,
   };
 }
 
-export type ConfirmVersion = (typeof CONFIRM_VERSIONS)[Locale];
+export type ConfirmVersion =
+  | (typeof CONFIRM_VERSIONS)[Locale]
+  | (typeof PREVIOUS_CONFIRM_VERSIONS)[Locale];
 
 /** What the person's press on the confirmation page answered (N-73). */
 export interface ConfirmPress {
@@ -172,7 +181,10 @@ export interface ConfirmPress {
   launchNews: boolean;
 }
 
-const CONFIRM_VERSION_SET: ReadonlySet<unknown> = new Set(Object.values(CONFIRM_VERSIONS));
+const CONFIRM_VERSION_SET: ReadonlySet<unknown> = new Set([
+  ...Object.values(CONFIRM_VERSIONS),
+  ...Object.values(PREVIOUS_CONFIRM_VERSIONS),
+]);
 
 /** The confirm body: the token as sent (checked against the store), and the press. */
 export function parseConfirm(b: Body): { token: string; press: ConfirmPress } | null {
