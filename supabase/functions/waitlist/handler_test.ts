@@ -437,7 +437,7 @@ Deno.test('AC10: one confirmation mail from Peter, with the confirm and delete l
   const { to, mail, key } = nth(sent, 0);
   const row = rowOf(store, 'hello+ac10@hummlist.com');
   assertEquals(to, 'hello+ac10@hummlist.com');
-  assertEquals(mail.from, '"Peter von Snacklist" <hello@snacklist.app>');
+  assertEquals(mail.from, '"Peter · Snacklist" <hello@snacklist.app>');
   assertEquals(mail.replyTo, 'hello@snacklist.app');
   assertEquals(mail.subject, 'Bitte bestätige deine E-Mail für Hummlist');
   assertEquals(mail.headers, {}, 'the confirmation has no List-Unsubscribe');
@@ -569,11 +569,19 @@ Deno.test('AC12: the one-click link deletes the row, again and again; a forged o
   });
 });
 
-Deno.test('the recipient allow-list: unset keeps to hello+…@hummlist.com, * lets everyone in', async () => {
+Deno.test('the recipient allow-list: unset keeps to hello+…@hummlist.com and test@ / test+…@snacklist.app, * lets everyone in', async () => {
   const test = setup();
   await test.call('signup', form('peter@example.com'));
   await test.flush();
   assertEquals([test.store.rows.size, test.sent.length], [0, 0]);
+
+  for (const email of ['hello+x@hummlist.com', 'test@snacklist.app', 'test+x@snacklist.app']) {
+    const allowed = setup();
+    await allowed.call('signup', form(email));
+    await allowed.flush();
+    assertEquals(allowed.store.rows.size, 1, email);
+    assertEquals(allowed.sent.map((s) => s.to), [email]);
+  }
 
   const all = setup({ WAITLIST_MAIL_ALLOW: '*' });
   await all.call('signup', form('peter@example.com'));
