@@ -6,7 +6,7 @@
     "clientId": "REPLACE_WITH_CLIENT_ID",
     "accessTokenScheme": "HTTP_BASIC",
     "scopes": [],
-    "domains": ["app.hummlist.com", "jdwqrallbpdbshrdhenk.supabase.co"],
+    "domains": ["app.snacklist.app", "app.hummlist.com", "jdwqrallbpdbshrdhenk.supabase.co"],
     "skipOnEnablement": false,
     "pkceConfiguration": { "status": "ENABLED", "codeChallengeMethod": "S256" }
   }

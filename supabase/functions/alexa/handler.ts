@@ -1,5 +1,5 @@
-// POST /functions/v1/alexa: the endpoint of the custom Alexa skill "Hummlist" (de-DE, en-*;
-// the request's locale picks the language, voices.ts).
+// POST /functions/v1/alexa: the endpoint of the custom Alexa skills "Snacklist" and, until S5,
+// "Hummlist" (de-DE, en-*; the request's locale picks the language, voices.ts).
 // Every request is verified first (verify.ts); a refused one answers 400 and touches nothing.
 // The linked account is the Supabase OAuth access token Alexa got through account linking; its
 // user's default household (household_members.is_default, read per request) is the one written

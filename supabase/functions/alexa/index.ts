@@ -1,4 +1,4 @@
-// The Alexa skill "Hummlist": POST /functions/v1/alexa (docs/ALEXA.md).
+// The Alexa skills "Snacklist" and "Hummlist" (until S5): POST /functions/v1/alexa (docs/ALEXA.md).
 import { telemetryFor, withTelemetry } from '../_shared/telemetry.ts';
 import { trustFrom } from './config.ts';
 import { productionDeps } from './deps.ts';
