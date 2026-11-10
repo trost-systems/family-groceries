@@ -27,7 +27,7 @@ its person to Snacklist and connects the MCP server. Change it when that changes
 | Check | Where | Fails when |
 | --- | --- | --- |
 | `md-twin` | build | a public HTML page has no `.md` twin, the twin's first line is not `# <h1>`, or the page doesn't link it |
-| `llms-txt` | build | `llms.txt` breaks the llmstxt.org structure, a link doesn't resolve to a built file or anchor, a link leaves the site's `siteUrl` (only `https://mcp.hummlist.com` may), or a public page is missing |
+| `llms-txt` | build | `llms.txt` breaks the llmstxt.org structure, a link doesn't resolve to a built file or anchor, a link leaves the site's `siteUrl` (only `https://mcp.snacklist.app` may), or a public page is missing |
 | `llms-full` | build | `llms-full.txt` is missing a twin listed in `llms.txt` |
 | `robots` | build | `robots.txt` disallows a page that carries `noindex` (crawlers could never see the `noindex`), or has no `Sitemap` line. The site-wide `X-Robots-Tag: noindex` header in `site/vercel.json` makes every page noindex until launch, so any `Disallow` of a page fails today |
 | `launch` | build | `site/config/stage.ts` says `'launch'` and any `noindex` is left (the `X-Robots-Tag` header in `site/vercel.json` or a meta tag on a public page) |
@@ -46,7 +46,7 @@ Every check has a fixture test that breaks one thing and expects that check to f
 `site/checks/agent-forms.test.mjs` and `scripts/mcp-smoke.test.mjs` (a fake MCP server).
 
 The MCP probe never uses a real household. CI runs it without credentials against
-`https://mcp.hummlist.com` (discovery only; `initialize` and `tools/list` report `SKIP`), and
+`https://mcp.snacklist.app` (discovery only; `initialize` and `tools/list` report `SKIP`), and
 `e2e/tests/mcp-smoke.spec.ts` runs it with an access token of a throwaway household on the local
 stack. `MCP_PROTOCOL_VERSION` picks the protocol version (default `2025-11-25`, what the server
 speaks today).
@@ -58,7 +58,7 @@ cd site && npm ci && npm test && npm run build    # build checks and their fixtu
 node agent.mjs dist                                # the build checks again, on any dist
 scripts/verify.sh --only site,site-agent          # both gates, as CI runs them
 node --test scripts/mcp-smoke.test.mjs             # the probe's fixture tests
-scripts/mcp-smoke.sh https://mcp.hummlist.com      # the live probe, discovery only
+scripts/mcp-smoke.sh https://mcp.snacklist.app      # the live probe, discovery only
 scripts/verify.sh --only e2e -- tests/mcp-smoke.spec.ts   # the probe with a test household
 ```
 

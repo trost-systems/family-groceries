@@ -2,7 +2,7 @@
 
 Job 21 (Spec #2, Peter's decisions of 2026-10-27 in DECISIONS.md "Job 21"). Testers and
 customers send a short note from **Mehr → Feedback senden** on iOS, Android and the web. The
-note goes into one table, `public.feedback`, which Peter and the Hummlist PM read with the
+note goes into one table, `public.feedback`, which Peter and the Snacklist PM read with the
 service role (Supabase dashboard or the Supabase connector). Nothing notifies anyone: the PM
 reads the table every Monday with the SQL below.
 

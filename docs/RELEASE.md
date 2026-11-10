@@ -512,9 +512,9 @@ does not exist yet fails the same way ("is missing"). The sequence:
 
 1. The Lead enables the capability in the browser (`NEEDS_LEAD.md`, L6).
    For the Home Screen widget (job 63) that is, under Certificates,
-   Identifiers & Profiles: register the App Group `group.com.hummlist.app`;
-   register the App ID `com.hummlist.app.HomeWidget`; enable App Groups on
-   both `com.hummlist.app` and `com.hummlist.app.HomeWidget` and assign the
+   Identifiers & Profiles: register the App Group `group.com.snacklist.app`;
+   register the App ID `com.snacklist.app.HomeWidget`; enable App Groups on
+   both `com.snacklist.app` and `com.snacklist.app.HomeWidget` and assign the
    group to each.
 2. From CI: Actions, Certificates, Run workflow on `main` with lane
    `renew_profile` and confirm `renew` (`gh workflow run certificates.yml

@@ -1,4 +1,4 @@
-# Club niche (Vereine) for Hummlist: desk research
+# Club niche (Vereine) for Snacklist: desk research
 
 Date: 2026-11-07. Method: web search and page/PDF reads only (no sign-ups, no contact).
 "Estimate" marks my own numbers with the reasoning; "unknown" marks what I could not find.
@@ -73,7 +73,7 @@ shopping flow). No player found with an MCP server or AI-agent access (search fo
 | AI training for clubs is now offered by state sports federations (e.g. LSB Niedersachsen KI workshops 2026, NRW "Digitalisierung und KI im Verein") | https://www.lsb-niedersachsen.de/fileadmin/daten/dokumente/Organisationsentwicklung/Digitalisierung/Impulse/20260810_Ausschreibung_KI_Workshops_01.pdf ; https://www.land.nrw/pressemitteilung/digitalisierung-und-ki-im-verein-kostenfreie-weiterbildungsreihe-fuer-engagierte |
 | MCP / agent use by clubs or small organisations | **unknown**: no survey asks about agents, connectors or MCP. |
 
-### Which agents can even reach Hummlist's MCP server
+### Which agents can even reach Snacklist's MCP server
 
 - Claude: custom remote MCP connectors on all plans incl. Free (Free: one custom connector):
   https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-MCP
@@ -81,7 +81,7 @@ shopping flow). No player found with an MCP server or AI-agent access (search fo
   full MCP with write tools only in Business and Enterprise/Edu workspaces; Pro read/fetch only;
   Free/Plus none. Third-party pages disagree on Plus; OpenAI's help page is the authority:
   https://help.openai.com/en/articles/12584461
-- So the dominant tool (ChatGPT, 71 % of German AI users) cannot write to a Hummlist list on the
+- So the dominant tool (ChatGPT, 71 % of German AI users) cannot write to a Snacklist list on the
   consumer plans club volunteers typically use; Claude (5 % of AI users) can, for free.
 
 ### Estimate: share of club organisers who would manage a list through an agent over MCP
@@ -94,7 +94,7 @@ Estimate, per club (one organising person per club):
   workspaces, though some use their employer's)
 - willing to add a custom connector with OAuth for a club list: ~25-40 % of those
 - Result: **~0.5-1.5 % of club organisers today**, i.e. roughly **3,000-9,000 of 629,000 Vereine**
-  (estimate). This would rise sharply if ChatGPT opened write MCP to Plus/Free or if Hummlist
+  (estimate). This would rise sharply if ChatGPT opened write MCP to Plus/Free or if Snacklist
   were listed in a client's app directory.
 
 ## 4. What a club needs from a shared list app
@@ -123,7 +123,7 @@ Product needs (from the tools above, club size data and GDPR guidance; my synthe
   it needs a binding contract under Art. 28(3); non-EU processors need Chapter V safeguards
   (LfDI BW guidance, sections 3.2-3.3, same PDF). Club software vendors publish AVV templates
   (easyVerein above; DFBnet: https://intg-portal.dfbnet.org/fileadmin/content/downloads/DFBnet_Verein/DFBnetVerein-Finanz_Auftragsverarbeitung-DSGVO.pdf).
-  => Hummlist would need a click-through AVV for clubs, a TOM list, a sub-processor list
+  => Snacklist would need a click-through AVV for clubs, a TOM list, a sub-processor list
   (Supabase, Vercel, PostHog, and the AI provider question below) and EU hosting.
 - **Function-based access**: each officer sees only the data the role needs (LfDI BW 4.1).
 - **Information duty (Art. 13)** at collection and **deletion** when a member leaves (LfDI BW 1.3, 6):
@@ -171,10 +171,10 @@ admin and then team by team. Evidence that club members carry a club tool into t
   only); export; a click-through AVV, TOM and sub-processor page; MCP tools scoped to a chosen
   list. Today's model is one household with one list, so this is a real product change, not a toggle.
 - **Competition**: Spond's free event tasks cover "who does what" for clubs already on Spond;
-  free one-link Mitbringlisten (BringList, SignUpGenius-style) cover one-off events. Hummlist's
+  free one-link Mitbringlisten (BringList, SignUpGenius-style) cover one-off events. Snacklist's
   edge would be the grocery strengths (categories, aisle order, live sync, voice/Siri/Alexa) plus
   the agent, for the standing Vereinsheim kitchen/bar list more than for one party.
-- **Risks**: GDPR duties shift onto Hummlist as processor (AVV, deletion on exit, member-to-member
+- **Risks**: GDPR duties shift onto Snacklist as processor (AVV, deletion on exit, member-to-member
   data rules); member data flowing into the organiser's AI provider; viral loop is weak (participants
   of a bring-list rarely become organisers; household spread from a club list is unproven); clubs pay
   little or nothing; support load from volunteer admins; a ChatGPT policy change could open or keep

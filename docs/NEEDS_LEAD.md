@@ -5,18 +5,21 @@ Peter only signing in. Everything around them is done from the box. Steps
 that need Peter's own decision, money or identity are in
 [`NEEDS_PETER.md`](NEEDS_PETER.md) instead.
 
-## mcp.hummlist.com
+## mcp.snacklist.app (set up as mcp.hummlist.com)
 
-Status: done. The Lead posted `Lead: mcp.hummlist.com live` (2026-10-28 15:44), and job 26's
-`scripts/mcp-smoke.sh https://mcp.hummlist.com` passed. The steps below
-stay as the record of the setup.
+Status: done. The public MCP URL is `https://mcp.snacklist.app`, a second production domain on
+the same `hummlist-mcp` project (2026-11-10, #355); `mcp.hummlist.com` keeps serving for clients
+set up before the rename and advertises its own host. The Lead posted `Lead: mcp.hummlist.com
+live` (2026-10-28 15:44), and job 26's `scripts/mcp-smoke.sh https://mcp.hummlist.com` passed.
+The steps below stay as the record of that setup; for the Snacklist host, read
+`mcp.snacklist.app` for `mcp.hummlist.com` in steps 2, 3 and 5.
 
-Job 26. Makes `https://mcp.hummlist.com` the public MCP URL
-([`MCP.md`](MCP.md#public-url-mcphummlistcom)). Everything else is on
+Job 26. Made `https://mcp.hummlist.com` the public MCP URL
+([`MCP.md`](MCP.md#public-url-mcpsnacklistapp)). Everything else is on
 `main`: `mcp-proxy/vercel.json` and the function that advertises the public
 URL. Nothing here costs money: a Hobby project, no env vars, no secrets.
-DNS needs no change: hummlist.com is on Vercel's nameservers with a
-wildcard, and `mcp.hummlist.com` answers `DEPLOYMENT_NOT_FOUND` today.
+DNS needed no change: hummlist.com is on Vercel's nameservers with a
+wildcard, and `mcp.hummlist.com` answered `DEPLOYMENT_NOT_FOUND` then.
 
 1. **Create the project** (Vercel connector or dashboard, team of the
    existing Hummlist projects):
@@ -87,14 +90,16 @@ Status (2026-10-28): all done. Nothing is open for the Lead.
   (SHA-1 `77:B6:9B:5E:8F:10:5D:3F:46:3C:62:C3:BC:BE:A8:3D:EA:10:08:53`) in
   `family-groceries-512507`.
 
-The steps below stay as the record of what was done and for a re-setup.
+The steps below stay as the record of what was done and for a re-setup. The status above is
+the Hummlist app (`com.hummlist.app`, kept until R1 retires it); the steps name the Snacklist
+app (`com.snacklist.app`), which the Release workflow builds and uploads now.
 
 Values used below (none is secret):
 
 | What | Value |
 | --- | --- |
-| Package name | `com.hummlist.app` |
-| App name | Hummlist |
+| Package name | `com.snacklist.app` |
+| App name | Snacklist |
 | Upload key SHA-1 | `D4:9D:98:9E:AD:E3:2E:FE:D2:D3:A1:7A:71:B2:95:29:84:81:78:69` |
 | Upload key SHA-256 | `2C:9B:48:6D:AF:1B:94:AB:3F:92:38:49:CC:0F:C3:42:EF:09:64:2C:32:40:74:97:69:25:61:74:0C:BA:84:F5` |
 | Service account | `play-release@family-groceries-ci.iam.gserviceaccount.com` |
@@ -116,18 +121,18 @@ Verify: the "All apps" page loads.
 
 ### L2: Create the app
 
-Only if "Hummlist" is not in "All apps".
+Only if "Snacklist" is not in "All apps".
 
 1. Select **Create app**.
-2. App name: `Hummlist`. Default language: `German – de-DE`. App or game:
+2. App name: `Snacklist`. Default language: `German – de-DE`. App or game:
    **App**. Free or paid: **Free**.
 3. Tick the declarations (Developer Program Policies, US export laws).
    Select **Create app**.
 
 The package name is set by the first upload (L3) and cannot change after
-that; the AAB carries `com.hummlist.app`.
+that; the AAB carries `com.snacklist.app`.
 
-Verify: Hummlist opens on its Dashboard.
+Verify: Snacklist opens on its Dashboard.
 
 ### L3: Internal testing, first release, Play App Signing
 
@@ -135,11 +140,11 @@ Verify: Hummlist opens on its Dashboard.
    (built on the box, version code 1003, signer checked). Later: the newest
    Release run on `main` with an `android`
    job (Actions, Release, open the run, Artifacts,
-   `hummlist-<build number>-aab`; artifacts are kept 7 days). Unzip it to
+   `snacklist-<build number>-aab`; artifacts are kept 7 days). Unzip it to
    get `app-release.aab`. If none is younger than 7 days, run
    `gh workflow run release.yml -f upload=false -f platform=android` and
    wait about 15 minutes.
-2. Hummlist, **Test and release**, **Testing**, **Internal testing**,
+2. Snacklist, **Test and release**, **Testing**, **Internal testing**,
    **Testers** tab: **Create email list**, name `Familie`, add Peter's Google
    account (the one he uses on his Android phone, if any). Do not add Lea
    until Peter says so. Save, tick the list, **Save**.
@@ -178,7 +183,7 @@ hand once; after that, back to `completed`.
 2. Email address:
    `play-release@family-groceries-ci.iam.gserviceaccount.com`. This is the
    CI's API account, not a person; no email goes out.
-3. **App permissions**, **Add app**: Hummlist only. Tick:
+3. **App permissions**, **Add app**: Snacklist only. Tick:
    - **Release to testing tracks** (under Releases)
    - **View app information (read-only)** (under App access)
    Leave everything else unticked, including account permissions.
@@ -187,7 +192,7 @@ hand once; after that, back to `completed`.
 Verify: the next Release run's `android` job, step `upload`, prints
 "Play access works" (before `PLAY_RELEASE_STATUS` is set) or uploads to
 internal testing (after). Until L4, it prints "Play refuses the service
-account for com.hummlist.app (...)".
+account for com.snacklist.app (...)".
 
 ### L5: Policy items (App content)
 
@@ -199,7 +204,7 @@ them under "Set up your app".
 
 | Item (Policy, App content) | Blocks internal testing | Blocks closed/open/production | When |
 | --- | --- | --- | --- |
-| Privacy policy URL | No | Yes | After 33a's policy is on hummlist.com (https://hummlist.com/datenschutz). |
+| Privacy policy URL | No | Yes | After 33a's policy is on snacklist.app (https://snacklist.app/datenschutz). |
 | App access (sign-in needed; reviewer credentials) | No | Yes (review) | With the production track. |
 | Ads (no ads) | No | Yes | Any time: "No, my app does not contain ads". |
 | Content rating (IARC questionnaire) | No | Yes | Any time; the answers are Peter's. |
@@ -216,21 +221,21 @@ concerns production only.
 
 Weekly TestFlight builds do not need this (job 23 checked: the current
 profile is `ACTIVE` and the build has no new entitlement). Job 22 needs it
-for universal links (`applinks:app.hummlist.com`).
+for universal links (`applinks:app.snacklist.app`).
 
 1. <https://developer.apple.com/account>, Peter signs in. **Certificates,
-   Identifiers & Profiles**, **Identifiers**, `com.hummlist.app`.
+   Identifiers & Profiles**, **Identifiers**, `com.snacklist.app`.
 2. Tick **Associated Domains**. Leave every other capability as it is.
    **Save**, confirm the dialog about invalidated profiles.
 3. Do not touch **Certificates** or **Profiles** (no revoke, no new
-   certificate). The profile "match AppStore com.hummlist.app" now shows
+   certificate). The profile "match AppStore com.snacklist.app" now shows
    "Invalid"; that is expected.
 4. Post on BOARD.md that L6 is done. The box (job 22, or whoever is
    running) then runs `bundle exec fastlane ios renew_profile`
    (`RELEASE.md`, "Capabilities", step 2), which regenerates the profile
    with the existing certificate `GN85KDC962`.
 
-Verify: Profiles shows "match AppStore com.hummlist.app" as Active with a
+Verify: Profiles shows "match AppStore com.snacklist.app" as Active with a
 new expiry date, and the next Release run's `plan` passes "Check the
 profile". Between step 2 and the box's `renew_profile`, a Release run fails
 in `plan` with "Profile ... is INVALID"; that is the expected signal, not a
@@ -241,17 +246,17 @@ new problem.
 Google Cloud Console, project `family-groceries-512507`, **Google Auth
 Platform**, **Clients**, **Create client**, type **Android**:
 
-1. Name `Hummlist upload key`, package `com.hummlist.app`, SHA-1
+1. Name `Snacklist upload key`, package `com.snacklist.app`, SHA-1
    `D4:9D:98:9E:AD:E3:2E:FE:D2:D3:A1:7A:71:B2:95:29:84:81:78:69`.
    **Create**. (Builds signed locally or by CI with the upload key.)
-2. After L3: a second client, `Hummlist Play app signing`, package
-   `com.hummlist.app`, SHA-1 = the app signing key SHA-1 from L3, step 7.
+2. After L3: a second client, `Snacklist Play app signing`, package
+   `com.snacklist.app`, SHA-1 = the app signing key SHA-1 from L3, step 7.
    This one makes Google sign-in work in builds installed from Play.
 
 No client secret is created and nothing goes into the repo: the app never
 sends an Android client ID; Google matches it by package and SHA-1.
 
-Verify: both clients are listed with package `com.hummlist.app`. On a phone
+Verify: both clients are listed with package `com.snacklist.app`. On a phone
 with the internal testing build, "Mit Google anmelden" completes.
 
 ## Job 24: help page URLs (after Peter's publish OK)
@@ -260,13 +265,13 @@ Status: waiting for Peter's OK on the text (docs/NEEDS_PETER.md, Job 24).
 
 1. Send Peter the hummlist-site preview of the PR's head: `/support` and `/en/support` on the
    preview deployment URL (BOARD.md line "24-privacy-page: PR …", or the PR's Vercel check).
-2. After the publish PR is merged and https://hummlist.com/support answers 200:
-   - App Store Connect → Apps → Hummlist → the app version (or App Information) → **Support
-     URL**: `https://hummlist.com/support` (required for review). Marketing URL stays empty.
-   - Play Console → Hummlist → Grow users → Store presence → Store settings → **Store listing
-     contact details**: Email `support@hummlist.com`, Website `https://hummlist.com/support`,
+2. After the publish PR is merged and https://snacklist.app/support answers 200:
+   - App Store Connect → Apps → Snacklist → the app version (or App Information) → **Support
+     URL**: `https://snacklist.app/support` (required for review). Marketing URL stays empty.
+   - Play Console → Snacklist → Grow users → Store presence → Store settings → **Store listing
+     contact details**: Email `support@snacklist.app`, Website `https://snacklist.app/support`,
      **Save**.
-3. Check: `curl -sI https://hummlist.com/support | head -1` gives 200 and the page has no
+3. Check: `curl -sI https://snacklist.app/support | head -1` gives 200 and the page has no
    "ENTWURF" banner.
 
 ## Job 25: Hummlist Lifetime store setup (browser; Peter only signs in)
@@ -317,7 +322,7 @@ Then send Apple's test notification ("Request a Test Notification", or the App S
 ### P4: Sandbox tester
 
 App Store Connect → Users and Access → Sandbox → Test Accounts → "+": an address Peter chooses
-(an alias on hummlist.com works; never a real person's Apple ID without his OK), region Germany.
+(an alias on snacklist.app works; never a real person's Apple ID without his OK), region Germany.
 On the test iPhone: Settings → App Store → Sandbox Account → sign in.
 
 ### P5: Google Play (after the payments profile)
@@ -352,7 +357,7 @@ On the iPhone with the sandbox tester (and on Android with a license tester afte
    P3's test notification. The next poll (or a REFUND notification) shows the household locked.
 6. Report the result on BOARD.md.
 
-## Job 43: Hummlist Lifetime, household-bound (2026-10-31)
+## Job 43: Snacklist Lifetime, household-bound (2026-10-31)
 
 ### Steps
 
@@ -388,7 +393,7 @@ PR lands: point the webhook at the URL in step 7 and send RevenueCat's test even
 `ignored`); check steps 3 to 6 and 9 below. The SDK key defines are `REVENUECAT_APPLE_API_KEY`
 and `REVENUECAT_GOOGLE_API_KEY`.
 
-1. RevenueCat account and project "Hummlist" (free up to USD 2,500 monthly tracked revenue, then
+1. RevenueCat account and project "Snacklist", named "Hummlist" until 2026-11-10 (free up to USD 2,500 monthly tracked revenue, then
    1 %; confirm webhooks are included on the plan the dashboard shows). Accepting the terms
    accepts the DPA.
 2. Apps: App Store (`com.hummlist.app`) and Play Store (`com.hummlist.app`). Public SDK keys into
@@ -447,7 +452,7 @@ and `REVENUECAT_GOOGLE_API_KEY`.
   said they bought it (first claim)".
 - "Alle Mitglieder deines Haushalts sehen, dass der Haushalt freigeschaltet ist." / "All members
   … see that the household is unlocked.": still true; members no longer see who paid (H-55). New:
-  someone with a valid invite sees, before joining, whether the household has Hummlist Lifetime;
+  someone with a valid invite sees, before joining, whether the household has Snacklist Lifetime;
   the joining user's own recent purchase (30 days) is checked to offer the refund help (shown to
   no one else); members see when the household bought Lifetime more than once.
 - "Rechtsgrundlage: … dass ein Kauf nicht mehrfach oder in fremden Haushalten verwendet wird." /
@@ -456,8 +461,8 @@ and `REVENUECAT_GOOGLE_API_KEY`.
   sold or honoured, reviewed yearly).
 - "Speicherdauer: Die Freischaltung bleibt beim Haushalt … Löschst du dein Konto, entfernen wir
   die Verbindung zwischen dem Kauf und deinem Konto; die Transaktion selbst bleibt ohne
-  Personenbezug gespeichert, solange Hummlist betrieben wird … Wird der Haushalt gelöscht, endet
-  seine Freischaltung." / "Retention: …": the transaction is no longer kept while Hummlist runs:
+  Personenbezug gespeichert, solange Snacklist betrieben wird … Wird der Haushalt gelöscht, endet
+  seine Freischaltung." / "Retention: …": the transaction is no longer kept while Snacklist runs:
   30 days after the household's deletion it is deleted (only the HMAC stays) and RevenueCat is
   asked to delete the household's customer. Account deletion still only removes the buyer link.
   New: the last member may archive the household instead (once archiving is on), which keeps its
@@ -617,7 +622,7 @@ these are the sentences and steps for you.
 - Actual: `minified:hm` (`DartExceptionProcessor._getExceptionType` uses `runtimeType`), so
   PostHog groups issues by meaningless names.
 - Proposed fix: map the core error and exception types by `is` checks before falling back to
-  `runtimeType` (Hummlist's `errorType` in `app/lib/analytics/exceptions.dart` does this), and let
+  `runtimeType` (Snacklist's `errorType` in `app/lib/analytics/exceptions.dart` does this), and let
   the app add its own types.
 
 ## Job 47: purchase legal fixes, Legal Review K.11 (2026-10-31)
@@ -695,7 +700,7 @@ new server switch is seeded off. Decisions: DECISIONS "Job 47". Behavior: docs/P
   exclude RevenueCat's file and the session. Your call; a small app PR either way.
 - **H-50.** Archived households are deleted 24 months after archiving; "Archivierte Haushalte"
   shows "Wird am <Datum> gelöscht", and the join screen's archive offer names the 24 months. No
-  reminder e-mail: Hummlist sends no e-mails of its own (DECISIONS 47.3). If the texts promise a
+  reminder e-mail: Snacklist sends no e-mails of its own (DECISIONS 47.3). If the texts promise a
   reminder, that needs a mail sender first.
 - **The buyer's claim (job 43 review).** It now names the purchase's household and counts for a
   member at the purchase time, also one who left within the hour. That needs a new, short-lived
@@ -714,25 +719,25 @@ the merge. The changelog item waits on the `native-siri` hold in `releases/flags
 
 ### 1. Device test on Peter's iPhone (internal TestFlight, after the merge)
 
-Sign in to Hummlist on the TestFlight build, open the list once, then close the app. Set Siri to
+Sign in to Snacklist on the TestFlight build, open the list once, then close the app. Set Siri to
 English (Settings → Siri → Language) for lines 1 to 5, then to German for lines 6 to 9.
 
-1. "Hey Siri, add to Hummlist" → "What should I add?" → "milk, eggs and bread" → Siri: "Added
-   milk, eggs and bread to Hummlist." Lea's phone shows the three items within seconds.
-2. "Hey Siri, add milk to Hummlist" (milk on the list before) → no follow-up question, "Already on
+1. "Hey Siri, add to Snacklist" → "What should I add?" → "milk, eggs and bread" → Siri: "Added
+   milk, eggs and bread to Snacklist." Lea's phone shows the three items within seconds.
+2. "Hey Siri, add milk to Snacklist" (milk on the list before) → no follow-up question, "Already on
    the list: milk." or "Added milk …".
-3. "Hey Siri, what's on my Hummlist?" → reads at most ten items, then "and N more".
+3. "Hey Siri, what's on my Snacklist?" → reads at most ten items, then "and N more".
 4. Airplane mode on, then line 1 → Siri says nothing was added. No item appears after airplane
    mode goes off again.
 5. HomePod (if one is paired, Personal Requests on): line 1 → the full sentence is spoken.
-6. "Hey Siri, füge etwas zur Hummlist hinzu" → "Was soll auf die Liste?" → "Milch, Eier und Brot"
+6. "Hey Siri, füge etwas zur Snacklist hinzu" → "Was soll auf die Liste?" → "Milch, Eier und Brot"
    → "Hinzugefügt: Milch, Eier, Brot." (German device: the checks in "Job 71" below.)
-7. "Hey Siri, füge Milch zur Hummlist hinzu" → no follow-up question.
-8. "Hey Siri, was steht auf meiner Hummlist?" → reads the list.
-9. Mehr → Abmelden, then line 6 → "Öffne Hummlist und melde dich an …", nothing added.
+7. "Hey Siri, füge Milch zur Snacklist hinzu" → no follow-up question.
+8. "Hey Siri, was steht auf meiner Snacklist?" → reads the list.
+9. Mehr → Abmelden, then line 6 → "Öffne Snacklist und melde dich an …", nothing added.
 10. The old Shortcut ("Hey Siri, Einkaufsliste") still answers as before.
 10a. One-word items take the app's language when the word is too short to tell (DECISIONS "Job 51"
-    item 13). With the iPhone in English and Siri in German, say "Füge etwas zu Hummlist hinzu" →
+    item 13). With the iPhone in English and Siri in German, say "Füge etwas zu Snacklist hinzu" →
     "Milch". Note whether the answer comes in German or English. English there is a known
     limitation, not a failure; the item must still be added.
 11. Later, with job 50's lock on and a locked household: line 6 → the Premium sentence, nothing
@@ -745,7 +750,7 @@ If Siri doesn't hear the phrases at all (lines 1 and 6), do section 2 and test a
 Apple requires `com.apple.developer.siri` for SiriKit Intents extensions, not for App Intents
 (DECISIONS "Job 51" item 5). If voice invocation fails anyway:
 
-1. Lead: developer.apple.com → Identifiers → `com.hummlist.app` → enable **Siri** → Save.
+1. Lead: developer.apple.com → Identifiers → `com.snacklist.app` → enable **Siri** → Save.
 2. On the box, renew the App Store profile (docs/RELEASE.md "Capabilities"): `bundle exec fastlane
    ios renew_profile` with the env shown there.
 3. A one-line PR adds `<key>com.apple.developer.siri</key><true/>` to
@@ -754,11 +759,11 @@ Apple requires `com.apple.developer.siri` for SiriKit Intents extensions, not fo
 
 No `NSSiriUsageDescription`: the app never calls `INPreferences.requestSiriAuthorization`.
 
-### 3. Placeholder copy for Hummlist Launch (Spec #5)
+### 3. Placeholder copy for Snacklist Launch (Spec #5)
 
 - `premium_required` (voice, not reachable until job 50): de "Sprachbefehle sind Teil von
-  Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt." en "Voice
-  commands are part of Hummlist Premium. You can unlock it in the app under More, Hummlist Premium.
+  Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt." en "Voice
+  commands are part of Snacklist Premium. You can unlock it in the app under More, Snacklist Premium.
   I didn't add anything." The iOS app has the same sentences as a fallback
   (`app/ios/Runner/AppIntents`).
 - The guides' native Siri sections (`site/content/guides/de/siri-kurzbefehl.md` "Ohne
@@ -773,7 +778,7 @@ No `NSSiriUsageDescription`: the app never calls `INPreferences.requestSiriAutho
   form in the iPhone's Keychain. It is bound to the app session and ends with sign-out. The
   privacy policy's section on access tokens and voice should name it.
 - **Item names on the device for Siri.** Up to 50 item names of the household go to the iOS App
-  Shortcuts system so that "Add milk to Hummlist" works. Apple states it "may extract anonymized
+  Shortcuts system so that "Add milk to Snacklist" works. Apple states it "may extract anonymized
   App Shortcuts data such as localized phrases, display representation values … Machine learning
   models use this data" (https://developer.apple.com/documentation/appintents/app-shortcuts). The
   display representation values are our item names. The privacy text should say so, or Launch
@@ -790,7 +795,7 @@ No `NSSiriUsageDescription`: the app never calls `INPreferences.requestSiriAutho
   there because it needs only Apple's Shortcuts app and an access key.
 
 
-## Job 49: Hummlist Premium, yearly and Lifetime (2026-11-01)
+## Job 49: Snacklist Premium, yearly and Lifetime (2026-11-01)
 
 The go-live order for jobs 43 to 50 is now [`PAYWALL_RELEASE.md`](PAYWALL_RELEASE.md) (job 67).
 
@@ -850,7 +855,7 @@ RevenueCat entitlement `premium` (`entl654efcfce4`) with all four products attac
    and IN yearly amounts; put them into `expectedPrices` in `scripts/iap/product.ts` (they are
    `null` now). The 20 euro storefronts all expect 9.99 / 29.99; if a store set one differently,
    the check says which.
-7. **StoreKit configuration file:** `app/ios/Hummlist.storekit` was written by hand (Xcode format
+7. **StoreKit configuration file:** `app/ios/Snacklist.storekit` was written by hand (Xcode format
    4) with the subscription group; open it once in Xcode on a Mac (or a StoreKit test run) and
    commit whatever Xcode rewrites.
 8. **PostHog (319492 only):** update the two paying-household insights from
@@ -884,9 +889,9 @@ RevenueCat entitlement `premium` (`entl654efcfce4`) with all four products attac
   `lifetimeBoughtTwice`, `joinLifetimeEnds`): left word for word. The refund sheet now adds the
   placeholder `premiumRefundYearly` ("Für das Jahresabo gilt dasselbe. Eine Kündigung beendet nur
   die Verlängerung; das laufende Jahr wird nicht automatisch erstattet.") below them.
-- **S-11**: the rename „Hummlist Lifetime“ → „Hummlist Premium“ in the 26 values of app_de.arb
+- **S-11**: the rename „Snacklist Lifetime“ → „Snacklist Premium“ in the 26 values of app_de.arb
   (and app_en.arb) was not applied (legal text change; Peter's approval).
-- **Terms / EULA (H-20, H-93)**: no Hummlist terms exist. The Premium page links Apple's standard
+- **Terms / EULA (H-20, H-93)**: no Snacklist terms exist. The Premium page links Apple's standard
   EULA on iOS (`appleEulaUrl`) and, as a placeholder, the support page on Android and the web
   (`termsUrl` in `app/lib/purchases/premium_server.dart`).
 - **Kündigungsbutton (§ 312k BGB)**: built nothing beyond the store-management links
@@ -949,21 +954,21 @@ Turning it on is Peter's go. Decisions: DECISIONS "Job 50". Behavior: docs/PURCH
   at most once an hour per household and integration) nor `paywall_viewed` (entry point). Both
   only happen with the switches on; the server switch waits for this.
 - Privacy section 7 ("Siri, Alexa und KI-Assistenten") describes the integrations without saying
-  they need Hummlist Premium; the support FAQ (`site/content/legal/support.md`,
+  they need Snacklist Premium; the support FAQ (`site/content/legal/support.md`,
   `support-en.md`), the purchase privacy page (`datenschutz-kaeufe.md`, `privacy-purchases.md`)
   and the store listings may call them free or not name them as premium. Check before the switch.
 - The new service-only table `integration_blocks` (household, integration, last report time) is
   in docs/PRIVACY_DATA_MAP.md; it cascades with the household.
 
-### Hummlist Launch: placeholder copy
+### Snacklist Launch: placeholder copy
 
 | Where | Key | Text (DE; EN in the same file) |
 | --- | --- | --- |
-| `supabase/functions/voice/copy.ts` | `failures.premium_required` | Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt. |
-| `app/ios/Runner/Localizable.xcstrings` (job 51, used only when the server sends no speech) | `siri.locked` | Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. |
-| `supabase/functions/alexa/speech.ts` | `premiumAdd` | Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts hinzugefügt. (job 69: Alexa is not Premium) |
-| `supabase/functions/alexa/speech.ts` | `premium` (read, launch) | Hummlist nimmt für euren Haushalt gerade keine Sprachbefehle an. |
-| `supabase/functions/mcp/tools.ts` | `premiumRequired.de` / `.en` | Dieser Haushalt braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in der Hummlist-App frei. Es wurde nichts gelesen oder geändert. |
+| `supabase/functions/voice/copy.ts` | `failures.premium_required` | Sprachbefehle sind Teil von Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt. |
+| `app/ios/Runner/Localizable.xcstrings` (job 51, used only when the server sends no speech) | `siri.locked` | Sprachbefehle sind Teil von Snacklist Premium. Du kannst es in der App freischalten. |
+| `supabase/functions/alexa/speech.ts` | `premiumAdd` | Snacklist nimmt für euren Haushalt gerade keine Sprachbefehle an. Ich habe nichts hinzugefügt. (job 69: Alexa is not Premium) |
+| `supabase/functions/alexa/speech.ts` | `premium` (read, launch) | Snacklist nimmt für euren Haushalt gerade keine Sprachbefehle an. |
+| `supabase/functions/mcp/tools.ts` | `premiumRequired.de` / `.en` | Dieser Haushalt braucht Snacklist Premium für den Zugang über KI-Assistenten. Schalte es in der Snacklist-App frei. Es wurde nichts gelesen oder geändert. |
 | `app/l10n/app_de.arb` / `app_en.arb` | `integrationPremiumTitle`, `integrationPremiumBody`, `integrationPremiumSiri`, `integrationPremiumAlexa`, `integrationPremiumAi`, `integrationPremiumLater`, `integrationPremiumBuy`, `integrationPremiumSoon`, `integrationPaused` | the integration settings' card and the paused label (descriptions marked PLACEHOLDER) |
 
 ### Alexa
@@ -976,17 +981,17 @@ within the skill, and every skill that makes products available for purchase mus
 published requirements. The skill sells nothing; it tells a locked household to unlock in the app
 ("Du kannst es in der App freischalten"). Whether that counts as pointing to a purchase outside
 Alexa is Amazon's call: ask in the certification submission, or say only that the household needs
-Hummlist Premium without naming a purchase. The "Requirements for account linking" page
+Snacklist Premium without naming a purchase. The "Requirements for account linking" page
 (https://developer.amazon.com/en-US/docs/alexa/account-linking/requirements-account-linking.html,
 modified 2026-09-29, read 2026-11-01) has no rule about the description. Recommended: the skill
-description says that Siri, Alexa and AI assistants need Hummlist Premium for the household,
+description says that Siri, Alexa and AI assistants need Snacklist Premium for the household,
 before the switch goes on. The certification test account needs premium (a tester grant), or the
 certifier hears only the premium answer. No Alexa console change was made.
 
 ### MCP and docs for clients
 
 `docs/MCP.md` has the engineering note. Client-facing texts that will need a premium note
-(Hummlist Launch, not edited here): the site guides under `site/content/guides/` about connecting
+(Snacklist Launch, not edited here): the site guides under `site/content/guides/` about connecting
 Claude, ChatGPT, Codex, Siri and Alexa, and the app's own help links. `mcp-proxy/vercel.json`
 needed no change.
 
@@ -1007,7 +1012,7 @@ switch is on. Job 49 had no `paywall_viewed`; this job added it (DECISIONS 50.9)
 
 None new.
 
-## Job 54: demo videos for hummlist.com (2026-11-01)
+## Job 54: demo videos for snacklist.app (2026-11-01)
 
 - **Human gate: Peter watches each loop once on a phone.** Open the PR's Vercel preview (`/de` and
   `/en`, Vercel login) on a phone and on a laptop, let each of the three demo cards play once,
@@ -1045,15 +1050,15 @@ None new.
   - Your own additions (here through MCP) get no "new" highlight, unlike another member's mint
     row; the mcp-chat video adds a mint marker beside the phone to point at them.
 
-## Job 68: account deletion and Hummlist Premium (2026-11-02, for Legal Review)
+## Job 68: account deletion and Snacklist Premium (2026-11-02, for Legal Review)
 
 **Outcome (DECISIONS 68.1 to 68.3).** Deleting the account never archives a household:
 
 - **Last member of a household with Premium** (Lifetime, a yearly plan or a promotional grant):
   the household is deleted with the account, its Premium ends. With `HOUSEHOLD_ARCHIVE` on, the
   dialog says so, explains that archiving isn't possible there and that inviting someone keeps the
-  household, links the refund help, and Delete waits for the tick „Ich habe verstanden: Hummlist
-  Premium endet und wird nicht automatisch erstattet.“ (EN "I understand: Hummlist Premium ends and
+  household, links the refund help, and Delete waits for the tick „Ich habe verstanden: Snacklist
+  Premium endet und wird nicht automatisch erstattet.“ (EN "I understand: Snacklist Premium ends and
   isn't refunded automatically.").
 - **Households the user archived** are deleted with the account (DECISIONS 43.11, unchanged;
   pgTAP `supabase/tests/leaves_unlocked.test.sql`). The dialog names them; one with Premium asks
@@ -1065,7 +1070,7 @@ None new.
 **For Legal Review:** the strings `accountDeletePremium`, `accountDeleteArchived`,
 `accountDeleteArchivedPremium`, `accountDeletePremiumAck` in `app/l10n/app_de.arb` /
 `app_en.arb`. They match `app/web/konto-loeschen.html` today (household deleted "mit … einer
-Freischaltung mit Hummlist Lifetime", archived households deleted too), which job 68 did not
+Freischaltung mit Snacklist Lifetime", archived households deleted too), which job 68 did not
 edit.
 
 **Lead decision needed only if you disagree:** to make account deletion archive instead, someone
@@ -1112,7 +1117,7 @@ German setting names differ between iOS versions, so the English ones are given.
 - Step 3 also opens the app, or step 2 shows English tiles: the phone does not use the German
   phrases. Do "Job 51" section 2 (the Siri capability and entitlement; Apple reads the
   alternative app names only with it, according to its documentation), then test again.
-- Everything works: tell the lead. The `native-siri` hold stays until Hummlist Launch.
+- Everything works: tell the lead. The `native-siri` hold stays until Snacklist Launch.
 
 ## Job 72: Alexa data cleanup and fact answers for Legal Review (2026-11-02)
 
@@ -1138,7 +1143,7 @@ What the texts may now say, as built:
   (03:29 UTC) once its minute has passed, so none is older than a day ("spätestens nach einem
   Tag" holds). Stricter than the handoff's "older than 1 day", which would let a counter live
   almost two days between two runs.
-- Disabling the skill: the link, the counter, the Hummlist session and the Zugänge entry go right
+- Disabling the skill: the link, the counter, the Snacklist session and the Zugänge entry go right
   away. Linking again: the older sessions and their links go right away.
 - "Amazon Alexa trennen": the session, the link and the counter go right away; GoTrue keeps the
   revoked grant record, which the next daily run deletes, within 24 hours ("spätestens am
@@ -1163,7 +1168,7 @@ as `supabase_read_only_user`, and the logs endpoint):
    (supabase.com/docs/guides/functions/regional-invocation). Not tested: whether the Alexa console
    accepts a query string in the endpoint URI (needs the ASK login, which only the box has). The
    endpoint is unchanged, as briefed.
-4. **`last_seen`.** It moves on every request that carries a token Hummlist accepts:
+4. **`last_seen`.** It moves on every request that carries a token Snacklist accepts:
    `linkedOrReply` (`supabase/functions/alexa/handler.ts` l.95-114) calls `alexa_remember`
    (l.112), whose upsert sets `last_seen = now()` (`20261030140000_alexa.sql` l.113-114). That
    covers LaunchRequest (l.196), AddItemIntent (l.158) and ReadListIntent, "what's on the list"
@@ -1174,7 +1179,7 @@ as `supabase_read_only_user`, and the logs endpoint):
    the update is reported, not spoken (`.catch`). Hosted: the one link's `last_seen` is
    2026-11-02 07:25:41 UTC, the moment of the last Alexa request in the edge logs. The 12-month
    purge also counts the session's `refreshed_at`: Alexa refreshes the token when it uses it.
-5. **Grant after SkillDisabled.** Before this job: yes. `alexa_revoke` deleted the Hummlist
+5. **Grant after SkillDisabled.** Before this job: yes. `alexa_revoke` deleted the Snacklist
    sessions only (`20261030140000_alexa.sql`, function `alexa_revoke`); the
    `auth.oauth_consents` row stayed with `revoked_at` null, with no expiry, until the user
    removed it in Zugänge or deleted the account. Zugänge lists exactly those rows (GoTrue
@@ -1196,7 +1201,7 @@ as `supabase_read_only_user`, and the logs endpoint):
    `alexa/skill-package/skill.json` with `ask deploy --target skill-metadata` (job 31b,
    docs/ALEXA.md "Deploy" step 2), not typed into the console. Job 31b's manifest read
    (`docs/screenshots/31b/alexa-deploy-smoke.txt`) shows privacy URL
-   `https://hummlist.com/datenschutz`, as in skill.json. The terms URL, the countries and the
+   `https://hummlist.com/datenschutz`, as skill.json said then (snacklist.app since #352). The terms URL, the countries and the
    privacy answers were not read back then, and this runner has no ASK login. On the box, from
    the repo root:
 
@@ -1210,7 +1215,7 @@ as `supabase_read_only_user`, and the logs endpoint):
    Run it against main's skill.json: job 69 changes skill.json (English locales), so a
    difference may be job 69's not yet deployed change rather than a hand edit.
 
-## Job 73: the Hummlist API (2026-11-02)
+## Job 73: the Snacklist API (2026-11-02)
 
 The API (`docs/API.md`, `docs/api/openapi.yaml`) ships dark: the app shows the API section under
 Mehr → Zugänge only while the PostHog flag `public-api` is on, and this job turned nothing on, in
@@ -1219,7 +1224,7 @@ no dashboard, console or hosted database. Merging deploys the `api` function and
 
 ### For the lead
 
-1. **Create the flag** `public-api` in PostHog project 319492 (Hummlist; never emotely 262464),
+1. **Create the flag** `public-api` in PostHog project 319492 (Snacklist; never emotely 262464),
    off. `releases/flags.json` has it as `"rollout": "off"`, so the changelog item waits for it.
 2. **The function works without the flag.** `create_api_token` is an RPC any signed-in app session
    can call, so someone who knows it can make a key and use the API before the flag is on. It
@@ -1239,10 +1244,10 @@ no dashboard, console or hosted database. Merging deploys the `api` function and
 4. **The integration-lock card's copy** names Siri, Alexa and AI assistants
    (`integrationPremiumTitle`, `integrationPremiumBody` in `app/l10n/app_*.arb`) and the held
    changelog item for `integration-lock` too. Neither mentions the API; the API section has its own
-   Premium line. Whether the card should name the API is copy for Hummlist Launch.
+   Premium line. Whether the card should name the API is copy for Snacklist Launch.
 5. **The PostHog insight** "Locked integrations" (`analytics/queries/integration_blocked_weekly.sql`)
    gained an `api` column. If the insight in PostHog is a copy of the query, paste the new one.
-6. **A public domain** (`api.hummlist.com`, a Vercel rewrite like `mcp-proxy/`) needs Peter's OK;
+6. **A public domain** (`api.snacklist.app`, a Vercel rewrite like `mcp-proxy/`) needs Peter's OK;
    the API is served under the Supabase functions URL meanwhile.
 
 ### Premium (Addendum 1, Q41 = PA2)
@@ -1280,7 +1285,7 @@ household, like the others. `docs/PAYWALL_RELEASE.md` section 6 says so.
 - `docs/PRIVACY_DATA_MAP.md` has the five rows. The privacy page (`site/`) is Legal's to change: it
   names MCP and Siri access keys but not the API.
 - **Premium terms**: the terms draft (PR #153) lists what Premium includes (Siri, connections
-  with AI assistants over MCP). With Q41 = PA2 it should name the Hummlist API too. Not changed here (legal text).
+  with AI assistants over MCP). With Q41 = PA2 it should name the Snacklist API too. Not changed here (legal text).
 
 ### Open questions
 
@@ -1288,7 +1293,7 @@ household, like the others. `docs/PAYWALL_RELEASE.md` section 6 says so.
   poll. Not built (brief).
 - **OAuth for third-party apps** (Zapier as a registered client with `read`/`write` scopes) is not in
   v1; the MCP's OAuth server could carry it.
-- **A user guide** for hummlist.com (DE and EN, how to make a key and a first Shortcut) can follow
+- **A user guide** for snacklist.app (DE and EN, how to make a key and a first Shortcut) can follow
   once the flag rolls out.
 
 ## Job 75: the API's server switch (2026-11-02)
@@ -1308,7 +1313,7 @@ own switch, `public.app_switches` key `public_api`, seeded **off** by
 The deploy of this migration (`supabase-deploy.yml` after the merge) is the only production change.
 Nothing else was switched.
 
-### Turning the API on (when Hummlist Launch says so)
+### Turning the API on (when Snacklist Launch says so)
 
 1. Server: in the SQL editor of project `jdwqrallbpdbshrdhenk` (or the Management API's
    `database/query`, service role):
@@ -1487,10 +1492,10 @@ Nothing about buying shows while the flags stay off (N-53). Beta builds keep `pr
 `REVENUECAT_PURCHASES` off, so no price, plan, Buy or Restore button renders, not even greyed out.
 The widget tests „N-53: …“ in `app/test/purchases/premium_screen_test.dart` and
 `e2e/tests/purchases.spec.ts` check this. Before sales start the page also hides
-„… ist bald verfügbar.“, „Hummlist Premium kaufst du in der iPhone- oder Android-App …“ (on the
+„… ist bald verfügbar.“, „Snacklist Premium kaufst du in der iPhone- oder Android-App …“ (on the
 web too, for every household) and „… freigeschaltet. Danke!“. Two things are visible today:
 - The hero without its slogan, for every household on the web and in the store builds: the member
-  hexes, „Hummlist Premium gilt für euren ganzen Haushalt …“, the AI line, and the Siri line in
+  hexes, „Snacklist Premium gilt für euren ganzen Haushalt …“, the AI line, and the Siri line in
   the iPhone app only. The page is reachable only by its link, or from Mehr for households that
   have Premium.
 - For households with a free unlock (promotional grant): the beta or tester title, the subtitle and
@@ -1510,13 +1515,13 @@ UI included.
 
 | Key | DE | EN |
 | --- | --- | --- |
-| `premiumTitle` | Hummlist Premium | Hummlist Premium |
+| `premiumTitle` | Snacklist Premium | Snacklist Premium |
 | `premiumHeroTitle` (only while sales are on, N-68) | Einer kauft. Alle haben es. | One buys. Everyone has it. |
-| `premiumHeroBody` | Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen. | Hummlist Premium covers your whole household, including everyone who joins later. |
+| `premiumHeroBody` | Snacklist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen. | Snacklist Premium covers your whole household, including everyone who joins later. |
 | `premiumBenefitSiri` (iPhone app with `NATIVE_SIRI_LIVE` only, hidden today, N-71) | Per Siri auf die Liste, ohne die App zu öffnen | Add to the list with Siri, without opening the app |
 | `premiumBenefitAi` (final, Legal N-67) | KI-Assistenten, die MCP unterstützen, mit eurer Liste verbinden | Connect AI assistants that support MCP to your list |
-| `premiumBenefitApi` | Eigene Automationen mit der Hummlist API | Your own automations with the Hummlist API |
-| `premiumStatusBeta` (final, Legal) | In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet | Free in the beta, until Hummlist Premium launches |
+| `premiumBenefitApi` | Eigene Automationen mit der Snacklist API | Your own automations with the Snacklist API |
+| `premiumStatusBeta` (final, Legal) | In der Beta kostenlos freigeschaltet, bis Snacklist Premium startet | Free in the beta, until Snacklist Premium launches |
 | `premiumStatusFree` (final, Legal) | Kostenlos freigeschaltet (Test und App-Prüfung) | Unlocked free of charge (testing and app review) |
 | `premiumBetaBody` (final, Legal) | Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die kostenlose Freischaltung endet, sagen wir dir mindestens 4 Wochen vorher Bescheid. | You pay nothing, and nothing renews automatically. We'll let you know at least 4 weeks before the free unlock ends. |
 | `premiumBetaPrivacyLink` (final, Legal) | Mehr dazu in der Datenschutzerklärung | More in the privacy policy |
@@ -1528,33 +1533,33 @@ UI included.
 | `premiumHousehold` | Premium gehört dann zum Haushalt „{household}“ und bleibt dort, auch wenn du den Haushalt später verlässt. | Premium then belongs to the household “{household}” and stays there, even if you leave it later. |
 | `premiumBuyYearly` | Jährlich abschließen | Subscribe yearly |
 | `premiumBuyLifetime` | Lifetime kaufen | Buy Lifetime |
-| `premiumYearlyTerms` | Hummlist Premium jährlich, Laufzeit 1 Jahr. Das Abo verlängert sich automatisch um ein Jahr, wenn du es nicht mindestens 24 Stunden vor Ende der Laufzeit kündigst. Bezahlt wird über dein Apple- bzw. Google-Konto, bei der Bestätigung des Kaufs und bei jeder Verlängerung. Verwalten und kündigen kannst du das Abo in den Abo-Einstellungen des App Store bzw. von Google Play. | Hummlist Premium yearly, 1 year. The plan renews automatically for another year unless you cancel it at least 24 hours before the end of the period. Your Apple or Google account is charged when you confirm the purchase and at every renewal. You can manage and cancel the plan in the App Store's or Google Play's subscription settings. |
+| `premiumYearlyTerms` | Snacklist Premium jährlich, Laufzeit 1 Jahr. Das Abo verlängert sich automatisch um ein Jahr, wenn du es nicht mindestens 24 Stunden vor Ende der Laufzeit kündigst. Bezahlt wird über dein Apple- bzw. Google-Konto, bei der Bestätigung des Kaufs und bei jeder Verlängerung. Verwalten und kündigen kannst du das Abo in den Abo-Einstellungen des App Store bzw. von Google Play. | Snacklist Premium yearly, 1 year. The plan renews automatically for another year unless you cancel it at least 24 hours before the end of the period. Your Apple or Google account is charged when you confirm the purchase and at every renewal. You can manage and cancel the plan in the App Store's or Google Play's subscription settings. |
 | `premiumLifetimeValue` | Einmal zahlen, für immer: so viel wie drei Jahre. | Pay once, for good: as much as three years. |
 | `lifetimeRestore` | Kauf wiederherstellen | Restore purchase |
 | `premiumTermsLink` | Nutzungsbedingungen (EULA) | Terms of Use (EULA) |
 | `premiumPrivacyLink` | Datenschutzerklärung | Privacy policy |
 | `lifetimeRefundLink` (once sales are on, or after buying twice, N-69) | Doppelt gekauft? So bekommst du dein Geld zurück | Bought it twice? How to get your money back |
-| `premiumStatusLifetime` | Hummlist Premium Lifetime | Hummlist Premium Lifetime |
-| `premiumStatusRenews` | Hummlist Premium aktiv (jährlich, verlängert sich am {date}) | Hummlist Premium active (yearly, renews on {date}) |
-| `premiumStatusEnds` | Hummlist Premium aktiv (jährlich, läuft am {date} aus) | Hummlist Premium active (yearly, ends on {date}) |
-| `premiumChecking` | Wir prüfen, ob euer Haushalt Hummlist Premium schon hat … | Checking whether your household already has Hummlist Premium … |
-| `premiumUnavailable` | Hummlist Premium ist gerade nicht verfügbar. | Hummlist Premium is not available right now. |
-| `premiumWeb` | Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet. | You can buy Hummlist Premium in the iPhone or Android app. It is then unlocked here too, for your whole household. |
+| `premiumStatusLifetime` | Snacklist Premium Lifetime | Snacklist Premium Lifetime |
+| `premiumStatusRenews` | Snacklist Premium aktiv (jährlich, verlängert sich am {date}) | Snacklist Premium active (yearly, renews on {date}) |
+| `premiumStatusEnds` | Snacklist Premium aktiv (jährlich, läuft am {date} aus) | Snacklist Premium active (yearly, ends on {date}) |
+| `premiumChecking` | Wir prüfen, ob euer Haushalt Snacklist Premium schon hat … | Checking whether your household already has Snacklist Premium … |
+| `premiumUnavailable` | Snacklist Premium ist gerade nicht verfügbar. | Snacklist Premium is not available right now. |
+| `premiumWeb` | Snacklist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet. | You can buy Snacklist Premium in the iPhone or Android app. It is then unlocked here too, for your whole household. |
 | `lifetimeUnlocking` | Wird freigeschaltet … | Unlocking … |
 | `lifetimePending` | Wartet auf Bestätigung | Waiting for approval |
-| `lifetimePendingBody` | Hummlist Lifetime wird freigeschaltet, sobald der Kauf bestätigt ist. Das kann etwas dauern. | Hummlist Lifetime is unlocked as soon as the purchase is approved. This can take a while. |
+| `lifetimePendingBody` | Snacklist Lifetime wird freigeschaltet, sobald der Kauf bestätigt ist. Das kann etwas dauern. | Snacklist Lifetime is unlocked as soon as the purchase is approved. This can take a while. |
 | `lifetimeUnlockDelayed` | Dein Kauf ist angekommen, die Freischaltung dauert nur länger als sonst. Sie erscheint hier von selbst; bitte nicht noch einmal kaufen. | Your purchase went through; unlocking just takes longer than usual. It appears here by itself, so please don't buy again. |
 | `lifetimeCanceled` | Kauf abgebrochen. | Purchase canceled. |
 | `lifetimeStoreFailed` | Der Kauf hat nicht geklappt ({code}). | The purchase didn't go through ({code}). |
 | `lifetimeStoreOffline` | Der Store ist gerade nicht erreichbar. Prüfe die Verbindung. | The store can't be reached right now. Check your connection. |
 | `lifetimeUsedElsewhere` | Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort. Hier schaltet er nichts frei. | This purchase belongs to another, earlier household and stays there. It unlocks nothing here. |
-| `premiumUsedElsewhereYearly` | Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Hummlist Premium abschließen. | Your Apple or Google account already pays a yearly plan for another household. Someone else in this household can subscribe to Hummlist Premium. |
+| `premiumUsedElsewhereYearly` | Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Snacklist Premium abschließen. | Your Apple or Google account already pays a yearly plan for another household. Someone else in this household can subscribe to Snacklist Premium. |
 | `lifetimeNothingRestored` | Kein früherer Kauf gefunden. | No earlier purchase found. |
-| `lifetimeBoughtTwice` | Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen der Käufe kannst du dir erstatten lassen. | Your household bought Hummlist Lifetime more than once. One of the purchases can be refunded. |
+| `lifetimeBoughtTwice` | Euer Haushalt hat Snacklist Lifetime mehr als einmal gekauft. Einen der Käufe kannst du dir erstatten lassen. | Your household bought Snacklist Lifetime more than once. One of the purchases can be refunded. |
 | `premiumTwoYearly` | Euer Haushalt hat zwei Jahresabos. Kündigen kann jedes nur, wer es abgeschlossen hat. | Your household has two yearly plans. Each can only be cancelled by whoever took it out. |
 | `premiumBillingIssue` | Apple bzw. Google konnten dein Jahresabo nicht abbuchen. Premium läuft noch bis {date}. Prüfe deine Zahlungsmethode im Store. | Apple or Google couldn't charge your yearly plan. Premium keeps running until {date}. Check your payment method in the store. |
-| `premiumLifetimeWhileYearly` | Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Kündigen kann nur, wer das Abo abgeschlossen hat, unter [Abos verwalten]. Hummlist kann das Abo nicht kündigen. | Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn't refunded automatically. Only the person who took out the plan can cancel it, in [Manage subscriptions]. Hummlist can't cancel it. |
-| `premiumLifetimeWhileYearlySubscriber` | Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Du kannst es unter [Abo verwalten] kündigen. Hummlist kann das Abo nicht kündigen. | Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn't refunded automatically. You can cancel it in [Manage subscription]. Hummlist can't cancel it. |
+| `premiumLifetimeWhileYearly` | Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Kündigen kann nur, wer das Abo abgeschlossen hat, unter [Abos verwalten]. Snacklist kann das Abo nicht kündigen. | Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn't refunded automatically. Only the person who took out the plan can cancel it, in [Manage subscriptions]. Snacklist can't cancel it. |
+| `premiumLifetimeWhileYearlySubscriber` | Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Du kannst es unter [Abo verwalten] kündigen. Snacklist kann das Abo nicht kündigen. | Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn't refunded automatically. You can cancel it in [Manage subscription]. Snacklist can't cancel it. |
 | `premiumBuyAnyway` | Trotzdem kaufen | Buy anyway |
 | `cancel` | Abbrechen | Cancel |
 | `premiumManage` | Abo verwalten oder kündigen | Manage or cancel subscription |
@@ -1562,7 +1567,7 @@ UI included.
 | `premiumManageApple` | App Store | App Store |
 | `premiumManageGoogle` | Google Play | Google Play |
 
-`premiumStatusGranted`, `premiumStatusGrantedUntil` („Hummlist Premium geschenkt (bis …)“),
+`premiumStatusGranted`, `premiumStatusGrantedUntil` („Snacklist Premium geschenkt (bis …)“),
 `premiumUnlockedBody`, `premiumComingSoon` and `premiumVat` are deleted. The refund help page behind
 `lifetimeRefundLink` (`refundHelp*`) and the dialogs before leaving or deleting with a running plan
 (`premiumBillingContinues*`) are unchanged and not part of this page.
@@ -1574,7 +1579,7 @@ The grant decides, not the switch:
   `scripts/iap/promotional.ts grant` gives exactly that (`testerGrantEnd`). It shows
   „Kostenlos freigeschaltet (Test und App-Prüfung)“, before and after the launch.
 - Any grant that ends earlier is a beta grant. It shows „In der Beta kostenlos freigeschaltet, bis
-  Hummlist Premium startet“, also after `premium_offer` goes on.
+  Snacklist Premium startet“, also after `premium_offer` goes on.
 
 Under both come the subtitle and the link to `/datenschutz#premium-beta` (EN
 `/en/privacy#premium-beta`).
@@ -1612,7 +1617,7 @@ Under both come the subtitle and the link to `/datenschutz#premium-beta` (EN
    plus a disabled button).
 2. **Q3 „Lifetime“ and „für immer“.** The Lifetime tile is titled „Lifetime“ and its line under
    the button reads „Einmal zahlen, für immer: so viel wie drei Jahre.“ (job 49 placeholder). Does
-   „für immer“ need a definition (for example „solange es Hummlist gibt“), is „so viel wie drei
+   „für immer“ need a definition (for example „solange es Snacklist gibt“), is „so viel wie drei
    Jahre“ an acceptable price comparison, and is „Lifetime“ fine as a German product name?
 3. **Q4 withdrawal right.** The page adds no text about the right of withdrawal for digital
    content or the consent to start it; the App Store / Play purchase sheet handles the purchase.
@@ -1630,7 +1635,7 @@ Under both come the subtitle and the link to `/datenschutz#premium-beta` (EN
 6. **Restore only next to an offer.** „Kauf wiederherstellen“ shows only while a plan is offered,
    as on job 49's page. A household that already has Premium has nothing to restore here. Fine?
 7. **Benefit wording.** „ChatGPT oder Claude schreiben mit (MCP)“ names two third-party products;
-   „Eigene Automationen mit der Hummlist API“ shows only while the PostHog flag `public-api` is on.
+   „Eigene Automationen mit der Snacklist API“ shows only while the PostHog flag `public-api` is on.
    No retailer names, logos or colours anywhere on the page (N-23). No Alexa (N-27).
 
 Resolved: the N-54 placeholder. Peter approved Legal's final beta texts (2026-11-03, 20:32). They are
@@ -1760,10 +1765,10 @@ To ship it:
   app behaviour, outside this job (DECISIONS Job 125 item 5). The reviewer's 20 runs at the same
   condition did not hit it again, which fits a rare event.
 
-## Job 82: the hummlist.com waitlist (Spec #10), 2026-11-02
+## Job 82: the snacklist.app waitlist (Spec #10), 2026-11-02
 
 Everything is built. Since the requeue of 2026-11-04 (Addenda 5 to 10) the merge of PR #210 is the
-switch: it publishes the waitlist stage on hummlist.com. The secrets decide whether sign-ups work
+switch: it publishes the waitlist stage on snacklist.app. The secrets decide whether sign-ups work
 (NEEDS_PETER "Job 82"). The design and every route are in [`WAITLIST.md`](WAITLIST.md).
 
 ### Not merged: Peter OKs the copy, Legal reviews
@@ -1783,13 +1788,13 @@ bypass request once the Vercel env vars are set (NEEDS_PETER "Job 82", step 3).
 
 | Step | Where | What is stored or seen | How long |
 | --- | --- | --- | --- |
-| Form | hummlist.com page, `fetch` to the same origin | nothing (no cookie, no storage, no analytics, no third-party resource) | |
+| Form | snacklist.app page, `fetch` to the same origin | nothing (no cookie, no storage, no analytics, no third-party resource) | |
 | Vercel function `/api/waitlist*` | Vercel, `regions: ["fra1"]` in `site/vercel.json` | sees the IP and the body; logs only a fixed outcome code; sends on an HMAC of `<UTC date>\|<IP>` (keyed with the proxy secret), never the IP | Vercel's own request logs (path, no body) |
 | Edge function `waitlist` | Supabase, `x-region: eu-central-1` | sees the body; logs only outcome codes | |
 | `public.waitlist` | Supabase Postgres, Frankfurt | email, HMAC of the email, platform, locale, the form text version answered (`waitlist-*-v2`), the consent text version shown at the confirm press (`waitlist-confirm-*-v1`), launch news (set only by that press), sign-up, confirm, invite, launch-mail and last-mail times, the SHA-256 of the confirm token and its expiry; nothing about who or what submitted | unconfirmed 7 days; confirmed 3 months after the invite, with launch news 30 days after the launch mail; everything by 2027-12-31 (Berlin); unsubscribe deletes at once |
 | `public.waitlist_consent_proof` | same | HMAC of the email, both text versions, locale, launch news, the four times, end reason; never the address, never an IP | 3 years after the later of last mail and end |
 | `public.waitlist_rate` | same | SHA-256 of the daily client key, the hour, a count | deleted after 2 hours |
-| Resend | Resend (USA), domain hummlist.com in eu-west-1 | the mail (to, subject, body); no tags, no metadata; single sends with an idempotency key | Resend's 30 days |
+| Resend | Resend (USA), domain snacklist.app in eu-west-1 | the mail (to, subject, body); no tags, no metadata; single sends with an idempotency key | Resend's 30 days |
 
 Retention hook: `public.purge_waitlist(now)`, pg_cron `purge-waitlist` daily at 03:23 UTC, every
 period tested to the minute in `supabase/tests/waitlist.test.sql`.
@@ -1819,8 +1824,8 @@ period tested to the minute in `supabase/tests/waitlist.test.sql`.
    deletes the row. The column is not there.
 3. **The 2027-12-31 cap applies to every row**, not only launch-news ones, so a confirmed address
    that is never invited doesn't stay forever.
-4. **Sender name per language:** "Peter von Hummlist" in German mails, "Peter from Hummlist" in
-   English ones (Legal handoff 2.5).
+4. **Sender name:** "Peter · Snacklist" in German and English mails since #357 (2026-11-10);
+   before, per language "Peter von Hummlist" and "Peter from Hummlist" (Legal handoff 2.5).
 5. **Welcome mail** goes out automatically right after confirming (consent text names it). It is
    not an invite. Its text is a neutral draft (Launch's draft 5b was not in the brief), and with
    the markers gone it would go out as written once `WAITLIST_MAIL_ALLOW=*`; the same holds for
@@ -1831,13 +1836,13 @@ period tested to the minute in `supabase/tests/waitlist.test.sql`.
    addresses for the backup retention. Legal should say whether its periods cover backups.
 8. **Deletion request by mail** (`end_reason = deletion_request`) has no function yet; Peter
    handles it with the unsubscribe link of the address's mail, or by SQL (NEEDS_PETER).
-9. **app.hummlist.com had no noindex** (AC15 assumed it). The app's `vercel.json` now sends
-   `X-Robots-Tag: noindex`; it reaches app.hummlist.com with the next store release, or sooner if
+9. **app.snacklist.app had no noindex** (AC15 assumed it). The app's `vercel.json` now sends
+   `X-Robots-Tag: noindex`; it reaches app.snacklist.app with the next store release, or sooner if
    you move the `release` branch.
 10. **Launch mail** is not built (later spec); `launch_mail_sent_at` exists for the purge.
 11. **A policy sentence names the browser app's URL as text.** In `/datenschutz` and
     `/en/privacy`, section 8 (account deletion) still ends in the plain text
-    `https://app.hummlist.com/konto-loeschen.html`; §1 and the §3 heading name "app.hummlist.com".
+    `https://app.snacklist.app/konto-loeschen.html`; §1 and the §3 heading name "app.snacklist.app".
     The link is gone (Addendum 1: link removal only, no legal wording changed), but the sentence
     points readers to the browser app. Legal should say whether it stays.
 12. **Rate counters are a global lever.** Besides 10 per client key, all sign-ups share 300 per
@@ -2101,20 +2106,21 @@ To close: close #78 and #79 with a link to the PR. If either one fails again wit
 - **Phone check of the loops.** As for job 54: watch the four loops on a phone at real speed
   (landing page, both languages), especially the new voice-add card.
 - **English video hears German (your call).** The app's dictation listens in German in every
-  language, so the English voice-add cut shows the German sentence with "Hummlist listens in
+  language, so the English voice-add cut shows the German sentence with "Snacklist listens in
   German." (DECISIONS "Job 150" 3). The other way is English dictation in the app (its own job),
   then a re-take with an English sentence.
 - **Copy.** New strings are drafts in `site/COPY_NEEDED.md` (voice.app.*, demo.voice-add,
-  voice-add.*) for Hummlist Launch; voice.siri.now lost its in-app sentence to the new card.
+  voice-add.*) for Snacklist Launch; voice.siri.now lost its in-app sentence to the new card.
 
 
-## Job 156: nexus.hummlist.com (ops dashboard), 2026-11-07
+## Job 156: nexus.snacklist.app (ops dashboard), 2026-11-07
 
 Status: done (2026-11-07, job 156 fix 4). The lead created the token. Job 156 ran steps 2 and 3:
 project `hummlist-nexus` (not git-connected, Vercel Authentication on all deployments, no password
 protection), domain `nexus.hummlist.com`, first production deploy. A logged-out request to the page
 or to `/data/snapshot.json` gets a 302 to the Vercel login. The hz cron deploys every 10 minutes
-once `nexus/` is on main. The steps stay below as the record.
+once `nexus/` is on main. The steps stay below as the record. Since 2026-11-10 the domain is
+`nexus.snacklist.app` on the same project; `nexus.hummlist.com` is a 308 redirect to it.
 
 Nothing here costs money (cost table in [`nexus/README.md`](../nexus/README.md#cost)). Vercel
 Authentication with the scope **All Deployments** is "Included" on Hobby and Pro since
@@ -2129,13 +2135,12 @@ not needed. Do NOT turn on Password Protection: that one is $20 per project per 
    `VERCEL_TOKEN=...` and `VERCEL_ORG_ID=<team id>` (a token scoped to the team; never into the repo).
 2. **Set the project up** on hz: `set -a; . ~/.config/agents/nexus.env; set +a;
    ~/nexus-publisher/nexus/scripts/setup-vercel.sh` (idempotent). It creates the project
-   `hummlist-nexus` (not git-connected), adds `nexus.hummlist.com`, sets Vercel Authentication to
+   `hummlist-nexus` (not git-connected), adds `nexus.snacklist.app` (and keeps `nexus.hummlist.com` as a 308 redirect to it), sets Vercel Authentication to
    All Deployments and prints `VERCEL_PROJECT_ID`: add that line to `nexus.env`. With nothing
    deployed yet it says "no deployment yet" and exits 0. Then run
    `~/nexus-publisher/nexus/scripts/cron.sh` once (the first deploy) and rerun `setup-vercel.sh`:
-   this time it ends with a logged-out `curl` of `https://nexus.hummlist.com` that must show 401 or a
-   redirect to the Vercel login. DNS needs no change: hummlist.com is on Vercel's nameservers with
-   a wildcard (`nexus.hummlist.com` answers Vercel's 404 today).
+   this time it ends with a logged-out `curl` of `https://nexus.snacklist.app` that must show 401 or a
+   redirect to the Vercel login. DNS needs no change: snacklist.app is on Vercel's nameservers.
 3. From then on the hz cron entry (installed by job 156, the line is in `nexus/README.md`) deploys
    every 10 minutes; its log is `~/nexus-publisher.log`.
 
@@ -2145,4 +2150,4 @@ cron runs whatever `main` holds with it in its environment. Keep the expiry shor
 in the dashboard), keep `nexus.env` mode 600 and outside every checkout, and revoke the token if
 hz is ever shared beyond these jobs. A separate free Hobby team just for nexus would contain it
 fully but is not needed at €0 either way; the lead's call.
-   Send Peter `https://nexus.hummlist.com`; he signs in with his Vercel account.
+   Send Peter `https://nexus.snacklist.app`; he signs in with his Vercel account.

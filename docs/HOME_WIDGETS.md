@@ -21,7 +21,7 @@ Borri). On iOS the app and the extension share the App Group
 
 ## The payload
 
-The app writes one string under the key `hummlist_widget`: JSON, version 1.
+The app writes one string under the key `snacklist_widget`: JSON, version 1.
 
 ```json
 {

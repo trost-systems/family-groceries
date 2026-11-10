@@ -1,6 +1,6 @@
 # The snacklist.app waitlist (job 82, Spec #10)
 
-snacklist.app (also served on hummlist.com) keeps its landing page; only its calls to action
+snacklist.app (hummlist.com redirects there) keeps its landing page; only its calls to action
 change by stage, and none links the browser app. In the `waitlist` stage they lead to a sign-up form. A sign-up is double opt-in: the
 address counts only after its owner agrees on the confirmation page and presses the button there
 (Legal N-73: only the person's own click is consent, whoever filled in the form). Confirmed sign-ups collect into weekly batches, and Peter invites a batch by

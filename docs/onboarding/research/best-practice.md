@@ -13,9 +13,9 @@ How to read this:
   community posts) or could not check against the original. Do not quote these numbers as fact.
 - **[assessment]** marks my own reasoning or legal reading. Section D is not legal advice; the
   table there is a starting point for the privacy policy review, not a sign-off.
-- Hummlist context used: the current flow is sign-in, then the analytics question, then
+- Snacklist context used: the current flow is sign-in, then the analytics question, then
   welcome / create household (name, stores) / invite partner, then the list
-  (`.cursor/skills/verify-hummlist/features/onboarding.md`). A one-card tip queue already exists
+  (`.cursor/skills/verify-snacklist/features/onboarding.md`). A one-card tip queue already exists
   (`features/tips.md`, job 80). PostHog runs only after an explicit yes, personless, with an
   event allow-list (`docs/ANALYTICS.md`).
 
@@ -45,7 +45,7 @@ How to read this:
 - **Atomic network** (Andrew Chen, *The Cold Start Problem*, 2021): the smallest group of users
   for which the product works and people stay; "tool first, network later" products (his Dropbox
   example) are useful alone and better together.
-  <https://www.lennysnewsletter.com/p/atomic-network>. Hummlist is the extreme case: the atomic
+  <https://www.lennysnewsletter.com/p/atomic-network>. Snacklist is the extreme case: the atomic
   network is two people in one household.
 - **Classic examples** (all **[unverified]**, they circulate through secondary sources only):
   Facebook "7 friends in 10 days", Slack "2,000 team messages" (with "93% of those teams still
@@ -79,9 +79,9 @@ vendor glossary pages without methodology (**[unverified]**,
   <https://m1.material.io/growth-communications/onboarding.html> (older Material 1 guidance; no
   Material 3 equivalent found).
 
-### Implications for Hummlist
+### Implications for Snacklist
 
-- **[assessment]** Hummlist's aha is two-sided: *"something my partner added shows up on my
+- **[assessment]** Snacklist's aha is two-sided: *"something my partner added shows up on my
   phone"* or *"what I ticked off disappears on theirs"*. A solo user who adds 20 items has done
   setup, not the aha. Count activation per **household**, not per user (Verna, Miro).
 - Proposed candidate metric to test against `retention_weekly.sql`: **household activated = within
@@ -163,7 +163,7 @@ invite), or (3) is the user building something they will own (IKEA effect), and 
 Friction hurts when it is (a) a wall before any value, (b) a question whose answer the user never
 sees used, or (c) long enough that people drop out before completion.
 
-### Implications for Hummlist
+### Implications for Snacklist
 
 - Keep the store picker: it is good friction by every criterion above (the answer immediately
   orders the list, the household "builds" its list, it is one screen, it can be skipped). Show the
@@ -180,7 +180,7 @@ sees used, or (c) long enough that people drop out before completion.
 - Biggest structural friction today is sign-in before any value. A guest/local list before
   sign-up (Duolingo pattern) is a large architectural change for a synced, household-scoped app
   (RLS on `household_id`); flag it as a separate decision, not part of this job.
-- Do not copy Noom-length flows: Hummlist is a utility; the evidence for long quizzes is from
+- Do not copy Noom-length flows: Snacklist is a utility; the evidence for long quizzes is from
   paid health/coaching products with a paywall at the end, and it is mostly unverified.
 
 ---
@@ -228,9 +228,9 @@ sees used, or (c) long enough that people drop out before completion.
   in-context hotspots and reports activation +100 %, conversion +80 %.
   <https://appcues.com/examples/trainual-video-tutorials>
 
-### Implications for Hummlist
+### Implications for Snacklist
 
-- No carousel and no multi-step tour at first start. Hummlist's core interactions (type, tick)
+- No carousel and no multi-step tour at first start. Snacklist's core interactions (type, tick)
   are conventional; NN/g says skip help for conventional patterns.
 - **Learning by doing** for the one unconventional thing (tap ticks, long-press edits, drag):
   the existing gesture card ("Tippen hakt ab · Halten bearbeitet") is the right idea; better still
@@ -288,7 +288,7 @@ sees used, or (c) long enough that people drop out before completion.
    unnecessary data, Art. 7(4)), specific and granular per purpose, informed, unambiguous,
    withdrawable as easily as given.
    <https://www.edpb.europa.eu/our-work-tools/our-documents/guidelines/guidelines-052020-consent-under-regulation-2016679_en>
-   Age: Germany kept the Art. 8 GDPR age of 16 for information society services; Hummlist's
+   Age: Germany kept the Art. 8 GDPR age of 16 for information society services; Snacklist's
    16+ floor fits **[assessment]**.
 7. **Art. 9 special categories, inferred data**: the CJEU held that data that *indirectly*
    reveals a special category (by "comparison, inference or deduction") is itself special-category
@@ -336,7 +336,7 @@ by itself create a legal basis; it is the *use* that decides (EDPB 2/2019 para 4
 | "How do you shop?" (weekly big shop vs daily, who shops) | 6(1)(b) if it sets a feature (e.g. reminder cadence); otherwise research -> 6(1)(f) with opt-out or 6(1)(a) | Depends on use | If no feature uses it, ask it later in an optional survey, not in onboarding. |
 | Which stores (as research, e.g. market share) | 6(1)(f) for aggregate analysis of data already held for the contract, documented balancing | No, but Art. 13 notice + Art. 21 objection | Aggregate only; purpose compatibility test (Art. 6(4)) since it was collected for list ordering. |
 | Why they joined / jobs to be done | 6(1)(a) consent or 6(1)(f) | Recommended: optional question, clearly marked as "hilft uns", skip equal weight | Free text invites over-sharing (names, health). Prefer fixed choices; if free text, keep it out of PostHog (it already forbids free text). |
-| Referral source "Wie hast du von Hummlist erfahren?" | 6(1)(f) (measuring marketing channels) with one-tap "keine Angabe" | No **[assessment]** | Fixed list only. Not an analytics event with identifiers; store per household or aggregate. If it is sent to PostHog, it needs the analytics consent. |
+| Referral source "Wie hast du von Snacklist erfahren?" | 6(1)(f) (measuring marketing channels) with one-tap "keine Angabe" | No **[assessment]** | Fixed list only. Not an analytics event with identifiers; store per household or aggregate. If it is sent to PostHog, it needs the analytics consent. |
 | Diet (vegan, vegetarian, halal, kosher, gluten-free, lactose-free, allergies) | Avoid. If ever needed: 6(1)(a) + 9(2)(a) explicit consent, separate screen, purpose-bound | Yes, explicit | High Art. 9 risk (religion, health) per C-184/20. Better: let users create such filters themselves as plain list features without the app labelling *why*. Never in analytics. |
 | Analytics events (PostHog) | 6(1)(a) consent, plus § 25 Abs. 1 TDDDG consent for SDK storage/reads | Yes (already done) | Keep the yes/no screen equal weight; no "recommended" highlight on Yes (EDPB 03/2022). Withdrawal as easy as consent (Settings). |
 | Error reports / crash logs | Arguably 6(1)(f) + § 25 exemption for technically necessary stability; DSK does not give a blanket exemption | Currently consent-gated; keep it so unless a lawyer signs off **[assessment]** | Today they ride on the analytics yes (docs/ANALYTICS.md). |
@@ -346,10 +346,10 @@ by itself create a legal basis; it is the *use* that decides (EDPB 2/2019 para 4
 | Product research questions in-app (NPS, "what's missing?") | 6(1)(a) consent per survey, or 6(1)(f) with opt-out for short fixed-choice surveys | Recommended consent; always optional | Rate-limit (no continuous prompting); one "nicht mehr fragen" that sticks. |
 | Email for research interviews | 6(1)(a) | Yes, separate checkbox, unticked | Separate from account email purpose. |
 
-### Implications for Hummlist
+### Implications for Snacklist
 
 - Split onboarding questions into two visibly different groups: **setup** (stores, maybe household
-  size if it drives something; contract basis, skippable) and **"Hilf uns, Hummlist besser zu
+  size if it drives something; contract basis, skippable) and **"Hilf uns, Snacklist besser zu
   machen"** (optional, consent or LI, equal-weight skip). Never mix them on one screen.
 - Every optional question gets a skip that is **as visible as the answer** (a real button or
   "Keine Angabe" chip, not a grey text link under a big CTA): EDPB *Hidden in plain sight*.
@@ -411,7 +411,7 @@ quickly, preferring animation or graphics". NN/g: use visuals with ultra-short t
 teach the gesture **on a real row** the first time the user is on that screen with a row to try,
 and retire the hint as soon as the gesture is used once (TipKit-style invalidation).
 
-### Proposed default rule set for Hummlist [assessment, synthesised from the sources above]
+### Proposed default rule set for Snacklist [assessment, synthesised from the sources above]
 
 | Rule | Default | Source basis |
 | --- | --- | --- |
@@ -429,7 +429,7 @@ and retire the hint as soon as the gesture is used once (TipKit-style invalidati
 | Upsell separation | Premium prompts are not tips and follow their own (stricter) rules | Apple HIG (no promotional content in tips) |
 | Measurement | `hint_shown`, `hint_dismissed`, `hint_feature_used_within_7d` (ids only, no text), only for consenting users | D, `eventCatalog` |
 
-### Implications for Hummlist
+### Implications for Snacklist
 
 - The existing tip card (job 80) already matches the 1-at-a-time and dismiss-forever rules. The
   gaps are: **triggers** (today it is a fixed queue, not behaviour-based), **retire-on-use**
@@ -484,9 +484,9 @@ and retire the hint as soon as the gesture is used once (TipKit-style invalidati
 Read: since Android 13, Android and iOS converge around **~50 %** opt-in for utility apps; the
 prompt is a one-shot on iOS and a two-shot on Android, so timing matters more than copy.
 
-### Implications for Hummlist
+### Implications for Snacklist
 
-- **Never at first launch or inside onboarding.** Hummlist works without push; the value of a push
+- **Never at first launch or inside onboarding.** Snacklist works without push; the value of a push
   ("Lea hat Milch hinzugefügt", "Peter ist im Laden") only exists once a partner is in the
   household.
 - **Trigger in context**, e.g. the first time a partner's change arrives while the app is open, or

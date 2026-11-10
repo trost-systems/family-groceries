@@ -1,6 +1,6 @@
 # Public release record
 
-`releases.json` lists every Hummlist release that is public in the stores. It is the one place
+`releases.json` lists every Snacklist release that is public in the stores. It is the one place
 that says what the public has, so the site and a later history page read it instead of asking the
 stores or git (Vercel clones shallow). The format is checked by `parseRecord` in
 `site/releases.mjs`; the site tests and `scripts/release/record.mjs` both use it.
@@ -19,7 +19,7 @@ node scripts/release/record.mjs add --version 1.0.0 --sha <commit> --build 1100
 ```
 
 and pushes the change to `main` as `Release 1.0.0: public release record`. That push makes
-Vercel rebuild hummlist.com with the new live version (`site/README.md`, "Live version"). Add
+Vercel rebuild snacklist.app with the new live version (`site/README.md`, "Live version"). Add
 `--dry-run` to see the entry without writing it.
 
 ## Fields
@@ -37,10 +37,10 @@ Each release:
 | `date`, `day` | Date the stores accepted it (Europe/Berlin), and days since `day_zero` (day 0). |
 | `build` | Store build number, above the previous release's. |
 | `sha`, `previous_sha` | The released `main` commit and the previous release's (`null` for the first). |
-| `stores` | Which stores got it: `app_store`, `play`, `web` (app.hummlist.com). |
+| `stores` | Which stores got it: `app_store`, `play`, `web` (app.snacklist.app). |
 | `stats` | From git at record time, over `previous_sha..sha` (the first release counts from the root commit). `commits`; `additions`, `deletions`, `files_changed` of the net diff; `contributors`; optional (job 105, missing in releases recorded before it): `automated_commits`, the commits with a bot as author or co-author, and `loc`, the lines of code at `sha` (below). |
 | `notes` | Short release notes, `de` and `en` (may be empty), from the workflow's inputs. The changelog is `changelog`. |
-| `changelog` | Optional (job 39). The reviewed changelog: `title` (`de`, `en`, may be empty), `items` (`new`, `improved`, `fixed`, each a list of `{de, en, pr, sha}`, plus `flag` or `hold` for an item that waited for one, job 40), `store` (`app_store` and `play`, each `{de, en}`, the "What's new" texts within the stores' limits). A release without it shows "Fehlerbehebungen und Verbesserungen." on hummlist.com. |
+| `changelog` | Optional (job 39). The reviewed changelog: `title` (`de`, `en`, may be empty), `items` (`new`, `improved`, `fixed`, each a list of `{de, en, pr, sha}`, plus `flag` or `hold` for an item that waited for one, job 40), `store` (`app_store` and `play`, each `{de, en}`, the "What's new" texts within the stores' limits). A release without it shows "Fehlerbehebungen und Verbesserungen." on snacklist.app. |
 
 A contributor is every commit author and every `Co-authored-by:` trailer, merged by identity, so a
 commit by the bot with Peter as co-author counts once for each of them. Each contributor has
@@ -88,7 +88,7 @@ and `generated_from` (`previous_sha`, `sha`: the range it was collected from).
 `scripts/release/changelog.mjs draft` writes it from the PRs' `## Changelog` notes, and a person
 reviews the wording ([`docs/CHANGELOG.md`](../docs/CHANGELOG.md)). When `record.mjs add` records
 that version, it copies `title`, `items` and `store` into the entry and deletes the draft file in
-the same commit, so the record is the one copy afterwards. Preview builds of hummlist.com show
+the same commit, so the record is the one copy afterwards. Preview builds of snacklist.app show
 drafts with a banner; production shows only the record.
 
 A draft also has `held` (job 40): the items whose flag or hold in `flags.json` is still closed,

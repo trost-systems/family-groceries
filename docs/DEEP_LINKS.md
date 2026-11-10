@@ -4,7 +4,7 @@ A link to `https://app.snacklist.app/<path>` or `https://app.hummlist.com/<path>
 matching screen of the installed Snacklist app: iOS universal links, Android App Links. Hummlist
 builds, until Hummlist retires, claim only app.hummlist.com. Where the app is not installed,
 the same URL opens the web app, which routes it the same way. Emails (the E2 onboarding email links
-`https://app.hummlist.com/more/invites`), the site and invites use these URLs. The phone apps'
+`https://app.snacklist.app/more/invites`), the site and invites use these URLs. The phone apps'
 invite links use `APP_URL`, `https://app.snacklist.app` since job 174. Job 66; invite
 links (`/join/<code>`) came first in job 22.
 

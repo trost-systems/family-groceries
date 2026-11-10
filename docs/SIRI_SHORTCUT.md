@@ -216,7 +216,7 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
   items when the phrase has none; the `ItemSuggestion` entity makes "Add milk to Snacklist" one
   utterance for names the app sent), `ReadListIntent`, `SnacklistShortcuts` (the App Shortcuts
   provider), `VoiceClient` (URLSession, 8 s in all, branches on `outcome`), `SiriCredentialStore`
-  (Keychain) and the `hummlist/siri` method channel (`SiriBridge.swift`). iOS 17 and newer, always
+  (Keychain) and the `snacklist/siri` method channel (`SiriBridge.swift`). iOS 17 and newer, always
   in the background. Phrases: `Runner/AppShortcuts.xcstrings` (a phrase set per language, job
   97); dialogs:
   `Localizable.xcstrings`. The app's list of the phrases for Zugänge is
@@ -259,7 +259,8 @@ voice: none read de client=ios-1210.ReadList -> unauthorized status=401 count=0 
 
 - `via`: `siri` (the app's Siri credential), `pat` (the Shortcut recipe), `session` (in-app
   dictation), `none` (no valid sign-in).
-- `client`: the iPhone's `x-hummlist-client` header, `ios-<build>.<path>`. The path is
+- `client`: the iPhone's `x-snacklist-client` header (`x-hummlist-client` from installed Hummlist
+  builds, still read), `ios-<build>.<path>`. The path is
   `AddItems` (a phrase without an item), `AddItems.item` (a known item in the phrase), `ReadList`,
   or `Lists.add` / `Lists.read` (SiriKit's list grammar). `-` without the header (the Shortcut,
   older builds), `other` for a value that isn't one token.

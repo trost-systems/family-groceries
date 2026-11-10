@@ -144,7 +144,7 @@ Client IDs are public; secrets are not.
 | Apple Sign in with Apple key (`.p8`) | **no** | stays on Peter's machine; never in the repo |
 | Apple client secret (JWT from the `.p8`) | **no** | Supabase only; expires after at most 6 months |
 | `SIGN_IN_WITH_APPLE` | yes | `app/config/auth.json`, `"true"` once Apple is set up in Supabase |
-| `APP_URL` | yes | `app/config/auth.json`, the web app origin for the phone apps' invite links: `https://app.snacklist.app` since job 174 (`https://app.hummlist.com` from job 20 on, still the hosted Site URL; `supabase/deploy/auth_urls.ts` allows both hosts) |
+| `APP_URL` | yes | `app/config/auth.json`, the web app origin for the phone apps' invite links: `https://app.snacklist.app` since job 174 (`https://app.hummlist.com` from job 20 on; `supabase/deploy/auth_urls.ts` allows both hosts) |
 
 Release builds read the app values with
 `flutter build … --dart-define-from-file=config/auth.json`. Only

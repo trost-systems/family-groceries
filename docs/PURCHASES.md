@@ -56,7 +56,7 @@ id, never anonymous.
    unless cancelled at least 24 hours before the period ends, charged at confirmation and
    renewal, where to cancel); the cards are followed by Restore, the terms (Apple's standard EULA
    on iOS, a placeholder elsewhere) and the privacy policy. All copy is placeholder (K.13 /
-   Hummlist Launch).
+   Snacklist Launch).
 4. **The tap starts the SDK.** Buy configures `purchases_flutter` with the household id as App
    User ID (`logIn(householdId)` instead when this app run configured it for another household),
    loads that plan's product by id (`getProducts`, `ProductCategory.subscription` for yearly,
@@ -543,7 +543,7 @@ tool result with `isError: true` and HTTP 200 (German, or English for a client t
 Nothing is added, queued or kept. OAuth discovery, initialize and tools/list stay free. Alexa is
 not locked at all (job 72, Legal Review N-27): `integration_gate` answers `alexa` open
 (`20261102120000_alexa_free.sql`), the alexa function no longer asks, and its Zugänge tile never
-shows as paused. All copy is a placeholder until Hummlist Launch.
+shows as paused. All copy is a placeholder until Snacklist Launch.
 
 What it never does: delete, revoke or disconnect anything. A lapsed yearly plan (or a refund)
 locks again at read time; tokens, the Siri credential, the Alexa link, OAuth connections and the
@@ -683,7 +683,7 @@ Scripted where the APIs allow it, never submitted for review:
 A sheet (`app/lib/purchases/refund_help.dart`) from the Premium page, the join screen and the
 delete confirmation. Its texts are Legal Review's R-8 strings word for word (H-76, job 47
 ADDENDUM 1 and 2): App Store purchases only Apple refunds; Google Play in the first 48 hours
-through Google, after that by e-mail to support@hummlist.com with the order number (`GPA.…`) or
+through Google, after that by e-mail to support@snacklist.app with the order number (`GPA.…`) or
 the Google account's e-mail address, looked at case by case; statutory rights unaffected. Links:
 Apple's Report a Problem, Google Play's refund page, and the FAQ on snacklist.app (`/support`,
 `/en/support`; its refund question has no anchor of its own, and the legal pages are not this

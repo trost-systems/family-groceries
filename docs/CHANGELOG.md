@@ -18,8 +18,8 @@ category, then one German and one English sentence.
 ```
 ## Changelog
 new
-de: Mit Alexa fügst du Artikel per Sprache hinzu: „Alexa, sag Hummlist, füg Milch hinzu“.
-en: Add items with Alexa: "Alexa, tell Hummlist to add milk".
+de: Mit Alexa fügst du Artikel per Sprache hinzu: „Alexa, sag Snacklist, füg Milch hinzu“.
+en: Add items with Alexa: "Alexa, tell Snacklist to add milk".
 hold: alexa-certification
 
 fixed

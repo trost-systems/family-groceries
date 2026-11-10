@@ -51,16 +51,16 @@ Not researched.
 ## Gaps
 No source gives real activation, invite-rate or time-to-first-item numbers for any of these apps. No exact invite-prompt copy was found. Permission timing (notifications, contacts) is documented only for Splitwise's contacts, and only by inference.
 
-## Patterns worth copying / avoiding for Hummlist
+## Patterns worth copying / avoiding for Snacklist
 1. **Copy: first list in seconds (Bring!).** Show the list screen with suggested staples on the first run; no questionnaire. (screensdesign Bring! link)
 2. **Copy: never land on a blank screen (Todoist welcome step).** Offer a few tappable suggestions or an example, and remove them after use.
 3. **Avoid: mandatory account before any value (Bring!, AnyList).** Flagged as drop-off risk. Consider value-first (add items), then sign-up. Weigh against RLS and household design, which need a user.
-4. **Copy: one household identity (OurGroceries advice to share one email).** Hummlist's invite-by-link household is the better version; say "one household" in the copy.
+4. **Copy: one household identity (OurGroceries advice to share one email).** Snacklist's invite-by-link household is the better version; say "one household" in the copy.
 5. **Copy: ask to invite right after the first items exist (Bring! at ~28 s).** The invite makes sense once there is something to share; offer a link, not an email field.
 6. **Avoid: invite buried in a list footer (AnyList: scroll to the bottom).** Use a visible empty-state CTA and a persistent entry.
 7. **Avoid: invite flows needing the invitee's existing account or same email (AnyList, OurGroceries, Listonic by email).** The link should land the invitee in the household in a few steps; show the inviter's name.
 8. **Copy: keep first-run permissions out (none in Bring!).** Ask for notifications only after a reason shows up, such as a partner adding an item. Contacts (Splitwise) is not needed with links.
 9. **Copy: no onboarding paywall (Bring!, AnyList, OurGroceries all free-first).** Show the per-household premium when a premium feature is used.
-10. **Copy: contextual tips from use, not a tour.** AnyList documents autocomplete and paste-a-list as text only. Hummlist can surface the paste-in, Siri/Alexa and store-order hints after a few items.
+10. **Copy: contextual tips from use, not a tour.** AnyList documents autocomplete and paste-a-list as text only. Snacklist can surface the paste-in, Siri/Alexa and store-order hints after a few items.
 11. **Measure our own activation.** No benchmark exists; define it ourselves (e.g. 5 items plus a second member added within 7 days) and test it with the PostHog gate insights.
 12. **Avoid copying Splitwise's "needs a second person" cliff.** A list has value alone; the invite should enhance, not block.

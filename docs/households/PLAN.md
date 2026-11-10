@@ -52,7 +52,7 @@ reached the Hetzner runner. Compare once it does.
   rows. `DeviceCache` keeps one household per user and drops the others' lists. `ListScope` already
   keys the list on the household id, so a switch rebuilds the list cleanly.
 - Invites: 8-character code, 7 days, single use, any member creates or revokes, link
-  `https://app.hummlist.com/join/<CODE>`, universal links and App Links in place, the code survives
+  `https://app.snacklist.app/join/<CODE>`, universal links and App Links in place, the code survives
   sign-in and onboarding on the device (`PendingInvite`). No deferred deep link: after a store
   install the code is typed. Copy says "Partner".
 - No member list, rename, leave or remove-member screen.
@@ -201,7 +201,7 @@ the join only to keep the demo short. Copy follows the
 household `kind` (partner, family, flat, club, just me) instead of "Partner".
 
 **Link and join page.** The shared text stays the user's own message:
-„Komm in „Sommerfest" auf Hummlist: https://app.hummlist.com/join/K7Q2M9XD · Code: K7Q2-M9XD".
+„Komm in „Sommerfest" auf Snacklist: https://app.snacklist.app/join/K7Q2M9XD · Code: K7Q2-M9XD".
 With the app installed, the link opens the app (universal link / App Link, as today). Without it:
 
 1. A light page on `/join/<code>` (static HTML, no Flutter download first) shows "Peter lädt dich
@@ -304,7 +304,7 @@ of households with more than 4 members).
 | Voice or an agent writes into the club list by surprise | Default household changes only by an explicit choice or when the default membership ends (then the oldest remaining one); AI connections name their household on the consent screen; the Siri/Alexa answer names the household when the user has more than one. |
 | Forwarded group link lets strangers in | 50-use cap, 30 days, revoke and "Wer ist beigetreten", remove member; join approval in HH3. |
 | Join page enumerates codes | 40-bit codes, per-IP and per-code rate limits, counts but no item names. |
-| The join page is a new signed-out exposure: today `/join/<code>` signed out goes to the login; the page would show the inviter's first name and a household name such as „Familie Brandt" to anyone holding the link | Only to link holders, and the inviter chose to share it; the first name and household name are what the shared text already says. Before HH2 ships: Legal confirms the basis (Art. 6(1)(f), the inviter's interest in being recognised) and the privacy notice gets a line under the invite section (N-18 stays: Hummlist sends nothing). |
+| The join page is a new signed-out exposure: today `/join/<code>` signed out goes to the login; the page would show the inviter's first name and a household name such as „Familie Brandt" to anyone holding the link | Only to link holders, and the inviter chose to share it; the first name and household name are what the shared text already says. Before HH2 ships: Legal confirms the basis (Art. 6(1)(f), the inviter's interest in being recognised) and the privacy notice gets a line under the invite section (N-18 stays: Snacklist sends nothing). |
 | `list_repository` loads the profiles of everyone the user shares any household with, then filters to this household; a 50-member club next to the family grows every list load | Load profiles through `household_members_of(h)` joined to `profiles` for the current household only (part B). |
 | Club GDPR: members see each other | Display names only (no emails anywhere today); a club data processing agreement before any club marketing (HH3, Legal). |
 | Cache shows the old household's list after a switch | List state keyed on household id (already); cache keyed on (user, household); e2e covers it. |

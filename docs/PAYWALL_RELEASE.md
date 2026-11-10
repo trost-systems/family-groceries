@@ -14,13 +14,13 @@ Owners:
 
 - **Peter**: decisions, legal sign-off, anything under his Apple, Google or
   bank identity.
-- **Ops** (Hummlist Ops): App Store Connect, Play Console and RevenueCat
+- **Ops** (Snacklist Ops): App Store Connect, Play Console and RevenueCat
   dashboard work. Ops creates no product and changes no price without
   Peter's yes.
-- **Lead** (hummlist-lead): repository PRs, repository variables and
+- **Lead** (snacklist-lead): repository PRs, repository variables and
   secrets, function secrets, SQL on the hosted project.
 - **Legal** (Legal Review): legal texts and their publication.
-- **Launch** (Hummlist Launch): user-facing copy that is still a placeholder.
+- **Launch** (Snacklist Launch): user-facing copy that is still a placeholder.
 
 ## The switches
 
