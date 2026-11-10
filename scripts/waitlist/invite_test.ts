@@ -175,7 +175,7 @@ Deno.test('--confirm mails each allowed row once, records it and exports the lis
   assertEquals(android.mail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
   assert(
     ios.mail.headers['List-Unsubscribe']?.startsWith(
-      `<https://hummlist.com/api/waitlist/unsubscribe?id=${ROWS[0].id}&s=`,
+      `<https://snacklist.app/api/waitlist/unsubscribe?id=${ROWS[0].id}&s=`,
     ),
   );
   assertEquals(

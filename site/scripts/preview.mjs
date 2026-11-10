@@ -39,7 +39,8 @@ export const matchesSource = (source, path) => new RegExp(`^${source}$`).test(pa
 // Like Vercel, a `has` value is a regex that must match the whole header value; no value means present.
 function matchesHas(req, has = []) {
   return has.every((cond) => {
-    const value = req.headers[cond.key.toLowerCase()];
+    // type "host" matches the Host header without its port (S3: the hummlist.com redirect).
+    const value = cond.type === 'host' ? req.headers.host?.replace(/:\d+$/, '') : req.headers[cond.key.toLowerCase()];
     if (value === undefined) return false;
     return cond.value === undefined || new RegExp(`^${cond.value}$`).test(value);
   });
@@ -90,7 +91,9 @@ export function startPreview({ dir = join(SITE_DIR, 'dist'), port = 55990, host 
     if (config.cleanUrls && path.endsWith('.html')) return redirect(308, path.replace(/(\/index)?\.html$/, '') || '/');
     for (const rule of config.redirects ?? []) {
       if (matchesSource(rule.source, path) && matchesHas(req, rule.has)) {
-        return redirect(rule.statusCode ?? (rule.permanent === false ? 307 : 308), rule.destination);
+        const groups = new RegExp(`^${rule.source}$`).exec(path);
+        const location = rule.destination.replace(/\$(\d)/g, (_, n) => groups[Number(n)] ?? '');
+        return redirect(rule.statusCode ?? (rule.permanent === false ? 307 : 308), location);
       }
     }
     if (FUNCTIONS[path]) {

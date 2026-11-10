@@ -79,7 +79,7 @@ Deno.test('siteOrigin accepts hummlist.com, snacklist.app, previews and a local 
       'http://localhost:4173',
       'https://127.0.0.1:4173',
     ]
-  ) assertEquals(siteOrigin(bad), 'https://hummlist.com', String(bad));
+  ) assertEquals(siteOrigin(bad), 'https://snacklist.app', String(bad));
 });
 
 Deno.test('AC10: the German confirmation mail is doi-mail-de-v2 (M-1) with footer (a), no launch line', () => {

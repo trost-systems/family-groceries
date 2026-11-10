@@ -24,7 +24,7 @@ export interface Unsubscribe {
   oneClick: string;
 }
 
-export const SITE_ORIGIN = 'https://hummlist.com';
+export const SITE_ORIGIN = 'https://snacklist.app';
 const PLAY_TESTING_URL = 'https://play.google.com/apps/testing/com.hummlist.app';
 
 const ORIGINS = [
@@ -34,7 +34,7 @@ const ORIGINS = [
   /^http:\/\/127\.0\.0\.1:[0-9]{1,5}$/,
 ];
 
-/** The site the request came to, for the links in its mails; anything unknown is hummlist.com. */
+/** The site the request came to, for the links in its mails; anything unknown is snacklist.app. */
 export function siteOrigin(header: string | null): string {
   return header && ORIGINS.some((o) => o.test(header)) ? header : SITE_ORIGIN;
 }

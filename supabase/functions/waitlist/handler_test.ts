@@ -473,7 +473,9 @@ Deno.test('links in mails go only to known sites', async () => {
     );
     await flush();
     assert(
-      nth(sent, 0).mail.text.includes('Confirm email <https://hummlist.com/en/waitlist/confirm#t='),
+      nth(sent, 0).mail.text.includes(
+        'Confirm email <https://snacklist.app/en/waitlist/confirm#t=',
+      ),
       origin,
     );
   }
@@ -520,7 +522,7 @@ Deno.test('AC11: the token confirms once within 48 h, then the welcome mail goes
   assertEquals(welcome.mail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
   assertMatch(
     welcome.mail.headers['List-Unsubscribe'] ?? '',
-    /^<https:\/\/hummlist\.com\/api\/waitlist\/unsubscribe\?id=[0-9a-f-]{36}&s=[0-9a-f]{64}&l=de>$/,
+    /^<https:\/\/snacklist\.app\/api\/waitlist\/unsubscribe\?id=[0-9a-f-]{36}&s=[0-9a-f]{64}&l=de>$/,
   );
   assertEquals(await (await call('confirm', press(token))).json(), { status: 'invalid' }, 'used');
   await flush();
