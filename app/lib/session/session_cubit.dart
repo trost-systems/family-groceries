@@ -48,7 +48,7 @@ class const Household({
   /// The user's own role in it.
   final HouseholdRole role = HouseholdRole.member,
 
-  /// It has Hummlist Premium, which covers every member.
+  /// It has Snacklist Premium, which covers every member.
   final bool premium = false,
 
   /// An invite makes a join request an owner or admin decides on instead
@@ -563,7 +563,7 @@ class SessionCubit(
 
   /// Leaves [householdId]; the user's other households stay. As its last
   /// member, the household is deleted, or with [archive] archived if it has
-  /// Hummlist Lifetime (job 43). Leaving the shown household shows the
+  /// Snacklist Lifetime (job 43). Leaving the shown household shows the
   /// default one; leaving the last one, onboarding. Throws
   /// [HouseholdError].
   Future<void> leave(String householdId, {bool archive = false}) async {

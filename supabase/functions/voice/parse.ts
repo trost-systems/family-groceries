@@ -33,7 +33,8 @@ const separators = new Set([
 const words = (phrases: string) => phrases.split('|').map((p) => p.split(' '));
 const cross = (...parts: string[][]) =>
   parts.reduce<string[][]>(
-    (acc, options) => acc.flatMap((head) => options.map((o) => o ? [...head, o] : head)),
+    (acc, options) =>
+      acc.flatMap((head) => options.flatMap((o) => o ? [[...head, ...o.split(' ')]] : [head])),
     [[]],
   );
 
@@ -41,8 +42,22 @@ const cross = (...parts: string[][]) =>
 const onTheList = cross(
   ['auf', 'in', 'zu', 'zur'],
   ['', 'die', 'den', 'der', 'meine', 'meinen', 'meiner', 'unsere', 'unseren', 'unserer'],
-  // German Siri writes the app name as German words (INAlternativeAppNames in app/ios, job 71).
-  ['liste', 'einkaufsliste', 'einkaufszettel', 'zettel', 'hummlist', 'hummliste', 'hummelliste'],
+  // German Siri writes the app name as German words (INAlternativeAppNames in app/ios, job 71);
+  // Hummlist's until Snacklist replaces it (job 174).
+  [
+    'liste',
+    'einkaufsliste',
+    'einkaufszettel',
+    'zettel',
+    'snacklist',
+    'snack list',
+    'snäcklist',
+    'snecklist',
+    'snackliste',
+    'hummlist',
+    'hummliste',
+    'hummelliste',
+  ],
 );
 
 /**
@@ -51,7 +66,7 @@ const onTheList = cross(
  */
 const leadingFiller = [
   ...words(
-    'hey siri|siri|hummlist|hummliste|hummelliste|einkaufsliste|einkaufszettel|okay|ok|also|ca|circa|etwa|ungefähr|ach ja|ach so|achso|ach|äh|ähm|ehm|hm|hmm|so|ja|dann|' +
+    'hey siri|siri|snacklist|snack list|snäcklist|snecklist|snackliste|hummlist|hummliste|hummelliste|einkaufsliste|einkaufszettel|okay|ok|also|ca|circa|etwa|ungefähr|ach ja|ach so|achso|ach|äh|ähm|ehm|hm|hmm|so|ja|dann|' +
       'bitte|mal|danke|doch|eben|halt|unbedingt|dringend|mehr|mal sehen|' +
       'wir brauchen|wir bräuchten|ich brauche|ich bräuchte|brauchen|brauche|' +
       'wir haben|wir haben kein|wir haben keine|wir haben keinen|' +

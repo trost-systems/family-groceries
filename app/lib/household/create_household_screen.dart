@@ -137,7 +137,7 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final problem = _problem;
     final nameError = _invalidName ? l10n.householdNameInvalid : null;
     final own = [

@@ -147,7 +147,7 @@ class _WhoStepState() extends State<_WhoStep> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final draft = _draft(context);
     final onboarding = context.read<OnboardingCubit>();
     return OnboardingStepPage(
@@ -353,7 +353,7 @@ class _StoresStepState() extends State<_StoresStep> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final stores = _draft(context).stores;
     final onboarding = context.read<OnboardingCubit>();
     final own = [
@@ -465,7 +465,7 @@ class _NeedStepState() extends State<_NeedStep> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final items = _draft(context).items;
     final onboarding = context.read<OnboardingCubit>();
     final signedIn = context.watch<SessionCubit>().state is! SignedOut;

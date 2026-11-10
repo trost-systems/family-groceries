@@ -184,7 +184,7 @@ class const _NoStoreRow() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

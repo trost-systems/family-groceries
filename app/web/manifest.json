@@ -1,6 +1,6 @@
 {
-    "name": "Hummlist",
-    "short_name": "Hummlist",
+    "name": "Snacklist",
+    "short_name": "Snacklist",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#f7f7f2",

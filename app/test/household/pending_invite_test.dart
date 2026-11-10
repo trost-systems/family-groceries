@@ -44,6 +44,7 @@ void main() {
 
   group('a pasted text', () {
     for (final (text, code) in [
+      ('https://app.snacklist.app/join/ABCD2345', 'ABCD2345'),
       ('https://app.hummlist.com/join/ABCD2345', 'ABCD2345'),
       ('https://app.hummlist.com/join/abcd-2345?x=1', 'ABCD2345'),
       ('https://app.hummlist.com/?invite=WXYZ6789', 'WXYZ6789'),
@@ -52,7 +53,7 @@ void main() {
       ('abcd-2345', 'ABCD2345'),
       ('ABCD 2345', 'ABCD2345'),
       (
-        'Komm in unseren Hummlist-Haushalt: '
+        'Komm in unseren Snacklist-Haushalt: '
             'https://app.hummlist.com/join/ABCD2345 · Code: ABCD2345',
         'ABCD2345',
       ),

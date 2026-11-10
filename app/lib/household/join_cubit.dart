@@ -35,7 +35,7 @@ class const JoinState({
   /// The name of the household the code leads to, once previewed.
   final String? household,
 
-  /// What Hummlist Lifetime means for this join, once previewed.
+  /// What Snacklist Lifetime means for this join, once previewed.
   final JoinLifetime lifetime = const JoinLifetime(),
   final HouseholdProblem? problem,
 

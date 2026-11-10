@@ -22,7 +22,7 @@ class const SettingsScreen({super.key}) extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = context.watch<ThemeCubit>();
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return ListView(
       key: const ValueKey('settings-screen'),
       padding: const EdgeInsets.only(bottom: HlSpace.s5),

@@ -47,7 +47,7 @@ test('every call to action follows the stage: waitlist and beta lead to the form
         assert.equal(doc.querySelectorAll('form').length, 0, 'no form at launch');
         for (const block of [doc.querySelector('.hero-actions'), target]) {
           assert.deepEqual(block.querySelectorAll('.store-badge img').map((img) => img.getAttribute('src')), ['/media/badges/app-store-en.svg', `/media/badges/google-play-${locale}.png`]);
-          assert.deepEqual(block.querySelectorAll('.store-badge').map((a) => a.getAttribute('href')), ['https://hummlist.com/get', 'https://hummlist.com/get'], 'the listings are TODOs, so the badges go to /get');
+          assert.deepEqual(block.querySelectorAll('.store-badge').map((a) => a.getAttribute('href')), ['https://snacklist.app/get', 'https://snacklist.app/get'], 'the listings are TODOs, so the badges go to /get');
         }
         assert.ok(target.querySelector('.store-qr svg'), 'the QR code sits in the closing block');
         assert.equal(doc.querySelector('.hero-actions .store-qr'), null, 'not in the hero');
@@ -57,7 +57,7 @@ test('every call to action follows the stage: waitlist and beta lead to the form
         assert.equal(target.querySelector('button[type="submit"] [data-when="idle"]').text, label, `${stage} ${locale} button`);
         assert.equal(doc.querySelectorAll('.store-badge').length, 0);
       }
-      for (const a of doc.querySelectorAll('a')) assert.doesNotMatch(a.getAttribute('href') ?? '', /app\.hummlist\.com/, `${stage} ${locale}`);
+      for (const a of doc.querySelectorAll('a')) assert.doesNotMatch(a.getAttribute('href') ?? '', /app\.(?:snacklist\.app|hummlist\.com)/, `${stage} ${locale}`);
     }
   }
 });
@@ -173,24 +173,24 @@ test('noindex: every page says it by header or in the page until the launch PR l
 // The privacy policy names the web app in its wording (sections 1, 3 and 12, and the deletion page
 // in section 8); Legal decides those sentences, so only the links went.
 const LEGAL_MENTIONS = {
-  '/datenschutz': ['(app.hummlist.com)', 'Web-App app.hummlist.com', 'https://app.hummlist.com/konto-loeschen.html', 'hummlist.com, app.hummlist.com, mcp.hummlist.com'],
-  '/en/privacy': ['(app.hummlist.com)', 'Web app app.hummlist.com', 'https://app.hummlist.com/konto-loeschen.html', 'hummlist.com, app.hummlist.com and mcp.hummlist.com'],
+  '/datenschutz': ['(app.snacklist.app)', 'Web-App app.snacklist.app', 'https://app.snacklist.app/konto-loeschen.html', 'snacklist.app, app.snacklist.app, mcp.hummlist.com'],
+  '/en/privacy': ['(app.snacklist.app)', 'Web app app.snacklist.app', 'https://app.snacklist.app/konto-loeschen.html', 'snacklist.app, app.snacklist.app and mcp.hummlist.com'],
 };
 
-test('in no stage does a page link, load or name a URL of app.hummlist.com, and nothing comes from another server', () => {
+test('in no stage does a page link, load or name a URL of app.snacklist.app, and nothing comes from another server', () => {
   for (const [stage, { outDir }] of Object.entries(STAGES)) {
     const files = readdirSync(outDir, { recursive: true }).filter((f) => /\.(html|css|js)$/.test(f));
     assert.ok(files.length > 20);
     for (const file of files) {
       const text = readFileSync(join(outDir, file), 'utf8');
       if (!file.endsWith('.html')) {
-        assert.doesNotMatch(text, /app\.hummlist\.com|url\(\s*['"]?(https?:)?\/\//i, `${stage} ${file}`);
+        assert.doesNotMatch(text, /app\.(?:snacklist\.app|hummlist\.com)|url\(\s*['"]?(https?:)?\/\//i, `${stage} ${file}`);
         continue;
       }
       const doc = parse(text);
       for (const el of doc.querySelectorAll('*')) {
         for (const [name, value] of Object.entries(el.attributes)) {
-          assert.doesNotMatch(value, /app\.hummlist\.com/i, `${stage} ${file}: <${el.tagName} ${name}>`);
+          assert.doesNotMatch(value, /app\.(?:snacklist\.app|hummlist\.com)/i, `${stage} ${file}: <${el.tagName} ${name}>`);
           if (['src', 'srcset', 'poster', 'action', 'data'].includes(name) || (name === 'href' && el.tagName === 'LINK' && !['canonical', 'alternate'].includes(el.getAttribute('rel')))) {
             assert.doesNotMatch(value, /^(https?:)?\/\//i, `${stage} ${file}: <${el.tagName} ${name}="${value}"> loads from another server`);
           }
@@ -201,7 +201,7 @@ test('in no stage does a page link, load or name a URL of app.hummlist.com, and 
         assert.ok(body.includes(mention), `${file} still says ${mention}`);
         body = body.replaceAll(mention, '');
       }
-      assert.doesNotMatch(body, /app\.hummlist\.com/i, `${stage} ${file}: names the web app`);
+      assert.doesNotMatch(body, /app\.(?:snacklist\.app|hummlist\.com)/i, `${stage} ${file}: names the web app`);
     }
   }
 });
@@ -227,7 +227,7 @@ test('the site\'s CSP lets the form post to this origin and nothing else changed
   for (const route of ['/de', '/en/waitlist/confirm']) assert.equal(res[route].headers['content-security-policy'], csp, route);
 });
 
-test('the QR code decodes to hummlist.com/get', () => {
+test('the QR code decodes to snacklist.app/get', () => {
   const svg = parse(launch.page('/de').querySelector('.store-qr').innerHTML).querySelector('svg');
   const size = Number(svg.getAttribute('viewBox').split(' ')[2]);
   const scale = 4;

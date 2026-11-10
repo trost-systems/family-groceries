@@ -20,7 +20,7 @@ Uri googleRefundUrl(String language) => Uri.https(
 /// The refund help (DECISIONS 43.5, H-76): Apple alone refunds App Store
 /// purchases; Google Play refunds go to Google in the first 48 hours, after
 /// that to our support, which looks at each case in the Play Console. Links
-/// to Apple, Google and the FAQ on hummlist.com. A sheet rather than a page,
+/// to Apple, Google and the FAQ on snacklist.app. A sheet rather than a page,
 /// so the join screen keeps its state and it works before the user has a
 /// household.
 Future<void> showRefundHelp(BuildContext context) => showModalBottomSheet<void>(

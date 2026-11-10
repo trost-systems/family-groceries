@@ -37,7 +37,7 @@ class const StoreBadge(
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     // The tips are the hexagon's own, so the text never runs into them.
     final tip = HlHex.tip * height;
     return Semantics(
@@ -64,7 +64,7 @@ class const StoreBadge(
     );
   }
 
-  Widget _face(HummlistColors t) {
+  Widget _face(SnacklistColors t) {
     // `logo` has no asset to draw yet: `_logos` is empty.
     if (style == StoreBadgeStyle.logo && _logos.containsKey(store.seedKey)) {
       return Image.asset(_logos[store.seedKey]!, height: height * 0.6);

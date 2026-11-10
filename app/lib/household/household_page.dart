@@ -475,7 +475,7 @@ class _RenameDialogState() extends State<_RenameDialog> {
 }
 
 /// What leaving does: the others keep the list, or the household goes
-/// with its last member; with Hummlist Lifetime it may be archived instead
+/// with its last member; with Snacklist Lifetime it may be archived instead
 /// (job 43), or its Lifetime ends.
 class const _LeaveDialog({
   required final String household,

@@ -12,7 +12,7 @@ last wrote; they never reach the network and never change the list.
 | Payload, sync, launch links | `app/lib/home_widget/` |
 | iOS WidgetKit extension `HomeWidget` (`com.hummlist.app.HomeWidget`) | `app/ios/HomeWidget/` |
 | Android Jetpack Glance widget | `app/android/app/src/main/kotlin/com/hummlist/app/widget/` |
-| Colours (light and dark), generated from the tokens | `app/ios/HomeWidget/HummlistColors.swift`, `app/android/app/src/main/res/values{,-night}/hummlist_tokens.xml` (`node design/tokens/build.mjs`) |
+| Colours (light and dark), generated from the tokens | `app/ios/HomeWidget/SnacklistColors.swift`, `app/android/app/src/main/res/values{,-night}/snacklist_tokens.xml` (`node design/tokens/build.mjs`) |
 
 The package is [`home_widget`](https://pub.dev/packages/home_widget) (Anton
 Borri). On iOS the app and the extension share the App Group

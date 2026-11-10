@@ -208,7 +208,7 @@ Deno.test({
       assertEquals(await analyticsSubject(sql, peter.userId), null, 'no answer: nothing');
       const phone = crypto.randomUUID();
       const laptop = crypto.randomUUID();
-      const record = (install: string, consent: boolean, version: string | null = '2026-11-01') =>
+      const record = (install: string, consent: boolean, version: string | null = '2026-11-10') =>
         asUser(
           peter.userId,
           (tx) =>
@@ -224,6 +224,13 @@ Deno.test({
         (tx) => tx`select public.record_analytics_consent(${phone}::uuid, true)`,
       );
       assertEquals(await analyticsSubject(sql, peter.userId), null, 'a yes from an older build');
+      // Job 174: Hummlist builds show the same text under the old name until Snacklist replaces them.
+      await record(phone, true, '2026-11-01');
+      assertEquals(
+        (await analyticsSubject(sql, peter.userId))?.installId,
+        phone,
+        "Hummlist's text",
+      );
       await record(phone, true);
       assertEquals(await analyticsSubject(sql, peter.userId), {
         installId: phone,

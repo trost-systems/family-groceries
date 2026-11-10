@@ -41,7 +41,7 @@ class const InviteJoin({
 });
 
 /// A household the user archived as its last member (job 43): no members,
-/// its list and Hummlist Lifetime kept, until they re-enable it.
+/// its list and Snacklist Lifetime kept, until they re-enable it.
 @immutable
 class const ArchivedHousehold({
   required final String id,
@@ -57,14 +57,14 @@ class const ArchivedHousehold({
 /// What a code leads to, before joining (`preview_invite`).
 sealed class const InvitePreview();
 
-/// An open invite of the household [name], with what Hummlist Lifetime
+/// An open invite of the household [name], with what Snacklist Lifetime
 /// means for joining it (job 43).
 final class const InviteOpen(
   final String name, {
   final JoinLifetime lifetime = const JoinLifetime(),
 }) extends InvitePreview;
 
-/// Hummlist Lifetime around a join, as `preview_invite` tells it.
+/// Snacklist Lifetime around a join, as `preview_invite` tells it.
 @immutable
 class const JoinLifetime({
   /// The invite's household has it: nothing to buy there.
@@ -221,7 +221,7 @@ abstract interface class InviteRepository() {
   /// The members of [householdId], oldest first (`household_members_of`).
   Future<List<HouseholdMember>> members(String householdId);
 
-  /// Whether [householdId] has Hummlist Premium that ends when its last
+  /// Whether [householdId] has Snacklist Premium that ends when its last
   /// member leaves (`leaves_unlocked`).
   Future<bool> leavesUnlocked(String householdId);
 

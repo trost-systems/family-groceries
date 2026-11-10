@@ -1,4 +1,4 @@
-// The native Siri phrases (app/ios/Runner/AppIntents/HummlistIntents.swift) against the catalog
+// The native Siri phrases (app/ios/Runner/AppIntents/SnacklistIntents.swift) against the catalog
 // Siri matches them with (Runner/AppShortcuts.xcstrings, job 97): every App Shortcut phrase has a
 // set of en and de phrases that each name the app once and keep the Swift phrase's parameter, no
 // German phrase is left in English or said twice, and each language names the app the way its
@@ -44,7 +44,7 @@ const placeholders = (phrase: string) =>
 const parameters = (phrase: string) =>
   placeholders(phrase).filter((p) => p !== "${applicationName}");
 
-const source = read("Runner/AppIntents/HummlistIntents.swift");
+const source = read("Runner/AppIntents/SnacklistIntents.swift");
 const literals = (code: string) =>
   [...code.matchAll(
     /"((?:[^"\\\n]|\\\(\.applicationName\)|\\\(\\\.\$\w+\))*)"/g,
@@ -65,11 +65,11 @@ const phrases = phraseLists.flat();
 const negatives = literals(negativeCode);
 const shortcuts = providerCode.split("AppShortcut(\n").length - 1;
 if (phrases.length < 3) {
-  problems.push(`HummlistIntents.swift: only ${phrases.length} phrases found`);
+  problems.push(`SnacklistIntents.swift: only ${phrases.length} phrases found`);
 }
 if (shortcuts === 0 || shortcuts > 10) {
   problems.push(
-    `HummlistIntents.swift: ${shortcuts} App Shortcuts; Apple allows 1 to 10`,
+    `SnacklistIntents.swift: ${shortcuts} App Shortcuts; Apple allows 1 to 10`,
   );
 }
 for (const phrase of phrases) {
@@ -78,10 +78,10 @@ for (const phrase of phrases) {
   }
 }
 if (phraseLists.length !== shortcuts) {
-  problems.push("HummlistIntents.swift: an App Shortcut without phrases");
+  problems.push("SnacklistIntents.swift: an App Shortcut without phrases");
 }
 if (negatives.length === 0) {
-  problems.push("HummlistIntents.swift: no negativePhrases");
+  problems.push("SnacklistIntents.swift: no negativePhrases");
 }
 // Siri asks for the items after a phrase without one, so that works for any item; an item phrase
 // matches only the names the app suggested.
@@ -90,13 +90,13 @@ const add = literals(
 );
 const firstWithItem = add.findIndex((p) => p.includes("${item}"));
 if (add.length === 0) {
-  problems.push("HummlistIntents.swift: no AddItemsIntent phrases found");
+  problems.push("SnacklistIntents.swift: no AddItemsIntent phrases found");
 } else if (
   firstWithItem === 0 ||
   add.slice(firstWithItem).some((p) => !p.includes("${item}"))
 ) {
   problems.push(
-    "HummlistIntents.swift: the add phrases without an item must come first",
+    "SnacklistIntents.swift: the add phrases without an item must come first",
   );
 }
 for (const phrase of phrases) {
@@ -145,7 +145,7 @@ const negativeValues = (key: string, lang: string) => {
 for (const key of Object.keys(catalogEntries)) {
   if (!phrases.includes(key) && !negatives.includes(key)) {
     problems.push(
-      `${catalogPath}: "${key}" is no phrase in HummlistIntents.swift`,
+      `${catalogPath}: "${key}" is no phrase in SnacklistIntents.swift`,
     );
   }
 }
@@ -198,7 +198,7 @@ for (const lang of ["en", "de"]) {
       said.set(spoken, phrase);
       if (lang !== "de") continue;
       // German Siri hands "Einkaufsliste" and "Füge X zur <…>liste hinzu" to Reminders; a bare
-      // "Auf meine Hummlist" is a fragment of that grammar.
+      // "Auf meine Snacklist" is a fragment of that grammar.
       const first = value.split(" ")[0].toLowerCase();
       if (/liste/i.test(value)) {
         problems.push(`${where}: says Liste, which Reminders takes`);
@@ -233,7 +233,7 @@ for (const lang of ["en", "de"]) {
       );
     }
     for (const value of set) {
-      if (value.includes("${applicationName}") || /hummlist/i.test(value)) {
+      if (value.includes("${applicationName}") || /snacklist|hummlist/i.test(value)) {
         problems.push(
           `${catalogPath} ${lang} negative "${value}" names the app and would block it`,
         );
@@ -258,7 +258,7 @@ for (const lang of ["en", "de"]) {
   if (list.length === 0) problems.push(`siri_phrases.dart: no ${lang} phrases`);
   for (const phrase of list) {
     const asTable = phrase.replace(/[?.!]$/, "").replace(/<[^>]+>/g, "${item}")
-      .replaceAll("Hummlist", "${applicationName}").toLowerCase();
+      .replaceAll("Snacklist", "${applicationName}").toLowerCase();
     if (!known[lang].has(asTable)) {
       problems.push(
         `siri_phrases.dart shows "${phrase}", which is no ${lang} phrase Siri knows`,
@@ -301,9 +301,9 @@ if (variables.length === 0) {
   problems.push("Info.plist: no INAlternativeAppNames");
 }
 if (
-  !/<key>CFBundleSpokenName<\/key>\s*<string>Hummlist<\/string>/.test(plist)
+  !/<key>CFBundleSpokenName<\/key>\s*<string>Snacklist<\/string>/.test(plist)
 ) {
-  problems.push('Info.plist: CFBundleSpokenName must be "Hummlist"');
+  problems.push('Info.plist: CFBundleSpokenName must be "Snacklist"');
 }
 if (variables.length > 3) {
   problems.push("Info.plist: Apple reads at most three INAlternativeAppNames");
@@ -314,11 +314,11 @@ for (const lang of ["en", "de", "Base"]) {
   for (const variable of variables) {
     const name = table.get(variable)?.trim();
     if (!name) problems.push(`${path}: no ${variable}`);
-    else if (name.toLowerCase() === "hummlist") {
+    else if (name.toLowerCase() === "snacklist") {
       problems.push(`${path}: ${variable} repeats the app name`);
-    } else if (name.toLowerCase() === "humm") {
+    } else if (name.toLowerCase() === "snack") {
       problems.push(
-        `${path}: ${variable} is "Humm"; the brand is never Humm alone`,
+        `${path}: ${variable} is "Snack"; the brand is never Snack alone`,
       );
     } else if (lang === "de" && /liste$/i.test(name)) {
       // German Siri hands "Füge X zur … Liste hinzu" to Reminders (job 97).
@@ -333,8 +333,8 @@ for (const lang of ["en", "de", "Base"]) {
   for (const key of ["CFBundleSpokenName", "NSSiriUsageDescription"]) {
     if (!table.get(key)?.trim()) problems.push(`${path}: no ${key}`);
   }
-  if (table.get("CFBundleSpokenName") !== "Hummlist") {
-    problems.push(`${path}: CFBundleSpokenName must be "Hummlist"`);
+  if (table.get("CFBundleSpokenName") !== "Snacklist") {
+    problems.push(`${path}: CFBundleSpokenName must be "Snacklist"`);
   }
 }
 

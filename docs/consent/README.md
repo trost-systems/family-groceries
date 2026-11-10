@@ -7,7 +7,8 @@ Rn. 108). The app stores the version with every decision (`consentTextVersion` i
 
 | Version | File | Stored as | Shown by |
 | --- | --- | --- | --- |
-| 2026-11-01 | [2026-11-01.md](2026-11-01.md) | `2026-11-01` | the release after PR "Consent text version and re-ask" on (current) |
+| 2026-11-10 | [2026-11-10.md](2026-11-10.md) | `2026-11-10` | Snacklist (job 174): 2026-11-01 with the new name (current) |
+| 2026-11-01 | [2026-11-01.md](2026-11-01.md) | `2026-11-01` | Hummlist, from the release after PR "Consent text version and re-ask" on; the server still counts its yes until Hummlist retires |
 | PR #165 text | [2026-11-01-pr165.md](2026-11-01-pr165.md) | nothing (no version field yet) | builds with #165, before this version field |
 | 2026-10-30 | [2026-10-30.md](2026-10-30.md) | nothing (no version field yet) | builds up to b5d0fee |
 

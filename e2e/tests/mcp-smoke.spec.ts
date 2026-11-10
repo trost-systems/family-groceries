@@ -34,7 +34,7 @@ for (const [version, handshake] of [['2025-11-25', 'initialize'], ['2026-07-28',
     const { code, out } = await smoke(token, version);
     expect(out).not.toContain(token);
     expect(code, out).toBe(0);
-    expect(out).toContain(`PASS ${handshake}: 200, protocol ${version}, server hummlist, tools capability`);
+    expect(out).toContain(`PASS ${handshake}: 200, protocol ${version}, server snacklist, tools capability`);
     expect(out).toMatch(/^PASS tools\/list: .*add_items/m);
     expect(out).not.toMatch(/^(FAIL|SKIP) /m);
   });

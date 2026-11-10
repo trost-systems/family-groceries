@@ -14,6 +14,10 @@ const cases: [string, string[]][] = [
   ['add milk to my Humm List', ['milk']],
   ['put milk on the hum list', ['milk']],
   ['add milk to Humlist', ['milk']],
+  // Job 174: Snacklist's names.
+  ['add milk to Snacklist', ['milk']],
+  ['put milk on my Snack List', ['milk']],
+  ['add milk and eggs to the snack-list', ['milk', 'eggs']],
   ['add milk to my shopping list', ['milk']],
   ['put eggs on the list please', ['eggs']],
   ['Hey Siri, add milk', ['milk']],

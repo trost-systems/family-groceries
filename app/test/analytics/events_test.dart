@@ -167,7 +167,7 @@ void main() {
     ('invite_sent', {'code': 'ABCD2345'}, 'the code'),
     (
       'invite_sent',
-      {'link': 'https://app.hummlist.com/join/ABCD2345'},
+      {'link': 'https://app.snacklist.app/join/ABCD2345'},
       'the link',
     ),
     ('invite_sent', {'channel': 'whatsapp'}, 'an app the sheet picked'),

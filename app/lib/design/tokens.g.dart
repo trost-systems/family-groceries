@@ -1,11 +1,11 @@
-// GENERATED from design/tokens/hummlist.tokens.json by design/tokens/build.mjs. Do not edit.
+// GENERATED from design/tokens/snacklist.tokens.json by design/tokens/build.mjs. Do not edit.
 import 'package:flutter/material.dart';
 
 /// Every colour token, in light or dark. Read it with
-/// `Theme.of(context).extension<HummlistColors>()!` or [HummlistColors.of].
+/// `Theme.of(context).extension<SnacklistColors>()!` or [SnacklistColors.of].
 @immutable
-class HummlistColors extends ThemeExtension<HummlistColors> {
-  const HummlistColors({
+class SnacklistColors extends ThemeExtension<SnacklistColors> {
+  const SnacklistColors({
     required this.brand,
     required this.onBrand,
     required this.honey,
@@ -124,7 +124,7 @@ class HummlistColors extends ThemeExtension<HummlistColors> {
   final Color inverse;
   final Color onInverse;
 
-  static const light = HummlistColors(
+  static const light = SnacklistColors(
     brand: Color(0xFF1B3FAE),
     onBrand: Color(0xFFFFFFFF),
     honey: Color(0xFFFFE24A),
@@ -165,7 +165,7 @@ class HummlistColors extends ThemeExtension<HummlistColors> {
     onInverse: Color(0xFFF3F6FF),
   );
 
-  static const dark = HummlistColors(
+  static const dark = SnacklistColors(
     brand: Color(0xFF9FB6FF),
     onBrand: Color(0xFF0B1024),
     honey: Color(0xFFFFE24A),
@@ -206,20 +206,20 @@ class HummlistColors extends ThemeExtension<HummlistColors> {
     onInverse: Color(0xFFEFF3FF),
   );
 
-  static HummlistColors of(Brightness brightness) => switch (brightness) {
+  static SnacklistColors of(Brightness brightness) => switch (brightness) {
     Brightness.light => light,
     Brightness.dark => dark,
   };
 
   @override
-  HummlistColors copyWith() => this;
+  SnacklistColors copyWith() => this;
 
   @override
-  HummlistColors lerp(HummlistColors? other, double t) {
+  SnacklistColors lerp(SnacklistColors? other, double t) {
     if (other == null) {
       return this;
     }
-    return HummlistColors(
+    return SnacklistColors(
       brand: Color.lerp(brand, other.brand, t)!,
       onBrand: Color.lerp(onBrand, other.onBrand, t)!,
       honey: Color.lerp(honey, other.honey, t)!,

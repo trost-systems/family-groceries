@@ -7,13 +7,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
-final url = Uri.parse('https://hummlist.com/data/item-icons.v1.json');
+final url = Uri.parse('https://snacklist.app/data/item-icons.v1.json');
 const bundled = 5;
 
 String file({
   Object? schema = 1,
   Object? revision = 6,
-  Map<String, Object?> entries = const {'hummlist': '🐝', 'banane': ''},
+  Map<String, Object?> entries = const {'snacklist': '🐝', 'banane': ''},
 }) => jsonEncode({'schema': schema, 'revision': revision, 'entries': entries});
 
 final class _Store() implements ItemIconsStore {
@@ -67,7 +67,7 @@ void main() {
     test('reads schema 1', () {
       final parsed = parseItemIconsFile(file());
       expect(parsed?.revision, 6);
-      expect(parsed?.entries, {'hummlist': '🐝', 'banane': ''});
+      expect(parsed?.entries, {'snacklist': '🐝', 'banane': ''});
     });
 
     test('accepts ZWJ emoji, phrases and whole-word keys', () {
@@ -123,7 +123,7 @@ void main() {
 
   test('a newer file applies over the bundled table, stops included', () async {
     await start(ok);
-    expect(icon('Hummlist'), '🐝');
+    expect(icon('Snacklist'), '🐝');
     expect(icon('Banane'), isNull);
     expect(icon('Ei'), ItemIcons.bundled.emojiFor('Ei'));
     expect(store.cached?.etag, '"v6"');
@@ -159,7 +159,7 @@ void main() {
       etag: '"v6"',
     );
     await start(ok);
-    expect(icon('Hummlist'), '🐝');
+    expect(icon('Snacklist'), '🐝');
     expect(requests, isEmpty);
   });
 
@@ -188,7 +188,7 @@ void main() {
     expect(store.cached?.body, first?.body);
     expect(store.cached?.etag, first?.etag);
     expect(store.cached?.checkedAt, clock);
-    expect(icon('Hummlist'), '🐝');
+    expect(icon('Snacklist'), '🐝');
   });
 
   test('offline keeps the cache and asks again at the next start', () async {
@@ -197,7 +197,7 @@ void main() {
     clock = clock.add(const Duration(days: 2));
     await start((request) async => throw http.ClientException('offline'));
     expect(store.cached, same(first));
-    expect(icon('Hummlist'), '🐝');
+    expect(icon('Snacklist'), '🐝');
     await start((_) async => http.Response('', 304));
     expect(requests, hasLength(3));
   });
@@ -211,7 +211,7 @@ void main() {
       expect(store.cached?.body, first?.body);
       expect(store.cached?.etag, first?.etag);
       expect(store.cached?.checkedAt, clock);
-      expect(icon('Hummlist'), '🐝');
+      expect(icon('Snacklist'), '🐝');
       clock = clock.add(const Duration(hours: 23));
       await start((_) async => http.Response('nope', status));
       expect(requests, hasLength(2), reason: 'no request within the day');
@@ -242,7 +242,7 @@ void main() {
       await start((_) async => http.Response.bytes(utf8.encode(body), 200));
       expect(store.cached?.body, first?.body, reason: body);
       expect(store.cached?.checkedAt, clock, reason: body);
-      expect(icon('Hummlist'), '🐝');
+      expect(icon('Snacklist'), '🐝');
     }
     await start(ok);
     expect(requests, hasLength(4));
@@ -251,7 +251,7 @@ void main() {
   test('a body over 256 KiB is not read', () async {
     final big = '${file(revision: 9)}${' ' * itemIconsMaxBytes}';
     await start((_) async => http.Response.bytes(utf8.encode(big), 200));
-    expect(cubit.state.emojiFor('Hummlist'), isNull);
+    expect(cubit.state.emojiFor('Snacklist'), isNull);
     expect(store.cached?.body, isNull);
     expect(store.cached?.checkedAt, clock);
   });
@@ -280,7 +280,7 @@ void main() {
         now: () => clock,
         bundledRevision: bundled,
       ).start();
-      expect(icon('Hummlist'), isNull);
+      expect(icon('Snacklist'), isNull);
       expect(sent, lessThan(300));
       expect(store.cached?.checkedAt, clock);
     },
@@ -331,7 +331,7 @@ void main() {
       now: () => clock,
       bundledRevision: bundled,
     ).start();
-    expect(icon('Hummlist'), '🐝');
+    expect(icon('Snacklist'), '🐝');
     expect(store.writes, 0);
   });
 }

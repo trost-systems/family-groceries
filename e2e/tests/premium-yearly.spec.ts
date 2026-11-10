@@ -21,16 +21,16 @@ import {
 } from './helpers';
 import { buy, householdOf, rcEvent, subscribe, yearlyId } from './iap';
 
-// Job 49: Hummlist Premium as a yearly plan and Lifetime, on the web (docs/PURCHASES.md). The web
+// Job 49: Snacklist Premium as a yearly plan and Lifetime, on the web (docs/PURCHASES.md). The web
 // sells nothing; it shows the household's Premium, live for every member, from RevenueCat's
 // lifecycle events posted to the real webhook (iap.ts). Ending a plan deletes nothing. A plan that
 // keeps being billed is said before deleting the account or leaving the household (H-85).
 
 const newPage = async (browser: Browser) => await (await browser.newContext()).newPage();
 
-const status = (page: Page) => page.getByText(/^Hummlist Premium (Lifetime|aktiv|über)/);
-const renews = (page: Page) => page.getByText(/^Hummlist Premium aktiv \(jährlich, verlängert sich am /);
-const ends = (page: Page) => page.getByText(/^Hummlist Premium aktiv \(jährlich, läuft am /);
+const status = (page: Page) => page.getByText(/^Snacklist Premium (Lifetime|aktiv|über)/);
+const renews = (page: Page) => page.getByText(/^Snacklist Premium aktiv \(jährlich, verlängert sich am /);
+const ends = (page: Page) => page.getByText(/^Snacklist Premium aktiv \(jährlich, läuft am /);
 /** The web's manage note: a group named by its text, with the two store links in it. */
 const manageOnWeb = (page: Page) =>
   page.getByRole('group', { name: 'Dein Jahresabo verwaltest du im App Store oder bei Google Play.' });
@@ -38,7 +38,7 @@ const manageOnWeb = (page: Page) =>
 const lifetimeWhileYearly = (page: Page, rest: RegExp) =>
   page.getByText(new RegExp(`^Euer Haushalt hat schon ein Jahresabo\\..*${rest.source}`));
 const billingContinues = (page: Page) =>
-  page.getByText(/^Dein Jahresabo für Hummlist Premium läuft weiter und wird über dein Apple- bzw\. Google-Konto/);
+  page.getByText(/^Dein Jahresabo für Snacklist Premium läuft weiter und wird über dein Apple- bzw\. Google-Konto/);
 const billingOther = (page: Page) =>
   page.getByText('Ein Jahresabo für diesen Haushalt läuft weiter, bis es gekündigt wird.');
 
@@ -124,7 +124,7 @@ test('Lifetime while a yearly plan runs: Lifetime wins, the plan keeps billing a
   expect(await subscribe(peterEmail, tx)).toBe('granted');
   await expect(renews(lea)).toBeVisible({ timeout: 10_000 });
   expect(await buy(leaEmail, `4902${Date.now()}`)).toBe('granted');
-  await expect(lea.getByText(/^Hummlist Premium Lifetime/)).toBeVisible({ timeout: 10_000 });
+  await expect(lea.getByText(/^Snacklist Premium Lifetime/)).toBeVisible({ timeout: 10_000 });
   await expect(lifetimeWhileYearly(lea, /Kündigen kann nur, wer das Abo abgeschlossen hat, unter Abos verwalten/))
     .toBeVisible();
   // The note itself is text, not one big link (the inline link is a tap on the span; widget tests tap it).
@@ -146,7 +146,7 @@ test('Lifetime while a yearly plan runs: Lifetime wins, the plan keeps billing a
   expect((await rcEvent('RENEWAL', maxHousehold, tx, { productId: yearlyId })).body)
     .toEqual({ status: 'used_elsewhere' });
   await openPremium(max);
-  await expect(max.getByText('Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.')).toBeVisible();
+  await expect(max.getByText('Snacklist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.')).toBeVisible();
   await expect(status(max), 'Max has no Premium').toHaveCount(0);
 });
 
@@ -223,7 +223,7 @@ test.describe('in English', () => {
     await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeVisible();
     expect(await subscribe(email, `4905${Date.now()}`)).toBe('granted');
     await page.goto('/more/lifetime');
-    await expect(page.getByText(/^Hummlist Premium active \(yearly, renews on /)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/^Snacklist Premium active \(yearly, renews on /)).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole('group', { name: 'You manage your yearly plan in the App Store or on Google Play.' }))
       .toBeVisible();
     await screenshot(page, 'job49-web-yearly-renews-en-390');

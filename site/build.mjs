@@ -34,8 +34,8 @@ export const LOCALES = {
       languageNav: 'Sprache',
       mainNav: 'Hauptnavigation',
       footerNav: 'Rechtliches',
-      siteNav: 'Hummlist',
-      home: 'Hummlist, zur Startseite',
+      siteNav: 'Snacklist',
+      home: 'Snacklist, zur Startseite',
       skip: 'Zum Inhalt',
       guides: 'Anleitungen',
       draft: 'ENTWURF: Freigabe durch Peter',
@@ -45,12 +45,12 @@ export const LOCALES = {
       until: (key) => `Nur bis ${key} freigegeben ist`,
       changelog: {
         title: 'Neuigkeiten',
-        description: 'Was jede Version von Hummlist neu bringt, verbessert und behebt.',
+        description: 'Was jede Version von Snacklist neu bringt, verbessert und behebt.',
         version: (v) => `Version ${v}`,
         categories: { new: 'Neu', improved: 'Verbessert', fixed: 'Behoben' },
         neutral: 'Fehlerbehebungen und Verbesserungen.',
         draft: 'Entwurf, noch nicht im Store',
-        empty: 'Die erste Version von Hummlist ist bald in den Stores. Hier steht dann, was jede neue Version bringt.',
+        empty: 'Die erste Version von Snacklist ist bald in den Stores. Hier steht dann, was jede neue Version bringt.',
       },
     },
   },
@@ -71,8 +71,8 @@ export const LOCALES = {
       languageNav: 'Language',
       mainNav: 'Main',
       footerNav: 'Legal',
-      siteNav: 'Hummlist',
-      home: 'Hummlist, home',
+      siteNav: 'Snacklist',
+      home: 'Snacklist, home',
       skip: 'Skip to content',
       guides: 'Guides',
       draft: "DRAFT: pending Peter's approval",
@@ -82,18 +82,18 @@ export const LOCALES = {
       until: (key) => `Only until ${key} is released`,
       changelog: {
         title: "What's new",
-        description: 'What each version of Hummlist adds, improves and fixes.',
+        description: 'What each version of Snacklist adds, improves and fixes.',
         version: (v) => `Version ${v}`,
         categories: { new: 'New', improved: 'Improved', fixed: 'Fixed' },
         neutral: 'Bug fixes and improvements.',
         draft: 'Draft, not in the stores yet',
-        empty: "Hummlist's first version is coming to the stores soon. This page will then list what each new version brings.",
+        empty: "Snacklist's first version is coming to the stores soon. This page will then list what each new version brings.",
       },
     },
   },
 };
 
-const SITE_NAME = 'Hummlist';
+const SITE_NAME = 'Snacklist';
 
 // A footer link to a page that isn't built yet fails the build, so each waits for its flag.
 const FOOTER_LINKS = [
@@ -272,7 +272,7 @@ export const KINDS = {
     group: (fm) => `page:${fm.translation_key}`,
   },
   // Comparison pages (ST5): German only, at /<locale>/<slug>, e.g. /de/einkaufsliste-vergleich-bring.
-  // The title is the page's whole <title>, without the "| Hummlist" suffix.
+  // The title is the page's whole <title>, without the "| Snacklist" suffix.
   comparison: {
     fields: ['title', 'description', 'slug', 'locale', 'updated'],
     ogType: 'article',

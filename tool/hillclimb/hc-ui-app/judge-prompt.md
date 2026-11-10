@@ -10,7 +10,7 @@ a top-tier app.
    cobalt, lemon, mint, tomato on warm white or deep navy, hexagonal controls
    with a 2 px navy contour that sit on a hard edge, Bricolage Grotesque for
    titles over Inter for UI, 48 px targets, the contrast rules).
-2. `hummlist.tokens.json`: the token values (colours, type, space, radius).
+2. `snacklist.tokens.json`: the token values (colours, type, space, radius).
 3. Every screenshot listed in `shots.txt`, in that order. Open each PNG with
    the Read tool and look at it closely. Screenshots are rendered at device
    pixel ratio 1 (one image pixel = one logical pixel); phone shots are

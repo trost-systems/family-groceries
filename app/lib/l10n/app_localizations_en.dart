@@ -10,7 +10,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Hummlist';
+  String get appTitle => 'Snacklist';
 
   @override
   String get addFieldHint => 'What do you need?';
@@ -280,11 +280,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get orWithEmail => 'or with email';
 
   @override
-  String get onboardingTitle => 'Welcome to Hummlist';
+  String get onboardingTitle => 'Welcome to Snacklist';
 
   @override
   String get onboardingBody =>
-      'Hummlist shares one shopping list with everyone in your household. Create a new household or accept an invite.';
+      'Snacklist shares one shopping list with everyone in your household. Create a new household or accept an invite.';
 
   @override
   String get householdName => 'Household name';
@@ -485,7 +485,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get siriOtherIphone => 'Siri (other iPhone)';
 
   @override
-  String get siriSayHint => 'For example, say “Hey Siri, add to Hummlist”.';
+  String get siriSayHint => 'For example, say “Hey Siri, add to Snacklist”.';
 
   @override
   String get siriShowPhrases => 'Show Siri phrases';
@@ -514,7 +514,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get revokeSiriBody =>
-      'Siri on that iPhone can no longer add items. Hummlist sets Siri up again the next time it starts there.';
+      'Siri on that iPhone can no longer add items. Snacklist sets Siri up again the next time it starts there.';
 
   @override
   String connectedOn(DateTime date) {
@@ -688,12 +688,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String accountDeletePremium(String household) {
-    return '“$household” has Hummlist Premium. It belongs to the household and ends with it. Archiving isn\'t possible here, because an archived household is deleted with your account. To keep the household with Premium, invite someone first and delete your account only after they have joined.';
+    return '“$household” has Snacklist Premium. It belongs to the household and ends with it. Archiving isn\'t possible here, because an archived household is deleted with your account. To keep the household with Premium, invite someone first and delete your account only after they have joined.';
   }
 
   @override
   String accountDeletePremiumLastMember(String household) {
-    return '“$household” has Hummlist Premium. It belongs to the household. If you delete your account, it ends. Do you want to keep it? Then ask someone to join first. Wait until they have joined. Then delete your account.';
+    return '“$household” has Snacklist Premium. It belongs to the household. If you delete your account, it ends. Do you want to keep it? Then ask someone to join first. Wait until they have joined. Then delete your account.';
   }
 
   @override
@@ -713,9 +713,9 @@ class AppLocalizationsEn extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          'Your archived households $names are deleted with your account, and their Hummlist Premium with them.',
+          'Your archived households $names are deleted with your account, and their Snacklist Premium with them.',
       one:
-          'Your archived household $names is deleted with your account, and its Hummlist Premium with it.',
+          'Your archived household $names is deleted with your account, and its Snacklist Premium with it.',
     );
     return '$_temp0';
   }
@@ -761,7 +761,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountDeletedApple =>
-      'If you signed in with Apple, remove “Hummlist” on your iPhone under Settings › [your name] › Sign-In & Security › Sign in with Apple.';
+      'If you signed in with Apple, remove “Snacklist” on your iPhone under Settings › [your name] › Sign-In & Security › Sign in with Apple.';
 
   @override
   String get exportDone => 'Data exported';
@@ -1005,7 +1005,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updatePatchBody =>
-      'Hummlist has downloaded improvements. Restart the app to use them.';
+      'Snacklist has downloaded improvements. Restart the app to use them.';
 
   @override
   String get updatePatchAction => 'Restart';
@@ -1084,11 +1084,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoryOther => 'Other';
 
   @override
-  String get analyticsConsentTitle => 'May Hummlist collect usage data?';
+  String get analyticsConsentTitle => 'May Snacklist collect usage data?';
 
   @override
   String get analyticsConsentBody =>
-      'Hummlist (run by Peter Trost) wants to see which features are used, find bugs, measure whether Hummlist pays for itself and switch new features on step by step. For that, Hummlist stores a random ID on this device and uses it to send pseudonymous usage data, error reports, your household\'s ID and technical details of your device or browser to our service provider PostHog (servers in the EU). List contents, names and e-mail addresses are never sent. You can withdraw any time under More → Usage data. More in the';
+      'Snacklist (run by Peter Trost) wants to see which features are used, find bugs, measure whether Snacklist pays for itself and switch new features on step by step. For that, Snacklist stores a random ID on this device and uses it to send pseudonymous usage data, error reports, your household\'s ID and technical details of your device or browser to our service provider PostHog (servers in the EU). List contents, names and e-mail addresses are never sent. You can withdraw any time under More → Usage data. More in the';
 
   @override
   String get analyticsConsentPrivacyLink => 'privacy policy';
@@ -1119,7 +1119,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get feedbackRow => 'Send feedback';
 
   @override
-  String get rateApp => 'Rate Hummlist';
+  String get rateApp => 'Rate Snacklist';
 
   @override
   String get helpRow => 'Help & contact';
@@ -1205,7 +1205,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storesDisclaimer =>
-      'We use shop names such as dm, Lidl or EDEKA only so you can see which shop a list is for. The names and trade marks belong to their owners. Hummlist is independent and isn\'t affiliated with, sponsored or endorsed by these companies.';
+      'We use shop names such as dm, Lidl or EDEKA only so you can see which shop a list is for. The names and trade marks belong to their owners. Snacklist is independent and isn\'t affiliated with, sponsored or endorsed by these companies.';
 
   @override
   String get skipStores => 'Skip';
@@ -1255,7 +1255,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startLogIn => 'Already have an account? Log in';
 
   @override
-  String get loginNew => 'New to Hummlist? Get started';
+  String get loginNew => 'New to Snacklist? Get started';
 
   @override
   String onboardingProgress(int step, int count) {
@@ -1464,7 +1464,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String inviteShareTextCodeOnly(String code) {
-    return 'Join our Hummlist household. Code: $code';
+    return 'Join our Snacklist household. Code: $code';
   }
 
   @override
@@ -1510,14 +1510,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Try again';
 
   @override
-  String get lifetimeTitle => 'Hummlist Lifetime';
+  String get lifetimeTitle => 'Snacklist Lifetime';
 
   @override
-  String get lifetimeRowHint => 'Support Hummlist';
+  String get lifetimeRowHint => 'Support Snacklist';
 
   @override
   String get lifetimeBody =>
-      'One purchase for your whole household: Hummlist Lifetime supports the development of Hummlist.';
+      'One purchase for your whole household: Snacklist Lifetime supports the development of Snacklist.';
 
   @override
   String get lifetimeBuy => 'Continue to purchase';
@@ -1531,14 +1531,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lifetimeUnlockedBody =>
-      'Hummlist Lifetime is unlocked for your whole household. Thank you!';
+      'Snacklist Lifetime is unlocked for your whole household. Thank you!';
 
   @override
   String get lifetimePending => 'Waiting for approval';
 
   @override
   String get lifetimePendingBody =>
-      'Hummlist Lifetime is unlocked as soon as the purchase is approved. This can take a while.';
+      'Snacklist Lifetime is unlocked as soon as the purchase is approved. This can take a while.';
 
   @override
   String get lifetimeUnlocking => 'Unlocking …';
@@ -1549,13 +1549,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lifetimeBoughtTwice =>
-      'Your household bought Hummlist Lifetime more than once. One of the purchases can be refunded.';
+      'Your household bought Snacklist Lifetime more than once. One of the purchases can be refunded.';
 
   @override
   String get lifetimeCanceled => 'Purchase canceled.';
 
   @override
-  String get lifetimeComingSoon => 'Hummlist Lifetime is coming soon.';
+  String get lifetimeComingSoon => 'Snacklist Lifetime is coming soon.';
 
   @override
   String get lifetimeStoreOffline =>
@@ -1575,11 +1575,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lifetimeWeb =>
-      'You can buy Hummlist Lifetime in the iPhone or Android app. It\'s then unlocked here too, for your whole household.';
+      'You can buy Snacklist Lifetime in the iPhone or Android app. It\'s then unlocked here too, for your whole household.';
 
   @override
   String get lifetimeChecking =>
-      'Checking whether your household has Hummlist Lifetime already …';
+      'Checking whether your household has Snacklist Lifetime already …';
 
   @override
   String get lifetimeRefundLink =>
@@ -1590,15 +1590,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refundHelpBody =>
-      'Hummlist Lifetime always belongs to the household it was bought in. Only Apple refunds App Store purchases. For Google Play, ask Google within 48 hours of buying; after that, email us at support@hummlist.com and we\'ll look at your request. Your statutory rights are not affected.';
+      'Snacklist Lifetime always belongs to the household it was bought in. Only Apple refunds App Store purchases. For Google Play, ask Google within 48 hours of buying; after that, email us at support@hummlist.com and we\'ll look at your request. Your statutory rights are not affected.';
 
   @override
   String get refundHelpApple =>
-      'iPhone: open reportaproblem.apple.com, sign in with your Apple Account, choose “Request a refund”, then Hummlist Lifetime.';
+      'iPhone: open reportaproblem.apple.com, sign in with your Apple Account, choose “Request a refund”, then Snacklist Lifetime.';
 
   @override
   String get refundHelpGoogle =>
-      'Android, within 48 hours: open Google Play, tap your profile picture, then “Payments & subscriptions”, “Budget & order history”, choose Hummlist Lifetime and “Report a problem”. After that, email us with the order number (it starts with “GPA.”) or your Google account\'s email address.';
+      'Android, within 48 hours: open Google Play, tap your profile picture, then “Payments & subscriptions”, “Budget & order history”, choose Snacklist Lifetime and “Report a problem”. After that, email us with the order number (it starts with “GPA.”) or your Google account\'s email address.';
 
   @override
   String get refundHelpReason =>
@@ -1615,11 +1615,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get joinTargetUnlocked =>
-      'This household has Hummlist Lifetime. You don\'t need to buy anything.';
+      'This household has Snacklist Lifetime. You don\'t need to buy anything.';
 
   @override
   String get joinRefundLink =>
-      'Bought Hummlist Lifetime recently? How to request a refund';
+      'Bought Snacklist Lifetime recently? How to request a refund';
 
   @override
   String get joinLifetimeRefundLink => 'Ask Apple or Google for a refund';
@@ -1631,7 +1631,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get archivedEmpty => 'You haven\'t archived a household.';
 
   @override
-  String get archivedUnlocked => 'With Hummlist Lifetime';
+  String get archivedUnlocked => 'With Snacklist Lifetime';
 
   @override
   String archivedDeletesOn(DateTime date) {
@@ -1655,14 +1655,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get premiumTitle => 'Hummlist Premium';
+  String get premiumTitle => 'Snacklist Premium';
 
   @override
   String get premiumHeroTitle => 'One buys. Everyone has it.';
 
   @override
   String get premiumHeroBody =>
-      'Hummlist Premium covers your whole household, including everyone who joins later.';
+      'Snacklist Premium covers your whole household, including everyone who joins later.';
 
   @override
   String get premiumBenefitSiri =>
@@ -1673,14 +1673,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Connect AI assistants that support MCP to your list';
 
   @override
-  String get premiumBenefitApi => 'Your own automations with the Hummlist API';
+  String get premiumBenefitApi => 'Your own automations with the Snacklist API';
 
   @override
   String premiumStatusRenews(DateTime date) {
     final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
     final String dateString = dateDateFormat.format(date);
 
-    return 'Hummlist Premium active (yearly, renews on $dateString)';
+    return 'Snacklist Premium active (yearly, renews on $dateString)';
   }
 
   @override
@@ -1688,11 +1688,11 @@ class AppLocalizationsEn extends AppLocalizations {
     final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMMd(localeName);
     final String dateString = dateDateFormat.format(date);
 
-    return 'Hummlist Premium active (yearly, ends on $dateString)';
+    return 'Snacklist Premium active (yearly, ends on $dateString)';
   }
 
   @override
-  String get premiumStatusLifetime => 'Hummlist Premium Lifetime';
+  String get premiumStatusLifetime => 'Snacklist Premium Lifetime';
 
   @override
   String premiumWithVat(String period) {
@@ -1712,11 +1712,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumStatusBeta =>
-      'Free in the beta, until Hummlist Premium launches';
+      'Free in the beta, until Snacklist Premium launches';
 
   @override
   String get premiumChecking =>
-      'Checking whether your household already has Hummlist Premium …';
+      'Checking whether your household already has Snacklist Premium …';
 
   @override
   String get premiumYearlyTitle => 'Yearly';
@@ -1736,7 +1736,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumYearlyTerms =>
-      'Hummlist Premium yearly, 1 year. The plan renews automatically for another year unless you cancel it at least 24 hours before the end of the period. Your Apple or Google account is charged when you confirm the purchase and at every renewal. You can manage and cancel the plan in the App Store\'s or Google Play\'s subscription settings.';
+      'Snacklist Premium yearly, 1 year. The plan renews automatically for another year unless you cancel it at least 24 hours before the end of the period. Your Apple or Google account is charged when you confirm the purchase and at every renewal. You can manage and cancel the plan in the App Store\'s or Google Play\'s subscription settings.';
 
   @override
   String premiumHousehold(String household) {
@@ -1751,7 +1751,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumUnavailable =>
-      'Hummlist Premium is not available right now.';
+      'Snacklist Premium is not available right now.';
 
   @override
   String get premiumTermsLink => 'Terms of Use (EULA)';
@@ -1761,7 +1761,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumUsedElsewhereYearly =>
-      'Your Apple or Google account already pays a yearly plan for another household. Someone else in this household can subscribe to Hummlist Premium.';
+      'Your Apple or Google account already pays a yearly plan for another household. Someone else in this household can subscribe to Snacklist Premium.';
 
   @override
   String get premiumTwoYearly =>
@@ -1769,7 +1769,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumWeb =>
-      'You can buy Hummlist Premium in the iPhone or Android app. It is then unlocked here too, for your whole household.';
+      'You can buy Snacklist Premium in the iPhone or Android app. It is then unlocked here too, for your whole household.';
 
   @override
   String get premiumRefundYearly =>
@@ -1798,18 +1798,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get premiumLifetimeWhileYearly =>
-      'Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn\'t refunded automatically. Only the person who took out the plan can cancel it, in [Manage subscriptions]. Hummlist can\'t cancel it.';
+      'Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn\'t refunded automatically. Only the person who took out the plan can cancel it, in [Manage subscriptions]. Snacklist can\'t cancel it.';
 
   @override
   String get premiumLifetimeWhileYearlySubscriber =>
-      'Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn\'t refunded automatically. You can cancel it in [Manage subscription]. Hummlist can\'t cancel it.';
+      'Your household already has a yearly plan. It keeps running and being billed after the one-time purchase until it is cancelled; the rest of the plan year isn\'t refunded automatically. You can cancel it in [Manage subscription]. Snacklist can\'t cancel it.';
 
   @override
   String get premiumBuyAnyway => 'Buy anyway';
 
   @override
   String get premiumBillingContinues =>
-      'Your Hummlist Premium yearly plan keeps running and is billed to your Apple or Google account until you cancel it. Deleting or leaving doesn\'t cancel it.';
+      'Your Snacklist Premium yearly plan keeps running and is billed to your Apple or Google account until you cancel it. Deleting or leaving doesn\'t cancel it.';
 
   @override
   String get premiumBillingContinuesOther =>
@@ -1822,11 +1822,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumContinueAnyway => 'Continue anyway';
 
   @override
-  String get integrationPremiumTitle => 'Part of Hummlist Premium';
+  String get integrationPremiumTitle => 'Part of Snacklist Premium';
 
   @override
   String get integrationPremiumBody =>
-      'Siri and AI assistants are part of Hummlist Premium. Your connections stay saved and work again as soon as your household has Hummlist Premium.';
+      'Siri and AI assistants are part of Snacklist Premium. Your connections stay saved and work again as soon as your household has Snacklist Premium.';
 
   @override
   String get integrationPremiumSiri => 'Siri on iPhone';
@@ -1839,13 +1839,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Later: Google Assistant and Apple Watch';
 
   @override
-  String get integrationPremiumBuy => 'Unlock Hummlist Premium';
+  String get integrationPremiumBuy => 'Unlock Snacklist Premium';
 
   @override
   String get integrationPremiumSoon => 'Coming soon.';
 
   @override
-  String get integrationPaused => 'Paused: needs Hummlist Premium';
+  String get integrationPaused => 'Paused: needs Snacklist Premium';
 
   @override
   String get apiHeader => 'API';
@@ -1903,7 +1903,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get apiPremium =>
-      'The Hummlist API is part of Hummlist Premium. Your keys stay and work again as soon as your household has Premium.';
+      'The Snacklist API is part of Snacklist Premium. Your keys stay and work again as soon as your household has Premium.';
 
   @override
   String get accessTokensHint =>
@@ -1971,7 +1971,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tipAmountsBody =>
-      'Write “2 cucumbers” or “milk 2 l” and Hummlist picks up the amount.';
+      'Write “2 cucumbers” or “milk 2 l” and Snacklist picks up the amount.';
 
   @override
   String get tipDismiss => 'Hide tip';
@@ -2080,12 +2080,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String leaveLifetimeEnds(String household) {
-    return '“$household” has Hummlist Lifetime. You are the last member: if you leave, the household is deleted. Hummlist Lifetime ends with it, because a purchase belongs to its household.';
+    return '“$household” has Snacklist Lifetime. You are the last member: if you leave, the household is deleted. Snacklist Lifetime ends with it, because a purchase belongs to its household.';
   }
 
   @override
   String leaveArchiveOffer(String household) {
-    return '“$household” has Hummlist Lifetime. You are the last member. Archive the household instead of deleting it: the list and Hummlist Lifetime are kept, and you can bring it back under “More” later. If you don\'t bring it back within 24 months, it is deleted.';
+    return '“$household” has Snacklist Lifetime. You are the last member. Archive the household instead of deleting it: the list and Snacklist Lifetime are kept, and you can bring it back under “More” later. If you don\'t bring it back within 24 months, it is deleted.';
   }
 
   @override
@@ -2186,16 +2186,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String inviteShareKind(String kind, String name, String link, String code) {
     String _temp0 = intl.Intl.selectLogic(kind, {
       'partner':
-          'I\'ve set up our shopping list in Hummlist. Join me: $link · Code: $code',
+          'I\'ve set up our shopping list in Snacklist. Join me: $link · Code: $code',
       'family':
-          'Our family shopping list “$name” is on Hummlist now. Join us: $link · Code: $code',
+          'Our family shopping list “$name” is on Snacklist now. Join us: $link · Code: $code',
       'flat':
-          'Our flat\'s shopping list “$name” is on Hummlist now. Join us: $link · Code: $code',
+          'Our flat\'s shopping list “$name” is on Snacklist now. Join us: $link · Code: $code',
       'club':
-          'We\'re planning the shopping for “$name” in Hummlist. Join in: $link · Code: $code',
+          'We\'re planning the shopping for “$name” in Snacklist. Join in: $link · Code: $code',
       'solo':
-          'I\'m sharing my shopping list “$name” in Hummlist with you: $link · Code: $code',
-      'other': 'Join our Hummlist household: $link · Code: $code',
+          'I\'m sharing my shopping list “$name” in Snacklist with you: $link · Code: $code',
+      'other': 'Join our Snacklist household: $link · Code: $code',
     });
     return '$_temp0';
   }
@@ -2463,14 +2463,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hintSiriBody =>
-      'Say “Hey Siri, add to Hummlist” when your hands are full.';
+      'Say “Hey Siri, add to Snacklist” when your hands are full.';
 
   @override
   String get hintWidgetTitle => 'Your list on the home screen';
 
   @override
   String get hintWidgetBody =>
-      'Add the Hummlist widget by pressing and holding your phone\'s home screen.';
+      'Add the Snacklist widget by pressing and holding your phone\'s home screen.';
 
   @override
   String get hintOwnHouseholdTitle => 'A list of your own';

@@ -75,7 +75,7 @@ Deno.test('locked: initialize and tools/list answer without asking the gate', as
     clientInfo: { name: 'test', version: '1' },
   }));
   assertEquals(init.status, 200);
-  assertEquals((await message(init)).result.serverInfo.name, 'hummlist');
+  assertEquals((await message(init)).result.serverInfo.name, 'snacklist');
   const list = await s.handle(rpc('tools/list'));
   assertEquals(list.status, 200);
   assertEquals(
@@ -133,8 +133,8 @@ Deno.test('locked: English for a client that prefers it', async () => {
     rpc('tools/call', { name: 'list_items', arguments: {} }, 'en-US,en;q=0.9,de;q=0.5'),
   );
   assertEquals((await message(res)).result.content[0]?.text, premiumRequired.en);
-  assert(premiumRequired.en.includes('Hummlist Premium'));
-  assert(premiumRequired.de.includes('Hummlist Premium'));
+  assert(premiumRequired.en.includes('Snacklist Premium'));
+  assert(premiumRequired.de.includes('Snacklist Premium'));
 });
 
 Deno.test('the check fails: no premium answer (an error, like any database failure)', async () => {

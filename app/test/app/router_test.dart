@@ -84,7 +84,7 @@ void main() {
     (household, '/more/account?invite=ABCD2345', '/join/ABCD2345'),
     (SignedOut(), '/more/account', '/login?next=%2Fmore%2Faccount'),
     (household, '/more/settings', null),
-    // Hummlist Lifetime is for a household: never signed out or before one
+    // Snacklist Lifetime is for a household: never signed out or before one
     // (job 66: there after sign-in and onboarding).
     (household, '/more/lifetime', null),
     (SignedOut(), '/more/lifetime', '/login?next=%2Fmore%2Flifetime'),

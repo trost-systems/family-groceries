@@ -12,7 +12,7 @@ class const HlGroup({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Padding(
       padding: EdgeInsets.fromLTRB(HlSpace.s4, top, HlSpace.s4, 0),
       child: HlSticker(
@@ -54,7 +54,7 @@ class const HlRowHex(
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return PointyHex(
       face: face,
       contour: t.border,

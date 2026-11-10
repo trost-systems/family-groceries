@@ -40,9 +40,9 @@ done
 # grammar (job 97), and no language may train an unresolved InfoPlist.strings variable as the
 # name (job 71).
 ssu="$app/Metadata.appintents/root.ssu.yaml"
-grep -q Hamlist "$ssu" || { echo "ios: $ssu does not train the German alternative app names (de.lproj/InfoPlist.strings)" >&2; exit 1; }
-if grep -n -i -E "humm ?liste|ham liste" "$ssu"; then echo "ios: $ssu trains a German app name ending in Liste" >&2; exit 1; fi
-if grep -n HUMMLIST_NAME "$ssu"; then echo "ios: $ssu trains a variable as the app name; give every lproj an InfoPlist.strings" >&2; exit 1; fi
+grep -q -E 'Sn(ä|\\u00[Ee]4|\\x[Ee]4)cklist' "$ssu" || { echo "ios: $ssu does not train the German alternative app names (de.lproj/InfoPlist.strings)" >&2; exit 1; }
+if grep -n -i -E "sn(a|ä|e)ck ?-?liste" "$ssu"; then echo "ios: $ssu trains a German app name ending in Liste" >&2; exit 1; fi
+if grep -n SNACKLIST_NAME "$ssu"; then echo "ios: $ssu trains a variable as the app name; give every lproj an InfoPlist.strings" >&2; exit 1; fi
 # App Store Connect wants SiriKit example phrases in every language for each declared intent
 # (ITMS-90626): the built app must carry them, not only the source tree.
 "$REPO_ROOT/scripts/siri-vocabulary.py" "$app"
@@ -104,7 +104,7 @@ for r in json.load(sys.stdin)["runtimes"]:
 read -r runtime devicetype <<<"$(storekit_runtime)"
 # Downloading it here would cost several GB inside the job's 40 minutes: fail and say so.
 [[ -n ${runtime:-} ]] || { echo "ios: the runner image has no iOS $storekit_ios simulator runtime for the StoreKit tests; run scripts/ios-storekit-probe.sh on it to find a runtime whose storekitd takes Snacklist.storekit and set storekit_ios (DECISIONS 127)" >&2; exit 1; }
-storekit_udid="$(xcrun simctl create "Hummlist StoreKit" "$devicetype" "$runtime")"
+storekit_udid="$(xcrun simctl create "Snacklist StoreKit" "$devicetype" "$runtime")"
 # Created and booted after the main tests: xcodebuild there lost its own simulator ("Unable to find
 # a device") while this one was being created and booted (job 127).
 xcrun simctl boot "$storekit_udid"

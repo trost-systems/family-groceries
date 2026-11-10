@@ -9,8 +9,8 @@
 			<string>INAddTasksIntent</string>
 			<key>IntentExamples</key>
 			<array>
-				<string>Add milk to my shopping list in Hummlist</string>
-				<string>Add bread to Hummlist</string>
+				<string>Add milk to my shopping list in Snacklist</string>
+				<string>Add bread to Snacklist</string>
 			</array>
 		</dict>
 		<dict>
@@ -18,8 +18,8 @@
 			<string>INSearchForNotebookItemsIntent</string>
 			<key>IntentExamples</key>
 			<array>
-				<string>Show my shopping list in Hummlist</string>
-				<string>What's on Hummlist?</string>
+				<string>Show my shopping list in Snacklist</string>
+				<string>What's on Snacklist?</string>
 			</array>
 		</dict>
 	</array>

@@ -65,7 +65,7 @@ test('production leaves out a guide the stores do not have yet, like a draft', a
   assert.ok(!htmlRoutes(outDir).includes(NEU) && !routes.includes(NEU), 'no page');
   assert.ok(!hrefs(page('/de/anleitungen')).includes(NEU), 'not on the index');
   const en = page(NEW);
-  assert.deepEqual(alternates(en), { en: `https://hummlist.com${NEW}`, 'x-default': `https://hummlist.com${NEW}` });
+  assert.deepEqual(alternates(en), { en: `https://snacklist.app${NEW}`, 'x-default': `https://snacklist.app${NEW}` });
   assert.equal(en.querySelector('header nav.lang a').getAttribute('href'), '/de/anleitungen', 'the switch falls back to the index');
   for (const route of htmlRoutes(outDir)) assert.doesNotMatch(readFileSync(join(outDir, route === '/' ? 'index.html' : `${route.slice(1)}.html`), 'utf8'), /noch nicht im Store|not in the stores yet/, route);
   const res = await serve(outDir, [NEU, NEW]);

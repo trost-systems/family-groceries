@@ -1088,7 +1088,7 @@ void main() {
               find.descendant(of: row('Tee'), matching: find.byType(Material)),
             )
             .color,
-        HummlistColors.of(Theme.of(tester.element(row('Tee'))).brightness)
+        SnacklistColors.of(Theme.of(tester.element(row('Tee'))).brightness)
             .honeySoft,
         reason: 'new is honey; mint is done',
       );
@@ -1440,7 +1440,7 @@ void main() {
       expect(shadows, HlSticker.shadow(Brightness.dark, StickerDepth.s));
       for (final s in shadows) {
         expect(s.blurRadius, 0, reason: 'no glow: one hard 3D edge');
-        expect(s.color, HummlistColors.dark.border);
+        expect(s.color, SnacklistColors.dark.border);
       }
     });
 

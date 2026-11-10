@@ -19,7 +19,7 @@ class const CatalogHome({super.key}) extends StatelessWidget {
             spacing: HlSpace.s4,
             children: [
               Text(
-                'Hummlist Widgetbook',
+                'Snacklist Widgetbook',
                 style: text.displaySmall?.copyWith(
                   fontFamily: HlFont.display,
                   fontWeight: FontWeight.w800,

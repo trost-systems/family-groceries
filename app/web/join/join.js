@@ -14,7 +14,7 @@ const codePattern = /^[A-HJ-NP-Z2-9]{8}$/;
 
 const texts = {
   de: {
-    title: 'Einladung · Hummlist',
+    title: 'Einladung · Snacklist',
     invitedBy: (inviter, household) => `${inviter} lädt dich zu „${household}“ ein`,
     invited: (household) => `Du bist zu „${household}“ eingeladen`,
     members: (n) => (n === 1 ? '1 Mitglied' : `${n} Mitglieder`),
@@ -37,7 +37,7 @@ const texts = {
     error: ['Einladung nicht geladen', 'Prüf deine Verbindung und lade die Seite neu. Beitreten geht auch direkt.'],
   },
   en: {
-    title: 'Invite · Hummlist',
+    title: 'Invite · Snacklist',
     invitedBy: (inviter, household) => `${inviter} invites you to “${household}”`,
     invited: (household) => `You’re invited to “${household}”`,
     members: (n) => (n === 1 ? '1 member' : `${n} members`),

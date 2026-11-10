@@ -1,0 +1,20 @@
+[23:56:05.693Z] ok tab title "Snacklist"
+[23:56:06.664Z] ok start (de): no "Hummlist" outside hummlist.com links
+[23:56:06.664Z] ok start (de): names Snacklist
+[23:56:07.688Z] ok login (de): no "Hummlist" outside hummlist.com links
+[23:56:07.688Z] ok login (de): names Snacklist
+[23:56:10.549Z] ok consent title "Darf Snacklist Nutzungsdaten erfassen?"
+[23:56:10.691Z] ok consent (de): no "Hummlist" outside hummlist.com links
+[23:56:10.692Z] ok consent (de): names Snacklist
+[23:56:13.475Z] ok More (de): no "Hummlist" outside hummlist.com links
+[23:56:13.490Z] GET /manifest.json 200: { "name": "Snacklist", "short_name": "Snacklist", "start_url": ".", "display": "standalone", "background_color": "#f7f7f2", "theme_color": "#1b3fae", "description": "Gemeinsame Einkaufsliste", "orientation": "portrait-primary", "prefer_related_applications": false, "icons": [ { "src": "icons/Icon-192.png", "sizes": "192x192", "type": "image/png" }, { "src": "icons/Icon-512.png", "sizes": "512x512"
+[23:56:13.494Z] GET /.well-known/apple-app-site-association 200: { "applinks": { "details": [ { "appIDs": ["VCZSHMZY25.com.snacklist.app", "VCZSHMZY25.com.hummlist.app"], "components": [ { "/": "/list", "comment": "The list." }, { "/": "/add", "comment": "The list with the add sheet open." }, { "/": "/stores/*", "comment": "The list at one store's section." }, { "/": "/more", "comment": "The More tab." }, { "/": "/more/*", "comment": "A page of the More tab, e.
+[23:56:13.498Z] GET /.well-known/assetlinks.json 200: [ { "relation": ["delegate_permission/common.handle_all_urls"], "target": { "namespace": "android_app", "package_name": "com.snacklist.app", "sha256_cert_fingerprints": [ "27:0E:40:2B:04:1D:4D:C8:E7:65:10:C6:B4:36:FE:E8:51:D9:08:E6:00:43:89:7F:4E:AF:B9:2F:BC:7B:E4:2A", "2C:9B:48:6D:AF:1B:94:AB:3F:92:38:49:CC:0F:C3:42:EF:09:64:2C:32:40:74:97:69:25:61:74:0C:BA:84:F5" ] } }, { "relation": ["delegate_
+[23:56:13.501Z] ok manifest name/short_name Snacklist/Snacklist
+[23:56:13.503Z] ok AASA appIDs VCZSHMZY25.com.snacklist.app,VCZSHMZY25.com.hummlist.app
+[23:56:13.510Z] ok assetlinks packages com.snacklist.app,com.hummlist.app
+[23:56:13.545Z] ok konto-loeschen title "Snacklist: Konto und Daten löschen"
+[23:56:13.739Z] ok konto-loeschen: no "Hummlist" outside addresses and links
+[23:56:15.357Z] ok login (en): no "Hummlist" outside hummlist.com links
+[23:56:15.358Z] ok login (en): names Snacklist
+[23:56:15.397Z] PASS

@@ -25,7 +25,7 @@ class FakeHouseholds(final FakeAuth fakeAuth)
   final memberships = <String, List<String>>{};
   final defaults = <String, String>{};
 
-  /// Households whose Hummlist Premium ends with their last member.
+  /// Households whose Snacklist Premium ends with their last member.
   final unlocked = <String>{};
 
   /// Invite code to the household it leads to.

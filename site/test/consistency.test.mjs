@@ -10,18 +10,18 @@ const REPO = join(SITE_DIR, '..');
 const APP_WEB = join(REPO, 'app', 'web');
 const contentFiles = () => readdirSync(CONTENT_DIR, { recursive: true }).filter((f) => f.endsWith('.md'));
 
-// app.hummlist.com serves files from app/web as they are (vercel.json: cleanUrls false) and answers
+// app.snacklist.app serves files from app/web as they are (vercel.json: cleanUrls false) and answers
 // every other path with the Flutter app. A link to a static page there must name the real file,
 // e.g. /konto-loeschen.html, or the reader lands in the app instead (review of job 24).
-test('links to app.hummlist.com name a file the app host really serves', () => {
+test('links to app.snacklist.app name a file the app host really serves', () => {
   const links = contentFiles().flatMap((file) =>
-    [...readFileSync(join(CONTENT_DIR, file), 'utf8').matchAll(/https:\/\/app\.hummlist\.com(\/[^\s)\]"']*[^\s)\]"'.,])?/g)]
+    [...readFileSync(join(CONTENT_DIR, file), 'utf8').matchAll(/https:\/\/app\.snacklist\.app(\/[^\s)\]"']*[^\s)\]"'.,])?/g)]
       .map((m) => ({ file, path: (m[1] ?? '/').split(/[?#]/)[0] })),
   );
   assert.ok(links.some((l) => l.path === '/konto-loeschen.html'), 'the help page links the deletion page');
   for (const { file, path } of links) {
     if (path === '/') continue;
-    assert.ok(existsSync(join(APP_WEB, path)), `${file}: https://app.hummlist.com${path} is not a file in app/web (the app would open instead)`);
+    assert.ok(existsSync(join(APP_WEB, path)), `${file}: https://app.snacklist.app${path} is not a file in app/web (the app would open instead)`);
   }
 });
 

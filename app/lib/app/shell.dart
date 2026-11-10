@@ -228,7 +228,7 @@ class const _TabBand({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final open = band == _Band.hint;
     final short = hlMotion(context, HlDuration.short);
     final hint = DefaultTextStyle.of(context).style
@@ -335,7 +335,7 @@ class const _Pill({
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final t = HummlistColors.of(brightness);
+    final t = SnacklistColors.of(brightness);
     return MediaQuery.withClampedTextScaling(
       // Large text still fits the 44 high indicator.
       maxScaleFactor: 1.5,
@@ -411,7 +411,7 @@ class _TabState() extends State<_Tab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final _Tab(:destination, :selected, :onTap) = widget;
     final color = selected ? t.onHoney : t.text;
     final indicator = Container(

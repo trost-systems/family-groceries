@@ -454,7 +454,7 @@ Deno.test('open variants join the exact duplicates in one sentence, each name on
   );
   assertEquals(
     confirmation([item('Karotten', false, ['Möhren']), item('Milch', true)], 'en'),
-    'Added Karotten to Hummlist. Already on the list: Milch and Möhren.',
+    'Added Karotten to Snacklist. Already on the list: Milch and Möhren.',
   );
   assertEquals(
     confirmation([item('Milch', true), item('Eier', true)], 'en'),

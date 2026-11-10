@@ -19,7 +19,7 @@ final class const FateKept(
 final class const FateDeleted(
   final String householdName, {
 
-  /// It has Hummlist Premium now, which ends with it (`leaves_unlocked`).
+  /// It has Snacklist Premium now, which ends with it (`leaves_unlocked`).
   final bool unlocked = false,
 }) extends HouseholdFate;
 
@@ -35,11 +35,11 @@ class const AccountFate(
   final List<HouseholdFate> households, {
   final List<ArchivedFate> archived = const [],
 }) {
-  /// The households deleted with the account that have Hummlist Premium.
+  /// The households deleted with the account that have Snacklist Premium.
   Iterable<FateDeleted> get deletedPremium =>
       households.whereType<FateDeleted>().where((h) => h.unlocked);
 
-  /// Hummlist Premium of some household ends with the account.
+  /// Snacklist Premium of some household ends with the account.
   bool get endsPremium =>
       deletedPremium.isNotEmpty || archived.any((a) => a.unlocked);
 }

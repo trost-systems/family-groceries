@@ -1,4 +1,4 @@
-/// The paths of the app URL (app.hummlist.com) that open the installed app
+/// The paths of the app URL (app.snacklist.app) that open the installed app
 /// instead of the browser (docs/DEEP_LINKS.md): iOS universal links
 /// (`web/.well-known/apple-app-site-association`) and Android App Links
 /// (the verified intent filter in `AndroidManifest.xml`), both checked

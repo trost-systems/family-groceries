@@ -145,7 +145,7 @@ void main() {
       // The store divider's rule is the store's only line between sections.
       test('store rule (brand) on surface ≥ 3', () {
         expect(
-          contrastRatio(HummlistColors.of(brightness).brand, scheme.surface),
+          contrastRatio(SnacklistColors.of(brightness).brand, scheme.surface),
           greaterThanOrEqualTo(3),
         );
       });

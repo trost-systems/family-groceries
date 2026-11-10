@@ -102,14 +102,14 @@ void main() {
     expect(find.text('Mehr'), findsOneWidget);
     const labels = [
       'Konto',
-      'Hummlist Premium',
+      'Snacklist Premium',
       'Partner einladen',
       'Anderem Haushalt beitreten',
       'Zugänge',
       'Einstellungen',
       'Tipps',
       'Feedback senden',
-      'Hummlist bewerten',
+      'Snacklist bewerten',
       'Hilfe & Kontakt',
       'Impressum',
       'Datenschutzerklärung',
@@ -131,14 +131,14 @@ void main() {
     expect(find.text('More'), findsOneWidget);
     const labels = [
       'Account',
-      'Hummlist Premium',
+      'Snacklist Premium',
       'Invite your partner',
       'Join another household',
       'Access',
       'Settings',
       'Tips',
       'Send feedback',
-      'Rate Hummlist',
+      'Rate Snacklist',
       'Help & contact',
       'Imprint',
       'Privacy policy',
@@ -201,7 +201,7 @@ void main() {
       label('more-licenses')?.fontWeight,
     );
     expect(glyph('more-sign-out'), glyph('more-licenses'));
-    expect(glyph('more-sign-out'), isNot(HummlistColors.light.error));
+    expect(glyph('more-sign-out'), isNot(SnacklistColors.light.error));
   });
 
   testWidgets('the version sits below every row', (tester) async {

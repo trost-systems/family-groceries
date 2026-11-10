@@ -79,7 +79,7 @@ const claimBackoff = [
   Duration(seconds: 15),
 ];
 
-/// Hummlist Premium's purchase (yearly or Lifetime) and restore. It talks to
+/// Snacklist Premium's purchase (yearly or Lifetime) and restore. It talks to
 /// RevenueCat only when the user taps Buy or Restore ([buy], [restore]) for
 /// a plan the server's rows allow ([Entitlements.canOffer]): building it, app
 /// start and opening the Premium page reach not RevenueCat (Legal Review

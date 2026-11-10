@@ -49,5 +49,5 @@ test('a missing agent file fails', () => catches({ 'robots.txt': null }, 'agent-
 test('a sitemap URL that is not served fails', () =>
   catches({ 'sitemap.xml': (xml) => xml.replace('/en/guides/claude<', '/en/guides/nope<') }, 'sitemap', /\/en\/guides\/nope answers 404/));
 test('a sitemap URL serving another canonical URL fails', () =>
-  catches({ 'en/privacy.html': (html) => html.replace('<link rel="canonical" href="https://hummlist.com/en/privacy">', '<link rel="canonical" href="https://hummlist.com/en/privacy-old">') }, 'sitemap', /canonical URL is https:\/\/hummlist\.com\/en\/privacy-old/));
+  catches({ 'en/privacy.html': (html) => html.replace('<link rel="canonical" href="https://snacklist.app/en/privacy">', '<link rel="canonical" href="https://snacklist.app/en/privacy-old">') }, 'sitemap', /canonical URL is https:\/\/snacklist\.app\/en\/privacy-old/));
 test('with the public API on, a missing openapi.yaml fails', () => catches({}, 'openapi', /\/openapi\.yaml answers 404/, true));

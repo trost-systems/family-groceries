@@ -69,9 +69,9 @@ test('the German and English support pages link each other', () => {
   assert.equal(page('/support').querySelector('header nav.lang a').getAttribute('href'), '/en/support');
   assert.equal(page('/en/support').querySelector('header nav.lang a').getAttribute('href'), '/support');
   assert.deepEqual(alternates(page('/support')), {
-    de: 'https://hummlist.com/support',
-    en: 'https://hummlist.com/en/support',
-    'x-default': 'https://hummlist.com/support',
+    de: 'https://snacklist.app/support',
+    en: 'https://snacklist.app/en/support',
+    'x-default': 'https://snacklist.app/support',
   });
 });
 

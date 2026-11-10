@@ -14,7 +14,7 @@ async function openMore(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
 }
 
-test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit on More; licenses name Hummlist; sign-out ends at the login', async ({ page }) => {
+test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit on More; licenses name Snacklist; sign-out ends at the login', async ({ page }) => {
   const email = newEmail('more');
   await signUpWithHousehold(page, email, { stores: ['Supermarkt', 'Drogerie'] });
   await openMore(page);
@@ -111,8 +111,8 @@ test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit 
   for (const target of order) ys.push(await top(target));
   expect(ys, 'help, then the Rechtliches label, its four rows, then Abmelden').toEqual([...ys].sort((a, b) => a - b));
 
-  await page.context().route('https://hummlist.com/**', (route) =>
-    route.fulfill({ contentType: 'text/html', body: '<title>hummlist.com</title>' }));
+  await page.context().route('https://snacklist.app/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<title>snacklist.app</title>' }));
   async function opensSitePage(name: string, url: string) {
     const row = page.getByRole('button', { name, exact: true });
     await wheelTo(page, row);
@@ -122,13 +122,13 @@ test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit 
     await (await popup).close();
     await expect(page, 'the app stays on More').toHaveURL(/\/more$/);
   }
-  await opensSitePage('Datenschutzerklärung', 'https://hummlist.com/datenschutz');
+  await opensSitePage('Datenschutzerklärung', 'https://snacklist.app/datenschutz');
   // Apple's EULA on iOS; the web build links the support page until there are terms of our own.
-  await opensSitePage('Nutzungsbedingungen (EULA)', 'https://hummlist.com/support');
+  await opensSitePage('Nutzungsbedingungen (EULA)', 'https://snacklist.app/support');
 
   await page.getByRole('button', { name: 'Lizenzen', exact: true }).click();
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'the licenses page names the app and lists packages' })
-    .toMatch(/Hummlist[\s\S]*Flutter[\s\S]*bloc/);
+    .toMatch(/Snacklist[\s\S]*Flutter[\s\S]*bloc/);
   await screenshot(page, 'more-02-licenses');
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more$/);
@@ -143,14 +143,14 @@ test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit 
 test('the Impressum is two taps from the list: Mehr, Impressum (DDG §5); old /more/legal links land on More', async ({ page }) => {
   await signUpWithHousehold(page, newEmail('imprint'));
   await expect(addField(page)).toBeVisible();
-  await page.context().route('https://hummlist.com/**', (route) =>
-    route.fulfill({ contentType: 'text/html', body: '<title>hummlist.com</title>' }));
+  await page.context().route('https://snacklist.app/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<title>snacklist.app</title>' }));
   await moreTab(page).click();
   const imprint = page.getByRole('button', { name: 'Impressum', exact: true });
   await wheelTo(page, imprint);
   const popup = page.waitForEvent('popup');
   await imprint.click();
-  expect((await popup).url(), 'the imprint on the site, in a new tab').toBe('https://hummlist.com/impressum');
+  expect((await popup).url(), 'the imprint on the site, in a new tab').toBe('https://snacklist.app/impressum');
   await (await popup).close();
   await expect(page, 'the app stays on More').toHaveURL(/\/more$/);
 

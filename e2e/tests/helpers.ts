@@ -810,14 +810,14 @@ export async function openMore(page: Page, entry: string): Promise<void> {
 }
 
 /**
- * The Hummlist Premium page by its link (`/more/lifetime`), the way the integration settings open
+ * The Snacklist Premium page by its link (`/more/lifetime`), the way the integration settings open
  * it: More lists it only once Premium may be offered or the household has it (job 64), and the
  * switch `premium_offer` is off on the e2e stack.
  */
 export async function openPremium(page: Page): Promise<void> {
   await page.goto('/more/lifetime');
   await expect(page).toHaveURL(/\/more\/lifetime$/);
-  await expect(page.getByText('Hummlist Premium', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Snacklist Premium', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
 }
 
 const inviteCode = /^Code [A-HJ-NP-Z2-9]{8}$/;

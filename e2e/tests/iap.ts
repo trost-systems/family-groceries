@@ -91,7 +91,7 @@ export async function claim(email: string, transactionId: string, householdId?: 
 }
 
 /**
- * [email] buys Hummlist Lifetime for [household] (their default unless named): the claim, then
+ * [email] buys Snacklist Lifetime for [household] (their default unless named): the claim, then
  * RevenueCat's webhook.
  */
 export async function buy(email: string, transactionId: string, household?: string): Promise<string> {

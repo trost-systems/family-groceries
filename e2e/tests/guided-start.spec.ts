@@ -177,7 +177,7 @@ test('the X: sign in instead keeps the draft for later; discard starts over with
 
   await leave(page, 'Stattdessen anmelden');
   await expect(page).toHaveURL(/\/login$/);
-  await page.getByRole('button', { name: "Neu bei Hummlist? Los geht's", exact: true }).click();
+  await page.getByRole('button', { name: "Neu bei Snacklist? Los geht's", exact: true }).click();
   await expect(page, 'the draft resumes').toHaveURL(/\/start\/stores$/);
 
   await leave(page, 'Fortschritt verwerfen');

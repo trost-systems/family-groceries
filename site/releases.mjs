@@ -155,7 +155,7 @@ export function parseRecord(text, source = 'releases/releases.json') {
   }
   c.object(data, '$', ['project', 'identities', 'releases']);
   const project = c.object(data.project, 'project', ['name', 'repo', 'day_zero']);
-  c.matches(project.name === 'Hummlist', project.name, 'project.name', '"Hummlist"');
+  c.matches(project.name === 'Snacklist', project.name, 'project.name', '"Snacklist"');
   c.matches(/^[\w.-]+\/[\w.-]+$/.test(c.string(project.repo, 'project.repo')), project.repo, 'project.repo', 'owner/name');
   c.matches(isDate(project.day_zero), project.day_zero, 'project.day_zero', 'a date (YYYY-MM-DD)');
 

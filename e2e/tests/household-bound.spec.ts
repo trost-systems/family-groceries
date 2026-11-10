@@ -6,7 +6,7 @@ import {
 } from './helpers';
 import { archiveSwitchOn, buy, householdOf, report } from './iap';
 
-// Job 43: Hummlist Lifetime is household-bound (docs/PURCHASES.md, model A). Purchases are signed
+// Job 43: Snacklist Lifetime is household-bound (docs/PURCHASES.md, model A). Purchases are signed
 // by the local stack's App Store stand-in and verified by the real function, as in
 // purchases.spec.ts; the web shows what every member sees.
 
@@ -20,9 +20,9 @@ const newPage = async (browser: Browser) => {
 };
 
 /** The status tile: its title says which Premium the household has (job 49). */
-const unlocked = (page: Page) => page.getByText(/^Hummlist Premium (Lifetime|aktiv|über)/);
+const unlocked = (page: Page) => page.getByText(/^Snacklist Premium (Lifetime|aktiv|über)/);
 const buyButton = (page: Page) => page.getByRole('button', { name: /Weiter zum Kauf|kaufen/ });
-const BOUGHT_TWICE = /^Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft\./;
+const BOUGHT_TWICE = /^Euer Haushalt hat Snacklist Lifetime mehr als einmal gekauft\./;
 
 async function inviteCode(email: string): Promise<string> {
   const { data, error } = await (await apiAs(email)).rpc('create_invite', {
@@ -34,7 +34,7 @@ async function inviteCode(email: string): Promise<string> {
 
 /**
  * Leaves the [shown] household from More's household page (job 169b), as its last member with
- * Hummlist Lifetime: the dialog offers the archive (the e2e build's HOUSEHOLD_ARCHIVE), and
+ * Snacklist Lifetime: the dialog offers the archive (the e2e build's HOUSEHOLD_ARCHIVE), and
  * [choice] answers it. Ends on the list of another household.
  */
 async function leaveLastWithLifetime(page: Page, shown: string, choice: 'Löschen und verlassen' | 'Archivieren und verlassen', shot: string) {
@@ -69,15 +69,15 @@ test('joining an unlocked household: nothing to buy, the refund help; the purcha
   // Ben opens Anna's invite link as the last member of his unlocked household. Joining adds a
   // household (job 169b), so the join screen no longer offers to archive or delete his own.
   await ben.goto(invitePath(await inviteCode(annaEmail)));
-  await expect(ben.getByText('Dieser Haushalt hat Hummlist Lifetime. Du musst nichts kaufen.')).toBeVisible();
+  await expect(ben.getByText('Dieser Haushalt hat Snacklist Lifetime. Du musst nichts kaufen.')).toBeVisible();
   await expect(ben.getByText(/Archiviere den Haushalt/), 'nothing about his own household').toHaveCount(0);
   const refundLink = ben.getByRole('button', { name: /vor Kurzem gekauft\? So forderst du den Kauf zurück/ });
   await expect(refundLink).toBeVisible();
   await screenshot(ben, 'job43-join-unlocked-de-390');
   await refundLink.click();
   await expect(ben.getByText('Kauf zurückfordern', { exact: true })).toBeVisible();
-  await expect(ben.getByText(/^Hummlist Lifetime gehört immer zu dem Haushalt, in dem es gekauft wurde\. Käufe im App Store erstattet nur Apple\./)).toBeVisible();
-  await expect(ben.getByRole('link', { name: 'Mehr in den häufigen Fragen' })).toHaveAttribute('href', 'https://hummlist.com/support');
+  await expect(ben.getByText(/^Snacklist Lifetime gehört immer zu dem Haushalt, in dem es gekauft wurde\. Käufe im App Store erstattet nur Apple\./)).toBeVisible();
+  await expect(ben.getByRole('link', { name: 'Mehr in den häufigen Fragen' })).toHaveAttribute('href', 'https://snacklist.app/support');
   await expect(ben.getByRole('link', { name: 'Bei Apple anfragen' })).toHaveAttribute('href', 'https://reportaproblem.apple.com/');
   await expect(ben.getByRole('link', { name: 'Bei Google anfragen' })).toHaveAttribute(
     'href',
@@ -120,7 +120,7 @@ test('a joiner into a locked household is told nothing; a household bought twice
   await dirk.goto(invitePath(await inviteCode(caraEmail)));
   await expect(dirk.getByRole('button', { name: 'Haushalt beitreten', exact: true })).toBeVisible();
   await expect(dirk.getByText(/Du musst nichts kaufen/)).toHaveCount(0);
-  await expect(dirk.getByText(/Hummlist Lifetime endet/)).toHaveCount(0);
+  await expect(dirk.getByText(/Snacklist Lifetime endet/)).toHaveCount(0);
   await dirk.getByRole('button', { name: 'Haushalt beitreten', exact: true }).click();
   await expect(dirk).toHaveURL(/\/$/);
 
@@ -168,7 +168,7 @@ test('the last member archives an unlocked household, its purchase stays its own
   deletes.setMonth(deletes.getMonth() + 24);
   // In the browser's zone (playwright.config.ts): on a UTC runner just before midnight the day differs.
   const date = deletes.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Berlin' });
-  await expect(frank.getByRole('group', { name: new RegExp(`Mit Hummlist Lifetime\\s+Wird am ${date} gelöscht$`) }))
+  await expect(frank.getByRole('group', { name: new RegExp(`Mit Snacklist Lifetime\\s+Wird am ${date} gelöscht$`) }))
     .toBeVisible();
   await screenshot(frank, 'job43-archived-de-390');
   await screenshot(frank, 'job47-archived-deletes-de-390');
@@ -190,12 +190,12 @@ test('the web says nothing about buying before sales start, also in English', as
   await signUpWithHousehold(page, email);
   await openTab(page, 'Mehr');
   await expect(page.getByRole('button', { name: 'Konto', exact: false }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Hummlist Premium/ }), 'not listed before the launch (job 64)')
+  await expect(page.getByRole('button', { name: /^Snacklist Premium/ }), 'not listed before the launch (job 64)')
     .toHaveCount(0);
   await openPremium(page);
   // Job 87, Legal Review's final texts: nothing about buying before sales start (premium_offer off).
-  await expect(page.getByText('Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.')).toBeVisible();
-  await expect(page.getByText(/^Hummlist Premium kaufst du in der iPhone- oder Android-App\./)).toHaveCount(0);
+  await expect(page.getByText('Snacklist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.')).toBeVisible();
+  await expect(page.getByText(/^Snacklist Premium kaufst du in der iPhone- oder Android-App\./)).toHaveCount(0);
   await expect(buyButton(page)).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Doppelt gekauft\?/ }), 'no refund link before sales start (N-69)')
     .toHaveCount(0);
@@ -219,8 +219,8 @@ test.describe('in English', () => {
     await page.getByRole('button', { name: 'Later', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeVisible();
     await page.goto('/more/lifetime');
-    await expect(page.getByText('Hummlist Premium covers your whole household, including everyone who joins later.')).toBeVisible();
-    await expect(page.getByText(/^You can buy Hummlist Premium in the iPhone or Android app\./)).toHaveCount(0);
+    await expect(page.getByText('Snacklist Premium covers your whole household, including everyone who joins later.')).toBeVisible();
+    await expect(page.getByText(/^You can buy Snacklist Premium in the iPhone or Android app\./)).toHaveCount(0);
     await screenshot(page, 'job43-web-en-390');
     // Before sales start the refund help shows only to a household that bought twice (N-69).
     await expect(page.getByRole('button', { name: /^Bought it twice\?/ })).toHaveCount(0);
@@ -237,7 +237,7 @@ test.describe('in English', () => {
 });
 
 // Job 68: deleting the account as the last member of an unlocked household, or with an unlocked
-// archived household, says that Hummlist Premium ends and is not refunded; Delete waits for the
+// archived household, says that Snacklist Premium ends and is not refunded; Delete waits for the
 // tick. Neither household is archived: an archive would go with the account (DECISIONS 68).
 test('account deletion: the last member of an unlocked household confirms that Premium is not refunded', async ({ browser }) => {
   const email = newEmail('acct68');
@@ -257,9 +257,9 @@ test('account deletion: the last member of an unlocked household confirms that P
   await page.reload();
   await openMore(page, 'Konto');
   await page.getByRole('button', { name: 'Konto löschen', exact: true }).click();
-  await expect(page.getByRole('group', { name: /^„Zuhause“ hat Hummlist Premium\. Es gehört zum Haushalt und endet mit ihm\. Archivieren geht hier nicht/ })).toBeVisible();
+  await expect(page.getByRole('group', { name: /^„Zuhause“ hat Snacklist Premium\. Es gehört zum Haushalt und endet mit ihm\. Archivieren geht hier nicht/ })).toBeVisible();
   // The dialog's paragraphs reach the screen reader as one text.
-  await expect(page.getByText(/Dein archivierter Haushalt „Unser Haushalt“ wird mit deinem Konto gelöscht, und mit ihm sein Hummlist Premium\./)).toBeVisible();
+  await expect(page.getByText(/Dein archivierter Haushalt „Unser Haushalt“ wird mit deinem Konto gelöscht, und mit ihm sein Snacklist Premium\./)).toBeVisible();
   const ack = page.getByRole('checkbox', { name: 'Ich weiß: Premium endet. Ich bekomme mein Geld nicht von selbst zurück.' });
   await expect(ack).toBeVisible();
   // Scroll the dialog in Flutter first: a click on the field below the fold would land on the

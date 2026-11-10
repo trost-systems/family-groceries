@@ -1,4 +1,4 @@
-/// The Hummlist Widgetbook: components, addons and the scenario matrix,
+/// The Snacklist Widgetbook: components, addons and the scenario matrix,
 /// shared by the app (`main.dart`) and the tests.
 library;
 

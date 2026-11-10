@@ -1,4 +1,4 @@
-// Goldens of key screens in the Hummlist theme (design job 52), light and
+// Goldens of key screens in the Snacklist theme (design job 52), light and
 // dark at a phone size, with the real fonts. After a deliberate look change:
 //   flutter test --update-goldens test/design/screens_golden_test.dart
 import 'dart:async';

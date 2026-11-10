@@ -75,7 +75,7 @@ struct SiriCredentialStore {
   }
 }
 
-/// The household's known items for the "Add <item> to Hummlist" phrases: at most 50 names, each
+/// The household's known items for the "Add <item> to Snacklist" phrases: at most 50 names, each
 /// with at most two synonyms, at most 100 spoken values in all. Apple caps an app at 1,000 phrases
 /// with every parameter value expanded, and the busiest language has six item phrases. Not
 /// secret; a file in Application Support rather than the Keychain, and not UserDefaults, which

@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In de, this message translates to:
-  /// **'Hummlist'**
+  /// **'Snacklist'**
   String get appTitle;
 
   /// No description provided for @addFieldHint.
@@ -575,13 +575,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTitle.
   ///
   /// In de, this message translates to:
-  /// **'Willkommen bei Hummlist'**
+  /// **'Willkommen bei Snacklist'**
   String get onboardingTitle;
 
   /// No description provided for @onboardingBody.
   ///
   /// In de, this message translates to:
-  /// **'Hummlist teilt eine Einkaufsliste mit allen in deinem Haushalt. Erstelle einen neuen Haushalt oder nimm eine Einladung an.'**
+  /// **'Snacklist teilt eine Einkaufsliste mit allen in deinem Haushalt. Erstelle einen neuen Haushalt oder nimm eine Einladung an.'**
   String get onboardingBody;
 
   /// No description provided for @householdName.
@@ -923,7 +923,7 @@ abstract class AppLocalizations {
   /// Zugänge, Siri card on this iPhone (job 80): one example sentence, no hint that Siri ever needed setting up
   ///
   /// In de, this message translates to:
-  /// **'Sag zum Beispiel: „Hey Siri, etwas auf Hummlist setzen“.'**
+  /// **'Sag zum Beispiel: „Hey Siri, etwas auf Snacklist setzen“.'**
   String get siriSayHint;
 
   /// No description provided for @siriShowPhrases.
@@ -971,7 +971,7 @@ abstract class AppLocalizations {
   /// No description provided for @revokeSiriBody.
   ///
   /// In de, this message translates to:
-  /// **'Siri kann auf dem iPhone dann nichts mehr hinzufügen. Beim nächsten Start von Hummlist dort wird Siri neu eingerichtet.'**
+  /// **'Siri kann auf dem iPhone dann nichts mehr hinzufügen. Beim nächsten Start von Snacklist dort wird Siri neu eingerichtet.'**
   String get revokeSiriBody;
 
   /// No description provided for @connectedOn.
@@ -1211,13 +1211,13 @@ abstract class AppLocalizations {
   /// No description provided for @accountDeletePremium.
   ///
   /// In de, this message translates to:
-  /// **'„{household}“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit ihm. Archivieren geht hier nicht, denn ein archivierter Haushalt wird mit deinem Konto gelöscht. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein und lösche dein Konto erst, wenn die Person beigetreten ist.'**
+  /// **'„{household}“ hat Snacklist Premium. Es gehört zum Haushalt und endet mit ihm. Archivieren geht hier nicht, denn ein archivierter Haushalt wird mit deinem Konto gelöscht. Soll der Haushalt mit Premium bleiben, lade vorher jemanden ein und lösche dein Konto erst, wenn die Person beigetreten ist.'**
   String accountDeletePremium(String household);
 
-  /// Account deletion (job 104): the last member's household has Hummlist Premium, in builds without the archive UI; accountDeletePremium without its archive sentence
+  /// Account deletion (job 104): the last member's household has Snacklist Premium, in builds without the archive UI; accountDeletePremium without its archive sentence
   ///
   /// In de, this message translates to:
-  /// **'„{household}“ hat Hummlist Premium. Das gehört zum Haushalt. Löschst du dein Konto, endet es. Soll es bleiben? Dann lad erst jemand ein. Warte, bis die Person beigetreten ist. Lösch dann dein Konto.'**
+  /// **'„{household}“ hat Snacklist Premium. Das gehört zum Haushalt. Löschst du dein Konto, endet es. Soll es bleiben? Dann lad erst jemand ein. Warte, bis die Person beigetreten ist. Lösch dann dein Konto.'**
   String accountDeletePremiumLastMember(String household);
 
   /// names: quoted and joined, like „Ferien“ und „Büro“
@@ -1229,7 +1229,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountDeleteArchivedPremium.
   ///
   /// In de, this message translates to:
-  /// **'{count, plural, =1{Dein archivierter Haushalt {names} wird mit deinem Konto gelöscht, und mit ihm sein Hummlist Premium.} other{Deine archivierten Haushalte {names} werden mit deinem Konto gelöscht, und mit ihnen ihr Hummlist Premium.}}'**
+  /// **'{count, plural, =1{Dein archivierter Haushalt {names} wird mit deinem Konto gelöscht, und mit ihm sein Snacklist Premium.} other{Deine archivierten Haushalte {names} werden mit deinem Konto gelöscht, und mit ihnen ihr Snacklist Premium.}}'**
   String accountDeleteArchivedPremium(int count, String names);
 
   /// A household name inside a sentence
@@ -1295,7 +1295,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountDeletedApple.
   ///
   /// In de, this message translates to:
-  /// **'Falls du dich mit Apple angemeldet hattest: Entferne „Hummlist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.'**
+  /// **'Falls du dich mit Apple angemeldet hattest: Entferne „Snacklist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.'**
   String get accountDeletedApple;
 
   /// No description provided for @exportDone.
@@ -1340,31 +1340,31 @@ abstract class AppLocalizations {
   /// **'Antippen fügt hinzu · ↵ nimmt den ersten Vorschlag'**
   String get addSheetHint;
 
-  /// Screen-reader name of the add sheet's store chip while Hummlist picks the store and knows none yet
+  /// Screen-reader name of the add sheet's store chip while Snacklist picks the store and knows none yet
   ///
   /// In de, this message translates to:
   /// **'Laden: automatisch'**
   String get storeAuto;
 
-  /// The add sheet's store chip while Hummlist picks the store and knows none yet; next to the automatic mark
+  /// The add sheet's store chip while Snacklist picks the store and knows none yet; next to the automatic mark
   ///
   /// In de, this message translates to:
   /// **'Laden'**
   String get chipStoreShort;
 
-  /// The add sheet's category chip while Hummlist picks the category and knows none yet; next to the automatic mark
+  /// The add sheet's category chip while Snacklist picks the category and knows none yet; next to the automatic mark
   ///
   /// In de, this message translates to:
   /// **'Kategorie'**
   String get chipCategoryShort;
 
-  /// Screen-reader name of the add sheet's store chip showing the store Hummlist picked
+  /// Screen-reader name of the add sheet's store chip showing the store Snacklist picked
   ///
   /// In de, this message translates to:
   /// **'Laden: automatisch, {name}'**
   String storeAutoValue(String name);
 
-  /// Screen-reader name of the add sheet's category chip showing the category Hummlist picked
+  /// Screen-reader name of the add sheet's category chip showing the category Snacklist picked
   ///
   /// In de, this message translates to:
   /// **'Kategorie: automatisch, {name}'**
@@ -1679,7 +1679,7 @@ abstract class AppLocalizations {
   /// More: update card body, patch downloaded
   ///
   /// In de, this message translates to:
-  /// **'Hummlist hat Verbesserungen geladen. Starte die App neu, um sie zu nutzen.'**
+  /// **'Snacklist hat Verbesserungen geladen. Starte die App neu, um sie zu nutzen.'**
   String get updatePatchBody;
 
   /// More: update card button, patch downloaded
@@ -1829,13 +1829,13 @@ abstract class AppLocalizations {
   /// Analytics consent screen after the first sign-in: title. approved by Peter 2026-10-30 (legal review H-03)
   ///
   /// In de, this message translates to:
-  /// **'Darf Hummlist Nutzungsdaten erfassen?'**
+  /// **'Darf Snacklist Nutzungsdaten erfassen?'**
   String get analyticsConsentTitle;
 
-  /// Analytics consent screen: who asks, why, what is stored and sent and what never is, how to withdraw. Ends right before analyticsConsentPrivacyLink, which follows after a space and is closed by a full stop. Version 2026-11-01 (consentTextVersion, docs/consent/2026-11-01.md): changing it needs a new version. approved by Peter 2026-11-01 (Legal 12:55)
+  /// Analytics consent screen: who asks, why, what is stored and sent and what never is, how to withdraw. Ends right before analyticsConsentPrivacyLink, which follows after a space and is closed by a full stop. Version 2026-11-10 (consentTextVersion, docs/consent/2026-11-10.md): changing it needs a new version. Approved by Peter 2026-11-01 (Legal 12:55); 2026-11-10 swaps only the name (job 174)
   ///
   /// In de, this message translates to:
-  /// **'Hummlist (Anbieter: Peter Trost) möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Hummlist trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Hummlist eine zufällige Kennung auf diesem Gerät und sendet damit pseudonyme Nutzungsdaten, Fehlerberichte, die Kennung deines Haushalts und technische Angaben zu Gerät oder Browser an unseren Dienstleister PostHog (Server in der EU). Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet. Du kannst jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der'**
+  /// **'Snacklist (Anbieter: Peter Trost) möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Snacklist trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Snacklist eine zufällige Kennung auf diesem Gerät und sendet damit pseudonyme Nutzungsdaten, Fehlerberichte, die Kennung deines Haushalts und technische Angaben zu Gerät oder Browser an unseren Dienstleister PostHog (Server in der EU). Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet. Du kannst jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der'**
   String get analyticsConsentBody;
 
   /// Analytics consent screen: the link to the privacy policy that ends analyticsConsentBody. approved by Peter 2026-10-30 (legal review H-03)
@@ -1892,13 +1892,13 @@ abstract class AppLocalizations {
   /// **'Feedback senden'**
   String get feedbackRow;
 
-  /// More: opens Hummlist's page in the App Store or Google Play, to rate it
+  /// More: opens Snacklist's page in the App Store or Google Play, to rate it
   ///
   /// In de, this message translates to:
-  /// **'Hummlist bewerten'**
+  /// **'Snacklist bewerten'**
   String get rateApp;
 
-  /// More: opens the help and contact page on hummlist.com in the browser
+  /// More: opens the help and contact page on snacklist.app in the browser
   ///
   /// In de, this message translates to:
   /// **'Hilfe & Kontakt'**
@@ -2051,7 +2051,7 @@ abstract class AppLocalizations {
   /// Legal Review L-7 (N-23), approved by Peter 2026-11-01 (L1): character for character; the onboarding store step (job 78: no longer on the stores screen)
   ///
   /// In de, this message translates to:
-  /// **'Ladennamen wie dm, Lidl oder EDEKA verwenden wir nur, damit du erkennst, für welchen Laden eine Liste gedacht ist. Die Namen und Marken gehören den jeweiligen Unternehmen. Hummlist ist ein unabhängiges Angebot und steht in keiner Verbindung zu diesen Unternehmen. Sie unterstützen oder empfehlen Hummlist nicht.'**
+  /// **'Ladennamen wie dm, Lidl oder EDEKA verwenden wir nur, damit du erkennst, für welchen Laden eine Liste gedacht ist. Die Namen und Marken gehören den jeweiligen Unternehmen. Snacklist ist ein unabhängiges Angebot und steht in keiner Verbindung zu diesen Unternehmen. Sie unterstützen oder empfehlen Snacklist nicht.'**
   String get storesDisclaimer;
 
   /// No description provided for @skipStores.
@@ -2141,7 +2141,7 @@ abstract class AppLocalizations {
   /// Sign-in screen: link back to the guided start
   ///
   /// In de, this message translates to:
-  /// **'Neu bei Hummlist? Los geht\'s'**
+  /// **'Neu bei Snacklist? Los geht\'s'**
   String get loginNew;
 
   /// Guided start: progress under the title
@@ -2471,7 +2471,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteShareTextCodeOnly.
   ///
   /// In de, this message translates to:
-  /// **'Komm in unseren Hummlist-Haushalt. Code: {code}'**
+  /// **'Komm in unseren Snacklist-Haushalt. Code: {code}'**
   String inviteShareTextCodeOnly(String code);
 
   /// No description provided for @share.
@@ -2543,28 +2543,28 @@ abstract class AppLocalizations {
   /// More: the one-time purchase; the product name, the same in every language
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Lifetime'**
+  /// **'Snacklist Lifetime'**
   String get lifetimeTitle;
 
-  /// More: under Hummlist Lifetime while not unlocked
+  /// More: under Snacklist Lifetime while not unlocked
   ///
   /// In de, this message translates to:
-  /// **'Hummlist unterstützen'**
+  /// **'Snacklist unterstützen'**
   String get lifetimeRowHint;
 
   /// No description provided for @lifetimeBody.
   ///
   /// In de, this message translates to:
-  /// **'Ein Kauf, für euren ganzen Haushalt: Hummlist Lifetime unterstützt die Entwicklung von Hummlist.'**
+  /// **'Ein Kauf, für euren ganzen Haushalt: Snacklist Lifetime unterstützt die Entwicklung von Snacklist.'**
   String get lifetimeBody;
 
-  /// Hummlist Lifetime: the buy button; the store's sheet shows the price (no store call before this tap, H-67)
+  /// Snacklist Lifetime: the buy button; the store's sheet shows the price (no store call before this tap, H-67)
   ///
   /// In de, this message translates to:
   /// **'Weiter zum Kauf'**
   String get lifetimeBuy;
 
-  /// Hummlist Lifetime: under Buy; the page shows no price, the store's sheet does
+  /// Snacklist Lifetime: under Buy; the page shows no price, the store's sheet does
   ///
   /// In de, this message translates to:
   /// **'Den Preis zeigen dir der App Store oder Google Play, bevor du kaufst.'**
@@ -2579,10 +2579,10 @@ abstract class AppLocalizations {
   /// No description provided for @lifetimeUnlockedBody.
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Lifetime ist für euren ganzen Haushalt freigeschaltet. Danke!'**
+  /// **'Snacklist Lifetime ist für euren ganzen Haushalt freigeschaltet. Danke!'**
   String get lifetimeUnlockedBody;
 
-  /// Hummlist Lifetime: Ask to Buy or a Play payment that completes later
+  /// Snacklist Lifetime: Ask to Buy or a Play payment that completes later
   ///
   /// In de, this message translates to:
   /// **'Wartet auf Bestätigung'**
@@ -2591,25 +2591,25 @@ abstract class AppLocalizations {
   /// No description provided for @lifetimePendingBody.
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Lifetime wird freigeschaltet, sobald der Kauf bestätigt ist. Das kann etwas dauern.'**
+  /// **'Snacklist Lifetime wird freigeschaltet, sobald der Kauf bestätigt ist. Das kann etwas dauern.'**
   String get lifetimePendingBody;
 
-  /// Hummlist Lifetime: bought or restored, waiting for the unlock from the server
+  /// Snacklist Lifetime: bought or restored, waiting for the unlock from the server
   ///
   /// In de, this message translates to:
   /// **'Wird freigeschaltet …'**
   String get lifetimeUnlocking;
 
-  /// Hummlist Lifetime: bought, but the server's unlock has not arrived within a minute
+  /// Snacklist Lifetime: bought, but the server's unlock has not arrived within a minute
   ///
   /// In de, this message translates to:
   /// **'Dein Kauf ist angekommen, die Freischaltung dauert nur länger als sonst. Sie erscheint hier von selbst; bitte nicht noch einmal kaufen.'**
   String get lifetimeUnlockDelayed;
 
-  /// Hummlist Lifetime: the household has two or more store purchases; the refund help link is on the page
+  /// Snacklist Lifetime: the household has two or more store purchases; the refund help link is on the page
   ///
   /// In de, this message translates to:
-  /// **'Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen der Käufe kannst du dir erstatten lassen.'**
+  /// **'Euer Haushalt hat Snacklist Lifetime mehr als einmal gekauft. Einen der Käufe kannst du dir erstatten lassen.'**
   String get lifetimeBoughtTwice;
 
   /// No description provided for @lifetimeCanceled.
@@ -2618,10 +2618,10 @@ abstract class AppLocalizations {
   /// **'Kauf abgebrochen.'**
   String get lifetimeCanceled;
 
-  /// Hummlist Lifetime: the store has no product yet
+  /// Snacklist Lifetime: the store has no product yet
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Lifetime ist bald verfügbar.'**
+  /// **'Snacklist Lifetime ist bald verfügbar.'**
   String get lifetimeComingSoon;
 
   /// No description provided for @lifetimeStoreOffline.
@@ -2651,13 +2651,13 @@ abstract class AppLocalizations {
   /// No description provided for @lifetimeWeb.
   ///
   /// In de, this message translates to:
-  /// **'Kaufen kannst du Hummlist Lifetime in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.'**
+  /// **'Kaufen kannst du Snacklist Lifetime in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.'**
   String get lifetimeWeb;
 
-  /// Hummlist Lifetime: the household's unlock is not known yet (loading or offline); no Buy button meanwhile
+  /// Snacklist Lifetime: the household's unlock is not known yet (loading or offline); no Buy button meanwhile
   ///
   /// In de, this message translates to:
-  /// **'Wir prüfen, ob dein Haushalt Hummlist Lifetime schon hat …'**
+  /// **'Wir prüfen, ob dein Haushalt Snacklist Lifetime schon hat …'**
   String get lifetimeChecking;
 
   /// A small link to the refund help
@@ -2675,19 +2675,19 @@ abstract class AppLocalizations {
   /// No description provided for @refundHelpBody.
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Lifetime gehört immer zu dem Haushalt, in dem es gekauft wurde. Käufe im App Store erstattet nur Apple. Bei Google Play beantragst du die Erstattung in den ersten 48 Stunden bei Google; danach schreib uns an support@hummlist.com, wir prüfen jede Anfrage einzeln. Deine gesetzlichen Rechte bleiben unberührt.'**
+  /// **'Snacklist Lifetime gehört immer zu dem Haushalt, in dem es gekauft wurde. Käufe im App Store erstattet nur Apple. Bei Google Play beantragst du die Erstattung in den ersten 48 Stunden bei Google; danach schreib uns an support@hummlist.com, wir prüfen jede Anfrage einzeln. Deine gesetzlichen Rechte bleiben unberührt.'**
   String get refundHelpBody;
 
   /// No description provided for @refundHelpApple.
   ///
   /// In de, this message translates to:
-  /// **'iPhone: Öffne reportaproblem.apple.com, melde dich mit deinem Apple Account an, wähle „Rückerstattung anfordern“ und dann Hummlist Lifetime.'**
+  /// **'iPhone: Öffne reportaproblem.apple.com, melde dich mit deinem Apple Account an, wähle „Rückerstattung anfordern“ und dann Snacklist Lifetime.'**
   String get refundHelpApple;
 
   /// No description provided for @refundHelpGoogle.
   ///
   /// In de, this message translates to:
-  /// **'Android, in den ersten 48 Stunden: Öffne Google Play, tippe auf dein Profilbild, dann „Zahlungen und Abos“, „Budget und Bestellverlauf“, wähle Hummlist Lifetime und „Problem melden“. Danach schreib uns mit der Bestellnummer (beginnt mit „GPA.“) oder der E-Mail-Adresse deines Google-Kontos.'**
+  /// **'Android, in den ersten 48 Stunden: Öffne Google Play, tippe auf dein Profilbild, dann „Zahlungen und Abos“, „Budget und Bestellverlauf“, wähle Snacklist Lifetime und „Problem melden“. Danach schreib uns mit der Bestellnummer (beginnt mit „GPA.“) oder der E-Mail-Adresse deines Google-Kontos.'**
   String get refundHelpGoogle;
 
   /// No description provided for @refundHelpReason.
@@ -2708,7 +2708,7 @@ abstract class AppLocalizations {
   /// **'Bei Google anfragen'**
   String get refundHelpGoogleLink;
 
-  /// Refund help: opens the FAQ on hummlist.com/support with the refund question (H-76)
+  /// Refund help: opens the FAQ on snacklist.app/support with the refund question (H-76)
   ///
   /// In de, this message translates to:
   /// **'Mehr in den häufigen Fragen'**
@@ -2717,13 +2717,13 @@ abstract class AppLocalizations {
   /// No description provided for @joinTargetUnlocked.
   ///
   /// In de, this message translates to:
-  /// **'Dieser Haushalt hat Hummlist Lifetime. Du musst nichts kaufen.'**
+  /// **'Dieser Haushalt hat Snacklist Lifetime. Du musst nichts kaufen.'**
   String get joinTargetUnlocked;
 
   /// No description provided for @joinRefundLink.
   ///
   /// In de, this message translates to:
-  /// **'Du hast Hummlist Lifetime vor Kurzem gekauft? So forderst du den Kauf zurück'**
+  /// **'Du hast Snacklist Lifetime vor Kurzem gekauft? So forderst du den Kauf zurück'**
   String get joinRefundLink;
 
   /// No description provided for @joinLifetimeRefundLink.
@@ -2747,7 +2747,7 @@ abstract class AppLocalizations {
   /// No description provided for @archivedUnlocked.
   ///
   /// In de, this message translates to:
-  /// **'Mit Hummlist Lifetime'**
+  /// **'Mit Snacklist Lifetime'**
   String get archivedUnlocked;
 
   /// Archived households: the household is deleted 24 months after archiving unless re-enabled
@@ -2777,7 +2777,7 @@ abstract class AppLocalizations {
   /// More: the Premium page and its row; the product name, the same in every language
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium'**
+  /// **'Snacklist Premium'**
   String get premiumTitle;
 
   /// Premium page (PW-P4, job 87): the hero's title; one member buys, the household has it
@@ -2789,7 +2789,7 @@ abstract class AppLocalizations {
   /// Premium page (PW-P4, job 87): under the hero title
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.'**
+  /// **'Snacklist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.'**
   String get premiumHeroBody;
 
   /// Premium page (PW-P4, job 87): benefit line, Siri
@@ -2807,25 +2807,25 @@ abstract class AppLocalizations {
   /// Premium page (PW-P4, job 87): benefit line, the public API; only while the public-api flag is on
   ///
   /// In de, this message translates to:
-  /// **'Eigene Automationen mit der Hummlist API'**
+  /// **'Eigene Automationen mit der Snacklist API'**
   String get premiumBenefitApi;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: an active yearly plan that renews
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: an active yearly plan that renews
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium aktiv (jährlich, verlängert sich am {date})'**
+  /// **'Snacklist Premium aktiv (jährlich, verlängert sich am {date})'**
   String premiumStatusRenews(DateTime date);
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: an active yearly plan with auto-renew off
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: an active yearly plan with auto-renew off
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium aktiv (jährlich, läuft am {date} aus)'**
+  /// **'Snacklist Premium aktiv (jährlich, läuft am {date} aus)'**
   String premiumStatusEnds(DateTime date);
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household has Lifetime
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household has Lifetime
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium Lifetime'**
+  /// **'Snacklist Premium Lifetime'**
   String get premiumStatusLifetime;
 
   /// Handoff 5(c), Legal Review final rule: the total price incl. VAT, e.g. „29,99 € einmalig, inkl. MwSt.“. Premium page, a plan tile: under the store's price, {period} is „pro Jahr“ or „einmalig“; only for a price in euros
@@ -2855,49 +2855,49 @@ abstract class AppLocalizations {
   /// FINAL (Legal Review, approved by Peter 2026-11-03 20:32, handoff 2026-11-03-pm-revenuecat-final section 4): use exactly as written. Premium page: status of a household with a free unlock (promotional grant) while sales have not started (premium_offer off)
   ///
   /// In de, this message translates to:
-  /// **'In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet'**
+  /// **'In der Beta kostenlos freigeschaltet, bis Snacklist Premium startet'**
   String get premiumStatusBeta;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household's rows are loading or offline; no Buy
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the household's rows are loading or offline; no Buy
   ///
   /// In de, this message translates to:
-  /// **'Wir prüfen, ob euer Haushalt Hummlist Premium schon hat …'**
+  /// **'Wir prüfen, ob euer Haushalt Snacklist Premium schon hat …'**
   String get premiumChecking;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the yearly plan's card title, offered first
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the yearly plan's card title, offered first
   ///
   /// In de, this message translates to:
   /// **'Jährlich'**
   String get premiumYearlyTitle;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49, 87). Premium page, yearly tile: the billing period under the store's price, followed by „inkl. MwSt.“ for a euro price
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49, 87). Premium page, yearly tile: the billing period under the store's price, followed by „inkl. MwSt.“ for a euro price
   ///
   /// In de, this message translates to:
   /// **'pro Jahr'**
   String get premiumPerYear;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the one-time purchase's card title
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the one-time purchase's card title
   ///
   /// In de, this message translates to:
   /// **'Lifetime'**
   String get premiumLifetimeTitle;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49, 87). Premium page, Lifetime tile: under the store's price, followed by „inkl. MwSt.“ for a euro price
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49, 87). Premium page, Lifetime tile: under the store's price, followed by „inkl. MwSt.“ for a euro price
   ///
   /// In de, this message translates to:
   /// **'einmalig'**
   String get premiumOneTime;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: Lifetime framed as three times the yearly price (Spec #4 AC9), without computing an amount
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: Lifetime framed as three times the yearly price (Spec #4 AC9), without computing an amount
   ///
   /// In de, this message translates to:
   /// **'Einmal zahlen, für immer: so viel wie drei Jahre.'**
   String get premiumLifetimeValue;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the subscription disclosures next to the yearly card and its Buy button (App Store Review Guidelines 3.1.2, Google Play)
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the subscription disclosures next to the yearly card and its Buy button (App Store Review Guidelines 3.1.2, Google Play)
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium jährlich, Laufzeit 1 Jahr. Das Abo verlängert sich automatisch um ein Jahr, wenn du es nicht mindestens 24 Stunden vor Ende der Laufzeit kündigst. Bezahlt wird über dein Apple- bzw. Google-Konto, bei der Bestätigung des Kaufs und bei jeder Verlängerung. Verwalten und kündigen kannst du das Abo in den Abo-Einstellungen des App Store bzw. von Google Play.'**
+  /// **'Snacklist Premium jährlich, Laufzeit 1 Jahr. Das Abo verlängert sich automatisch um ein Jahr, wenn du es nicht mindestens 24 Stunden vor Ende der Laufzeit kündigst. Bezahlt wird über dein Apple- bzw. Google-Konto, bei der Bestätigung des Kaufs und bei jeder Verlängerung. Verwalten und kündigen kannst du das Abo in den Abo-Einstellungen des App Store bzw. von Google Play.'**
   String get premiumYearlyTerms;
 
   /// LEGAL REVIEW Q6 (job 87): the household binding, shown before purchase. Wording pending Legal Review.
@@ -2906,55 +2906,55 @@ abstract class AppLocalizations {
   /// **'Premium gehört dann zum Haushalt „{household}“ und bleibt dort, auch wenn du den Haushalt später verlässt.'**
   String premiumHousehold(String household);
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: buy the yearly plan; RevenueCat starts only on this tap (H-67)
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: buy the yearly plan; RevenueCat starts only on this tap (H-67)
   ///
   /// In de, this message translates to:
   /// **'Jährlich abschließen'**
   String get premiumBuyYearly;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: buy Lifetime; RevenueCat starts only on this tap (H-67)
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: buy Lifetime; RevenueCat starts only on this tap (H-67)
   ///
   /// In de, this message translates to:
   /// **'Lifetime kaufen'**
   String get premiumBuyLifetime;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the store's prices could not be read (offline, store unavailable); no Buy without a price (A2-5)
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the store's prices could not be read (offline, store unavailable); no Buy without a price (A2-5)
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium ist gerade nicht verfügbar.'**
+  /// **'Snacklist Premium ist gerade nicht verfügbar.'**
   String get premiumUnavailable;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: link to the terms; Apple's standard EULA on iOS, a placeholder page elsewhere (no Hummlist terms exist, H-93)
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: link to the terms; Apple's standard EULA on iOS, a placeholder page elsewhere (no Snacklist terms exist, H-93)
   ///
   /// In de, this message translates to:
   /// **'Nutzungsbedingungen (EULA)'**
   String get premiumTermsLink;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: link to the privacy policy
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: link to the privacy policy
   ///
   /// In de, this message translates to:
   /// **'Datenschutzerklärung'**
   String get premiumPrivacyLink;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: after lifetimeUsedElsewhere when the yearly plan belongs to another household (one subscription per Apple ID and group)
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: after lifetimeUsedElsewhere when the yearly plan belongs to another household (one subscription per Apple ID and group)
   ///
   /// In de, this message translates to:
-  /// **'Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Hummlist Premium abschließen.'**
+  /// **'Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Snacklist Premium abschließen.'**
   String get premiumUsedElsewhereYearly;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: two yearly plans run at once (H-84); followed by the manage link
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: two yearly plans run at once (H-84); followed by the manage link
   ///
   /// In de, this message translates to:
   /// **'Euer Haushalt hat zwei Jahresabos. Kündigen kann jedes nur, wer es abgeschlossen hat.'**
   String get premiumTwoYearly;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page on the web: no sales on the web
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page on the web: no sales on the web
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.'**
+  /// **'Snacklist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet.'**
   String get premiumWeb;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Refund help: a short note for the yearly plan below the H-76 texts, which name only Lifetime (NEEDS_LEAD Job 49)
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Refund help: a short note for the yearly plan below the H-76 texts, which name only Lifetime (NEEDS_LEAD Job 49)
   ///
   /// In de, this message translates to:
   /// **'Für das Jahresabo gilt dasselbe. Eine Kündigung beendet nur die Verlängerung; das laufende Jahr wird nicht automatisch erstattet.'**
@@ -2966,7 +2966,7 @@ abstract class AppLocalizations {
   /// **'Abo verwalten oder kündigen'**
   String get premiumManage;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page on the web: before the two store links
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page on the web: before the two store links
   ///
   /// In de, this message translates to:
   /// **'Dein Jahresabo verwaltest du im App Store oder bei Google Play.'**
@@ -2993,13 +2993,13 @@ abstract class AppLocalizations {
   /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Before buying Lifetime while a yearly plan runs, and after (H-84). The part in [brackets] is the link to the store's subscription page; the app shows it without the brackets
   ///
   /// In de, this message translates to:
-  /// **'Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Kündigen kann nur, wer das Abo abgeschlossen hat, unter [Abos verwalten]. Hummlist kann das Abo nicht kündigen.'**
+  /// **'Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Kündigen kann nur, wer das Abo abgeschlossen hat, unter [Abos verwalten]. Snacklist kann das Abo nicht kündigen.'**
   String get premiumLifetimeWhileYearly;
 
   /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. premiumLifetimeWhileYearly for the subscriber (H-84). [brackets]: the store link
   ///
   /// In de, this message translates to:
-  /// **'Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Du kannst es unter [Abo verwalten] kündigen. Hummlist kann das Abo nicht kündigen.'**
+  /// **'Euer Haushalt hat schon ein Jahresabo. Es läuft nach dem Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt wird; das restliche Abojahr wird nicht automatisch erstattet. Du kannst es unter [Abo verwalten] kündigen. Snacklist kann das Abo nicht kündigen.'**
   String get premiumLifetimeWhileYearlySubscriber;
 
   /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Lifetime-while-yearly warning: opens the store sheet (RevenueCat starts only here, H-67). EN: Lead wording, PLACEHOLDER
@@ -3011,10 +3011,10 @@ abstract class AppLocalizations {
   /// Legal Review K.13 (job 49 ADDENDUM 2), word for word: do not reword. Before deleting the account, leaving, deleting or archiving a household, to the subscriber of a renewing yearly plan (H-85)
   ///
   /// In de, this message translates to:
-  /// **'Dein Jahresabo für Hummlist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. Löschen oder Verlassen kündigt es nicht.'**
+  /// **'Dein Jahresabo für Snacklist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. Löschen oder Verlassen kündigt es nicht.'**
   String get premiumBillingContinues;
 
-  /// PLACEHOLDER (job 49): Hummlist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Lead wording for Legal Review: the same moment, to members who are not the subscriber (H-85, NEEDS_LEAD Job 49)
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Lead wording for Legal Review: the same moment, to members who are not the subscriber (H-85, NEEDS_LEAD Job 49)
   ///
   /// In de, this message translates to:
   /// **'Ein Jahresabo für diesen Haushalt läuft weiter, bis es gekündigt wird.'**
@@ -3032,52 +3032,52 @@ abstract class AppLocalizations {
   /// **'Trotzdem fortfahren'**
   String get premiumContinueAnyway;
 
-  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings (Zugänge), locked household: the card's title
+  /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings (Zugänge), locked household: the card's title
   ///
   /// In de, this message translates to:
-  /// **'Teil von Hummlist Premium'**
+  /// **'Teil von Snacklist Premium'**
   String get integrationPremiumTitle;
 
-  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: why the connections are paused; nothing is removed
+  /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: why the connections are paused; nothing is removed
   ///
   /// In de, this message translates to:
-  /// **'Siri und KI-Assistenten gehören zu Hummlist Premium. Eure Verbindungen bleiben gespeichert und funktionieren wieder, sobald euer Haushalt Hummlist Premium hat.'**
+  /// **'Siri und KI-Assistenten gehören zu Snacklist Premium. Eure Verbindungen bleiben gespeichert und funktionieren wieder, sobald euer Haushalt Snacklist Premium hat.'**
   String get integrationPremiumBody;
 
-  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Hummlist Premium
+  /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Snacklist Premium
   ///
   /// In de, this message translates to:
   /// **'Siri auf dem iPhone'**
   String get integrationPremiumSiri;
 
-  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Hummlist Premium
+  /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Snacklist Premium
   ///
   /// In de, this message translates to:
   /// **'KI-Assistenten, die MCP unterstützen'**
   String get integrationPremiumAi;
 
-  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: planned, not built yet
+  /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: planned, not built yet
   ///
   /// In de, this message translates to:
   /// **'Später: Google Assistant und Apple Watch'**
   String get integrationPremiumLater;
 
-  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: button that opens the Hummlist Premium page (only where it is sold)
+  /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: button that opens the Snacklist Premium page (only where it is sold)
   ///
   /// In de, this message translates to:
-  /// **'Hummlist Premium freischalten'**
+  /// **'Snacklist Premium freischalten'**
   String get integrationPremiumBuy;
 
-  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: Hummlist Premium is not sold in this build yet, no button
+  /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: Snacklist Premium is not sold in this build yet, no button
   ///
   /// In de, this message translates to:
   /// **'Bald verfügbar.'**
   String get integrationPremiumSoon;
 
-  /// PLACEHOLDER (job 50): Hummlist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: shown on each existing connection or token, which stays as it is
+  /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: shown on each existing connection or token, which stays as it is
   ///
   /// In de, this message translates to:
-  /// **'Pausiert: braucht Hummlist Premium'**
+  /// **'Pausiert: braucht Snacklist Premium'**
   String get integrationPaused;
 
   /// Zugänge (More → Zugänge), job 73: label of the public REST API section
@@ -3182,10 +3182,10 @@ abstract class AppLocalizations {
   /// **'Die API ist noch nicht freigeschaltet.'**
   String get apiDisabled;
 
-  /// PLACEHOLDER (job 73): Hummlist Launch writes the final copy. Zugänge, API section, locked household (job 50): the keys stay, unused for now; new ones can still be made
+  /// PLACEHOLDER (job 73): Snacklist Launch writes the final copy. Zugänge, API section, locked household (job 50): the keys stay, unused for now; new ones can still be made
   ///
   /// In de, this message translates to:
-  /// **'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.'**
+  /// **'Die Snacklist-API gehört zu Snacklist Premium. Deine Schlüssel bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.'**
   String get apiPremium;
 
   /// Zugänge, under the access token heading while the public API is hidden (job 80)
@@ -3287,7 +3287,7 @@ abstract class AppLocalizations {
   /// List tab tip card (job 80): the quoted examples must parse with a Menge (app/test/tips/tips_test.dart checks them with parseEntry)
   ///
   /// In de, this message translates to:
-  /// **'Schreib „2 Gurken“ oder „Milch 2 l“, und Hummlist erkennt die Menge.'**
+  /// **'Schreib „2 Gurken“ oder „Milch 2 l“, und Snacklist erkennt die Menge.'**
   String get tipAmountsBody;
 
   /// List tab tip card (job 80): tooltip and screen reader label of the X that hides the tip
@@ -3443,13 +3443,13 @@ abstract class AppLocalizations {
   /// Job 169b: leave dialog, last member of a household with Lifetime, archive off
   ///
   /// In de, this message translates to:
-  /// **'„{household}“ hat Hummlist Lifetime. Du bist das letzte Mitglied: Verlässt du ihn, wird der Haushalt gelöscht. Hummlist Lifetime endet mit ihm, denn ein Kauf gehört zu seinem Haushalt.'**
+  /// **'„{household}“ hat Snacklist Lifetime. Du bist das letzte Mitglied: Verlässt du ihn, wird der Haushalt gelöscht. Snacklist Lifetime endet mit ihm, denn ein Kauf gehört zu seinem Haushalt.'**
   String leaveLifetimeEnds(String household);
 
   /// Job 169b: leave dialog, last member of a household with Lifetime, archive on
   ///
   /// In de, this message translates to:
-  /// **'„{household}“ hat Hummlist Lifetime. Du bist das letzte Mitglied. Archiviere den Haushalt, statt ihn zu löschen: Liste und Hummlist Lifetime bleiben erhalten, und du kannst ihn später unter „Mehr“ wieder aktivieren. Aktivierst du ihn nicht innerhalb von 24 Monaten wieder, wird er gelöscht.'**
+  /// **'„{household}“ hat Snacklist Lifetime. Du bist das letzte Mitglied. Archiviere den Haushalt, statt ihn zu löschen: Liste und Snacklist Lifetime bleiben erhalten, und du kannst ihn später unter „Mehr“ wieder aktivieren. Aktivierst du ihn nicht innerhalb von 24 Monaten wieder, wird er gelöscht.'**
   String leaveArchiveOffer(String household);
 
   /// Job 169b: leave dialog button that archives the household
@@ -3611,7 +3611,7 @@ abstract class AppLocalizations {
   /// Job 169b W2: the share text by the household's kind (other: not asked); always link and code. The user sends it (N-18).
   ///
   /// In de, this message translates to:
-  /// **'{kind, select, partner{Ich hab unsere Einkaufsliste in Hummlist angelegt. Komm dazu: {link} · Code: {code}} family{Unsere Familien-Einkaufsliste „{name}“ ist jetzt in Hummlist. Komm dazu: {link} · Code: {code}} flat{Unsere WG-Einkaufsliste „{name}“ ist jetzt in Hummlist. Komm dazu: {link} · Code: {code}} club{Wir planen die Einkäufe für „{name}“ in Hummlist. Mach mit: {link} · Code: {code}} solo{Ich teile meine Einkaufsliste „{name}“ in Hummlist mit dir: {link} · Code: {code}} other{Komm in unseren Hummlist-Haushalt: {link} · Code: {code}}}'**
+  /// **'{kind, select, partner{Ich hab unsere Einkaufsliste in Snacklist angelegt. Komm dazu: {link} · Code: {code}} family{Unsere Familien-Einkaufsliste „{name}“ ist jetzt in Snacklist. Komm dazu: {link} · Code: {code}} flat{Unsere WG-Einkaufsliste „{name}“ ist jetzt in Snacklist. Komm dazu: {link} · Code: {code}} club{Wir planen die Einkäufe für „{name}“ in Snacklist. Mach mit: {link} · Code: {code}} solo{Ich teile meine Einkaufsliste „{name}“ in Snacklist mit dir: {link} · Code: {code}} other{Komm in unseren Snacklist-Haushalt: {link} · Code: {code}}}'**
   String inviteShareKind(String kind, String name, String link, String code);
 
   /// Job 169b W2: role label of the member who created the household. Gender-neutral and short: der/die Hauptadmin; ranks above Admin (names admins, can't be removed)
@@ -4028,10 +4028,10 @@ abstract class AppLocalizations {
   /// **'Mit Siri hinzufügen'**
   String get hintSiriTitle;
 
-  /// Hint siri: a native Siri App Shortcut phrase (app/ios/Runner/AppShortcuts.xcstrings, Add to Hummlist)
+  /// Hint siri: a native Siri App Shortcut phrase (app/ios/Runner/AppShortcuts.xcstrings, Add to Snacklist)
   ///
   /// In de, this message translates to:
-  /// **'Sag „Hey Siri, füge etwas zu Hummlist hinzu“, wenn die Hände voll sind.'**
+  /// **'Sag „Hey Siri, füge etwas zu Snacklist hinzu“, wenn die Hände voll sind.'**
   String get hintSiriBody;
 
   /// Hint home-widget (job 168b, iPhone and Android): title
@@ -4043,7 +4043,7 @@ abstract class AppLocalizations {
   /// Hint home-widget: how to place the widget, after 5 active days
   ///
   /// In de, this message translates to:
-  /// **'Füge das Hummlist-Widget hinzu, indem du den Home-Bildschirm deines Smartphones gedrückt hältst.'**
+  /// **'Füge das Snacklist-Widget hinzu, indem du den Home-Bildschirm deines Smartphones gedrückt hältst.'**
   String get hintWidgetBody;
 
   /// Hint own-household (job 168b): title, for someone who joined another person's household

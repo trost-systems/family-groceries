@@ -62,7 +62,7 @@ private val FOOTER = 18.dp
 private val ROW = 22.dp
 
 /**
- * Hummlist on the Android Home Screen: how many items are open and the next few. It draws only
+ * Snacklist on the Android Home Screen: how many items are open and the next few. It draws only
  * what the app last wrote (WidgetPayload) and opens the app on a tap; it never changes the list.
  */
 class SnacklistWidget : GlanceAppWidget() {

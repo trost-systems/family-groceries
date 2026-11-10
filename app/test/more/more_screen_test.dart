@@ -183,15 +183,15 @@ void main() {
   for (final (device, imprint, privacy, terms) in [
     (
       const Locale('de', 'DE'),
-      'https://hummlist.com/impressum',
-      'https://hummlist.com/datenschutz',
-      'https://hummlist.com/support',
+      'https://snacklist.app/impressum',
+      'https://snacklist.app/datenschutz',
+      'https://snacklist.app/support',
     ),
     (
       const Locale('en', 'US'),
-      'https://hummlist.com/en/imprint',
-      'https://hummlist.com/en/privacy',
-      'https://hummlist.com/en/support',
+      'https://snacklist.app/en/imprint',
+      'https://snacklist.app/en/privacy',
+      'https://snacklist.app/en/support',
     ),
   ]) {
     testWidgets('$device: the legal rows on More open the site in the '
@@ -247,15 +247,15 @@ void main() {
     await tester.pumpAndSettle();
     expect(launcher.opened, [
       (
-        'https://hummlist.com/impressum',
+        'https://snacklist.app/impressum',
         PreferredLaunchMode.externalApplication,
       ),
     ]);
     expect(path(more), morePath);
   });
 
-  // Job 64: before the launch nobody sees Hummlist Premium in More.
-  group('Hummlist Premium', () {
+  // Job 64: before the launch nobody sees Snacklist Premium in More.
+  group('Snacklist Premium', () {
     Future<bool> listed(
       WidgetTester tester, {
       required bool offer,
@@ -268,7 +268,7 @@ void main() {
         store: FakePurchaseRepository(withoutStore: noSale),
         entitlements: FakeEntitlementsSource(unlockedNow: unlocked),
       );
-      return find.text('Hummlist Premium').evaluate().isNotEmpty;
+      return find.text('Snacklist Premium').evaluate().isNotEmpty;
     }
 
     testWidgets('is not listed while the server switch is off', (tester) async {
@@ -312,8 +312,8 @@ void main() {
 
   group('Hilfe & Kontakt (job 24)', () {
     for (final (device, url) in const [
-      (Locale('de', 'DE'), 'https://hummlist.com/support'),
-      (Locale('en', 'US'), 'https://hummlist.com/en/support'),
+      (Locale('de', 'DE'), 'https://snacklist.app/support'),
+      (Locale('en', 'US'), 'https://snacklist.app/en/support'),
     ]) {
       testWidgets('opens the ${device.languageCode} page in the browser', (
         tester,
@@ -359,10 +359,10 @@ void main() {
     });
   });
 
-  group('Hummlist bewerten (job 155)', () {
+  group('Snacklist bewerten (job 155)', () {
     for (final (device, label) in const [
-      (Locale('de', 'DE'), 'Hummlist bewerten'),
-      (Locale('en', 'US'), 'Rate Hummlist'),
+      (Locale('de', 'DE'), 'Snacklist bewerten'),
+      (Locale('en', 'US'), 'Rate Snacklist'),
     ]) {
       testWidgets('opens the store listing, ${device.languageCode}', (
         tester,

@@ -1,4 +1,4 @@
-// The purchases function (docs/PURCHASES.md): RevenueCat tells it about Hummlist Premium purchases
+// The purchases function (docs/PURCHASES.md): RevenueCat tells it about Snacklist Premium purchases
 // (yearly and Lifetime), a yearly plan's renewals, cancellations and expiry, and refunds; it
 // unlocks the household (RevenueCat's App User ID), keeps the plan's state, or takes the unlock
 // away. It never talks to Apple or Google itself.

@@ -49,7 +49,7 @@ enum OfferSwitch() {
 /// The two server reads the Premium page and the billing warnings make;
 /// neither touches a store or RevenueCat.
 abstract interface class PremiumServer() {
-  /// The server switch `premium_offer` (seeded off): whether Hummlist
+  /// The server switch `premium_offer` (seeded off): whether Snacklist
   /// Premium may be offered at all.
   Future<OfferSwitch> offerSwitch();
 
@@ -58,7 +58,7 @@ abstract interface class PremiumServer() {
   Future<MyYearlyPlan> myYearlyPlan({String? household});
 
   /// The server switch `integration_lock` (job 50, seeded off): Siri and MCP
-  /// need Hummlist Premium; Alexa stays free. False when it cannot be read.
+  /// need Snacklist Premium; Alexa stays free. False when it cannot be read.
   Future<bool> integrationLock();
 }
 
@@ -117,14 +117,14 @@ final googleSubscriptionsUrl = Uri.parse(
   'https://play.google.com/store/account/subscriptions',
 );
 
-/// Apple's standard EULA, linked as the terms of use on iOS until Hummlist
+/// Apple's standard EULA, linked as the terms of use on iOS until Snacklist
 /// has its own (H-93: needs a lawyer; NEEDS_LEAD Job 49).
 final appleEulaUrl = Uri.parse(
   'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
 );
 
 /// The terms of use for [platform]: on Android and the web a placeholder,
-/// the support page, until Legal Review supplies Hummlist's terms
+/// the support page, until Legal Review supplies Snacklist's terms
 /// (NEEDS_LEAD Job 49 lists it).
 Uri termsUrl(TargetPlatform platform, String language) =>
     platform == TargetPlatform.iOS ? appleEulaUrl : supportUrl(language);

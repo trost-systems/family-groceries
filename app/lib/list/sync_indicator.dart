@@ -337,7 +337,7 @@ class _SyncIndicatorState()
     final shown = _view.phase != SyncPhase.hidden;
     final top = MediaQuery.paddingOf(context).top;
     final brightness = Theme.of(context).brightness;
-    final t = HummlistColors.of(brightness);
+    final t = SnacklistColors.of(brightness);
     final tone = _tone(kind, brightness);
     final busy = _view.phase == SyncPhase.busy;
     void onTap() => unawaited(_tap());
@@ -472,7 +472,7 @@ class const _Nudge({
   SyncTrouble kind,
   Brightness brightness,
 ) {
-  final t = HummlistColors.of(brightness);
+  final t = SnacklistColors.of(brightness);
   return switch (kind) {
     SyncTrouble.offline => (
       // Dark mode's inverse is the page itself; the lighter navy stands off.
@@ -718,7 +718,7 @@ class const _Card({
 class const _RetryCue() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return TactileFace(
       states: const {},
       colors: TactileColors(

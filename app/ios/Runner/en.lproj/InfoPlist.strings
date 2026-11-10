@@ -1,10 +1,10 @@
 /* How English Siri writes the spoken app name; App Shortcut phrases match these too (INAlternativeAppNames, at most three). The hint is how all three sound. */
-"HUMMLIST_NAME_1" = "Humm List";
-"HUMMLIST_HINT_1" = "hum list";
-"HUMMLIST_NAME_2" = "Hum List";
-"HUMMLIST_HINT_2" = "hum list";
-"HUMMLIST_NAME_3" = "Humlist";
-"HUMMLIST_HINT_3" = "hum list";
+"SNACKLIST_NAME_1" = "Snack List";
+"SNACKLIST_HINT_1" = "snack list";
+"SNACKLIST_NAME_2" = "Snack-list";
+"SNACKLIST_HINT_2" = "snack list";
+"SNACKLIST_NAME_3" = "Snack Lists";
+"SNACKLIST_HINT_3" = "snack list";
 /* How Siri says the app name. */
-"CFBundleSpokenName" = "Hummlist";
-"NSSiriUsageDescription" = "Siri adds items to your Hummlist and reads it to you.";
+"CFBundleSpokenName" = "Snacklist";
+"NSSiriUsageDescription" = "Siri adds items to your Snacklist and reads it to you.";

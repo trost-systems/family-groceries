@@ -134,7 +134,7 @@ const hexFieldInset = HlHex.tip * HlSize.target + HlSpace.s1;
 /// The app theme gives every field the hex. A theme cannot tell a
 /// multi-line field from a single-line one, so multi-line fields sit in a
 /// [RoundedFields].
-InputDecorationThemeData fieldTheme(HummlistColors t, FieldShape shape) {
+InputDecorationThemeData fieldTheme(SnacklistColors t, FieldShape shape) {
   ContourInputBorder contour(Color color, {bool focused = false}) =>
       ContourInputBorder(
         shape: shape,
@@ -218,7 +218,7 @@ class const RoundedFields({required final Widget child, super.key})
   @override
   Widget build(BuildContext context) => InputDecorationTheme(
     data: fieldTheme(
-      HummlistColors.of(Theme.of(context).brightness),
+      SnacklistColors.of(Theme.of(context).brightness),
       FieldShape.rounded,
     ),
     child: child,

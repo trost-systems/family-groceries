@@ -5,8 +5,8 @@ import UIKit
 /// Adds what the user says to the household's list through `voice`. Runs in the background:
 /// the answer is Siri's dialog, the app never comes forward.
 struct AddItemsIntent: AppIntent {
-  static let title: LocalizedStringResource = "Add to Hummlist"
-  static let description = IntentDescription("Adds items to your household's Hummlist.")
+  static let title: LocalizedStringResource = "Add to Snacklist"
+  static let description = IntentDescription("Adds items to your household's Snacklist.")
 
   @available(iOS 26.0, *)
   static var supportedModes: IntentModes { .background }
@@ -53,8 +53,8 @@ struct AddItemsIntent: AppIntent {
 
 /// Reads the open items of the household's list (the server caps what it says).
 struct ReadListIntent: AppIntent {
-  static let title: LocalizedStringResource = "Read my Hummlist"
-  static let description = IntentDescription("Reads the open items on your household's Hummlist.")
+  static let title: LocalizedStringResource = "Read my Snacklist"
+  static let description = IntentDescription("Reads the open items on your household's Snacklist.")
 
   @available(iOS 26.0, *)
   static var supportedModes: IntentModes { .background }
@@ -66,10 +66,10 @@ struct ReadListIntent: AppIntent {
   }
 }
 
-/// Opens the app on the list, for "Show my Hummlist". The one intent that needs the app in front.
+/// Opens the app on the list, for "Show my Snacklist". The one intent that needs the app in front.
 struct OpenListIntent: AppIntent {
-  static let title: LocalizedStringResource = "Open Hummlist"
-  static let description = IntentDescription("Opens your household's Hummlist.")
+  static let title: LocalizedStringResource = "Open Snacklist"
+  static let description = IntentDescription("Opens your household's Snacklist.")
 
   @available(iOS 26.0, *)
   static var supportedModes: IntentModes { .foreground }
@@ -91,10 +91,10 @@ extension OpenListIntent {
   static var openAppWhenRun: Bool { true }
 }
 
-/// One of the household's known items, the value of "Add <item> to Hummlist". The app hands the
+/// One of the household's known items, the value of "Add <item> to Snacklist". The app hands the
 /// names over (`hummlist/siri` `suggestions`); its id is the name itself. Its synonyms are the
 /// household's other names for the same item (the same `canonical_key`), so "Füge Möhren zu
-/// Hummlist hinzu" matches the "Karotten" the household usually buys.
+/// Snacklist hinzu" matches the "Karotten" the household usually buys.
 struct ItemSuggestion: AppEntity {
   static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Item")
   static let defaultQuery = ItemSuggestionQuery()
@@ -143,9 +143,9 @@ extension ItemSuggestion {
 ///
 /// The phrase without an item comes first: Siri then asks for the items, which works for any
 /// item, while an `item` phrase matches only the names the app suggested. German phrases name the
-/// app first or as the object ("Hummlist, füge etwas hinzu"), never "Einkaufsliste" or a bare
-/// "auf meine Hummlist": those are Reminders' grammar, and Reminders wins (job 92).
-struct HummlistShortcuts: AppShortcutsProvider {
+/// app first or as the object ("Snacklist, füge etwas hinzu"), never "Einkaufsliste" or a bare
+/// "auf meine Snacklist": those are Reminders' grammar, and Reminders wins (job 92).
+struct SnacklistShortcuts: AppShortcutsProvider {
   static var appShortcuts: [AppShortcut] {
     AppShortcut(
       intent: AddItemsIntent(),
@@ -153,21 +153,21 @@ struct HummlistShortcuts: AppShortcutsProvider {
         "Add to \(.applicationName)",
         "Add \(\.$item) to \(.applicationName)",
       ],
-      shortTitle: "Add to Hummlist",
+      shortTitle: "Add to Snacklist",
       systemImageName: "cart.badge.plus")
     AppShortcut(
       intent: ReadListIntent(),
       phrases: ["What's on my \(.applicationName)"],
-      shortTitle: "Read my Hummlist",
+      shortTitle: "Read my Snacklist",
       systemImageName: "list.bullet")
     AppShortcut(
       intent: OpenListIntent(),
       phrases: ["Show my \(.applicationName)"],
-      shortTitle: "Open Hummlist",
+      shortTitle: "Open Snacklist",
       systemImageName: "checklist")
   }
 
-  /// Requests for the system's own lists. Siri never hands these to Hummlist, whatever its fuzzy
+  /// Requests for the system's own lists. Siri never hands these to Snacklist, whatever its fuzzy
   /// matching makes of them. One plain German translation each in AppShortcuts.xcstrings (job
   /// 170): the build log can't show whether a negative phrase's string set reaches Siri.
   static var negativePhrases: NegativeAppShortcutPhrases {

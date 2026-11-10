@@ -45,7 +45,7 @@ class const PremiumPage({
   final MyYearlyPlan? mine,
 
   /// The server switch `premium_offer` as read when the page opened, in
-  /// every build: whether Hummlist Premium has started. Null until read.
+  /// every build: whether Snacklist Premium has started. Null until read.
   final OfferSwitch? launch,
 
   /// The plan the Buy button buys while it is offered. Yearly when the page

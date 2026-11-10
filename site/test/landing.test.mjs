@@ -8,7 +8,7 @@ import { parseCopy } from '../landing.mjs';
 import { checkHtml } from '../build.mjs';
 import { copyNeeded, readVideoCopy } from '../scripts/copy-needed.mjs';
 
-const SITE = 'https://hummlist.com';
+const SITE = 'https://snacklist.app';
 const COPY_TEXT = readFileSync(join(CONTENT_DIR, 'landing/copy.yml'), 'utf8');
 const COPY = parseCopy(COPY_TEXT, 'copy.yml');
 const PROD = { VERCEL_ENV: 'production' };
@@ -156,7 +156,7 @@ test('the founder note sits between the privacy block and the sign-up form, bran
 
 test('no call to action links the web app, the hero leads to the form, and the privacy and help links follow their flags', () => {
   const on = buildSite().page('/de');
-  assert.deepEqual(on.querySelectorAll('a').filter((a) => /app\.hummlist\.com/.test(a.getAttribute('href'))).length, 0);
+  assert.deepEqual(on.querySelectorAll('a').filter((a) => /app\.snacklist\.app/.test(a.getAttribute('href'))).length, 0);
   assert.ok(on.querySelector('main a[href="/datenschutz"]'));
   assert.ok(on.querySelector('main a[href="/support"]'));
   assert.ok(on.querySelector('.hero-actions a[href="#warteliste"]') && on.querySelector('#test #warteliste form'));

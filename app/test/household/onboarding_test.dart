@@ -26,7 +26,7 @@ void main() {
         '"Mit wem"', (tester) async {
       final o = await pumpOnboarding(tester, location: '/');
       expect(location(o), '/welcome');
-      expect(find.text('Willkommen bei Hummlist'), findsOneWidget);
+      expect(find.text('Willkommen bei Snacklist'), findsOneWidget);
       expect(find.text('Haushalt erstellen'), findsOneWidget);
       expect(find.text('Einladung annehmen'), findsOneWidget);
       await tapKey(tester, 'onboarding-join');
@@ -40,7 +40,7 @@ void main() {
 
     testWidgets('in English', (tester) async {
       await pumpOnboarding(tester, location: '/', locale: const Locale('en'));
-      expect(find.text('Welcome to Hummlist'), findsOneWidget);
+      expect(find.text('Welcome to Snacklist'), findsOneWidget);
       expect(find.text('Create a household'), findsOneWidget);
       expect(find.text('Join with an invite'), findsOneWidget);
     });
@@ -293,7 +293,7 @@ void main() {
     });
   });
 
-  group('Hummlist Lifetime at the join (job 43)', () {
+  group('Snacklist Lifetime at the join (job 43)', () {
     const inHome = InHousehold('peter', home, [home]);
     FakeInvites says(JoinLifetime lifetime) =>
         FakeInvites()..lifetime['ABCD2345'] = lifetime;
@@ -306,7 +306,7 @@ void main() {
       );
       expect(
         find.text(
-          'Dieser Haushalt hat Hummlist Lifetime. Du musst nichts kaufen.',
+          'Dieser Haushalt hat Snacklist Lifetime. Du musst nichts kaufen.',
         ),
         findsOneWidget,
       );
@@ -365,7 +365,7 @@ void main() {
       );
       expect(
         find.text(
-          'This household has Hummlist Lifetime. '
+          'This household has Snacklist Lifetime. '
           "You don't need to buy anything.",
         ),
         findsOneWidget,
@@ -381,7 +381,9 @@ void main() {
             .first,
       );
       expect(
-        find.text('Bought Hummlist Lifetime recently? How to request a refund'),
+        find.text(
+          'Bought Snacklist Lifetime recently? How to request a refund',
+        ),
         findsOneWidget,
       );
     });
@@ -428,7 +430,7 @@ void main() {
       final code = o.invites.created.single.code;
       expect(o.sharer.shared, [
         // No APP_URL in tests: the code alone.
-        'Komm in unseren Hummlist-Haushalt. Code: $code',
+        'Komm in unseren Snacklist-Haushalt. Code: $code',
       ]);
       expect(find.bySemanticsLabel('Code $code'), findsOneWidget);
       expect(
@@ -495,7 +497,7 @@ void main() {
       await tapKey(tester, 'invite-partner');
       expect(
         o.sharer.shared.single,
-        startsWith('Join our Hummlist household.'),
+        startsWith('Join our Snacklist household.'),
       );
       await tester.pump(const Duration(seconds: 6));
     });

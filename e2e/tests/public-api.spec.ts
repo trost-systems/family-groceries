@@ -1,4 +1,4 @@
-// Job 73: the Hummlist API over HTTP through the local gateway (docs/API.md): an API key made in
+// Job 73: the Snacklist API over HTTP through the local gateway (docs/API.md): an API key made in
 // the app's session adds, lists, ticks and moves items that the open list shows, a read key
 // cannot write, every answer carries the rate-limit headers, and a burst ends in 429.
 import { expect, test } from './fixtures';

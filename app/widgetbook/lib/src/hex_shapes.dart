@@ -3,7 +3,7 @@ import 'package:family_groceries/design/tokens.g.dart';
 import 'package:flutter/material.dart';
 import 'package:hummlist_widgetbook/src/story.dart';
 
-const _path = 'Hummlist/Formen';
+const _path = 'Snacklist/Formen';
 
 /// The pointy hex (the add bar's plus); the fields are in `fields.dart`.
 final hexShapeComponents = [
@@ -13,7 +13,7 @@ final hexShapeComponents = [
 class const _Plus() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: HlSpace.s4,

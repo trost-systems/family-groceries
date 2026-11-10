@@ -53,7 +53,7 @@ class _HexCheckboxState()
   Widget build(BuildContext context) {
     positionController.duration = hlMotion(context, HlDuration.short);
     reactionController.duration = hlMotion(context, HlDuration.press);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final enabled = isInteractive;
     return Semantics(
       checked: widget.value,

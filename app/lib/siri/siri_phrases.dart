@@ -4,15 +4,15 @@
 /// that Siri knows each one.
 const siriPhrases = (
   en: [
-    'Add to Hummlist',
-    'Add something to my Hummlist',
-    'Add <item> to Hummlist',
-    "What's on my Hummlist?",
+    'Add to Snacklist',
+    'Add something to my Snacklist',
+    'Add <item> to Snacklist',
+    "What's on my Snacklist?",
   ],
   de: [
-    'Etwas auf Hummlist setzen',
-    'Hummlist, füge etwas hinzu',
-    'Füge <Eintrag> zu Hummlist hinzu',
-    'Hummlist, was steht drauf?',
+    'Etwas auf Snacklist setzen',
+    'Snacklist, füge etwas hinzu',
+    'Füge <Eintrag> zu Snacklist hinzu',
+    'Snacklist, was steht drauf?',
   ],
 );

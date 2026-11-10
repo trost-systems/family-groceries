@@ -455,7 +455,7 @@ class const _CloseButton({required final VoidCallback onClose})
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return FocusTraversalOrder(
       order: const NumericFocusOrder(4),
       // A tap on a web semantics button node takes the add field's text
@@ -508,7 +508,7 @@ class const _SuggestionRow({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final entry = suggestion.entry;
     final category = catalog.categories
         .where((c) => c.id == entry.categoryId)

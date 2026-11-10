@@ -2,7 +2,7 @@
 // (asUser); the link map, the rate limit and the analytics subject use the service connection
 // through functions in migration 20261030140000_alexa.sql that clients cannot call.
 import { sha256Hex } from '../_shared/auth.ts';
-import { CONSENT_TEXT_VERSION } from '../_shared/consent_version.ts';
+import { CURRENT_CONSENT_TEXT_VERSIONS } from '../_shared/consent_version.ts';
 import type { Sql, Tx } from '../_shared/db.ts';
 import { listItems as mcpListItems } from '../_shared/list.ts';
 import type { Spoken } from './speech.ts';
@@ -45,7 +45,7 @@ export async function openItems(tx: Tx, householdId: string): Promise<Spoken[]> 
 
 /**
  * Who an analytics event for [userId] goes to, or null when their latest answer was not a yes to
- * the current consent text ([CONSENT_TEXT_VERSION]): a yes under an older text, or one an app
+ * a current consent text ([CURRENT_CONSENT_TEXT_VERSIONS]): a yes under an older text, or one an app
  * build before 2026-11-01 recorded without a version, is no decision.
  */
 export interface AnalyticsSubject {
@@ -77,7 +77,9 @@ export async function analyticsSubject(sql: Sql, userId: string): Promise<Analyt
     where a.user_id = ${userId}::uuid
     order by a.decided_at desc, a.install_id
     limit 1`;
-  if (!row?.consent || row.consent_text_version !== CONSENT_TEXT_VERSION) return null;
+  if (!row?.consent || !CURRENT_CONSENT_TEXT_VERSIONS.includes(row.consent_text_version ?? '')) {
+    return null;
+  }
   if (!row.household_id || !row.role) return null;
   return {
     installId: row.install_id,

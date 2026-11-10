@@ -281,7 +281,7 @@ class const HintCallout({
 
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Semantics(
       container: true,
       child: ConstrainedBox(
@@ -384,7 +384,7 @@ class const _HintContent({
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Padding(
       padding: EdgeInsetsDirectional.only(
         start: HlSpace.s3,
@@ -470,7 +470,7 @@ class const ChecklistCard({
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final done = checklist.entries.where((e) => e.done).length;
     final kind = (checklist.kind ?? HouseholdKind.other).name;
     return Semantics(
@@ -582,7 +582,7 @@ class const _ChecklistRow({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Padding(
       padding: const EdgeInsetsDirectional.only(
         top: HlSpace.s2,

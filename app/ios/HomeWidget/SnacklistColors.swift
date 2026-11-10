@@ -1,9 +1,9 @@
-// Generated from design/tokens/hummlist.tokens.json by design/tokens/build.mjs. Do not edit.
+// Generated from design/tokens/snacklist.tokens.json by design/tokens/build.mjs. Do not edit.
 import SwiftUI
 import UIKit
 
 /// Every colour token, switching with the widget's light or dark appearance.
-enum HummlistColors {
+enum SnacklistColors {
   static let brand = dynamic(light: 0x1b3fae, dark: 0x9fb6ff)
   static let onBrand = dynamic(light: 0xffffff, dark: 0x0b1024)
   static let honey = dynamic(light: 0xffe24a, dark: 0xffe24a)

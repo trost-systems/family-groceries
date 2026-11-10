@@ -6,11 +6,15 @@
 // Env: SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF
 
 export const consentPath = '/oauth/consent';
-// The pre-rename callback stays for builds installed before job 20.
+// Snacklist's (job 174), Hummlist's until it retires, and the pre-rename one for builds installed
+// before job 20.
 const mobileCallbacks = [
+  'com.snacklist.app://login-callback',
   'com.hummlist.app://login-callback',
   'com.petertrost.familygroceries://login-callback',
 ];
+// Both hosts of the web app while Hummlist and Snacklist run side by side (job 174).
+const webApps = ['https://app.snacklist.app', 'https://app.hummlist.com'];
 
 export type AuthUrls = {
   'site_url': string;
@@ -31,7 +35,12 @@ export function origin(url: string): string {
 export function desired(current: string, appUrl: string, preview?: string): AuthUrls {
   const site = origin(appUrl);
   const keep = current.split(',').map((s) => s.trim()).filter(Boolean);
-  const allow = [`${site}/**`, ...(preview ? [`${preview}/**`] : []), ...mobileCallbacks];
+  const allow = [
+    `${site}/**`,
+    ...(preview ? [`${preview}/**`] : []),
+    ...webApps.map((app) => `${app}/**`),
+    ...mobileCallbacks,
+  ];
   return {
     site_url: site,
     uri_allow_list: [...new Set([...allow, ...keep])].join(','),

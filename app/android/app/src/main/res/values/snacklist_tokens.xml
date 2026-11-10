@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generated from design/tokens/hummlist.tokens.json by design/tokens/build.mjs. Do not edit. -->
+<!-- Generated from design/tokens/snacklist.tokens.json by design/tokens/build.mjs. Do not edit. -->
 <resources>
     <color name="hl_brand">#1b3fae</color>
     <color name="hl_on_brand">#ffffff</color>

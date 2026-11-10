@@ -8,9 +8,9 @@ import { RecordError } from '../releases.mjs';
 const PROD = { VERCEL_ENV: 'production' };
 const DE = '/de/changelog';
 const EN = '/en/changelog';
-const SITE = 'https://hummlist.com';
-const EMPTY_DE = 'Die erste Version von Hummlist ist bald in den Stores. Hier steht dann, was jede neue Version bringt.';
-const EMPTY_EN = "Hummlist's first version is coming to the stores soon. This page will then list what each new version brings.";
+const SITE = 'https://snacklist.app';
+const EMPTY_DE = 'Die erste Version von Snacklist ist bald in den Stores. Hier steht dann, was jede neue Version bringt.';
+const EMPTY_EN = "Snacklist's first version is coming to the stores soon. This page will then list what each new version brings.";
 const SHA = (c) => c.repeat(40);
 
 const item = (de, en, pr, sha) => ({ de, en, pr, sha });
@@ -94,9 +94,9 @@ test('production with no public release shows the empty state in both languages'
   assert.equal(en.querySelector('h1').text, "What's new");
   assert.deepEqual(de.querySelectorAll('main p').map((p) => p.text), [EMPTY_DE]);
   assert.deepEqual(en.querySelectorAll('main p').map((p) => p.text), [EMPTY_EN]);
-  assert.equal(de.querySelector('title').text, 'Neuigkeiten | Hummlist');
-  assert.equal(meta(de, 'description'), 'Was jede Version von Hummlist neu bringt, verbessert und behebt.');
-  assert.equal(meta(en, 'description'), 'What each version of Hummlist adds, improves and fixes.');
+  assert.equal(de.querySelector('title').text, 'Neuigkeiten | Snacklist');
+  assert.equal(meta(de, 'description'), 'Was jede Version von Snacklist neu bringt, verbessert und behebt.');
+  assert.equal(meta(en, 'description'), 'What each version of Snacklist adds, improves and fixes.');
   const res = await serve(outDir, [DE, EN]);
   assert.equal(res[DE].status, 200);
   assert.equal(res[EN].status, 200);

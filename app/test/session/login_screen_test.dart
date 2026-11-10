@@ -66,12 +66,12 @@ void main() {
     (
       const Locale('de'),
       ['Impressum', 'Datenschutz'],
-      ['https://hummlist.com/impressum', 'https://hummlist.com/datenschutz'],
+      ['https://snacklist.app/impressum', 'https://snacklist.app/datenschutz'],
     ),
     (
       const Locale('en'),
       ['Imprint', 'Privacy'],
-      ['https://hummlist.com/en/imprint', 'https://hummlist.com/en/privacy'],
+      ['https://snacklist.app/en/imprint', 'https://snacklist.app/en/privacy'],
     ),
   ]) {
     for (final size in [const Size(320, 568), const Size(1280, 720)]) {
@@ -262,7 +262,7 @@ void main() {
   ) async {
     await pumpLogin(tester, size: const Size(360, 780));
     expect(find.byType(AppBar), findsNothing);
-    expect(find.text('Hummlist'), findsOneWidget);
+    expect(find.text('Snacklist'), findsOneWidget);
     final mark = tester.getSize(find.byType(Image).first);
     expect(mark, const Size(56, 56));
     final applePill = find.descendant(

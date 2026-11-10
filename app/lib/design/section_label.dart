@@ -29,7 +29,7 @@ class const HlSectionLabel(
 
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Padding(
       padding: padding,
       child: LayoutBuilder(

@@ -106,7 +106,7 @@ const invitesPath = '/more/invites';
 /// default for Siri, Alexa & KI, and leaving it.
 const householdPath = '/more/household';
 
-/// More's Hummlist Premium: the purchase of either plan, its restore and
+/// More's Snacklist Premium: the purchase of either plan, its restore and
 /// the household's premium status. The path and its screen name stay
 /// `lifetime` from before job 49, so links and analytics keep their name.
 const premiumPath = '/more/lifetime';
@@ -386,7 +386,7 @@ String? authRedirect(
 void goToSignIn(BuildContext context) => context.go(loginPath);
 
 /// The guided start's first screen, from the sign-in's „Neu bei
-/// Hummlist?“: with a draft, [authRedirect] resumes it.
+/// Snacklist?“: with a draft, [authRedirect] resumes it.
 void goToStart(BuildContext context) => context.go(startPath);
 
 /// Where an old `/settings` link goes now: Konto for `?section=account`,

@@ -1511,3 +1511,28 @@ Built and merged (#327, #332, #333). What only Peter can do:
      ernennt nur, wer den Haushalt angelegt hat.“ (`app_de.arb:995`). Since the owner role passes
      on when the creator leaves, the person who may name admins is the owner, not necessarily
      the creator. The English text ("Only the household's owner names admins.") is right.
+
+## Job 174: Snacklist rename, code and copy (2026-11-10)
+
+1. **Mail addresses stay @hummlist.com.** The app, the legal pages, the support pages and the
+   consent texts still name support@, hello@ and feedback@hummlist.com: the snacklist.app
+   mailboxes don't exist yet. When they do (S3: Workspace secondary domain, Resend), say which
+   addresses Snacklist uses; one PR then swaps them together with the privacy and imprint pages.
+2. **Siri's alternative names, on your iPhone.** Siri gets „Snacklist“ as the spoken name and,
+   for what it may write instead, de „Snack List“, „Snäcklist“, „Snecklist“ and en „Snack List“,
+   „Snack-list“, „Snack Lists“. The brief also listed „Snacklist“ itself; the repo's Siri checks
+   refuse an alternative that repeats the app name (it costs one of the three slots and matches
+   nothing new), so „Snecklist“ and „Snack Lists“ took its place. On the first Snacklist
+   TestFlight build: say „Füge Milch zu Snacklist hinzu“ and „Was steht auf Snacklist?“ a few
+   times; if Siri writes the name another way, that spelling should replace one of these.
+3. **The waitlist pages mix both names until S3.** The sign-up and confirmation pages say
+   Snacklist („Snacklist-Beta“), but the consent texts right below them
+   (`site/content/legal/consent/waitlist-*`) and the waitlist mails still say Hummlist („Peter
+   Trost (Hummlist)“, sender „Peter von Hummlist“). Those consent texts are versioned records the
+   waitlist function checks, so a Snacklist version goes in together with the new mail sender
+   (S3). Say if the waitlist should rather stay all-Hummlist until then.
+4. **Apple's sign-in list may still say Hummlist.** After an account deletion the app tells
+   Apple users to remove „Snacklist“ under „Mit Apple anmelden“. Apple shows the name of the
+   primary App ID or Services ID the user signed in with; Snacklist's App ID is grouped under
+   Hummlist's, so users may see „Hummlist“ there. Worth a look in the Apple Developer portal at
+   S3 (the Services ID description is already „Snacklist“).

@@ -32,7 +32,7 @@ class _HexRadioState<T>() extends State<HexRadio<T>> {
   @override
   Widget build(BuildContext context) {
     final registry = RadioGroup.maybeOf<T>(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final enabled = widget.enabled && registry != null;
     return RawRadio<T>(
       value: widget.value,

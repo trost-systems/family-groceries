@@ -10,7 +10,7 @@ const ANDROID = 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KH
 const DESKTOP = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 const LISTED = { appStore: 'https://apps.apple.com/app/id0000000000', googlePlay: 'https://play.google.com/store/apps/details?id=com.hummlist.app' };
 
-const go = (ua, lang, urls) => getApp(new Request('https://hummlist.com/get', { headers: { 'user-agent': ua, ...(lang ? { 'accept-language': lang } : {}) } }), urls);
+const go = (ua, lang, urls) => getApp(new Request('https://snacklist.app/get', { headers: { 'user-agent': ua, ...(lang ? { 'accept-language': lang } : {}) } }), urls);
 
 test('/get sends a phone to its store once the listing is public', () => {
   for (const [ua, want] of [[IPHONE, LISTED.appStore], [IPAD, LISTED.appStore], [ANDROID, LISTED.googlePlay]]) {

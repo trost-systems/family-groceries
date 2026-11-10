@@ -40,7 +40,7 @@ const revenue = {
   country: matches(/^[A-Z]{2}$/),
   net_amount: amount,
   transaction_ref: matches(/^[0-9a-f]{32}$/),
-  // Job 49: which Hummlist Premium product the event is about. Promotional grants send no events.
+  // Job 49: which Snacklist Premium product the event is about. Promotional grants send no events.
   premium_source: oneOf('yearly', 'lifetime'),
 } satisfies Record<string, Rule>;
 
@@ -84,7 +84,7 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
     source: oneOf('native', 'shortcut'),
     count: intIn(0, 10_000),
   },
-  // Job 50: a household without Hummlist Premium used an integration while the lock is on (at
+  // Job 50: a household without Snacklist Premium used an integration while the lock is on (at
   // most once an hour per household and integration, _shared/premium.ts). Never what was said.
   // Alexa stays free (job 72), so it is never blocked; the API (job 73) is.
   'integration_blocked': { integration: oneOf('siri', 'mcp', 'api') },

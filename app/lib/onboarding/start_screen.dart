@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The first screen signed out (job 168b): the hex mark and wordmark, what
-/// Hummlist is, „Los geht's“ into the guided start (the usage-data question
+/// Snacklist is, „Los geht's“ into the guided start (the usage-data question
 /// first, unless this install answered it), „Schon ein Konto? Anmelden“
 /// and „Einladung einfügen“ for a join link copied before the install. The
 /// router moves on once the draft exists.
@@ -19,7 +19,7 @@ class const StartScreen({super.key}) extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     return Scaffold(
       body: SafeArea(
         bottom: false,

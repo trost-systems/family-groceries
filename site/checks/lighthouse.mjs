@@ -112,7 +112,7 @@ async function jpegToRgba(buf) {
 const header = ['page', 'form', 'scheme', 'ground (proof)', 'perf', 'a11y', 'best pr.', 'seo', 'LCP', 'CLS', 'TBT', 'below 1 (besides informative)'];
 const body = rows.map((r) => [r.page, `${r.form} ${r.width}`, r.scheme, `${r.ground}${r.schemeOk ? '' : ' WRONG'}`, r.perf, r.a11y, r.bp, r.seo, r.lcp, r.cls, r.tbt,
   [...r.perfFails.map((a) => `perf:${a}`), ...r.a11yFails.map((a) => `a11y:${a}`), ...r.bpFails.map((a) => `bp:${a}`), ...r.seoFails.map((a) => `seo:${a}${EXPECTED_FAILS.has(a) ? ' (expected, noindex)' : ''}`)].join(', ') || '-']);
-const md = `# Lighthouse, hummlist.com landing pages
+const md = `# Lighthouse, snacklist.app landing pages
 
 Lighthouse ${version}, Chromium ${chromium.executablePath().match(/chromium-(\d+)/)?.[1] ?? ''} build, against \`${dist}\` served by \`scripts/preview.mjs\` (vercel.json headers).
 Colour scheme: Chrome flag \`--blink-settings=preferredColorScheme=0\` (dark) or \`=1\` (light). The

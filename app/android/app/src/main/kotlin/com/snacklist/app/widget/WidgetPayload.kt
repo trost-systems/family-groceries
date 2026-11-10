@@ -8,7 +8,7 @@ data class WidgetItem(val name: String, val quantity: String?, val store: String
 
 /** What the widget shows: the app's `hummlist_widget` string, version 1 (docs/HOME_WIDGETS.md). */
 sealed interface WidgetPayload {
-    /** No payload yet, an unreadable one or another version: ask the user to open Hummlist. */
+    /** No payload yet, an unreadable one or another version: ask the user to open Snacklist. */
     data object NoData : WidgetPayload
 
     data object SignedOut : WidgetPayload

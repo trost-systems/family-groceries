@@ -23,7 +23,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// Hummlist Premium for the whole household (`/more/lifetime`), laid out as
+/// Snacklist Premium for the whole household (`/more/lifetime`), laid out as
 /// PW-P4 „Haushalt“ (job 87): the household as the hero, the status, the
 /// yearly plan and Lifetime as two tiles with the store's own prices, one Buy
 /// for the picked plan, restore, and the plan's management. A page of the
@@ -307,7 +307,7 @@ class const _Unlocked(
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         HlSpace.s4,
@@ -420,7 +420,7 @@ class const _Spinner() extends StatelessWidget {
 }
 
 TextStyle _display(BuildContext context, double size, {Color? color}) {
-  final t = HummlistColors.of(Theme.of(context).brightness);
+  final t = SnacklistColors.of(Theme.of(context).brightness);
   return TextStyle(
     fontFamily: HlFont.display,
     fontSize: size,
@@ -451,7 +451,7 @@ class const _Hero({
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     // No Flags above (a screen on its own, in tests): off.
     final api = context.select<Flags?, bool>(
       (flags) => flags?.isOn(publicApiFlag) ?? false,
@@ -524,7 +524,7 @@ class const _Benefit(final IconData icon, final String text)
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Semantics(
       container: true,
       child: Padding(
@@ -676,7 +676,7 @@ class const _PlanTile({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final ink = picked ? t.onHoney : t.text;
     final period = switch (plan) {
       PremiumPlan.yearly => l10n.premiumPerYear,

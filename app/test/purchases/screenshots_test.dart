@@ -1,7 +1,7 @@
-// Job 25, 43, 49, 87: PR screenshots of the Hummlist Premium page in its native
-// states (the web build only shows the web state). Renders More's real page
-// with the fake store and the app's theme, in Roboto and the Material icons
-// from the Flutter SDK. Skipped unless SCREENSHOT_DIR is set:
+// Job 25, 43, 49, 87: PR screenshots of the Snacklist Premium page in its
+// native states (the web build only shows the web state). Renders More's real
+// page with the fake store and the app's theme, in Roboto and the Material
+// icons from the Flutter SDK. Skipped unless SCREENSHOT_DIR is set:
 //   SCREENSHOT_DIR=/tmp/shots flutter test --update-goldens \
 //     test/purchases/screenshots_test.dart
 import 'dart:io';

@@ -19,7 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:hummlist_widgetbook/src/fixtures.dart' as fixtures;
 import 'package:hummlist_widgetbook/src/story.dart';
 
-const _path = 'Hummlist';
+const _path = 'Snacklist';
 
 /// The app's own widgets from `lib/list`, built standalone.
 final appComponents = [
@@ -85,7 +85,7 @@ final appComponents = [
   component(_path, 'FoldoutChips', [
     plain('Laden und Kategorie', (context) => const _Chips()),
     plain('Geändert', (context) => const _Chips(changed: true)),
-    // The add sheet before a pick: Hummlist's guess, muted and marked.
+    // The add sheet before a pick: Snacklist's guess, muted and marked.
     plain('Automatisch', (context) => const _Chips(auto: true)),
     plain('Läden offen', (context) => const _Chips(storesOpen: true)),
     plain(
@@ -154,7 +154,7 @@ class const _Badges(final List<Store> stores) extends StatelessWidget {
 class const _Chips({
   final bool changed = false,
 
-  /// Hummlist picks until the user does.
+  /// Snacklist picks until the user does.
   final bool auto = false,
   final bool storesOpen = false,
   final Catalog? catalog,

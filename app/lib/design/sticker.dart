@@ -39,14 +39,14 @@ class const HlSticker({
     if (brightness == Brightness.light) {
       return light;
     }
-    final contour = HummlistColors.dark.border;
+    final contour = SnacklistColors.dark.border;
     return [for (final s in light) BoxShadow(color: contour, offset: s.offset)];
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: color ?? t.surfaceRaised,

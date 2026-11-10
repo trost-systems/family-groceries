@@ -88,7 +88,7 @@ void main() {
     expect(find.text('Einer kauft. Alle haben es.'), findsOneWidget);
     expect(
       find.text(
-        'Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die '
+        'Snacklist Premium gilt für euren ganzen Haushalt, auch für alle, die '
         'später dazukommen.',
       ),
       findsOneWidget,
@@ -181,7 +181,7 @@ void main() {
         '(${on ? 'on' : 'off'})', (tester) async {
       await openLifetime(tester, flags: {if (on) 'public-api'});
       expect(
-        find.text('Eigene Automationen mit der Hummlist API'),
+        find.text('Eigene Automationen mit der Snacklist API'),
         on ? findsOneWidget : findsNothing,
       );
     });
@@ -192,7 +192,7 @@ void main() {
     expect(find.text('One buys. Everyone has it.'), findsOneWidget);
     expect(
       find.text(
-        'Hummlist Premium covers your whole household, including everyone '
+        'Snacklist Premium covers your whole household, including everyone '
         'who joins later.',
       ),
       findsOneWidget,
@@ -202,7 +202,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text('Your own automations with the Hummlist API'),
+      find.text('Your own automations with the Snacklist API'),
       findsOneWidget,
     );
     expect(
@@ -237,7 +237,7 @@ void main() {
     more.purchases.unlock();
     await tester.pumpAndSettle();
     shows({'lifetime-unlocked'});
-    expect(find.text('Hummlist Premium Lifetime'), findsOneWidget);
+    expect(find.text('Snacklist Premium Lifetime'), findsOneWidget);
     expect(key('premium-buy-lifetime'), findsNothing);
     expect(key('lifetime-restore'), findsNothing);
   });
@@ -318,7 +318,7 @@ void main() {
     await tester.pump();
     shows({'lifetime-unavailable'});
     expect(
-      find.text('Hummlist Premium ist gerade nicht verfügbar.'),
+      find.text('Snacklist Premium ist gerade nicht verfügbar.'),
       findsOneWidget,
     );
     expect(key('lifetime-restore'), findsOneWidget);
@@ -338,7 +338,7 @@ void main() {
       'kaufst du in der iPhone- oder Android-App',
       'Danke!',
       'coming soon',
-      'You can buy Hummlist Premium',
+      'You can buy Snacklist Premium',
       'Thank you!',
     ]) {
       expect(find.textContaining(hidden), findsNothing, reason: hidden);
@@ -500,7 +500,7 @@ void main() {
     shows({'lifetime-unlocked', 'lifetime-bought-twice'});
     expect(
       find.text(
-        'Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen '
+        'Euer Haushalt hat Snacklist Lifetime mehr als einmal gekauft. Einen '
         'der Käufe kannst du dir erstatten lassen.',
       ),
       findsOneWidget,
@@ -511,7 +511,7 @@ void main() {
     expect(find.text('Kauf zurückfordern'), findsOneWidget);
     expect(
       find.text(
-        'Hummlist Lifetime gehört immer zu dem Haushalt, in dem es gekauft '
+        'Snacklist Lifetime gehört immer zu dem Haushalt, in dem es gekauft '
         'wurde. Käufe im App Store erstattet nur Apple. Bei Google Play '
         'beantragst du die Erstattung in den ersten 48 Stunden bei Google; '
         'danach schreib uns an support@hummlist.com, wir prüfen jede Anfrage '
@@ -525,7 +525,7 @@ void main() {
       find.text(
         'Android, in den ersten 48 Stunden: Öffne Google Play, tippe auf dein '
         'Profilbild, dann „Zahlungen und Abos“, „Budget und '
-        'Bestellverlauf“, wähle Hummlist Lifetime und „Problem melden“. '
+        'Bestellverlauf“, wähle Snacklist Lifetime und „Problem melden“. '
         'Danach schreib uns mit der Bestellnummer (beginnt mit „GPA.“) oder '
         'der E-Mail-Adresse deines Google-Kontos.',
       ),
@@ -540,7 +540,7 @@ void main() {
     expect(find.text('Mehr in den häufigen Fragen'), findsOneWidget);
     expect(
       tester.widget<LegalLink>(key('refund-faq')).url,
-      Uri.parse('https://hummlist.com/support'),
+      Uri.parse('https://snacklist.app/support'),
     );
   });
 
@@ -570,7 +570,7 @@ void main() {
     );
     expect(
       find.text(
-        'Your household bought Hummlist Lifetime more than once. One of the '
+        'Your household bought Snacklist Lifetime more than once. One of the '
         'purchases can be refunded.',
       ),
       findsOneWidget,
@@ -584,7 +584,7 @@ void main() {
     expect(find.text('Request a refund'), findsOneWidget);
     expect(
       find.text(
-        'Hummlist Lifetime always belongs to the household it was bought in. '
+        'Snacklist Lifetime always belongs to the household it was bought in. '
         'Only Apple refunds App Store purchases. For Google Play, ask Google '
         'within 48 hours of buying; after that, email us at '
         "support@hummlist.com and we'll look at your request. Your statutory "
@@ -596,7 +596,7 @@ void main() {
       find.text(
         'Android, within 48 hours: open Google Play, tap your profile picture, '
         'then “Payments & subscriptions”, “Budget & order history”, choose '
-        'Hummlist Lifetime and “Report a problem”. After that, email us with '
+        'Snacklist Lifetime and “Report a problem”. After that, email us with '
         "the order number (it starts with “GPA.”) or your Google account's "
         'email address.',
       ),
@@ -608,7 +608,7 @@ void main() {
     expect(find.text('More in the FAQ'), findsOneWidget);
     expect(
       tester.widget<LegalLink>(key('refund-faq')).url,
-      Uri.parse('https://hummlist.com/en/support'),
+      Uri.parse('https://snacklist.app/en/support'),
     );
   });
 
@@ -642,7 +642,7 @@ void main() {
     shows({'lifetime-web'});
     expect(
       find.text(
-        'Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach '
+        'Snacklist Premium kaufst du in der iPhone- oder Android-App. Danach '
         'ist es auch hier für deinen ganzen Haushalt freigeschaltet.',
       ),
       findsOneWidget,
@@ -660,7 +660,7 @@ void main() {
     );
     expect(
       find.text(
-        'You can buy Hummlist Premium in the iPhone or Android app. It is '
+        'You can buy Snacklist Premium in the iPhone or Android app. It is '
         'then unlocked here too, for your whole household.',
       ),
       findsOneWidget,
@@ -796,7 +796,7 @@ void main() {
         expect(
           find.descendant(
             of: key('more-lifetime'),
-            matching: find.text('Hummlist Premium'),
+            matching: find.text('Snacklist Premium'),
           ),
           findsOneWidget,
         );
@@ -840,7 +840,7 @@ void main() {
     });
   });
 
-  group('Hummlist Premium: prices, disclosures, the offer (job 49)', () {
+  group('Snacklist Premium: prices, disclosures, the offer (job 49)', () {
     /// The tile's price and the line under it, as shown.
     String priceOf(WidgetTester tester, PremiumPlan plan) => [
       for (final part in ['price', 'period'])
@@ -879,7 +879,7 @@ void main() {
       );
       expect(
         tester.widget<LegalLink>(key('premium-privacy')).url,
-        Uri.parse('https://hummlist.com/datenschutz'),
+        Uri.parse('https://snacklist.app/datenschutz'),
       );
       expect(find.text('Nutzungsbedingungen (EULA)'), findsOneWidget);
     });
@@ -1003,7 +1003,7 @@ void main() {
         expect(key('lifetime-restore'), findsNothing);
         shows({'premium-unavailable'});
         expect(
-          find.text('Hummlist Premium ist gerade nicht verfügbar.'),
+          find.text('Snacklist Premium ist gerade nicht verfügbar.'),
           findsOneWidget,
         );
         expect(more.purchases.repository.calls, isEmpty);
@@ -1021,7 +1021,7 @@ void main() {
       expect(key('premium-buy-lifetime'), findsNothing);
       shows({'premium-unavailable'});
       expect(
-        find.text('Hummlist Premium ist gerade nicht verfügbar.'),
+        find.text('Snacklist Premium ist gerade nicht verfügbar.'),
         findsOneWidget,
       );
       expect(find.textContaining('bald verfügbar'), findsNothing);
@@ -1042,7 +1042,7 @@ void main() {
       expect(key('premium-card-lifetime'), findsOneWidget);
       expect(
         find.textContaining(
-          'Hummlist Premium aktiv (jährlich, verlängert '
+          'Snacklist Premium aktiv (jährlich, verlängert '
           'sich am',
         ),
         findsOneWidget,
@@ -1070,7 +1070,7 @@ void main() {
           'Einmalkauf weiter und wird weiter abgerechnet, bis es gekündigt '
           'wird; das restliche Abojahr wird nicht automatisch erstattet. '
           'Kündigen kann nur, wer das Abo abgeschlossen hat, unter Abos '
-          'verwalten. Hummlist kann das Abo nicht kündigen.',
+          'verwalten. Snacklist kann das Abo nicht kündigen.',
           findRichText: true,
         ),
         findsOneWidget,
@@ -1105,7 +1105,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         find.textContaining(
-          'You can cancel it in Manage subscription. Hummlist',
+          'You can cancel it in Manage subscription. Snacklist',
           findRichText: true,
         ),
         findsOneWidget,
@@ -1123,7 +1123,7 @@ void main() {
         store: FakePurchaseRepository(bought: const Canceled()),
       );
       expect(
-        find.textContaining('Hummlist Premium aktiv (jährlich, läuft am'),
+        find.textContaining('Snacklist Premium aktiv (jährlich, läuft am'),
         findsOneWidget,
       );
       await tester.tap(key('premium-buy-lifetime'));
@@ -1148,7 +1148,7 @@ void main() {
           ],
       );
       shows({'lifetime-unlocked', 'premium-lifetime-while-yearly'});
-      expect(find.text('Hummlist Premium Lifetime'), findsOneWidget);
+      expect(find.text('Snacklist Premium Lifetime'), findsOneWidget);
       await tester.tapOnText(find.textRange.ofSubstring('Abos verwalten'));
       await tester.pump();
       expect(
@@ -1271,7 +1271,7 @@ void main() {
       shows({'lifetime-checking'});
     });
 
-    testWidgets('a promotional grant before Hummlist Premium starts: the beta '
+    testWidgets('a promotional grant before Snacklist Premium starts: the beta '
         'status, nothing to buy', (tester) async {
       await openLifetime(
         tester,
@@ -1282,7 +1282,7 @@ void main() {
       shows({'lifetime-unlocked'});
       expect(
         find.text(
-          'In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet',
+          'In der Beta kostenlos freigeschaltet, bis Snacklist Premium startet',
         ),
         findsOneWidget,
       );
@@ -1300,7 +1300,7 @@ void main() {
       );
       expect(
         tester.widget<LegalLink>(key('premium-beta-privacy')).url,
-        Uri.parse('https://hummlist.com/datenschutz#premium-beta'),
+        Uri.parse('https://snacklist.app/datenschutz#premium-beta'),
       );
       expect(find.textContaining('Test und App-Prüfung'), findsNothing);
       expectBetaHero();
@@ -1317,7 +1317,7 @@ void main() {
       shows({'lifetime-unlocked'});
       expect(
         find.text(
-          'In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet',
+          'In der Beta kostenlos freigeschaltet, bis Snacklist Premium startet',
         ),
         findsOneWidget,
       );
@@ -1333,7 +1333,7 @@ void main() {
           ..rowsNow = [promotionalRow(from: DateTime.now(), days: 60)],
       );
       expect(
-        find.text('Free in the beta, until Hummlist Premium launches'),
+        find.text('Free in the beta, until Snacklist Premium launches'),
         findsOneWidget,
       );
       expect(
@@ -1346,7 +1346,7 @@ void main() {
       expect(find.text('More in the privacy policy'), findsOneWidget);
       expect(
         tester.widget<LegalLink>(key('premium-beta-privacy')).url,
-        Uri.parse('https://hummlist.com/en/privacy#premium-beta'),
+        Uri.parse('https://snacklist.app/en/privacy#premium-beta'),
       );
       expectHiddenBeforeSales();
     });
