@@ -248,10 +248,32 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Auth mails in the account's language (user_metadata.mail_locale, set by the app; docs/AUTH.md
+# "Mail language"). German for "de", English otherwise. Production gets the same subjects and
+# files from supabase/deploy/auth_mail.ts.
+[auth.email.template.confirmation]
+subject = "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Bestätige deine E-Mail-Adresse für Snacklist{{ else }}Confirm your email address for Snacklist{{ end }}"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Dein Anmeldelink für Snacklist{{ else }}Your Snacklist sign-in link{{ end }}"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.recovery]
+subject = "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Setze dein Snacklist-Passwort zurück{{ else }}Reset your Snacklist password{{ end }}"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Bestätige deine neue E-Mail-Adresse für Snacklist{{ else }}Confirm your new email address for Snacklist{{ end }}"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.invite]
+subject = "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Du wurdest zu Snacklist eingeladen{{ else }}You've been invited to Snacklist{{ end }}"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.reauthentication]
+subject = "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}{{ .Token }} ist dein Snacklist-Bestätigungscode{{ else }}{{ .Token }} is your Snacklist verification code{{ end }}"
+content_path = "./supabase/templates/reauthentication.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

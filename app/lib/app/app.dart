@@ -29,6 +29,7 @@ import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/review/review_prompt.dart';
 import 'package:family_groceries/review/store_review.dart';
+import 'package:family_groceries/session/mail_language.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:family_groceries/settings/account_repository.dart';
@@ -86,6 +87,10 @@ class const App({
   /// The language picked under More's Einstellungen, read before the
   /// first frame.
   final AppLanguage? language,
+
+  /// Keeps the account's mail language on the app's; null where no mail
+  /// language is saved (tests).
+  final MailLanguageSync? mailLanguage,
 
   /// Writes the Home Screen widgets' payload; null without widgets.
   final HomeWidgetSync? homeWidgets,
@@ -153,6 +158,7 @@ class _AppState() extends State<App> {
       widget.feedbackDevice ?? PluginFeedbackDevice();
   final _addSheetRequest = AddSheetRequest();
   StreamSubscription<Uri?>? _widgetLaunches;
+  var _mailLanguageTriggers = const <StreamSubscription<Object?>>[];
 
   /// Sends what analytics has queued when the app goes to the background
   /// or the tab is hidden: it may not come back. Back in front, it reads the
@@ -169,6 +175,7 @@ class _AppState() extends State<App> {
     _lifecycle = AppLifecycleListener(
       onHide: () => unawaited(widget.analytics.flush()),
       onResume: () {
+        _syncMailLanguage();
         unawaited(widget.entitlements.refresh());
         // Someone may have removed the user from a household meanwhile.
         if (widget.session.state case InHousehold() || NeedsHousehold()) {
@@ -183,6 +190,30 @@ class _AppState() extends State<App> {
     if (widget.widgetLaunches case final launches?) {
       _widgetLaunches = followWidgetLaunches(launches, _onWidgetLaunch);
     }
+    if (widget.mailLanguage != null) {
+      // On start (web: on load), on a sign-in and on a language pick; the
+      // device's language is read again on every resume.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncMailLanguage());
+      // A no-op signed out or when nothing changed, so every session state
+      // may ask.
+      _mailLanguageTriggers = [
+        widget.session.stream.listen((_) => _syncMailLanguage()),
+        _language.stream.listen((_) => _syncMailLanguage()),
+      ];
+    }
+  }
+
+  /// Saves the language the app shows as the account's mail language when
+  /// it changed; never waits or fails.
+  void _syncMailLanguage() {
+    unawaited(
+      widget.mailLanguage?.sync(
+        resolveLocale(
+          WidgetsBinding.instance.platformDispatcher.locales,
+          _language.state,
+        ),
+      ),
+    );
   }
 
   /// A widget tap opens the list; Add opens its add sheet too. Signed out,
@@ -206,6 +237,9 @@ class _AppState() extends State<App> {
     _lifecycle.dispose();
     _reviewSessions.dispose();
     unawaited(_widgetLaunches?.cancel());
+    for (final trigger in _mailLanguageTriggers) {
+      unawaited(trigger.cancel());
+    }
     unawaited(_sessions.cancel());
     if (widget.onboarding == null) {
       unawaited(_onboarding.close());

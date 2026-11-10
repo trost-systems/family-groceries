@@ -172,12 +172,44 @@ list also holds `com.snacklist.app://login-callback` and
 `https://app.snacklist.app/**`, and the Google provider holds Snacklist's iOS
 client (set by the lead on 2026-11-10). Still open: `com.snacklist.app` in
 the Apple client ID list (S2). The hosted Site URL is
-`https://app.hummlist.com`; the allow list also keeps
+`https://app.snacklist.app` since 2026-11-10 (before that `https://app.hummlist.com`); the allow list also keeps
 `https://family-groceries-pied.vercel.app/**` (the old Vercel URL, still an
 alias) and the preview pattern, and neither script removes an entry.
 On 2026-10-22 it ran once with no provider credentials. It added
 `com.petertrost.familygroceries://login-callback` to the allow list; Google
 and Apple stay disabled.
+
+### Mail language
+
+Supabase Auth sends the confirm, magic link, reset, email change, invite and
+reauthentication mails from `"Peter · Snacklist" <hello@snacklist.app>`
+(Auth SMTP through Resend). Each mail is German or English by the account's
+`user_metadata.mail_locale`:
+
+- The app saves `mail_locale` (`de` or `en`, the language it shows: the one
+  picked under Einstellungen, else the device's, German for any other) with
+  every sign-up and magic link (`signUp`/`signInWithOtp` `data`), so the
+  first mail is already in that language. A magic link to an existing
+  account doesn't change its saved language.
+- `app/lib/session/mail_language.dart` keeps it in sync: on start (on the
+  web, on load), on resume, on a sign-in and on a language pick it compares
+  the language the app shows with the saved one and calls `updateUser` only
+  when they differ. A failure is logged and retried at the next trigger; it
+  never blocks the UI.
+- `supabase/templates/*.html` and the `[auth.email.template.*]` subjects in
+  `supabase/config.toml` branch on it: German when `mail_locale` is `de`,
+  English otherwise (accounts from before 2026-11-10 until their app syncs,
+  and accounts made outside the app). Subjects are Go templates with the
+  same data as the body, so they branch too. The `with .Data` guard keeps an
+  account without metadata on English instead of a template error.
+- The local stack reads them from `config.toml`. Production gets them from
+  `supabase/deploy/auth_mail.ts` (Management API, converges, `--dry-run`
+  lists the keys that would change), with `SUPABASE_ACCESS_TOKEN` and
+  `SUPABASE_PROJECT_REF` set:
+  `deno run --allow-read --allow-env --allow-net --config supabase/deploy/deno.json supabase/deploy/auth_mail.ts`.
+  Run it after a merge that changes a template; the deploy workflow doesn't.
+- Notification mails (password changed etc.) are off in production and keep
+  Supabase's English defaults.
 
 ### Platform setup in the repo
 

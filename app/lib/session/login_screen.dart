@@ -10,6 +10,7 @@ import 'package:family_groceries/design/status_bar_backdrop.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/household/paste_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/session/mail_language.dart';
 import 'package:family_groceries/session/provider_buttons.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -241,6 +242,8 @@ class _SignInPanelState() extends State<SignInPanel> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    // The first mail's language (supabase/templates/).
+    final mailData = mailLocaleData(Localizations.localeOf(context));
     final flows = context.read<SocialSignIn>().flows;
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 420),
@@ -341,6 +344,7 @@ class _SignInPanelState() extends State<SignInPanel> {
                             email: _email.text.trim(),
                             password: _password.text,
                             emailRedirectTo: _redirectTo,
+                            data: mailData,
                           );
                           return res.session == null
                               ? l10n.signUpCheckEmail
@@ -358,6 +362,9 @@ class _SignInPanelState() extends State<SignInPanel> {
                           await _auth.signInWithOtp(
                             email: _email.text.trim(),
                             emailRedirectTo: _redirectTo,
+                            // Only a new account takes it; mails to an
+                            // existing one use its saved language.
+                            data: mailData,
                           );
                           return l10n.magicLinkSent;
                         }, needsPassword: false),
