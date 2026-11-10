@@ -1,8 +1,8 @@
 # Homepage scenes
 
 Source for the product illustrations on the snacklist.app landing pages (job 53). Each scene is
-a standalone HTML page at design size, built with the hummlist-ui-craft skill
-(`.claude/skills/hummlist-ui-craft/`). Nothing in this folder ships: the site build reads only
+a standalone HTML page at design size, built with the snacklist-ui-craft skill
+(`.claude/skills/snacklist-ui-craft/`). Nothing in this folder ships: the site build reads only
 the WebP stills that `film-all.mjs` writes to `site/public/media/`.
 
 ## Re-film

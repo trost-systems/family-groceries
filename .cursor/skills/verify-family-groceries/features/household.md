@@ -1,6 +1,6 @@
 # Household
 
-A list belongs to a household. A new user goes through onboarding (`features/onboarding.md`): signed out, the guided start ends with the account and creates the household from its answers; signed in without a household, "Willkommen bei Hummlist" offers "Haushalt erstellen" (the same guided start from "Mit wem") and "Einladung annehmen". Under Mehr, "Partner einladen" opens the Einladungen page (make an invite, see the open ones, revoke one), and "Anderem Haushalt beitreten" opens the join screen (titled "Haushalt beitreten" since job 57); its back arrow and "Abbrechen" return to More (job 78). Since job 169b a user can be in several households (up to 10 created or joined): joining adds one, the household chip top left of the list switches between them, and More's household row opens the household page (rename, members, the default for Siri, Alexa & KI, leave).
+A list belongs to a household. A new user goes through onboarding (`features/onboarding.md`): signed out, the guided start ends with the account and creates the household from its answers; signed in without a household, "Willkommen bei Snacklist" offers "Haushalt erstellen" (the same guided start from "Mit wem") and "Einladung annehmen". Under Mehr, "Partner einladen" opens the Einladungen page (make an invite, see the open ones, revoke one), and "Anderem Haushalt beitreten" opens the join screen (titled "Haushalt beitreten" since job 57); its back arrow and "Abbrechen" return to More (job 78). Since job 169b a user can be in several households (up to 10 created or joined): joining adds one, the household chip top left of the list switches between them, and More's household row opens the household page (rename, members, the default for Siri, Alexa & KI, leave).
 
 ## Sub-features
 
@@ -20,9 +20,9 @@ A list belongs to a household. A new user goes through onboarding (`features/onb
 ## How to get to it (user POV)
 
 - Start the app signed out and tap „Los geht's“: the guided start creates the household after the account.
-- Or sign up or sign in as a user without a household. After the analytics question (builds with a key), "Willkommen bei Hummlist" offers "Haushalt erstellen" and "Einladung annehmen".
+- Or sign up or sign in as a user without a household. After the analytics question (builds with a key), "Willkommen bei Snacklist" offers "Haushalt erstellen" and "Einladung annehmen".
 - Tap "Mehr" in the tab bar, then "Partner einladen" or "Anderem Haushalt beitreten" (the second group; More has no section labels since job 85).
-- Open an invite link (`/join/<code>`). The web build opens it, also before sign-in (the code is kept on the device through sign-in). The release phone apps claim `https://app.hummlist.com/join/*` and the other app links of `docs/DEEP_LINKS.md` (`/more/invites` included; universal links, App Links) once app.hummlist.com serves the `.well-known` files. The web side of every link: verify-hummlist `features/app-links.md`. The fg debug build sets no `APP_URL`, so its invites show the code only.
+- Open an invite link (`/join/<code>`). The web build opens it, also before sign-in (the code is kept on the device through sign-in). The release phone apps claim `/join/*` and the other app links of `docs/DEEP_LINKS.md` (`/more/invites` included; universal links, App Links) on `app.snacklist.app` and `app.hummlist.com`. Both hosts serve the `release` branch's `.well-known` files, which list Snacklist from the first release upload after #345. Snacklist builds share invites as `https://app.snacklist.app/join/<code>` (`APP_URL`). The web side of every link: verify-snacklist `features/app-links.md`. The fg debug build sets no `APP_URL`, so its invites show the code only.
 
 ## Driving it with fg
 

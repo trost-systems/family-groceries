@@ -13,7 +13,7 @@ Every signed-in user can export their data and delete their account. Both live o
 - `acct-offline` refuses without a connection ("Keine Internetverbindung. Dein Konto wurde nicht gelöscht. …") and deletes nothing.
 - `acct-export` saves `einkauf-daten-YYYY-MM-DD.json` (format `family-groceries-export`) with the user's account, profile, household, the items they added (`items_added`, with brand and properties) and history, the invites they made, token names and hints, connected apps (OAuth grants with scopes and dates), their analytics answers, Alexa links, their own feedback notes (`feedback`, job 21) and purchases (`purchases`, job 25), plus `version` and `exported_at`; never a token hash. `jq keys` on the file lists access_tokens, account, alexa_links, analytics_decisions, archived_households, connected_apps, exported_at, feedback, format, history, household, invites_created, items_added, profile, purchases, version. The snackbar says "Daten exportiert: <path>" on desktop.
 - `acct-welcome` deletes an account that has no household from the welcome screen ("Du bist in keinem Haushalt, geteilte Daten gibt es nicht.").
-- `acct-apple` asks Apple for a fresh authorization after the typed confirmation and revokes the Apple tokens (iOS only). Not drivable on the box: there is no iOS surface. Elsewhere the sign-in screen adds the hint to remove "Hummlist" from the Apple ID only when the server could not revoke.
+- `acct-apple` asks Apple for a fresh authorization after the typed confirmation and revokes the Apple tokens (iOS only). Not drivable on the box: there is no iOS surface. Elsewhere the sign-in screen adds the hint to remove "Snacklist" from the Apple ID only when the server could not revoke.
 
 ## How to get to it (user POV)
 
@@ -28,7 +28,7 @@ Preconditions:
 - Baseline from `features/README.md`. Peter is signed in on the list.
 - A short list, so the throwaway's item is on peter's screen: `fg db query "update items set status = 'bought' where status = 'active'" --write`.
 - Note the member count before the join: `fg db query "select count(*) from household_members m join households h on h.id = m.household_id where h.name = 'Familie Test'"`. Earlier household recipes may have left extra members.
-- Never delete the seeded peter or lea. The lea client hosts a throwaway user: run `fg logout --client lea`, then `fg type --key login-email --input konto-$(date +%s)@fg.test --client lea`, `fg type --key login-password --input test-password-123 --client lea`, `fg tap --text Registrieren --client lea` and `fg wait --key welcome --client lea` ("Willkommen bei Hummlist"). Its display name is the part before `@`.
+- Never delete the seeded peter or lea. The lea client hosts a throwaway user: run `fg logout --client lea`, then `fg type --key login-email --input konto-$(date +%s)@fg.test --client lea`, `fg type --key login-password --input test-password-123 --client lea`, `fg tap --text Registrieren --client lea` and `fg wait --key welcome --client lea` ("Willkommen bei Snacklist"). Its display name is the part before `@`.
 
 - **Journey: a throwaway member joins Familie Test, adds an item and deletes the account.**
   1. Invite as peter: `fg tap --key tab-more`, `fg wait --key more-invite`, `fg tap --key more-invite`, `fg wait --key invite-new`, `fg tap --key invite-new`, `fg wait --key invite-copy-code`, read the code with `fg find --type Text | jq -r '[.elements[].text | select(test("^[A-HJ-NP-Z2-9]{8}$"))][0]'`, then `fg back` and `fg tap --key tab-list`.

@@ -52,7 +52,7 @@ import 'fonts.dart';
 const _phone = Size(390, 844);
 const _desktop = Size(1280, 800);
 
-/// The 358 px compact design (hummlist-ui-craft).
+/// The 358 px compact design (snacklist-ui-craft).
 const _compact = Size(358, 780);
 
 Item _item(

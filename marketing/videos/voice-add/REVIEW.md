@@ -6,7 +6,7 @@ server splits the sentence and the three rows land under Getränke and Tiefkühl
 ticks them off, so the loop starts and ends on the same list. One take per language, one phone,
 11.2 to 11.5 s.
 
-## Hand-over notes (hummlist-ui-craft)
+## Hand-over notes (snacklist-ui-craft)
 
 - Plan: placed in the voice block's "In der App" card; focal object the add field with the
   microphone; action the tap and the sentence, shown word by word in a cobalt speech caption on

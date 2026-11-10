@@ -28,7 +28,7 @@ for name in iPhone-16-Plus iPhone-15-Plus iPhone-15-Pro-Max iPhone-14-Pro-Max; d
   type="com.apple.CoreSimulator.SimDeviceType.$name"
   grep -q "\"$type\"" <<<"$types" && break
 done
-udid="$(xcrun simctl create "Hummlist paywall shot" "$type" "$runtime")"
+udid="$(xcrun simctl create "Snacklist paywall shot" "$type" "$runtime")"
 log "simulator $udid ($type, $runtime)"
 trap 'xcrun simctl shutdown "$udid" 2>/dev/null; xcrun simctl delete "$udid"' EXIT
 xcrun simctl boot "$udid"

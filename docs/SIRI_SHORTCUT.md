@@ -1,7 +1,7 @@
 # Siri: „Hey Siri, Einkaufsliste“
 
 > **Seit Job 51 gibt es natives Siri ohne Einrichtung** (iOS 17 und neuer,
-> Englisch und Deutsch): „Füge etwas zu Hummlist hinzu“. Wie das gebaut
+> Englisch und Deutsch): „Füge etwas zu Snacklist hinzu“. Wie das gebaut
 > ist, steht unten unter [Natives Siri](#natives-siri-job-51). Der
 > Kurzbefehl hier funktioniert weiter, für eigene Sätze und für iPhones ohne
 > die App (die App selbst braucht seit Job 97 iOS 17).
@@ -15,7 +15,7 @@ ebenfalls klappen, das haben wir aber noch nicht getestet.
 > **Du:** Milch, zwei Gurken und Klopapier.
 > **Siri:** Hinzugefügt: Milch, 2 Gurken, Klopapier.
 
-Siri schickt den Satz an die Hummlist-App. Der Server teilt ihn in
+Siri schickt den Satz an die Snacklist-App. Der Server teilt ihn in
 Einträge auf, sortiert jeden Eintrag in seine Kategorie ein und antwortet
 mit dem Satz, den Siri vorliest. Die Einträge erscheinen sofort auf allen
 Geräten im Haushalt.
@@ -25,7 +25,7 @@ Geräten im Haushalt.
 > (`docs/NEEDS_PETER.md`, Abschnitt 1), antwortet die Adresse unten mit
 > einem Fehler.
 
-Die Einrichtung dauert etwa fünf Minuten. Du brauchst die Hummlist-App
+Die Einrichtung dauert etwa fünf Minuten. Du brauchst die Snacklist-App
 (angemeldet, in deinem Haushalt) und die App **Kurzbefehle** auf dem
 iPhone.
 
@@ -34,7 +34,7 @@ iPhone.
 Der Kurzbefehl meldet sich mit einem persönlichen Zugriffstoken an, nicht
 mit deinem Passwort.
 
-1. Öffne die Hummlist-App.
+1. Öffne die Snacklist-App.
 2. Tippe auf **Mehr** und dann auf **Zugänge**.
 3. Tippe unter **Zugriffstoken** auf **Token erstellen**.
 4. Gib als Name `Siri` ein und tippe auf **Erstellen**.
@@ -192,10 +192,10 @@ die Erinnerungen-App, gib dem Kurzbefehl einen eindeutigeren Namen, etwa
   ```
 
 - Integration lock (Job 50, docs/PURCHASES.md „Integration lock“): Ist der
-  Server-Schalter `integration_lock` an und hat der Haushalt kein Hummlist
+  Server-Schalter `integration_lock` an und hat der Haushalt kein Snacklist
   Premium, antwortet der Endpunkt jeder Anfrage mit einem Zugriffstoken
   oder der Siri-Anmeldung mit HTTP 200 und dem Satz „Sprachbefehle sind Teil
-  von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts
+  von Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts
   hinzugefügt.“ (`error`/`outcome` `premium_required`; Platzhaltertext).
   Nichts wird hinzugefügt oder vorgelesen; der Token bleibt gültig und
   funktioniert ohne neue Einrichtung, sobald der Haushalt Premium hat. Die
@@ -213,8 +213,8 @@ Satzes in `parse.ts`, die Beispielsätze als Tests in `parse_test.ts`.
 Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
 
 - **Intents** in the Runner target, `app/ios/Runner/AppIntents/`: `AddItemsIntent` (asks for the
-  items when the phrase has none; the `ItemSuggestion` entity makes "Add milk to Hummlist" one
-  utterance for names the app sent), `ReadListIntent`, `HummlistShortcuts` (the App Shortcuts
+  items when the phrase has none; the `ItemSuggestion` entity makes "Add milk to Snacklist" one
+  utterance for names the app sent), `ReadListIntent`, `SnacklistShortcuts` (the App Shortcuts
   provider), `VoiceClient` (URLSession, 8 s in all, branches on `outcome`), `SiriCredentialStore`
   (Keychain) and the `hummlist/siri` method channel (`SiriBridge.swift`). iOS 17 and newer, always
   in the background. Phrases: `Runner/AppShortcuts.xcstrings` (a phrase set per language, job
@@ -223,7 +223,7 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
   `app/lib/siri/siri_phrases.dart`; keep both in step.
 - **Credential.** After sign-in in a household the app (`app/lib/siri/siri_credentials.dart`)
   calls `create_siri_credential()` and stores `{token, id, userId, sessionId, url}` in the Keychain
-  (service `com.hummlist.app.siri`, this device only). The row is kind `siri` in
+  (service `com.snacklist.app.siri`, this device only). The row is kind `siri` in
   `personal_access_tokens`, bound to the Supabase session; it ends with sign-out, account deletion
   or leaving the household. Like every access key, its row is deleted 30 days after it ended
   (`purge_access_tokens`, see docs/MCP.md "Retention"). Only `voice` accepts it (`authenticate(req, deps, { siri: true })`).
@@ -266,9 +266,9 @@ voice: none read de client=ios-1210.ReadList -> unauthorized status=401 count=0 
 - `count`: the items understood (add, parse) or open (read).
 - Never in the line: the text, item names, tokens, user or household ids.
 
-On the iPhone the intents log to Console.app (subsystem `com.hummlist.app`, category `siri`):
+On the iPhone the intents log to Console.app (subsystem `com.snacklist.app`, category `siri`):
 which intent ran, whether a credential was there, and the HTTP status. A request the server
-never logs and the phone never logs never reached Hummlist: Siri sent it elsewhere.
+never logs and the phone never logs never reached Snacklist: Siri sent it elsewhere.
 
 ## Routing auf Deutsch (Job 92)
 
@@ -286,19 +286,21 @@ Build 1119 trained every German phrase, yet German Siri failed two ways:
 The fix:
 
 - **Phrases** (since job 97 `AppShortcuts.xcstrings`): German phrases name the app first or as the
-  object: „Hummlist, füge etwas hinzu“, „Etwas auf Hummlist setzen“, „Mit Hummlist einkaufen“,
-  „Hummlist, was steht drauf“. „Hummlist Einkaufsliste“ and „Auf meine Hummlist“ are gone. The
+  object: „Snacklist, füge etwas hinzu“, „Etwas auf Snacklist setzen“, „Mit Snacklist einkaufen“,
+  „Snacklist, was steht drauf“. „Snacklist Einkaufsliste“ and „Auf meine Snacklist“ are gone. The
   add phrases without an item come first, so Siri asks „Was soll auf die Liste?“ and any item
   works. `scripts/siri-phrases.ts` (lint gate) and RunnerTests reject „Einkaufsliste“, a phrase
   that starts with a preposition and ends with the app name, and an item phrase before a
   parameterless one.
-- **Spoken names** (`INAlternativeAppNames`, three per language, Apple's limit): since job 97
-  German „Humlist“, „Hamlist“, „Homlist“ (hint „hummlist“); „Humm Liste“, „Hummliste“ and „Ham
-  Liste“ are gone, because German Siri gives „zur … Liste“ to Reminders. English „Humm List“,
-  „Hum List“, „Humlist“ (hint "hum list"). `CFBundleSpokenName` is „Hummlist“ everywhere (job 92
+- **Spoken names** (`INAlternativeAppNames`, three per language, Apple's limit, keys
+  `SNACKLIST_NAME_*` in `Runner/<lang>.lproj/InfoPlist.strings`): since job 174 German
+  „Snack List“, „Snäcklist“, „Snecklist“ (hint „snäcklist“), English „Snack List“, „Snack-list“,
+  „Snack Lists“ (hint "snack list"). None ends in „Liste“, because German Siri gives
+  „zur … Liste“ to Reminders (job 97 dropped Hummlist's „Humm Liste“, „Hummliste“ and „Ham Liste“
+  for that). `CFBundleSpokenName` is „Snacklist“ everywhere (Hummlist's was „Hummlist“; job 92
   had „Humm List“). Apple documents no key that prefers one alternative name for App Shortcuts,
   so there is none.
-- **Parameters at launch.** `AppDelegate` calls `HummlistShortcuts.updateAppShortcutParameters()`
+- **Parameters at launch.** `AppDelegate` calls `SnacklistShortcuts.updateAppShortcutParameters()`
   in `didFinishLaunching`, so every install or update refreshes the item phrases, not only once a
   list has loaded.
 - **SiriKit Lists fallback** (`AppIntents/SiriKitLists.swift`): `AppDelegate`'s
@@ -313,7 +315,7 @@ The fix:
   Every failure, signed out, no household and the integration lock included, answers `failure`:
   Siri says its own localized sentence and stays in its sheet (job 97; `failureRequiringAppLaunch`
   opened the app). A Lists response has no field for the app's own words, so the reason ("open
-  Hummlist and sign in") is spoken only on the App Shortcuts path.
+  Snacklist and sign in") is spoken only on the App Shortcuts path.
 - **Example phrases** (`Runner/<lang>.lproj/AppIntentVocabulary.plist`): App Store Connect wants
   at least one example per SiriKit intent in each language (ITMS-90626 on build 1130), and the Siri
   Guide shows them. Every example names the app. German examples avoid
@@ -327,35 +329,35 @@ contains job 97 (build N). German first, then the same with Siri in English.
 
 1. Einstellungen › Siri › Sprache: **Deutsch (Deutschland)** (then **English (United States)**).
 2. Einstellungen › Siri › Antworten › **Transkription immer anzeigen**: on.
-3. Einstellungen › Apps › Hummlist › Siri: **Mit Siri verwenden** and **Von dieser App lernen**
-   on. After the first start in a household, iOS asked once whether Hummlist may use Siri.
-4. Open Hummlist once, signed in, in a household, and let the list load. Have „Karotten“ bought
+3. Einstellungen › Apps › Snacklist › Siri: **Mit Siri verwenden** and **Von dieser App lernen**
+   on. After the first start in a household, iOS asked once whether Snacklist may use Siri.
+4. Open Snacklist once, signed in, in a household, and let the list load. Have „Karotten“ bought
    once and „Möhren“ added once (same item, so „Möhren“ becomes a synonym).
-5. Kurzbefehle app: the Hummlist tile shows **Zu Hummlist hinzufügen**, **Meine Hummlist
-   vorlesen** and **Hummlist öffnen**.
+5. Kurzbefehle app: the Snacklist tile shows **Zu Snacklist hinzufügen**, **Meine Snacklist
+   vorlesen** and **Snacklist öffnen**.
 6. Say each phrase (then Type to Siri for the ones that fail by voice):
 
    | Siri | Phrase | Expected |
    | --- | --- | --- |
-   | de | Hummlist, füge etwas hinzu | Siri asks „Was soll auf die Liste?“; „Milch und Brot“: „Hinzugefügt: Milch, Brot.“ |
-   | de | Füge etwas zu meiner Hummlist hinzu | as above |
-   | de | Schreib etwas auf die Hummlist | as above |
-   | de | Füge Karotten zu Hummlist hinzu | Karotten added in one sentence, no question |
-   | de | Füge Möhren zur Hummlist hinzu | the household's „Karotten“ added (synonym) |
-   | de | Füge Zahnpasta zu Hummlist hinzu | Zahnpasta on the list (SiriKit Lists), not Reminders |
-   | de | Was steht auf meiner Hummlist | Siri reads the open items |
-   | de | Hummlist, was brauchen wir | as above |
-   | de | Zeig meine Hummlist | the app opens on the list, from any screen |
-   | de | Füge Milch zur Einkaufsliste hinzu | Reminders, not Hummlist (negative phrase) |
-   | de | signed out: Hummlist, füge etwas hinzu | Siri says „Öffne Hummlist und melde dich an. Ich habe nichts hinzugefügt.“, app stays closed |
-   | de | signed out: Füge Zahnpasta zu Hummlist hinzu | Siri says it could not do it, app stays closed |
-   | en | Add something to my Hummlist | Siri asks for the items, then "Added …" |
-   | en | Add carrots to Hummlist | added in one sentence (if "carrots" was used before) |
-   | en | What's on my Hummlist | Siri reads the open items |
-   | en | Show my Hummlist | the app opens on the list |
-   | en | Add milk to my shopping list | Reminders, not Hummlist |
-   | en | signed out: Add to Hummlist | "Open Hummlist and sign in. I didn't add anything.", app stays closed |
+   | de | Snacklist, füge etwas hinzu | Siri asks „Was soll auf die Liste?“; „Milch und Brot“: „Hinzugefügt: Milch, Brot.“ |
+   | de | Füge etwas zu meiner Snacklist hinzu | as above |
+   | de | Schreib etwas auf die Snacklist | as above |
+   | de | Füge Karotten zu Snacklist hinzu | Karotten added in one sentence, no question |
+   | de | Füge Möhren zur Snacklist hinzu | the household's „Karotten“ added (synonym) |
+   | de | Füge Zahnpasta zu Snacklist hinzu | Zahnpasta on the list (SiriKit Lists), not Reminders |
+   | de | Was steht auf meiner Snacklist | Siri reads the open items |
+   | de | Snacklist, was brauchen wir | as above |
+   | de | Zeig meine Snacklist | the app opens on the list, from any screen |
+   | de | Füge Milch zur Einkaufsliste hinzu | Reminders, not Snacklist (negative phrase) |
+   | de | signed out: Snacklist, füge etwas hinzu | Siri says „Öffne Snacklist und melde dich an. Ich habe nichts hinzugefügt.“, app stays closed |
+   | de | signed out: Füge Zahnpasta zu Snacklist hinzu | Siri says it could not do it, app stays closed |
+   | en | Add something to my Snacklist | Siri asks for the items, then "Added …" |
+   | en | Add carrots to Snacklist | added in one sentence (if "carrots" was used before) |
+   | en | What's on my Snacklist | Siri reads the open items |
+   | en | Show my Snacklist | the app opens on the list |
+   | en | Add milk to my shopping list | Reminders, not Snacklist |
+   | en | signed out: Add to Snacklist | "Open Snacklist and sign in. I didn't add anything.", app stays closed |
 
 7. Per phrase record the build number, what Siri wrote (screenshot of the transcript), and the
    outcome (added, Reminders, „unterstützt das nicht“, app opened). A transcript that spells the
-   name another way („Hummliste“, „Hum List“) is the input for the German alternative names.
+   name another way („Snack Liste“, „Snecklist“) is the input for the German alternative names.

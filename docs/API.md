@@ -1,4 +1,4 @@
-# Hummlist API (v1)
+# Snacklist API (v1)
 
 A JSON-over-HTTP API for one household's shopping list, next to the MCP server
 ([`docs/MCP.md`](MCP.md)). It is for people who automate their list: Zapier, n8n, Home Assistant,
@@ -71,7 +71,7 @@ Authorization: Bearer fgp_…
   account is deleted. Ended keys are deleted 30 days later (`purge_access_tokens`, Legal N-4).
 - **Other credentials do not work here.** MCP tokens, Siri credentials, OAuth access tokens and
   app sessions get `401 invalid_token`; API keys do not work on the MCP server or Siri.
-- **Hummlist Premium**: the API is a Premium integration like Siri and the MCP server. While the
+- **Snacklist Premium**: the API is a Premium integration like Siri and the MCP server. While the
   server switch `integration_lock` is on, a household without Premium gets
   `402 premium_required`; nothing is read or changed, the key keeps working once the household
   unlocks. While the switch is off (until the paywall release) every household may use it.
@@ -152,7 +152,7 @@ household's first list.
 
 Per item: `name` (1 to 120 characters, required), `quantity` (up to 40), `brand` (up to 60),
 `properties` (up to 120), `category` and `store` (an id or a name, up to 60). The name is split
-like everywhere in Hummlist ("2 Gurken" is name `Gurken`, quantity `2`); a given `quantity`,
+like everywhere in Snacklist ("2 Gurken" is name `Gurken`, quantity `2`); a given `quantity`,
 `brand` or `properties` replaces the parsed one. A given `category` is learned like a correction in
 the app. Without `store`, the item gets the store it was last bought in, an own brand's store
 (Balea → dm) or dm for drugstore items.
@@ -219,7 +219,7 @@ optional.
 | 400 | `invalid_idempotency_key` | The key is empty, too long or not printable ASCII |
 | 401 | `missing_token` | No `Authorization: Bearer` header |
 | 401 | `invalid_token` | Unknown, revoked or not an API key |
-| 402 | `premium_required` | The household needs Hummlist Premium for the API (integration lock on) |
+| 402 | `premium_required` | The household needs Snacklist Premium for the API (integration lock on) |
 | 403 | `insufficient_scope` | The key lacks the scope (`details.required`) |
 | 404 | `not_found` | No such endpoint |
 | 404 | `item_not_found` | No such item in this household (or not open, for `PATCH`) |

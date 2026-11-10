@@ -1,7 +1,7 @@
-# The hummlist.com waitlist (job 82, Spec #10)
+# The snacklist.app waitlist (job 82, Spec #10)
 
-hummlist.com keeps its landing page; only its calls to action change by stage, and none links the
-browser app. In the `waitlist` stage they lead to a sign-up form. A sign-up is double opt-in: the
+snacklist.app (also served on hummlist.com) keeps its landing page; only its calls to action
+change by stage, and none links the browser app. In the `waitlist` stage they lead to a sign-up form. A sign-up is double opt-in: the
 address counts only after its owner agrees on the confirmation page and presses the button there
 (Legal N-73: only the person's own click is consent, whoever filled in the form). Confirmed sign-ups collect into weekly batches, and Peter invites a batch by
 hand with `scripts/waitlist/invite.ts`. Nothing invites anyone automatically.
@@ -19,7 +19,7 @@ waitlist"):
 | --- | --- | --- |
 | `waitlist` (now) | „Auf die Warteliste“ / "Join the waitlist" | the sign-up form |
 | `beta` (built, off) | „Zur Beta anmelden“ / "Join the beta" | the sign-up form |
-| `launch` (built, off) | „App laden“ / "Get the app"; store badges in the hero | badges and a QR code for hummlist.com/get |
+| `launch` (built, off) | „App laden“ / "Get the app"; store badges in the hero | badges and a QR code for snacklist.app/get |
 
 `/get` (`site/api/get.mjs`) sends an iPhone or iPad to the App Store and Android to Google Play once
 `site/config/stores.mjs` has their URLs, and everything else to the landing page.
@@ -44,7 +44,7 @@ noindex in the page and keep it.
 ## Request path
 
 ```text
-browser (hummlist.com, same origin, fetch)
+browser (snacklist.app, same origin, fetch)
   -> Vercel function site/api/waitlist*  (region fra1; hashes the client IP, never logs)
   -> Supabase edge function waitlist     (x-region: eu-central-1; all logic)
   -> Postgres public.waitlist*           (RLS on, no grants to anon/authenticated)
@@ -78,8 +78,8 @@ upstream is `https://<ref>.supabase.co/functions/v1/waitlist`) with:
   raw IP never leaves the function, and the key changes every day.
 - `x-waitlist-origin`: the site origin the request came to (`https://` + `host`), for the links in
   the mails. The edge function accepts only `https://hummlist.com`,
-  `https://hummlist-site-*-peter-trost.vercel.app` and `http://127.0.0.1:<port>` and falls back to
-  `https://hummlist.com`.
+  `https://snacklist.app` (job 174), `https://hummlist-site-*-peter-trost.vercel.app` and
+  `http://127.0.0.1:<port>` and falls back to `https://hummlist.com`.
 - `x-region: eu-central-1`, `content-type: application/json`.
 
 It passes the upstream status and JSON body through unchanged; an unreachable upstream is

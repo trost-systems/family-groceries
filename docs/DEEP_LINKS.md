@@ -1,17 +1,19 @@
-# Deep links (app.hummlist.com)
+# Deep links (app.snacklist.app, app.hummlist.com)
 
-A link to `https://app.hummlist.com/<path>` opens the matching screen of the installed Hummlist
-app: iOS universal links, Android App Links. Where the app is not installed, the same URL opens
-the web app, which routes it the same way. Emails (the E2 onboarding email links
-`https://app.hummlist.com/more/invites`), the site and invites use these URLs. Job 66; invite
+A link to `https://app.snacklist.app/<path>` or `https://app.hummlist.com/<path>` opens the
+matching screen of the installed Snacklist app: iOS universal links, Android App Links. Hummlist
+builds, until Hummlist retires, claim only app.hummlist.com. Where the app is not installed,
+the same URL opens the web app, which routes it the same way. Emails (the E2 onboarding email links
+`https://app.hummlist.com/more/invites`), the site and invites use these URLs. The phone apps'
+invite links use `APP_URL`, `https://app.snacklist.app` since job 174. Job 66; invite
 links (`/join/<code>`) came first in job 22.
 
 | | |
 | --- | --- |
 | Route table in code | [`app/lib/app/deep_links.dart`](../app/lib/app/deep_links.dart) (`appLinks`) |
 | Routing | [`app/lib/app/router.dart`](../app/lib/app/router.dart) (`authRedirect`, `buildRouter`) |
-| iOS | [`app/ios/Runner/Runner.entitlements`](../app/ios/Runner/Runner.entitlements) (`applinks:app.hummlist.com`), [`app/web/.well-known/apple-app-site-association`](../app/web/.well-known/apple-app-site-association) |
-| Android | [`app/android/app/src/main/AndroidManifest.xml`](../app/android/app/src/main/AndroidManifest.xml) (the `autoVerify` filter), [`app/web/.well-known/assetlinks.json`](../app/web/.well-known/assetlinks.json) |
+| iOS | [`app/ios/Runner/Runner.entitlements`](../app/ios/Runner/Runner.entitlements) (`applinks:app.snacklist.app` and `applinks:app.hummlist.com`), [`app/web/.well-known/apple-app-site-association`](../app/web/.well-known/apple-app-site-association) (`appIDs` lists `com.snacklist.app` and `com.hummlist.app`) |
+| Android | [`app/android/app/src/main/AndroidManifest.xml`](../app/android/app/src/main/AndroidManifest.xml) (the `autoVerify` filter, hosts `app.snacklist.app` and `app.hummlist.com`), [`app/web/.well-known/assetlinks.json`](../app/web/.well-known/assetlinks.json) (statements for `com.snacklist.app` and `com.hummlist.app`) |
 | Serving | [`vercel.json`](../vercel.json): `.well-known/` stays out of the SPA rewrite; the AASA is served as `application/json` |
 | Checks | [`app/test/app/deep_links_config_test.dart`](../app/test/app/deep_links_config_test.dart), [`app/test/app/router_test.dart`](../app/test/app/router_test.dart), [`scripts/gates/web-prod.sh`](../scripts/gates/web-prod.sh), [`e2e/tests/deep-links.spec.ts`](../e2e/tests/deep-links.spec.ts), [`e2e/web-smoke.mjs`](../e2e/web-smoke.mjs) on a deployed URL |
 | Decisions | [DECISIONS.md](DECISIONS.md), "Job 66" |
@@ -38,7 +40,7 @@ household goes through onboarding first (Step 1, creating or joining) and then l
 link's screen instead of Step 3. Signing out never carries the screen the user was on.
 
 On iOS and Android a sign-in that leaves the app (a magic link, Apple on Android) comes back
-through `com.hummlist.app://login-callback`, which loses the location. The router keeps the
+through `com.snacklist.app://login-callback`, which loses the location. The router keeps the
 link's location in memory until the sign-in completes. Invite codes also survive an app kill
 (`PendingInvite`, job 22); other links do not, the app then opens the list.
 
@@ -76,18 +78,20 @@ that has the new filter.
 
 ## Rollout
 
-app.hummlist.com serves `app/web/.well-known/` from the `release` branch, so the new AASA goes
+Both hosts serve `app/web/.well-known/` from the `release` branch, so the new AASA goes
 live with the next dispatched store release, together with the app that routes the paths
 (docs/DEPLOY.md, "Web app"). An older app that receives a new link still opens: `/add` and
 `/stores/<id>` show the list there, `/more/...` already worked. Check the live files with
-`node e2e/web-smoke.mjs https://app.hummlist.com` and Apple's cached copy with
-`curl https://app-site-association.cdn-apple.com/a/v1/app.hummlist.com`; Google's view of the
-domain is
-`https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://app.hummlist.com&relation=delegate_permission/common.handle_all_urls`.
+`node e2e/web-smoke.mjs https://app.snacklist.app` (and `https://app.hummlist.com`) and Apple's
+cached copy with `curl https://app-site-association.cdn-apple.com/a/v1/app.snacklist.app`;
+Google's view of the domain is
+`https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://app.snacklist.app&relation=delegate_permission/common.handle_all_urls`.
+On 2026-11-10 both hosts' files list only `com.hummlist.app`: the `release` branch predates
+#345, so Snacklist's entries go live with the next release upload.
 
 ## Home Screen widgets (job 63)
 
-The widgets open the app with `hummlist-widget://open` and `hummlist-widget://add`, handled by
+The widgets open the app with `snacklist-widget://open` and `snacklist-widget://add`, handled by
 `app/lib/home_widget/` (not by these links). The widget's Add has its own add-sheet request next
 to `ListLinks` in the list screen; it could map onto this table (`router.go('/add')`) instead.
 That is a follow-up in job 63's files, not part of job 66.

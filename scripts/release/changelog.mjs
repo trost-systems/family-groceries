@@ -509,8 +509,8 @@ export function collect({ previous, sha, skip = [] }) {
 // (no job prefix, PR number or e-mail address) when it has no section; `none` and internal commits
 // give nothing. An unknown or missing previous commit (the first upload) takes the last 20.
 const NOTES_WORDS = {
-  de: { head: 'Neu in diesem Build von Hummlist:', none: 'Kleine Verbesserungen und Fehlerbehebungen.', more: (n) => `und ${n} weitere Änderungen` },
-  en: { head: 'New in this Hummlist build:', none: 'Small improvements and fixes.', more: (n) => `and ${n} more changes` },
+  de: { head: 'Neu in diesem Build von Snacklist:', none: 'Kleine Verbesserungen und Fehlerbehebungen.', more: (n) => `und ${n} weitere Änderungen` },
+  en: { head: 'New in this Snacklist build:', none: 'Small improvements and fixes.', more: (n) => `and ${n} more changes` },
 };
 const NOTES_MAX = 12;
 const noteTitle = (subject) =>

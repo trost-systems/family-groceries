@@ -37,7 +37,7 @@ it either completes or deletes nothing.
 | "Added by" and "bought by" on items (`items.added_by`, `items.bought_by`) | Removed (set to null) |
 | Sign in with Apple tokens at Apple | Revoked when possible (see below) |
 | Local device data (cached list, household, session) | Cleared on the device that deletes |
-| Hummlist Lifetime purchases (`purchases.user_id`, `entitlements.granted_by`, job 25) | The link to the account is removed (set to null). The purchase row stays without it, and the household keeps its unlock (see "What stays") |
+| Snacklist Lifetime purchases (`purchases.user_id`, `entitlements.granted_by`, job 25) | The link to the account is removed (set to null). The purchase row stays without it, and the household keeps its unlock (see "What stays") |
 
 ## What happens to the household
 
@@ -49,7 +49,7 @@ it either completes or deletes nothing.
 - **The user is the last member.** The household is deleted with
   everything in it: items, history, categories, stores, store layouts,
   the learned category and store memory, open invites, every token
-  issued for it, and its Hummlist Lifetime unlock.
+  issued for it, and its Snacklist Lifetime unlock.
 
 ## Sign in with Apple
 
@@ -67,7 +67,7 @@ Apple TN3194).
 - **Web and Android, or when revocation fails.** In those cases the server
   holds no Apple token (Supabase Auth does not keep provider tokens). The
   account is deleted anyway, as TN3194 requires, and the app tells the user
-  where to remove "Hummlist" from their Apple ID. On iOS the path is
+  where to remove "Snacklist" from their Apple ID. On iOS the path is
   Einstellungen › [Name] › Anmelden & Sicherheit › Mit Apple anmelden.
 - Revocation needs the Apple key as a function secret on the hosted
   project. Until Peter sets it (`docs/NEEDS_PETER.md`, job 9), every
@@ -91,14 +91,14 @@ deleting the Supabase user removes the link to the Google account.
 - **Copies outside the app.** An exported JSON file stays wherever the user
   saved it. Apple and Google keep their own records of the sign-in.
 
-- **Hummlist Lifetime purchases** (job 25, `docs/PURCHASES.md`). The store's
+- **Snacklist Lifetime purchases** (job 25, `docs/PURCHASES.md`). The store's
   transaction (store, product, transaction id, dates, price, currency,
   country) stays without any link to the account, so a refund can still be
   matched and the same purchase cannot unlock a second household. The
   household keeps its unlock while it exists; the purchase can unlock
   another household only after that one is deleted.
 
-Nothing is kept for legal reasons. Hummlist issues no invoices: Apple sells
+Nothing is kept for legal reasons. Snacklist issues no invoices: Apple sells
 in-app purchases as our commissionaire and Google as merchant of record,
 and both keep the tax records of the sale (DECISIONS 25.9).
 
@@ -119,7 +119,7 @@ own data:
 | `history` | your entries in the item history (`added`, `bought` and so on), with item name, category and time |
 | `access_tokens` | name, last four characters, created, last used and revoked times. The export never includes the token or its hash. |
 | `connected_apps` | the OAuth apps you allowed, with their scopes and grant times |
-| `purchases` | the Hummlist Lifetime purchases your account verified: store, product, the store's transaction id, environment, purchase and refund times, price, currency, country, and the household it unlocks (job 25) |
+| `purchases` | the Snacklist Lifetime purchases your account verified: store, product, the store's transaction id, environment, purchase and refund times, price, currency, country, and the household it unlocks (job 25) |
 
 Other members' names and data are not part of the export. Only a session
 in the app itself can call the export, never an MCP OAuth token.

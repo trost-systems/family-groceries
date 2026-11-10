@@ -64,10 +64,11 @@ code with the PKCE verifier it stored.
 
 - Web: `redirect_to` is the current origin plus the screen's return path, so
   `/join/<code>` survives the round trip.
-- Android: `redirect_to` is `com.hummlist.app://login-callback`,
+- Android: `redirect_to` is `com.snacklist.app://login-callback`,
   registered in `AndroidManifest.xml` and `Info.plist`. Magic links on the
-  phones use the same deep link. Builds from before the Hummlist rename
-  (job 20) use `com.petertrost.familygroceries://login-callback`, so both
+  phones use the same deep link. Hummlist builds use
+  `com.hummlist.app://login-callback`, builds from before the Hummlist rename
+  (job 20) `com.petertrost.familygroceries://login-callback`, so all three
   stay in the redirect allow list.
 - Errors come back as `?error=…&error_description=…`. `access_denied` shows
   "Anmeldung abgebrochen"; anything else shows "Anmeldung fehlgeschlagen: …".
@@ -136,14 +137,14 @@ Client IDs are public; secrets are not.
 | Google Android client IDs | yes | only Google Cloud and Supabase (additional client IDs); Android finds them by package name and SHA-1. Snacklist (`com.snacklist.app`): Play app signing `1001040145655-raog296lceu901h72e852e10kt75a7e2`, upload key `1001040145655-q9q9t08ugkv4fr117j01qck0ijobb3ck`, box debug `1001040145655-l88umh5facf1anqmqtpv7mtbtaukqe61`. Hummlist's clients stay |
 | Google Web client secret | **no** | Supabase only (dashboard or `scripts/configure-social-auth.mjs`) |
 | Apple Services ID | yes | Supabase Apple provider (first client ID) |
-| Bundle ID `com.snacklist.app` | yes | Supabase Apple provider (in the client ID list), added at the Snacklist cut-over (job 174, S2) |
+| Bundle ID `com.snacklist.app` | yes | Supabase Apple provider (in the client ID list), to add at the Snacklist cut-over (job 174, S2) |
 | Bundle ID `com.hummlist.app` | yes | Supabase Apple provider (in the client ID list) until Hummlist retires |
 | Old bundle ID `com.petertrost.familygroceries` | yes | Supabase Apple provider (in the client ID list) until the Hummlist build is verified (`NEEDS_PETER.md`, job 20) |
 | Apple Team ID, Key ID | yes | inputs to the client secret |
 | Apple Sign in with Apple key (`.p8`) | **no** | stays on Peter's machine; never in the repo |
 | Apple client secret (JWT from the `.p8`) | **no** | Supabase only; expires after at most 6 months |
 | `SIGN_IN_WITH_APPLE` | yes | `app/config/auth.json`, `"true"` once Apple is set up in Supabase |
-| `APP_URL` | yes | `app/config/auth.json`, the web app origin for the phone apps' invite links: `https://app.hummlist.com` since job 20; the same URL is the hosted Site URL (`supabase/deploy/auth_urls.ts`) |
+| `APP_URL` | yes | `app/config/auth.json`, the web app origin for the phone apps' invite links: `https://app.snacklist.app` since job 174 (`https://app.hummlist.com` from job 20 on, still the hosted Site URL; `supabase/deploy/auth_urls.ts` allows both hosts) |
 
 Release builds read the app values with
 `flutter build … --dart-define-from-file=config/auth.json`. Only
@@ -162,11 +163,15 @@ while Hummlist and Snacklist both run (job 174), pass both apps' clients,
 or the script drops the ones it isn't given.
 It reads the values from the environment, enables a provider only when all of
 its credentials are present, generates Apple's client secret from the `.p8`
-key, and always makes sure both deep links (old and new bundle ID) are in the
+key, and always makes sure the deep links of all three bundle IDs are in the
 redirect allow list. Apple's client IDs go into `external_apple_client_id` as
 one comma list, the Services ID first (the web flow signs in as the first
-ID), then both bundle IDs; `external_apple_additional_client_ids` stays empty.
-That is the hosted state since job 20. The hosted Site URL is
+ID), then the bundle IDs; `external_apple_additional_client_ids` stays empty.
+That is the hosted state since job 20. Since job 174 the hosted redirect allow
+list also holds `com.snacklist.app://login-callback` and
+`https://app.snacklist.app/**`, and the Google provider holds Snacklist's iOS
+client (set by the lead on 2026-11-10). Still open: `com.snacklist.app` in
+the Apple client ID list (S2). The hosted Site URL is
 `https://app.hummlist.com`; the allow list also keeps
 `https://family-groceries-pied.vercel.app/**` (the old Vercel URL, still an
 alias) and the preview pattern, and neither script removes an entry.
@@ -181,7 +186,7 @@ and Apple stay disabled.
   `Info.plist` has two URL types, the auth deep link and
   `$(GOOGLE_REVERSED_CLIENT_ID)` from `Flutter/Auth.xcconfig`.
 - Android: an intent filter for
-  `com.hummlist.app://login-callback`. No SHA fingerprint is
+  `com.snacklist.app://login-callback`. No SHA fingerprint is
   in code. Google matches the app by package name and the signing
   certificate's SHA-1 registered on the Android OAuth client (see
   `NEEDS_PETER.md`, section 4).

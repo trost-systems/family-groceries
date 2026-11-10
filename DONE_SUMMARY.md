@@ -36,6 +36,7 @@
 - Job 171, a store divider only folds; a hold or right click on a divider does nothing: [docs/done/171-store-header-tap.md](docs/done/171-store-header-tap.md)
 - Job 168c, guided start (#331) rebased onto several households (#327) and landed: [docs/done/168c.md](docs/done/168c.md)
 - Job 173, partner news under the household chip on phones; the 10-household cap on every join: [docs/done/173-phone-news-join-cap.md](docs/done/173-phone-news-join-cap.md)
+- Job 174, S1 of the Snacklist rename: identifiers, copy, docs and skills in three PRs, Hummlist kept working: [docs/done/174-snacklist-rename.md](docs/done/174-snacklist-rename.md)
 
 ## Job 1: foundation (2026-10-22)
 

@@ -14,7 +14,7 @@ function repo(files: Record<string, string>, entries?: unknown[]): string {
 
 const arb = (value: string) =>
   JSON.stringify({ '@@locale': 'en', hello: 'Hi', '@hello': { description: value }, shown: value });
-const clean = { 'site/content/a.md': 'Hummlist\n', 'app/l10n/app_en.arb': arb('Hello') };
+const clean = { 'site/content/a.md': 'Snacklist\n', 'app/l10n/app_en.arb': arb('Hello') };
 
 Deno.test('a clean repo passes', () => {
   assertEquals(check(repo(clean)), []);

@@ -141,7 +141,7 @@ re-render with `node marketing/videos/build.mjs` (marketing/videos/README.md).
 | `household-sync.member.mia` | Demo video household-sync | Mia | Mia | Name tag on Mia’s phone; fictional member, as in the hero. | draft |
 | `household-sync.member.noah` | Demo video household-sync | Noah | Noah | Name tag on Noah’s phone; fictional member. | draft |
 | `household-sync.member.ida` | Demo video household-sync | Ida | Ida | Name tag on Ida’s phone; fictional member. | draft |
-| `mcp-chat.caption` | Demo video mcp-chat | Jeder KI-Assistent mit MCP. | Any AI assistant with MCP. | New: caption of the mcp-chat video; generic on purpose (no assistant named, hummlist-ui-craft "Generic AI chat"). | draft |
+| `mcp-chat.caption` | Demo video mcp-chat | Jeder KI-Assistent mit MCP. | Any AI assistant with MCP. | New: caption of the mcp-chat video; generic on purpose (no assistant named, snacklist-ui-craft "Generic AI chat"). | draft |
 | `mcp-chat.add.request` | Demo video mcp-chat | Noch Honig und Marmelade | Add honey and jam | New: the typed request in the generic chat. | draft |
 | `mcp-chat.tick.request` | Demo video mcp-chat | Hab beides gekauft, hak es ab | Bought both, tick them off | New: the spoken request in the generic chat (shown as text after the voice input). | draft |
 | `mcp-chat.working` | Demo video mcp-chat | Hummlist wird gefragt … | Asking Hummlist … | New: the chat’s line while the Hummlist MCP tool runs. | draft |

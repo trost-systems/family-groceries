@@ -11,7 +11,8 @@ green `main` commit:
 - Android to the Play internal testing track.
 
 The public web app moves with these runs once a store upload succeeds:
-`https://app.hummlist.com` follows the same commit (via the `release` branch).
+`https://app.snacklist.app` and `https://app.hummlist.com` follow the same commit (via the
+`release` branch).
 `main` itself is also on `https://preview.app.hummlist.com`
 ([`DEPLOY.md`](DEPLOY.md), section "Web app").
 
@@ -49,7 +50,7 @@ dispatch) with `version`, `sha` (the released `main` commit), `build` and
 `dry_run: false`. The workflow computes the release's day and git stats
 (`scripts/release/record.mjs`), commits the entry to `main` as
 `Release <version>: public release record` and pushes it. That push
-redeploys hummlist.com, whose guides then show what the new version has
+redeploys snacklist.app, whose guides then show what the new version has
 ([`DEPLOY.md`](DEPLOY.md), "Guides site"). It starts no store upload: a push
 with the workflow's token starts no other workflow, and `plan.sh` counts only
 `app/` and `release.yml` as app changes. A dispatch defaults to
@@ -81,7 +82,7 @@ Each public release has a user-facing changelog, collected from the
      refuses to record the version.
    After any edit, run
    `node scripts/release/changelog.mjs store --version X`. Preview builds of
-   hummlist.com show the draft on the changelog page with the banner
+   the site show the draft on the changelog page with the banner
    "Entwurf, noch nicht im Store". Production does not show it.
 3. **Submit.** The store submission uses the draft's `store.app_store` and
    `store.play` texts as "What's new". That step does not exist yet: no
@@ -90,7 +91,7 @@ Each public release has a user-facing changelog, collected from the
    runs the Public release record workflow (above). `record.mjs` puts the
    draft into the new entry as `changelog` and deletes the draft file (and
    the override) in the same commit. In that commit it also writes the
-   still-held items to `releases/changelog/pending.json`. That push to `main` redeploys hummlist.com, so the changelog
+   still-held items to `releases/changelog/pending.json`. That push to `main` redeploys snacklist.app, so the changelog
    page shows the version only once it is live in the stores.
 
 Without a draft, the release is recorded without a changelog: the workflow
@@ -106,7 +107,7 @@ Three events start a run:
 | --- | --- | --- |
 | `workflow_run` | CI finished on `main` | The newest green `main` commit. Only a green CI run on a push to this repository starts the plan; after a red one (or a fork's PR from a branch named `main`, or a dispatched CI run) every job is skipped and nothing ships. |
 | `schedule` | Mondays 03:00 UTC | The same as `workflow_run`. A catch-up: it ships nothing when the testers have the newest green `main`, but re-ships before TestFlight's 90-day expiry or after Apple expired the builds, and picks up a commit whose `workflow_run` event never came. |
-| `workflow_dispatch` | By hand | The `main` commit it was started on, which must be green ([Run it by hand](#run-it-by-hand)). Like the automatic runs, a successful upload also moves `app.hummlist.com`. |
+| `workflow_dispatch` | By hand | The `main` commit it was started on, which must be green ([Run it by hand](#run-it-by-hand)). Like the automatic runs, a successful upload also moves the production web app. |
 
 The `plan` job gathers facts (`scripts/release/plan.sh gather`) and decides
 (`plan.sh decide`, a pure function with fixture tests in
@@ -167,7 +168,7 @@ line `Release plan (workflow_run): platform=both upload=true force=false
 main=<sha> trigger=<sha>` (or `(schedule)`, `(workflow_dispatch)`) shows it.
 
 ```bash
-gh workflow run release.yml                       # main's tip, if green and not shipped yet; upload also moves app.hummlist.com
+gh workflow run release.yml                       # main's tip, if green and not shipped yet; upload also moves the web app
 gh workflow run release.yml -f force=true         # ship even if the testers already have it
 gh workflow run release.yml -f upload=false       # build, sign and validate only
 gh workflow run release.yml -f platform=android   # one platform
@@ -181,7 +182,7 @@ gh workflow run release.yml -f platform=android   # one platform
 | `simulate_failure` | `false` | Fail the plan job on purpose, to test the failure issue. |
 
 A dispatch that finds `main` unchanged skips, so it does not move
-`app.hummlist.com` either; to publish the web app of a commit the testers
+the production web app either; to publish the web app of a commit the testers
 already have, use `force=true` (a new store build of the same commit) or the
 manual push in [`DEPLOY.md`](DEPLOY.md), section "Web app".
 
@@ -200,7 +201,7 @@ during a day of merges is one issue with one comment per run. The next run
 that uploads, or that finds the testers on the newest green `main`
 (`current`), closes it. Dry runs never touch it. A failed dispatch does not
 open the issue, since whoever started it watches the run; `simulate_failure`
-does (and its body also says whether `app.hummlist.com` moved). Until job 30
+does (and its body also says whether the production web app moved). Until job 30
 the issue was "Weekly release failed" (#53, closed). Watch the repository's
 issues (Watch, Custom, Issues) to get these.
 
@@ -265,27 +266,36 @@ nothing in the account or the repo fixes it.
 
 ## App identity
 
-The app is "Hummlist", bundle ID and Android `applicationId`
-`com.hummlist.app` since job 20. `app/fastlane/Appfile`, `Matchfile` and
-`APP_ID` in the `Fastfile` name it.
+The app is "Snacklist", bundle ID and Android `applicationId`
+`com.snacklist.app` since job 174 (decision B2). From job 20 it was
+"Hummlist", `com.hummlist.app`. `app/fastlane/Appfile`, `Matchfile` and
+`APP_ID` in the `Fastfile` name it. Release runs build Snacklist only; the
+branch `hummlist-maint` keeps the code from before the rename for a Hummlist
+hotfix.
 
 Since job 63 the iOS app embeds a second bundle, the Home Screen widget
-extension `com.hummlist.app.HomeWidget` (Xcode target `HomeWidget`,
+extension `com.snacklist.app.HomeWidget` (Xcode target `HomeWidget`,
 [HOME_WIDGETS.md](HOME_WIDGETS.md)). It is signed with its own App Store
 profile; `Matchfile` and `WIDGET_ID` in the `Fastfile` name it. The app and
-the extension share the App Group `group.com.hummlist.app`. The extension
+the extension share the App Group `group.com.snacklist.app`. The extension
 takes the app's version and build number (`FLUTTER_BUILD_NAME`,
 `FLUTTER_BUILD_NUMBER`), as App Store Connect requires.
 
-- iOS: App Store Connect app "Hummlist", Apple ID `6826922741`, primary
-  language de-DE. Internal group "Familie" has access to all builds, so every
-  `VALID` build reaches it. The old app record (`6826907810`,
-  `com.petertrost.familygroceries`) gets no further builds.
-- Android: Play app "Hummlist" (app ID `4972374295718364245`), created by
-  the Lead on 2026-10-27. The Lead uploaded the first bundle (0.1.0, version
-  code 1003, built on the box) by hand to internal testing, list "Familie",
-  on 2026-10-28 and set `PLAY_RELEASE_STATUS` to `completed`; since then
-  every upload run rolls out to internal testers.
+- iOS: App Store Connect app "Snacklist", Apple ID `6832756448`, SKU
+  `snacklist-ios`, primary language de-DE.
+- Android: Play app "Snacklist" (app ID `4975647801932295032`, package
+  `com.snacklist.app`). It has no upload yet: the first bundle goes up by
+  hand (the run's artifact `snacklist-<build>-aab`), and until then Play
+  refuses the upload runs.
+- Hummlist, until it retires: App Store Connect app "Hummlist", Apple ID
+  `6826922741`. Its internal group "Familie" had access to all builds, so
+  every `VALID` build reached it. The old app record (`6826907810`,
+  `com.petertrost.familygroceries`) gets no further builds. Play app
+  "Hummlist" (app ID `4972374295718364245`), created by the Lead on
+  2026-10-27. The Lead uploaded the first bundle (0.1.0, version code 1003,
+  built on the box) by hand to internal testing, list "Familie", on
+  2026-10-28 and set `PLAY_RELEASE_STATUS` to `completed`; from then on every
+  upload run rolled out to internal testers until job 174.
 
 ## Lanes
 
@@ -314,7 +324,7 @@ upload> --sha <shipped commit>` writes the TestFlight notes for the commits
 PR), newest first, at most 12 lines. Each commit gives:
 
 - its `## Changelog` items (`docs/CHANGELOG.md`) in the note's language, so
-  testers read the same sentences the stores and hummlist.com get, `flag:`
+  testers read the same sentences the stores and snacklist.app get, `flag:`
   and `hold:` items included;
 - nothing when the section says `none`;
 - its title, without the `Job <n>:` prefix, PR number and anything that looks
@@ -455,7 +465,9 @@ but only through Play Console support.
 | Play app signing key (Google-generated, Play Console, Setup, App signing; L3, 2026-10-28) | `77:B6:9B:5E:8F:10:5D:3F:46:3C:62:C3:BC:BE:A8:3D:EA:10:08:53` | `27:0E:40:2B:04:1D:4D:C8:E7:65:10:C6:B4:36:FE:E8:51:D9:08:E6:00:43:89:7F:4E:AF:B9:2F:BC:7B:E4:2A` |
 
 Play App Signing holds the app signing key, which signs what testers
-install. Google sign-in on Play builds and `assetlinks.json` (job 22) need
+install. Snacklist's Play app reuses Hummlist's app signing key, so
+`assetlinks.json` gives `com.snacklist.app` the same fingerprints; check them
+against Play Console after Snacklist's first upload. Google sign-in on Play builds and `assetlinks.json` (job 22) need
 the app signing key's fingerprints; debug and locally signed builds need the
 upload key's.
 
@@ -470,14 +482,15 @@ on the workload identity pool `github`, provider `family-groceries`.
 `google-github-actions/auth` exchanges the job's GitHub OIDC token and writes
 an `external_account` credentials file, which fastlane's supply reads as
 `json_key`. Play Console grants the account access to Hummlist
-(`NEEDS_LEAD.md`, L4).
+(`NEEDS_LEAD.md`, L4); Snacklist needs the same grant.
 
 ## iOS signing
 
 [match](https://docs.fastlane.tools/actions/match/) keeps the distribution
 certificate (`GN85KDC962`, Apple Distribution, expires 2027-10-25) and the
-App Store profiles "match AppStore com.hummlist.app" and "match AppStore
-com.hummlist.app.HomeWidget", encrypted with
+App Store profiles "match AppStore com.snacklist.app" and "match AppStore
+com.snacklist.app.HomeWidget" (Hummlist's `com.hummlist.app` ones stay next to
+them), encrypted with
 `MATCH_PASSWORD`, in the private repo
 `trost-systems/family-groceries-certificates`. The workflow loads
 `MATCH_DEPLOY_KEY` into an SSH agent so match can clone it.
@@ -490,8 +503,8 @@ does not ask the export compliance question for each build.
 
 ### Capabilities
 
-Enabling a capability on the App ID `com.hummlist.app` or
-`com.hummlist.app.HomeWidget` (for example Associated Domains for job 22)
+Enabling a capability on the App ID `com.snacklist.app` or
+`com.snacklist.app.HomeWidget` (for example Associated Domains for job 22)
 makes that App ID's App Store profile `INVALID`. The next Release run then
 fails in `plan` ("Profile ... is INVALID") before any build; a profile that
 does not exist yet fails the same way ("is missing"). The sequence:

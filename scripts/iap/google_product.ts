@@ -1,4 +1,4 @@
-// Creates Hummlist Lifetime in Google Play through the Play Developer API (monetization.onetimeproducts,
+// Creates Snacklist Lifetime in Google Play through the Play Developer API (monetization.onetimeproducts,
 // docs/PURCHASES.md, "Store setup"). Play only sells in-app products once the developer account has
 // a payments (merchant) profile, which only Peter can create (NEEDS_PETER Job 25): before that this
 // refuses to write. Dry run by default; --apply upserts the product and activates its purchase

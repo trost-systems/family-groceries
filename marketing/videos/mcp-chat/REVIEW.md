@@ -5,7 +5,7 @@ voice, to tick them off. The chat shows the real tool results of the take at the
 back; Sam's real app ("Sams Wohnung", fixture solo-long-list) shows the rows arrive and leave.
 11.3 to 12.0 s (job 146).
 
-## Hand-over notes (hummlist-ui-craft)
+## Hand-over notes (snacklist-ui-craft)
 
 - Plan: focal object the chat (the cause), satellite Sam's phone (the effect); action a typed
   request, then a spoken one; payoff the Hummlist result card next to the new rows in the app;

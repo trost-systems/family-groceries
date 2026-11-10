@@ -26,16 +26,17 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   from secrets (`docs/RELEASE.md`).
 - `vercel.json`, `scripts/vercel.sh`: Vercel builds the web app on every push
   (`scripts/vercel-local.sh` runs the same build in Vercel's base image).
-  `main` goes to `preview.app.hummlist.com` (Vercel login); `app.hummlist.com`
-  moves when a `release.yml` run uploads to a store and pushes the `release`
-  branch (`docs/DEPLOY.md`, section "Web app").
+  `main` goes to `preview.app.hummlist.com` (Vercel login); production
+  (`app.snacklist.app`, also `app.hummlist.com`) moves when a `release.yml`
+  run uploads to a store and pushes the `release` branch (`docs/DEPLOY.md`,
+  section "Web app").
   `supabase-deploy.yml` deploys migrations (`supabase/deploy/`, Management
   API) and edge functions (`--use-api`) from main, then runs
   `scripts/smoke-remote.sh`; its `ref` input rolls functions back.
   `keepalive.yml` reads through `health` daily so the free project doesn't
   pause. Runbook: `docs/DEPLOY.md`.
-- `site/`: the public site on hummlist.com (landing pages `/de` and `/en`,
-  guides, changelog, legal pages), its own Vercel project (Root Directory
+- `site/`: the public site on snacklist.app, also served on hummlist.com
+  (landing pages `/de` and `/en`, guides, changelog, legal pages), its own Vercel project (Root Directory
   `site`), static HTML from Markdown and `site/content/landing/copy.yml`;
   `site/README.md` explains adding a guide and the landing copy and media. Separate from the app's build.
   Production hides content tagged `since:` a version above the live one:
@@ -81,16 +82,16 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   state come from `scripts/fg seed <scenario>` (`test/fixtures/scenarios/`,
   removed with `fg teardown <run>`), multi-client sync proofs from
   `scripts/fg sync` (`docs/TEST_FIXTURES.md`).
-- The current feature map is `.cursor/skills/verify-hummlist/features/`
+- The current feature map is `.cursor/skills/verify-snacklist/features/`
   (`docs/FEATURE_MAP.md`): one file per user-facing feature, plus
   `FEATURES-FOR-WRITERS.md`, which emails and site copy are written from.
   Whenever user-facing behaviour changes, update the feature file and its
   section in FEATURES-FOR-WRITERS.md (last verified: commit and date) in the
-  same PR. The verify-hummlist skill drives the web build with Playwright
+  same PR. The verify-snacklist skill drives the web build with Playwright
   (`helpers/launch.sh`, `doctor.sh`, `drive.sh <feature-id>`, `cleanup.sh`);
-  hummlist-howto-clips films GIF/MP4 how-to clips of it.
-- Make shown UI look finished with the hummlist-ui-craft skill
-  (`.claude/skills/hummlist-ui-craft/`, also `.cursor/skills/`): the 6b look,
+  snacklist-howto-clips films GIF/MP4 how-to clips of it.
+- Make shown UI look finished with the snacklist-ui-craft skill
+  (`.claude/skills/snacklist-ui-craft/`, also `.cursor/skills/`): the 6b look,
   restraint, framing, motion, loops, poster frames, the 358 px compact design and
   the film/contact-sheet review loop, for homepage scenes, demo videos, goldens
   and app screens. Its `film.mjs` films HTML/CSS scenes with Playwright.

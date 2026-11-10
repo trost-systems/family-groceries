@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
-  title: Hummlist API
+  title: Snacklist API
   version: 1.0.0
-  summary: One household's Hummlist shopping list over HTTP.
+  summary: One household's Snacklist shopping list over HTTP.
   description: >-
     The guide is docs/API.md in the family-groceries repository: authentication with API keys,
     scopes, idempotency, errors, rate limits and versioning. Every response carries
@@ -82,7 +82,7 @@ paths:
       tags: [items]
       summary: Add 1 to 50 items
       description: >-
-        Names are split like everywhere in Hummlist ("2 Gurken" is Gurken, quantity 2). An item
+        Names are split like everywhere in Snacklist ("2 Gurken" is Gurken, quantity 2). An item
         already on the list is not added again (alreadyOnList); a spelling variant or synonym of
         an open item is added and reported (similarOnList). The items go to the list given by
         list, else to the household's first list (where Siri and Alexa add too); "already on the
@@ -279,7 +279,7 @@ components:
       scheme: bearer
       bearerFormat: fgp_ followed by 43 base64url characters
       description: >-
-        An API key from the Hummlist app (More, Zugänge, API) with the scope read, or read and
+        An API key from the Snacklist app (More, Zugänge, API) with the scope read, or read and
         write. MCP tokens, Siri credentials and OAuth tokens are not accepted.
   parameters:
     ItemId:
@@ -462,7 +462,7 @@ components:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
     PremiumRequired:
-      description: premium_required; the household needs Hummlist Premium for the API. Nothing was read or changed.
+      description: premium_required; the household needs Snacklist Premium for the API. Nothing was read or changed.
       content:
         application/json:
           schema: { $ref: '#/components/schemas/Error' }
