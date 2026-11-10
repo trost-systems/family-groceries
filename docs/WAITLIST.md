@@ -181,8 +181,8 @@ every period to the minute.
 
 ## Mails
 
-From `"Peter von Hummlist" <hello@hummlist.com>` (English: `"Peter from Hummlist"`), Reply-To
-`hello@hummlist.com`, HTML and plain text, no images, no tracking, no tags or metadata. Resend's
+From `"Peter von Snacklist" <hello@snacklist.app>` (English: `"Peter from Snacklist"`), Reply-To
+`hello@snacklist.app`, HTML and plain text, no images, no tracking, no tags or metadata. Resend's
 open and click tracking stay off in the domain settings.
 
 | Mail | When | Footer | List-Unsubscribe |

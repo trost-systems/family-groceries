@@ -101,10 +101,10 @@ type Segment = string | { text: string; url: string };
 type Paragraph = Segment[];
 
 const SENDER = {
-  de: '"Peter von Hummlist" <hello@hummlist.com>',
-  en: '"Peter from Hummlist" <hello@hummlist.com>',
+  de: '"Peter von Snacklist" <hello@snacklist.app>',
+  en: '"Peter from Snacklist" <hello@snacklist.app>',
 };
-const REPLY_TO = 'hello@hummlist.com';
+const REPLY_TO = 'hello@snacklist.app';
 
 const escape = (s: string) =>
   s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
