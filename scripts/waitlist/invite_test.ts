@@ -166,11 +166,11 @@ Deno.test('--confirm mails each allowed row once, records it and exports the lis
   assertExists(ios);
   assertExists(android);
   assert(
-    ios.mail.text.includes('TestFlight') && ios.mail.from.includes('Peter von Hummlist'),
+    ios.mail.text.includes('TestFlight') && ios.mail.from.includes('Peter von Snacklist'),
   );
   assert(
     android.mail.text.includes('play.google.com') &&
-      android.mail.from.includes('Peter from Hummlist'),
+      android.mail.from.includes('Peter from Snacklist'),
   );
   assertEquals(android.mail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
   assert(

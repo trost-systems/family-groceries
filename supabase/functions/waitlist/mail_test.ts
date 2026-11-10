@@ -87,8 +87,8 @@ Deno.test('AC10: the German confirmation mail is doi-mail-de-v2 (M-1) with foote
     confirmUrl: confirmUrl('https://hummlist.com', 'de', TOKEN),
     unsubscribe,
   });
-  assertEquals(mail.from, '"Peter von Hummlist" <hello@hummlist.com>');
-  assertEquals(mail.replyTo, 'hello@hummlist.com');
+  assertEquals(mail.from, '"Peter von Snacklist" <hello@snacklist.app>');
+  assertEquals(mail.replyTo, 'hello@snacklist.app');
   assertEquals(mail.subject, 'Bitte bestätige deine E-Mail für Hummlist');
   assertEquals(mail.headers, {});
   assert(
@@ -127,7 +127,7 @@ Deno.test('AC10: the English confirmation mail is doi-mail-en-v2 (M-2) with foot
     confirmUrl: confirmUrl('https://hummlist.com', 'en', TOKEN),
     unsubscribe: unsubscribeEn,
   });
-  assertEquals(mail.from, '"Peter from Hummlist" <hello@hummlist.com>');
+  assertEquals(mail.from, '"Peter from Snacklist" <hello@snacklist.app>');
   assertEquals(mail.subject, 'Please confirm your email for Hummlist');
   assert(mail.html.includes("One tap and you're on the beta waitlist."), 'preheader');
   assertEquals(
@@ -265,9 +265,9 @@ Deno.test('Resend: one single send with an idempotency key, reply-to and the mai
   assertEquals(req.headers.get('authorization'), 'Bearer re_test_key');
   assertEquals(req.headers.get('idempotency-key'), `welcome/${ID}`);
   assertEquals(await req.json(), {
-    from: '"Peter von Hummlist" <hello@hummlist.com>',
+    from: '"Peter von Snacklist" <hello@snacklist.app>',
     to: ['hello+resend@hummlist.com'],
-    reply_to: 'hello@hummlist.com',
+    reply_to: 'hello@snacklist.app',
     subject: mail.subject,
     html: mail.html,
     text: mail.text,
