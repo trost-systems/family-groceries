@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertExists, assertMatch } from '@std/assert';
-import { desired, templates } from './auth_mail.ts';
+import { desired, drafts, templates } from './auth_mail.ts';
 
 function key(keys: Record<string, string>, name: string): string {
   const value = keys[name];
@@ -35,14 +35,29 @@ Deno.test('the mails name Snacklist and never Hummlist', async () => {
   }
 });
 
+// The bodies are built from emails/ (a button, the raw link under it and Outlook's VML twin), so
+// the link shows up more than once in a language: check each branch has it.
+function branches(body: string): [string, string] {
+  const [de, en, ...rest] = body.split('{{- else -}}');
+  assert(de !== undefined && en !== undefined && rest.length === 0, 'one {{- else -}}');
+  return [de, en];
+}
+
 Deno.test('every link mail carries the confirmation link in both languages', async () => {
   const keys = await desired();
   for (const name of templates.filter((t) => t !== 'reauthentication')) {
-    const body = key(keys, `mailer_templates_${name}_content`);
-    assertEquals(body.match(/href="\{\{ \.ConfirmationURL \}\}"/g)?.length, 2, name);
+    for (const branch of branches(key(keys, `mailer_templates_${name}_content`))) {
+      assertMatch(branch, /<a href="\{\{ \.ConfirmationURL \}\}"/, name);
+    }
   }
+  for (const branch of branches(key(keys, 'mailer_templates_reauthentication_content'))) {
+    assertMatch(branch, /\{\{ \.Token \}\}/);
+  }
+});
+
+Deno.test('a template with a draft line is not applied', () => {
   assertEquals(
-    key(keys, 'mailer_templates_reauthentication_content').match(/\{\{ \.Token \}\}/g)?.length,
-    2,
+    drafts({ a: '<p data-hl-draft="reason line, Launch to confirm">x</p>', b: '<p>approved</p>' }),
+    ['a'],
   );
 });

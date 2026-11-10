@@ -29,6 +29,10 @@
       "released": false,
       "note": "waits for Peter's device test on iPhone and Android"
     },
+    "auth-mail-look": {
+      "released": false,
+      "note": "the restyled sign-in mails reach users once Peter approves them and runs supabase/deploy/auth_mail.ts (job 177, docs/NEEDS_PETER.md)"
+    },
     "integration-lock": {
       "released": false,
       "note": "Siri, Alexa and AI assistants need Snacklist Premium only once Peter turns the integration lock on (server switch, then the INTEGRATION_LOCK define)"

@@ -11057,3 +11057,96 @@ main before the rename) keeps a Hummlist hotfix build possible.
   rate function returns no row. Before, it would have thrown.
 - **Writers' copy stays brand-free.** The never-claim line in FEATURES-FOR-WRITERS says "the
   well-known assistants", not two product names, because main's copy names no assistant.
+
+## Job 55: Hummlist mail design system (2026-11-01; landed by job 177 as Snacklist)
+
+1. **React Email in its own package, `emails/`.** As `site/` is: own `package.json`, exact
+   versions, lockfile. `@react-email/components` 1.0.12 (its bundled `render` 2.0.6, the only
+   render in the tree), React 19.3.1, `tsx` to run TSX, `typescript` 5.9.3 for the type checks.
+   No React Email CLI, so no dev server and no telemetry; previews are Playwright PNGs. Nothing in
+   the repo argued for another tool: the site is plain HTML from Markdown, and Resend takes the
+   `html` and `text` this renders.
+2. **Tokens are read, not copied.** `emails/src/tokens.ts` parses `design/tokens/snacklist.tokens.json`
+   at render time. The output has resolved hex values inline, because mail clients have no CSS
+   variables. Sizes are token values (headline 36, title 22, body 17, label 15; space, radius,
+   border, depth, the 48 px target).
+3. **No web fonts.** Every remote load in a mail reveals the reader's IP and open time; Gmail's
+   proxy does not cover fonts, and only Apple Mail, iOS Mail and Thunderbird would load them. The
+   stacks lead with the tokens' Bricolage Grotesque and Inter and fall back to installed fonts.
+   The logo PNG on snacklist.app is the only remote load.
+4. **Logo: a square PNG from the icon generator.** `design/app-icon/build.mjs` writes
+   `site/public/email/snacklist-icon-96.png` (icon #5, 96 px for 48 px at 2x) with its cobalt ground,
+   so no client darkens ink on a transparent background. CSS rounds it. Its alt is empty because the
+   live "Snacklist" wordmark sits next to it; a screen reader would otherwise say the name twice.
+5. **Plain text from the same render**, with html-to-text formatters in `render.ts`: `1. Title` for
+   steps, the button's label over its URL, URLs of in-sentence links after their paragraph (the
+   Legal sentences stay whole), `-- ` before the footer.
+6. **Wording is checked word for word**, not by eye: the tests compare the auth mails with AL4's
+   templates (job 177; first a copy of the hosted English defaults) and the onboarding mails with
+   Launch's `.txt` drafts. Changing one word
+   in either fails the gate.
+7. **Local stack uses the templates.** `npm run build` writes the template block in
+   `supabase/config.toml` between markers, so the subjects come from the same table as the mails. The e2e
+   specs that read Mailpit (magic link, onboarding) pass with them. The security notifications stay
+   disabled locally, as on hosted. Nothing deploys `config.toml`'s auth settings; switching the
+   hosted project stays a manual step for Peter.
+8. **GoTrue strips HTML comments.** It renders templates with `html/template`, which drops every
+   comment, so the MSO conditionals (VML button, 600 px ghost table, the Arial font rule) never reach
+   readers through Supabase (seen in Mailpit). Kept anyway: they cost nothing, and mails sent
+   through Resend's API keep them. Through Supabase, Outlook on Windows shows the table button with
+   square corners and a card as wide as the reading pane. Moving auth mail to a Send Email Hook
+   would fix that; not built. (Per-reader DE/EN came with AL4's Go template branch instead.)
+9. **Footers per Legal Review N-15** (addendum 12:55): `TransactionalFooter` and `OnboardingFooter`
+   replace the placeholder slot. Reason lines nobody approved yet are typed `{ draft }`;
+   `renderEmail(…, { production: true })` and `npm run production` refuse them, the `Draft` body
+   component and the demo unsubscribe link. That keeps "pending" visible without a fake placeholder
+   in the reviewed mails.
+10. **"Partner joined" is transactional.** The addendum lists it under both footers. Item 5 (a
+    service notice with only "Liste öffnen", transactional footer) is the specific instruction,
+    and a member joining is account activity, not marketing; it uses `AuthLayout`.
+11. **Auth mails are one table** (`AUTH_MAILS` in `emails/src/emails/auth.tsx`): heading, blocks
+    (paragraph, button or code), subject, reason. Thirteen near-identical files would hide the four
+    real differences.
+12. **Demo screen for `PhoneScreenshot`**: `site/public/email/demo-list-de.png`, cropped from the
+    homepage's add-tick scene (the fictional Brandt household) with the scene's row checkbox
+    hidden, since the app has none (job 57).
+
+## Job 177: the mail design system for Snacklist, around AL4 (2026-11-10)
+
+1. **A fresh branch from main, #170 closed.** #170 was one commit nine days behind main, with
+   conflicts in all six templates AL4 had rewritten, config.toml, ci.yml and verify.sh. Cherry-picking
+   it onto main and resolving by hand was the same work as a rebase; a new PR keeps the old
+   Hummlist screenshots (47 PNGs) out of main's history.
+2. **AL4 is the source of the six mails' words, the design wraps them.** Each auth mail is a DE/EN
+   pair of copy in `emails/src/emails/auth.tsx`; the build renders both through `AuthLayout` and
+   joins them under AL4's exact pick (`{{ with .Data }}` guard, `mail_locale == "de"`, English in
+   the `else`). The six subjects come out byte for byte as AL4 wrote them. The tests compare the
+   words with AL4's files (`emails/test/fixtures/al4/`), and AL4's `auth_mail_test.ts` stays; its
+   "link exactly twice" check now asks for the link in each branch, because the design prints it
+   under the button and in Outlook's VML twin as well.
+3. **AL4's brand line gave way to the Legal footer.** AL4 ended each mail with "Snacklist ·
+   snacklist.app"; the transactional footer (N-15 a) names Snacklist, the address and both legal
+   pages, so a second brand line would repeat it.
+4. **The whole document sits in each branch**, not just the card's text. One `if` around two
+   complete mails keeps `html/template`'s contexts simple (both branches end in the same state) and
+   gives each language its own `lang` and `<title>`. A sent mail is about 7.5 KB (GoTrue strips the
+   comments); the template file is about 16 KB.
+5. **No `.txt` twins or `subjects.json` any more.** Supabase sends HTML only, and AL4's
+   `auth_mail.ts` reads the subjects from config.toml; nothing read the two. `renderEmail` still
+   makes plain text for previews and a future multipart sender.
+6. **The seven security notices got German drafts**, and "partner joined" and "account deleted" an
+   English twin, so every mail exists in both languages. The notices stay off everywhere; their
+   reason lines and the new German are drafts.
+7. **`auth_mail.ts` refuses draft lines.** Five of the six sent mails carry a reason line nobody
+   approved (`data-hl-draft`). Merging stays safe (nothing deploys auth templates), and the manual
+   deploy now stops on them instead of putting unapproved lines live.
+8. **Sender: "Peter · Snacklist" <hello@snacklist.app>.** The brief said "Peter von Snacklist"; main
+   switched to "Peter · Snacklist" with #357 the same day (docs/AUTH.md, docs/WAITLIST.md), and the
+   From lives in the hosted SMTP settings, not in these templates. The docs follow main.
+9. **Snacklist swaps only in the Legal texts** (N-15 a and b): name, domains and mail addresses,
+   per Peter's Q129 G1; the legal pages are `snacklist.app/impressum`, `/datenschutz`,
+   `/en/imprint` and `/en/privacy` (site/content/legal).
+10. **Two facts fixed in draft copy.** Launch's onboarding drafts sent feedback to „Einstellungen >
+    Feedback senden“; the app has it under Mehr („More“), so the drafts and the mails say that now.
+    The password-changed notice told readers to reset their password, which the app does not offer;
+    it now ends like the other security notices ("contact support").

@@ -1,0 +1,15 @@
+{{- /* German when the account saved mail_locale "de" (the app sets user_metadata.mail_locale), else English. See docs/AUTH.md. */ -}}
+{{- $de := false }}{{ with .Data }}{{ $de = eq (printf "%v" .mail_locale) "de" }}{{ end -}}
+{{ if $de -}}
+<h2>Du wurdest zu Snacklist eingeladen</h2>
+
+<p>Öffne den Link unten, um die Einladung anzunehmen und dein Snacklist-Konto anzulegen.</p>
+<p><a href="{{ .ConfirmationURL }}">Einladung annehmen</a></p>
+<p style="color:#6b6b6b;font-size:13px">Snacklist · <a href="https://snacklist.app">snacklist.app</a></p>
+{{- else -}}
+<h2>You've been invited to Snacklist</h2>
+
+<p>Follow the link below to accept the invitation and create your Snacklist account.</p>
+<p><a href="{{ .ConfirmationURL }}">Accept invitation</a></p>
+<p style="color:#6b6b6b;font-size:13px">Snacklist · <a href="https://snacklist.app">snacklist.app</a></p>
+{{- end }}

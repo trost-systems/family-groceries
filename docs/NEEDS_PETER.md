@@ -1569,3 +1569,33 @@ PR #231. Nothing blocks the merge; two optional checks after the deploy, both on
    header `x-vercel-forwarded-for`. If it is missing, the per-address token limit is one
    bucket for everyone on the proxy; tell the lead.
 
+## Job 177: Snacklist mail design, before it goes live (Peter, after review)
+
+The PR restyles every mail Supabase Auth can send (German and English, AL4's wording) and the
+onboarding and notice mails. Nothing is live, nothing was sent, the hosted project is unchanged.
+
+1. **Review** (done: Peter, 2026-11-10, "362 looks good, go ahead") every mail, German and English: the review page
+   `~/groceries-ops/jobs/177-mail-design-snacklist/previews/index.html` (PNGs, HTML and plain text
+   per mail; on the box under the same jobs path), or render it yourself:
+   `cd emails && npm ci && flock /tmp/fg-e2e.lock npm run preview -- --out /tmp/mails`.
+2. **Approve the Legal footer texts** (N-15 a and b, `emails/src/components/Footer.tsx`): Legal's
+   words with Snacklist's name, domain and addresses swapped in.
+3. **Merge** (done: job 179, 2026-11-10). Merging changes nothing on the hosted project; the site
+   deploy puts the logo at `https://snacklist.app/email/snacklist-icon-96.png`.
+4. **Approve or rewrite the draft reason lines** (the grey "Du bekommst diese E-Mail, weil …" line)
+   of confirmation, recovery, email change, invite and reauthentication, DE and EN, in
+   `emails/src/emails/auth.tsx` (`draft` becomes `confirmed`, then `cd emails && npm run build`).
+   The deploy refuses a template with a draft line, so until then the hosted project keeps AL4's
+   plain mails.
+5. **Put the templates live** from a checkout of `main` with a personal access token:
+
+   ```sh
+   export SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=jdwqrallbpdbshrdhenk
+   deno run --allow-read --allow-env --allow-net --config supabase/deploy/deno.json \
+     supabase/deploy/auth_mail.ts --dry-run   # lists the six mailer_templates_*_content keys
+   deno run --allow-read --allow-env --allow-net --config supabase/deploy/deno.json \
+     supabase/deploy/auth_mail.ts
+   ```
+
+   Then send yourself a sign-in link from the app in each language. To go back, run the same
+   script from a checkout of `0873093e` (AL4's plain templates).
