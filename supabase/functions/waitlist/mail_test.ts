@@ -16,9 +16,9 @@ import { MailError, resendMailer } from './resend.ts';
 const ID = '3f2a8c1e-0b6d-4e7f-9a1b-2c3d4e5f6a7b';
 const SIG = 'ab'.repeat(32);
 const TOKEN = 'A'.repeat(43);
-const unsubscribe = unsubscribeLinks('https://hummlist.com', 'de', ID, SIG);
-const unsubscribeEn = unsubscribeLinks('https://hummlist.com', 'en', ID, SIG);
-const SITE = 'https://hummlist.com';
+const unsubscribe = unsubscribeLinks('https://snacklist.app', 'de', ID, SIG);
+const unsubscribeEn = unsubscribeLinks('https://snacklist.app', 'en', ID, SIG);
+const SITE = 'https://snacklist.app';
 
 const assertNoImagesOrTracking = (mail: Mail) => {
   const glued = mail.text.match(/https?:\/\/[^\s<>]*[.,:;)](?=\s|$)/);
@@ -30,7 +30,7 @@ const assertNoImagesOrTracking = (mail: Mail) => {
   });
   for (const href of hrefs) {
     assert(
-      href.startsWith('https://hummlist.com/') ||
+      href.startsWith('https://snacklist.app/') ||
         href.startsWith('https://play.google.com/apps/testing/'),
       `a direct link, no redirect: ${href}`,
     );
@@ -39,20 +39,20 @@ const assertNoImagesOrTracking = (mail: Mail) => {
 
 Deno.test('links: confirm and unsubscribe values sit in the fragment; one-click is the POST endpoint', () => {
   assertEquals(
-    confirmUrl('https://hummlist.com', 'de', TOKEN),
-    `https://hummlist.com/de/warteliste/bestaetigen#t=${TOKEN}`,
+    confirmUrl('https://snacklist.app', 'de', TOKEN),
+    `https://snacklist.app/de/warteliste/bestaetigen#t=${TOKEN}`,
   );
   assertEquals(
-    confirmUrl('https://hummlist.com', 'en', TOKEN),
-    `https://hummlist.com/en/waitlist/confirm#t=${TOKEN}`,
+    confirmUrl('https://snacklist.app', 'en', TOKEN),
+    `https://snacklist.app/en/waitlist/confirm#t=${TOKEN}`,
   );
   assertEquals(unsubscribe, {
-    page: `https://hummlist.com/de/warteliste/abmelden#id=${ID}&s=${SIG}`,
-    oneClick: `https://hummlist.com/api/waitlist/unsubscribe?id=${ID}&s=${SIG}&l=de`,
+    page: `https://snacklist.app/de/warteliste/abmelden#id=${ID}&s=${SIG}`,
+    oneClick: `https://snacklist.app/api/waitlist/unsubscribe?id=${ID}&s=${SIG}&l=de`,
   });
   assertEquals(
     unsubscribeEn.page,
-    `https://hummlist.com/en/waitlist/unsubscribe#id=${ID}&s=${SIG}`,
+    `https://snacklist.app/en/waitlist/unsubscribe#id=${ID}&s=${SIG}`,
   );
 });
 
@@ -84,12 +84,12 @@ Deno.test('siteOrigin accepts hummlist.com, snacklist.app, previews and a local 
 
 Deno.test('AC10: the German confirmation mail is doi-mail-de-v2 (M-1) with footer (a), no launch line', () => {
   const mail = confirmationMail('de', {
-    confirmUrl: confirmUrl('https://hummlist.com', 'de', TOKEN),
+    confirmUrl: confirmUrl('https://snacklist.app', 'de', TOKEN),
     unsubscribe,
   });
   assertEquals(mail.from, '"Peter · Snacklist" <hello@snacklist.app>');
   assertEquals(mail.replyTo, 'hello@snacklist.app');
-  assertEquals(mail.subject, 'Bitte bestätige deine E-Mail für Hummlist');
+  assertEquals(mail.subject, 'Bitte bestätige deine E-Mail für Snacklist');
   assertEquals(mail.headers, {});
   assert(
     mail.html.includes('Ein Tipp, dann stehst du auf der Warteliste für die Beta.'),
@@ -100,16 +100,16 @@ Deno.test('AC10: the German confirmation mail is doi-mail-de-v2 (M-1) with foote
     mail.text,
     [
       'Hi,',
-      'diese Adresse wurde auf hummlist.com für die Warteliste der Hummlist-Beta eingetragen, von dir selbst oder zum Beispiel von einem KI-Assistenten für dich. Bitte bestätige kurz, dass das deine Adresse ist:',
-      `E-Mail bestätigen <https://hummlist.com/de/warteliste/bestaetigen#t=${TOKEN}>`,
+      'diese Adresse wurde auf snacklist.app für die Warteliste der Snacklist-Beta eingetragen, von dir selbst oder zum Beispiel von einem KI-Assistenten für dich. Bitte bestätige kurz, dass das deine Adresse ist:',
+      `E-Mail bestätigen <https://snacklist.app/de/warteliste/bestaetigen#t=${TOKEN}>`,
       'Der Link gilt 48 Stunden. Sobald du auf der Seite dahinter bestätigt hast, stehst du auf der Liste. Wir laden jede Woche neue Tester:innen ein, deine Einladung kommt per E-Mail.',
       'Du warst das nicht? Dann ignorier diese Mail einfach. Ohne Bestätigung tragen wir dich nicht ein und löschen die Adresse nach 7 Tagen.',
       'Peter',
       '--',
-      'Du bekommst diese E-Mail, weil diese Adresse auf hummlist.com für die Warteliste eingetragen wurde. ' +
+      'Du bekommst diese E-Mail, weil diese Adresse auf snacklist.app für die Warteliste eingetragen wurde. ' +
       `Eintrag sofort löschen <${unsubscribe.page}>`,
-      'Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Deutschland · support@hummlist.com\n' +
-      'Impressum: https://hummlist.com/impressum · Datenschutz: https://hummlist.com/datenschutz',
+      'Snacklist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Deutschland · support@snacklist.app\n' +
+      'Impressum: https://snacklist.app/impressum · Datenschutz: https://snacklist.app/datenschutz',
     ].join('\n\n') + '\n',
   );
   assert(
@@ -124,26 +124,26 @@ Deno.test('AC10: the German confirmation mail is doi-mail-de-v2 (M-1) with foote
 
 Deno.test('AC10: the English confirmation mail is doi-mail-en-v2 (M-2) with footer (a), no launch line', () => {
   const mail = confirmationMail('en', {
-    confirmUrl: confirmUrl('https://hummlist.com', 'en', TOKEN),
+    confirmUrl: confirmUrl('https://snacklist.app', 'en', TOKEN),
     unsubscribe: unsubscribeEn,
   });
   assertEquals(mail.from, '"Peter · Snacklist" <hello@snacklist.app>');
-  assertEquals(mail.subject, 'Please confirm your email for Hummlist');
+  assertEquals(mail.subject, 'Please confirm your email for Snacklist');
   assert(mail.html.includes("One tap and you're on the beta waitlist."), 'preheader');
   assertEquals(
     mail.text,
     [
       'Hi,',
-      "This address was signed up on hummlist.com for the Hummlist beta waitlist, by you or, for example, by an AI assistant for you. Please confirm that it's yours:",
-      `Confirm email <https://hummlist.com/en/waitlist/confirm#t=${TOKEN}>`,
+      "This address was signed up on snacklist.app for the Snacklist beta waitlist, by you or, for example, by an AI assistant for you. Please confirm that it's yours:",
+      `Confirm email <https://snacklist.app/en/waitlist/confirm#t=${TOKEN}>`,
       "The link works for 48 hours. Once you've confirmed on the page it opens, you're on the list. We invite new testers every week; your invite will come by email.",
       "Wasn't you? Just ignore this email. Without confirmation we won't add you, and we delete the address after 7 days.",
       'Peter',
       '--',
-      "You're getting this email because this address was signed up for the waitlist on hummlist.com. " +
+      "You're getting this email because this address was signed up for the waitlist on snacklist.app. " +
       `Delete this sign-up now <${unsubscribeEn.page}>`,
-      'Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · support@hummlist.com\n' +
-      'Imprint: https://hummlist.com/en/imprint · Privacy: https://hummlist.com/en/privacy',
+      'Snacklist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · support@snacklist.app\n' +
+      'Imprint: https://snacklist.app/en/imprint · Privacy: https://snacklist.app/en/privacy',
     ].join('\n\n') + '\n',
   );
   assert(!mail.html.includes('officially launches'), 'no launch line');
@@ -199,7 +199,7 @@ Deno.test('the invite mail has an iPhone and an Android line, footer (b) and one
   const ios = inviteMail('de', { platform: 'ios', unsubscribe });
   const android = inviteMail('en', { platform: 'android', unsubscribe: unsubscribeEn });
   assert(ios.text.includes('TestFlight') && !ios.text.includes('play.google.com'));
-  assert(android.text.includes('https://play.google.com/apps/testing/com.hummlist.app'));
+  assert(android.text.includes('https://play.google.com/apps/testing/com.snacklist.app'));
   assert(!android.text.includes('TestFlight'));
   assertEquals(ios.headers['List-Unsubscribe'], `<${unsubscribe.oneClick}>`);
   assertEquals(android.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
@@ -210,7 +210,7 @@ Deno.test('the invite mail has an iPhone and an Android line, footer (b) and one
 
 Deno.test('the HTML escapes what it interpolates', () => {
   const mail = confirmationMail('de', {
-    confirmUrl: 'https://hummlist.com/de/warteliste/bestaetigen#t="><script>',
+    confirmUrl: 'https://snacklist.app/de/warteliste/bestaetigen#t="><script>',
     unsubscribe,
   });
   assert(!mail.html.includes('<script>'));
@@ -273,11 +273,11 @@ Deno.test('From is the language-neutral Peter · Snacklist (U+00B7) for DE and E
   assertEquals(from, '"Peter · Snacklist" <hello@snacklist.app>');
   assertEquals(from.codePointAt(from.indexOf('\u00B7')), 0x00B7);
   const de = confirmationMail('de', {
-    confirmUrl: confirmUrl('https://hummlist.com', 'de', TOKEN),
+    confirmUrl: confirmUrl('https://snacklist.app', 'de', TOKEN),
     unsubscribe,
   });
   const en = confirmationMail('en', {
-    confirmUrl: confirmUrl('https://hummlist.com', 'en', TOKEN),
+    confirmUrl: confirmUrl('https://snacklist.app', 'en', TOKEN),
     unsubscribe: unsubscribeEn,
   });
   const welcome = welcomeMail('en', { unsubscribe: unsubscribeEn, launchNews: false });
@@ -337,7 +337,7 @@ Deno.test('Resend: one single send with an idempotency key, reply-to and the mai
   });
 
   const confirmation = confirmationMail('de', {
-    confirmUrl: 'https://hummlist.com/x',
+    confirmUrl: 'https://snacklist.app/x',
     unsubscribe,
   });
   await mailer.send('hello+resend@hummlist.com', confirmation, 'confirm/x');
@@ -372,4 +372,26 @@ Deno.test('Resend: a refusal names the status, never the answer', async () => {
     MailError,
   );
   assertEquals(e.message, 'resend answered 422');
+});
+
+Deno.test('no mail names Hummlist or hummlist.com (G1 name and domain swap)', () => {
+  const mails = [
+    confirmationMail('de', { confirmUrl: confirmUrl(SITE, 'de', TOKEN), unsubscribe }),
+    confirmationMail('en', {
+      confirmUrl: confirmUrl(SITE, 'en', TOKEN),
+      unsubscribe: unsubscribeEn,
+    }),
+    welcomeMail('de', { launchNews: true, unsubscribe }),
+    welcomeMail('en', { launchNews: false, unsubscribe: unsubscribeEn }),
+    inviteMail('de', { platform: 'ios', unsubscribe }),
+    inviteMail('en', { platform: 'android', unsubscribe: unsubscribeEn }),
+  ];
+  for (const mail of mails) {
+    for (const part of [mail.subject, mail.text, mail.html, ...Object.values(mail.headers ?? {})]) {
+      assert(
+        !/hummlist/i.test(part),
+        `${mail.subject}: ${part.match(/.{0,30}hummlist.{0,30}/i)?.[0]}`,
+      );
+    }
+  }
 });

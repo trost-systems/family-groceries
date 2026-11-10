@@ -25,7 +25,7 @@ export interface Unsubscribe {
 }
 
 export const SITE_ORIGIN = 'https://snacklist.app';
-const PLAY_TESTING_URL = 'https://play.google.com/apps/testing/com.hummlist.app';
+const PLAY_TESTING_URL = 'https://play.google.com/apps/testing/com.snacklist.app';
 
 const ORIGINS = [
   /^https:\/\/hummlist\.com$/,
@@ -156,18 +156,18 @@ function render(
 
 const IMPRINT = {
   de: [
-    'Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Deutschland · ' +
-    'support@hummlist.com\nImpressum: ',
-    { text: 'https://hummlist.com/impressum', url: 'https://hummlist.com/impressum' },
+    'Snacklist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Deutschland · ' +
+    'support@snacklist.app\nImpressum: ',
+    { text: 'https://snacklist.app/impressum', url: 'https://snacklist.app/impressum' },
     ' · Datenschutz: ',
-    { text: 'https://hummlist.com/datenschutz', url: 'https://hummlist.com/datenschutz' },
+    { text: 'https://snacklist.app/datenschutz', url: 'https://snacklist.app/datenschutz' },
   ],
   en: [
-    'Hummlist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · ' +
-    'support@hummlist.com\nImprint: ',
-    { text: 'https://hummlist.com/en/imprint', url: 'https://hummlist.com/en/imprint' },
+    'Snacklist · Peter Trost · Yalovastr. 5 · 72108 Rottenburg am Neckar · Germany · ' +
+    'support@snacklist.app\nImprint: ',
+    { text: 'https://snacklist.app/en/imprint', url: 'https://snacklist.app/en/imprint' },
     ' · Privacy: ',
-    { text: 'https://hummlist.com/en/privacy', url: 'https://hummlist.com/en/privacy' },
+    { text: 'https://snacklist.app/en/privacy', url: 'https://snacklist.app/en/privacy' },
   ],
 } satisfies Record<Locale, Paragraph>;
 
@@ -176,13 +176,13 @@ function footerA(locale: Locale, unsubscribe: string): Paragraph[] {
   return [
     locale === 'de'
       ? [
-        'Du bekommst diese E-Mail, weil diese Adresse auf hummlist.com für die Warteliste ' +
+        'Du bekommst diese E-Mail, weil diese Adresse auf snacklist.app für die Warteliste ' +
         'eingetragen wurde. ',
         { text: 'Eintrag sofort löschen', url: unsubscribe },
       ]
       : [
         "You're getting this email because this address was signed up for the waitlist on " +
-        'hummlist.com. ',
+        'snacklist.app. ',
         { text: 'Delete this sign-up now', url: unsubscribe },
       ],
     IMPRINT[locale],
@@ -194,19 +194,19 @@ function footerB(locale: Locale, unsubscribe: string): Paragraph[] {
   return [
     locale === 'de'
       ? [
-        'Du bekommst diese E-Mail, weil du dich auf hummlist.com für die Warteliste der ' +
-        'Hummlist-Beta eingetragen und deine Adresse bestätigt hast. Keine Mails mehr? ',
+        'Du bekommst diese E-Mail, weil du dich auf snacklist.app für die Warteliste der ' +
+        'Snacklist-Beta eingetragen und deine Adresse bestätigt hast. Keine Mails mehr? ',
         { text: 'Abmelden', url: unsubscribe },
-        ': ein Klick genügt, ohne Anmeldung. Oder schreib an support@hummlist.com. Dafür ' +
+        ': ein Klick genügt, ohne Anmeldung. Oder schreib an support@snacklist.app. Dafür ' +
         'entstehen dir nur die Übermittlungskosten nach den Basistarifen. Du kannst deine ' +
         'Einwilligung jederzeit widerrufen und der Nutzung deiner Adresse für diese E-Mails ' +
         'jederzeit widersprechen (Art. 21 DSGVO).',
       ]
       : [
-        "You're getting this email because you signed up for the Hummlist beta waitlist on " +
-        'hummlist.com and confirmed your address. No more emails? ',
+        "You're getting this email because you signed up for the Snacklist beta waitlist on " +
+        'snacklist.app and confirmed your address. No more emails? ',
         { text: 'Unsubscribe', url: unsubscribe },
-        ': one click, no sign-in. Or write to support@hummlist.com. This costs you nothing ' +
+        ': one click, no sign-in. Or write to support@snacklist.app. This costs you nothing ' +
         'beyond your normal connection charges. You can withdraw your consent and object to ' +
         'the use of your address for these emails at any time (Art. 21 GDPR).',
       ],
@@ -230,12 +230,12 @@ export function confirmationMail(
   if (locale === 'de') {
     return render(
       'de',
-      'Bitte bestätige deine E-Mail für Hummlist',
+      'Bitte bestätige deine E-Mail für Snacklist',
       'Ein Tipp, dann stehst du auf der Warteliste für die Beta.',
       [
         ['Hi,'],
         [
-          'diese Adresse wurde auf hummlist.com für die Warteliste der Hummlist-Beta ' +
+          'diese Adresse wurde auf snacklist.app für die Warteliste der Snacklist-Beta ' +
           'eingetragen, von dir selbst oder zum Beispiel von einem KI-Assistenten für dich. ' +
           'Bitte bestätige kurz, dass das deine Adresse ist:',
         ],
@@ -256,12 +256,12 @@ export function confirmationMail(
   }
   return render(
     'en',
-    'Please confirm your email for Hummlist',
+    'Please confirm your email for Snacklist',
     "One tap and you're on the beta waitlist.",
     [
       ['Hi,'],
       [
-        'This address was signed up on hummlist.com for the Hummlist beta waitlist, by you or, ' +
+        'This address was signed up on snacklist.app for the Snacklist beta waitlist, by you or, ' +
         "for example, by an AI assistant for you. Please confirm that it's yours:",
       ],
       [{ text: 'Confirm email', url: m.confirmUrl }],
@@ -287,12 +287,12 @@ export function welcomeMail(
   if (locale === 'de') {
     return render(
       'de',
-      'Du stehst auf der Warteliste für Hummlist',
+      'Du stehst auf der Warteliste für Snacklist',
       'Deine Adresse ist bestätigt.',
       [
         ['Hi,'],
         [
-          'deine Adresse ist bestätigt: Du stehst auf der Warteliste für die Hummlist-Beta. ' +
+          'deine Adresse ist bestätigt: Du stehst auf der Warteliste für die Snacklist-Beta. ' +
           'Wenn die Beta startet, bekommst du von uns die Einladung.' +
           (m.launchNews
             ? '\nSonst schreiben wir dir nur noch einmal, wenn die App offiziell startet.'
@@ -306,12 +306,12 @@ export function welcomeMail(
   }
   return render(
     'en',
-    "You're on the Hummlist waitlist",
+    "You're on the Snacklist waitlist",
     'Your address is confirmed.',
     [
       ['Hi,'],
       [
-        "Your address is confirmed: you're on the waitlist for the Hummlist beta. When the " +
+        "Your address is confirmed: you're on the waitlist for the Snacklist beta. When the " +
         "beta starts, we'll send you the invite." +
         (m.launchNews ? "\nOtherwise we'll only email you once more, when the app launches." : ''),
       ],
@@ -358,14 +358,14 @@ export function inviteMail(
   const de = locale === 'de';
   return render(
     locale,
-    de ? 'Deine Einladung zur Hummlist-Beta' : 'Your invite to the Hummlist beta',
+    de ? 'Deine Einladung zur Snacklist-Beta' : 'Your invite to the Snacklist beta',
     de ? 'Die Beta ist offen.' : 'The beta is open.',
     [
       ['Hi,'],
       [
         de
-          ? 'die Hummlist-Beta ist offen, und du bist dabei.'
-          : "The Hummlist beta is open, and you're in.",
+          ? 'die Snacklist-Beta ist offen, und du bist dabei.'
+          : "The Snacklist beta is open, and you're in.",
       ],
       platformLine[locale][m.platform],
       ['Peter'],
