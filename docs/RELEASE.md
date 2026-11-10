@@ -462,14 +462,15 @@ but only through Play Console support.
 | Certificate | SHA-1 | SHA-256 |
 | --- | --- | --- |
 | Upload key | `D4:9D:98:9E:AD:E3:2E:FE:D2:D3:A1:7A:71:B2:95:29:84:81:78:69` | `2C:9B:48:6D:AF:1B:94:AB:3F:92:38:49:CC:0F:C3:42:EF:09:64:2C:32:40:74:97:69:25:61:74:0C:BA:84:F5` |
-| Play app signing key (Google-generated, Play Console, Setup, App signing; L3, 2026-10-28) | `77:B6:9B:5E:8F:10:5D:3F:46:3C:62:C3:BC:BE:A8:3D:EA:10:08:53` | `27:0E:40:2B:04:1D:4D:C8:E7:65:10:C6:B4:36:FE:E8:51:D9:08:E6:00:43:89:7F:4E:AF:B9:2F:BC:7B:E4:2A` |
+| Hummlist Play app signing key (Google-generated, Play Console, Setup, App signing; L3, 2026-10-28) | `77:B6:9B:5E:8F:10:5D:3F:46:3C:62:C3:BC:BE:A8:3D:EA:10:08:53` | `27:0E:40:2B:04:1D:4D:C8:E7:65:10:C6:B4:36:FE:E8:51:D9:08:E6:00:43:89:7F:4E:AF:B9:2F:BC:7B:E4:2A` |
+| Snacklist Play app signing key (Google-generated, Play Console, Setup, App signing; first upload 2026-11-10) | `06:6E:7F:EE:F7:62:4E:90:7D:BC:F8:42:30:95:30:EE:5B:F1:17:75` | `C8:6F:D9:57:C8:05:6B:68:E1:C1:7C:BC:1B:C5:50:A3:45:36:59:0A:9B:F4:9E:25:4E:18:63:0C:8F:91:2A:EB` |
 
 Play App Signing holds the app signing key, which signs what testers
-install. Snacklist's Play app reuses Hummlist's app signing key, so
-`assetlinks.json` gives `com.snacklist.app` the same fingerprints; check them
-against Play Console after Snacklist's first upload. Google sign-in on Play builds and `assetlinks.json` (job 22) need
-the app signing key's fingerprints; debug and locally signed builds need the
-upload key's.
+install. Snacklist's Play app has its own Google-generated key (first upload
+2026-11-10). `assetlinks.json` lists that SHA-256 for `com.snacklist.app` and
+Hummlist's for `com.hummlist.app`; both also list the upload key. Google
+sign-in on Play builds and `assetlinks.json` (job 22) need the app signing
+key's fingerprints; debug and locally signed builds need the upload key's.
 
 ### Play service account
 
