@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Workflows (actionlint), shell scripts (shellcheck), the e2e TypeScript (tsc), the TypeScript lint
-# pack (tool/lint/ts), the gate wiring, the landing, e2e gate, CI download and release scripts' tests, the
+# pack (tool/lint/ts), the gate wiring, the landing, e2e gate, Vercel ignore step, CI download and release scripts' tests, the
 # structural lints in scripts/lint.sh, and
 # the generated files against their source: the design tokens (design/tokens/build.mjs) and the
 # app icon and splash screens (design/app-icon/build.mjs), the Android widget's hex shapes
@@ -20,6 +20,7 @@ deno run --allow-all tool/lint/ts/strict.ts
 scripts/check-gates.sh
 scripts/landing-test.sh
 scripts/e2e-gate-test.sh
+scripts/vercel-ignore-test.sh
 scripts/ci/download-test.sh
 scripts/release/test.sh
 scripts/lint.sh
