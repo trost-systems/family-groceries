@@ -26,7 +26,7 @@ test('Alexa in English: a linked add lands live and is read back in English', as
   };
 
   expect(await speech(addIntent('milk'))).toBe(
-    'Please link your Hummlist account in the Alexa app first. I sent you a card there.',
+    'Please link your Snacklist account in the Alexa app first. I sent you a card there.',
   );
 
   const client = await registerAlexaClient();
@@ -34,13 +34,13 @@ test('Alexa in English: a linked add lands live and is read back in English', as
 
   expect(await speech({ type: 'LaunchRequest' }, token)).toBe('What should go on the list?');
   expect(await speech(addIntent('two liters of milk and eggs'), token)).toBe(
-    'I put 2 liters of milk and eggs on Hummlist.',
+    'I put 2 liters of milk and eggs on Snacklist.',
   );
   await within(5_000, (timeout) => expect(itemRow(page, 'eggs')).toBeVisible({ timeout }));
   const { data } = await (await apiAs(email)).from('items').select('name, quantity').eq('status', 'active')
     .order('created_at');
   expect(data).toEqual([{ name: 'milk', quantity: '2 l' }, { name: 'eggs', quantity: null }]);
 
-  expect(await speech(addIntent('milk'), token)).toBe('Already on Hummlist: 2 liters of milk.');
-  expect(await speech(readIntent, token)).toBe('There are 2 things on your Hummlist: 2 liters of milk and eggs.');
+  expect(await speech(addIntent('milk'), token)).toBe('Already on Snacklist: 2 liters of milk.');
+  expect(await speech(readIntent, token)).toBe('There are 2 things on your Snacklist: 2 liters of milk and eggs.');
 });

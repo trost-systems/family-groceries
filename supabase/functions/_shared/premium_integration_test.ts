@@ -165,7 +165,7 @@ test('switch off: a household without premium adds over Siri, Alexa and MCP as b
   withHousehold(false, async (m, sql) => {
     const t = recorder();
     assertEquals((await voice(m, t)('Milch')).body.speech, 'Hinzugefügt: Milch.');
-    assertEquals(await alexa(m, t)('Eier'), 'Ich habe Eier auf die Hummlist gesetzt.');
+    assertEquals(await alexa(m, t)('Eier'), 'Ich habe Eier auf die Snacklist gesetzt.');
     assertFalse((await mcp(m, t)('add_items')).isError);
     assertEquals(await items(sql, m.householdId), ['Milch', 'Eier', 'Kaffee']);
     assertEquals(t.queued.filter((e) => e.event === 'integration_blocked'), []);
@@ -188,7 +188,7 @@ test('switch on: Siri and MCP locked, Alexa still adds (free, job 72), integrati
     await siri('Brot');
     assertEquals(
       await alexa(m, t)('Eier'),
-      'Ich habe Eier auf die Hummlist gesetzt.',
+      'Ich habe Eier auf die Snacklist gesetzt.',
       'Alexa is never locked',
     );
     const tool = mcp(m, t);
@@ -228,7 +228,7 @@ test('a yearly plan opens Siri and MCP with the same credentials; its lapse lock
 
     await yearly(sql, m, tx);
     assertEquals((await voice(m, t)('Milch')).body.speech, 'Hinzugefügt: Milch.');
-    assertEquals(await alexa(m, t)('Eier'), 'Ich habe Eier auf die Hummlist gesetzt.');
+    assertEquals(await alexa(m, t)('Eier'), 'Ich habe Eier auf die Snacklist gesetzt.');
     assertFalse((await mcp(m, t)('list_items')).isError);
 
     await sql`select public.purchase_lifecycle('apple', ${tx}, now() + interval '1 second',
@@ -237,7 +237,7 @@ test('a yearly plan opens Siri and MCP with the same credentials; its lapse lock
     assertEquals((await mcp(m, t)('list_items')).isError, true);
     assertEquals(
       await alexa(m, t)('Käse'),
-      'Ich habe Käse auf die Hummlist gesetzt.',
+      'Ich habe Käse auf die Snacklist gesetzt.',
       'lapsed: Alexa stays open',
     );
     assertEquals(await items(sql, m.householdId), ['Milch', 'Eier', 'Käse'], 'the list is kept');

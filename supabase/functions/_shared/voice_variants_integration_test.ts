@@ -246,7 +246,7 @@ Deno.test({
     withHousehold('Butter Weihenstephan', async (h) => {
       const asked = await alexa(h, 'de-DE', 'Butter');
       const yes = await alexa(h, 'de-DE', asked.again, 'CONFIRMED');
-      assertEquals(yes.speech, 'Ich habe Butter auf die Hummlist gesetzt.');
+      assertEquals(yes.speech, 'Ich habe Butter auf die Snacklist gesetzt.');
       assertEquals((await openItems(h)).map((i) => [i.name, i.brand]), [
         ['Butter', 'Weihenstephan'],
         ['Butter', null],

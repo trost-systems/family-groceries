@@ -102,7 +102,7 @@ Deno.test({
       const open = ['Eier', 'Milch', 'Tomaten'];
 
       const alexa = await alexaRead(me, mine);
-      assert(alexa.startsWith('Auf der Hummlist stehen 3 Sachen: '), alexa);
+      assert(alexa.startsWith('Auf der Snacklist stehen 3 Sachen: '), alexa);
       for (const name of open) assert(alexa.includes(name), alexa);
       for (const name of ['Spülmittel', 'Vorrat', 'Brot', 'Käse']) {
         assert(!alexa.includes(name), alexa);

@@ -14,7 +14,7 @@ n=$(ls "$CAPTURE" | wc -l); cp "$body" "$CAPTURE/$n.json"
 linked=false; grep -q accessToken "$body" && linked=true
 case $FAKE_MODE in
   good) if $linked; then card=null; text='Was soll auf die Liste?'; end=false
-        else card='{"type":"LinkAccount"}'; text='Bitte verknüpfe zuerst dein Hummlist-Konto.'; end=true; fi
+        else card='{"type":"LinkAccount"}'; text='Bitte verknüpfe zuerst dein Snacklist-Konto.'; end=true; fi
         status=SUCCESSFUL ;;
   apology) card=null; text='Das hat leider nicht geklappt.'; end=true; status=SUCCESSFUL ;;
   failed) echo '{"status":"FAILED","result":{"error":{"message":"An error occurred while invoking the skill endpoint."}}}'; exit 0 ;;
@@ -140,7 +140,7 @@ Deno.test('the unlinked body, signed like Amazon does, gets the LinkAccount card
 Deno.test('a good answer passes; the token goes to ask but never to the output', async () => {
   const r = await smoke([], { ALEXA_SKILL_ID: testSkillId, ALEXA_SMOKE_TOKEN: token }, 'good');
   assertEquals(r.code, 0, r.stdout + r.stderr);
-  assertStringIncludes(r.stdout, 'PASS unlinked: "Bitte verknüpfe zuerst dein Hummlist-Konto."');
+  assertStringIncludes(r.stdout, 'PASS unlinked: "Bitte verknüpfe zuerst dein Snacklist-Konto."');
   assertStringIncludes(r.stdout, 'LinkAccount, 312 ms at Amazon');
   assertStringIncludes(r.stdout, 'PASS linked: "Was soll auf die Liste?"');
   assertStringIncludes(r.stdout, 'scripts/alexa/diagnose.sh --last 15m');
