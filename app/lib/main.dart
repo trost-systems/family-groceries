@@ -28,6 +28,7 @@ import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/review/review_gates.dart';
 import 'package:family_groceries/review/review_prompt.dart';
 import 'package:family_groceries/review/store_review.dart';
+import 'package:family_groceries/session/mail_language.dart';
 import 'package:family_groceries/session/plugin_sign_in.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
@@ -179,6 +180,7 @@ Future<void> _main(WidgetsBinding Function() binding) async {
   }
   runApp(
     App(
+      mailLanguage: MailLanguageSync(client.auth),
       itemIcons: itemIcons,
       language: language,
       theme: theme,
