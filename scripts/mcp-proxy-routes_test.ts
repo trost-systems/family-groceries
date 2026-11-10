@@ -7,8 +7,8 @@
 import { assert, assertEquals } from '@std/assert';
 
 interface Condition {
-  type: 'header';
-  key: string;
+  type: 'header' | 'host';
+  key?: string;
   value?: string;
 }
 
@@ -34,8 +34,19 @@ function sourceMatches(source: string, path: string): boolean {
   return source === path;
 }
 
-function holds(condition: Condition, headers: Headers, anchoring: Anchoring): boolean {
-  assertEquals(condition.type, 'header', 'this test reads header conditions only');
+function holds(
+  condition: Condition,
+  headers: Headers,
+  anchoring: Anchoring,
+  host: string,
+): boolean {
+  if (condition.type === 'host') {
+    assert(condition.value !== undefined, 'host conditions need a value');
+    const pattern = anchoring === 'whole value' ? `^(?:${condition.value})$` : condition.value;
+    return new RegExp(pattern).test(host);
+  }
+  assertEquals(condition.type, 'header', 'this test reads header and host conditions only');
+  assert(condition.key !== undefined, 'header conditions need a key');
   const value = headers.get(condition.key);
   if (value === null) return false;
   if (condition.value === undefined) return true;
@@ -52,17 +63,32 @@ function staticFile(path: string): string | undefined {
   }
 }
 
+const DEFAULT_HOST = 'mcp.hummlist.com';
+const SNACK_HOST = 'mcp.snacklist.app';
+
+function forwardedDestination(destination: string, path: string): string {
+  return destination.replace(':path*', path.slice(1));
+}
+
 /** What Vercel serves for a request: `public/<file>` or the function URL it forwards to. */
-function route(path: string, init: Record<string, string>, anchoring: Anchoring): string {
+function route(
+  path: string,
+  init: Record<string, string>,
+  anchoring: Anchoring,
+  host = DEFAULT_HOST,
+): string {
   const headers = new Headers(init);
   const own = staticFile(path);
   if (own !== undefined) return `public/${own}`;
   for (const rule of config.rewrites) {
     if (!sourceMatches(rule.source, path)) continue;
-    if (!(rule.has ?? []).every((c) => holds(c, headers, anchoring))) continue;
-    if ((rule.missing ?? []).some((c) => holds(c, headers, anchoring))) continue;
+    if (!(rule.has ?? []).every((c) => holds(c, headers, anchoring, host))) continue;
+    if ((rule.missing ?? []).some((c) => holds(c, headers, anchoring, host))) continue;
     if (rule.destination.startsWith('https://')) {
-      return rule.destination.replace(':path*', path.slice(1)).replace(/\?via=mcp-hummlist$/, '');
+      return forwardedDestination(rule.destination, path).replace(
+        /\?via=mcp-(?:hummlist|snacklist)$/,
+        '',
+      );
     }
     const file = staticFile(rule.destination);
     assert(file !== undefined, `${rule.destination} has no file in ${config.outputDirectory}/`);
@@ -130,6 +156,53 @@ for (const anchoring of ['whole value', 'substring'] as const) {
     });
   }
 }
+
+function rewriteDestination(
+  path: string,
+  init: Record<string, string>,
+  host: string,
+): string {
+  const headers = new Headers(init);
+  for (const rule of config.rewrites) {
+    if (!sourceMatches(rule.source, path)) continue;
+    if (!(rule.has ?? []).every((c) => holds(c, headers, 'whole value', host))) continue;
+    if ((rule.missing ?? []).some((c) => holds(c, headers, 'whole value', host))) continue;
+    if (rule.destination.startsWith('https://')) {
+      return forwardedDestination(rule.destination, path);
+    }
+  }
+  return 'no route';
+}
+
+Deno.test('each host forwards to the function with its own via marker', () => {
+  for (
+    const [host, marker] of [[DEFAULT_HOST, 'mcp-hummlist'], [SNACK_HOST, 'mcp-snacklist']] as const
+  ) {
+    for (
+      const [path, headers] of [
+        ['/.well-known/oauth-protected-resource', { accept: chrome }],
+        ['/', { accept: '*/*' }],
+        ['/mcp', { accept: chrome }],
+      ] as const
+    ) {
+      const dest = rewriteDestination(path, headers, host);
+      assert(dest.endsWith(`?via=${marker}`), `${host} ${path} → ${dest}`);
+    }
+  }
+});
+
+Deno.test('a browser still gets the page on either host', () => {
+  for (const host of [DEFAULT_HOST, SNACK_HOST]) {
+    assertEquals(
+      route('/', { accept: chrome, 'accept-language': 'de' }, 'whole value', host),
+      'public/de.html',
+    );
+    assertEquals(
+      route('/', { accept: chrome, 'accept-language': 'en' }, 'whole value', host),
+      'public/en.html',
+    );
+  }
+});
 
 Deno.test('each page is noindex in its own language', () => {
   for (const lang of ['de', 'en']) {

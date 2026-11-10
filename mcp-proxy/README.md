@@ -1,12 +1,12 @@
 # mcp-proxy
 
 The Vercel project `hummlist-mcp` serves this directory at
-`https://mcp.hummlist.com`, the public URL of the Hummlist MCP server. It
-has no build and no secrets. `vercel.json` rewrites every request to the
-`mcp` edge function, except a person opening the URL in a browser, who gets
-a static page from `public/`:
+`https://mcp.hummlist.com` and `https://mcp.snacklist.app`, the public URLs
+of the Snacklist MCP server. It has no build and no secrets. `vercel.json`
+rewrites every request to the `mcp` edge function, except a person opening
+the URL in a browser, who gets a static page from `public/`:
 
-| Request on mcp.hummlist.com | Goes to (on `https://jdwqrallbpdbshrdhenk.supabase.co` unless a file) |
+| Request on mcp.hummlist.com or mcp.snacklist.app | Goes to (on `https://jdwqrallbpdbshrdhenk.supabase.co` unless a file) |
 | --- | --- |
 | `/de`, `/en`, `/static/...` | the files in `public/` (`de.html`, `en.html`, CSS, JS, logo, fonts) |
 | `/.well-known/oauth-protected-resource` | `/functions/v1/mcp/.well-known/oauth-protected-resource` |
@@ -35,15 +35,16 @@ share their markup and differ only in the strings: change both.
 `cleanUrls` serves `de.html` at `/de`; it also redirects `/<x>.html` and
 `/index` paths, which no MCP client uses.
 
-Each destination carries the query marker `via=mcp-hummlist`, which tells
-the function to advertise `https://mcp.hummlist.com` as the resource and
-`https://mcp.hummlist.com/.well-known/oauth-protected-resource` as its
-metadata (`supabase/functions/mcp/handler.ts`). Requests straight to
-supabase.co keep getting the supabase.co URLs, so both URLs work. The
-function also accepts `x-forwarded-host: mcp.hummlist.com`, which Vercel
-sends, but Supabase's gateway replaces that header before it reaches the
-function, so the marker is what works (`docs/DECISIONS.md`, Job 26, item 11). The
-authorization server stays Supabase Auth on supabase.co.
+Each destination carries a query marker for the host it came from:
+`via=mcp-hummlist` or `via=mcp-snacklist`. That tells the function to
+advertise that host as the resource and
+`https://<host>/.well-known/oauth-protected-resource` as its metadata
+(`supabase/functions/mcp/handler.ts`). Requests straight to supabase.co keep
+getting the supabase.co URLs, so every URL works. The function also accepts
+`x-forwarded-host` for those same hosts, which Vercel sends, but Supabase's
+gateway replaces that header before it reaches the function, so the marker
+is what works (`docs/DECISIONS.md`, Job 26, item 11). The authorization
+server stays Supabase Auth on supabase.co.
 
 `x-vercel-enable-rewrite-caching: 0` keeps Vercel from caching any response
 (Vercel caches external rewrites by default for projects created after
@@ -53,6 +54,7 @@ authorization server stays Supabase Auth on supabase.co.
 
 ```bash
 scripts/mcp-smoke.sh https://mcp.hummlist.com
+scripts/mcp-smoke.sh https://mcp.snacklist.app
 MCP_SMOKE_TOKEN=fgp_… scripts/mcp-smoke.sh https://mcp.hummlist.com   # also initialize + tools/list
 MCP_SMOKE_PAGE=1 scripts/mcp-smoke.sh https://mcp.hummlist.com         # also the page, DE and EN
 ```
@@ -85,9 +87,9 @@ compiled routes are in `.vercel/output/config.json`.
   reads the upstream `Host` either.
 - **`/.well-known`.** The rewrites page says the path "is reserved and
   cannot be redirected or rewritten". The external rewrite of
-  `/.well-known/oauth-protected-resource` works on mcp.hummlist.com all the
-  same (checked 2026-10-28 with `scripts/mcp-smoke.sh`, `docs/DECISIONS.md`
-  Job 26, item 13).
+  `/.well-known/oauth-protected-resource` works on mcp.hummlist.com and
+  mcp.snacklist.app all the same (checked 2026-10-28 on mcp.hummlist.com
+  with `scripts/mcp-smoke.sh`, `docs/DECISIONS.md` Job 26, item 13).
 - **Cost.** Hobby is free: 1,000,000 CDN requests and 100 GB Fast Data
   Transfer a month ([usage](https://vercel.com/docs/manage-cdn-usage)).
   Hobby is for non-commercial personal use
