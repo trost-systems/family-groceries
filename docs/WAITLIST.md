@@ -7,7 +7,8 @@ address counts only after its owner agrees on the confirmation page and presses 
 hand with `scripts/waitlist/invite.ts`. Nothing invites anyone automatically.
 
 Privacy rule: no bot or agent reads waitlist rows. Tests use only addresses of the form
-`hello+<anything>@hummlist.com`. Nothing logs an address, a token or a request body.
+`hello+<anything>@hummlist.com`, `test@snacklist.app` or `test+<anything>@snacklist.app`. Nothing
+logs an address, a token or a request body.
 
 ## Stages and switches
 
@@ -31,7 +32,7 @@ secrets are set:
 | --- | --- | --- |
 | Vercel function `/api/waitlist*` | `WAITLIST_UPSTREAM_URL` or `WAITLIST_PROXY_SECRET` unset: 404 | both set |
 | Edge function `waitlist` | `WAITLIST_PROXY_SECRET` or `WAITLIST_HMAC_SECRET` unset: 404 | both set, `RESEND_API_KEY` for mail |
-| Recipients | `WAITLIST_MAIL_ALLOW` unset: only `hello+…@hummlist.com` are stored and mailed; others get the normal answer and are dropped | `WAITLIST_MAIL_ALLOW=*` |
+| Recipients | `WAITLIST_MAIL_ALLOW` unset: only `hello+…@hummlist.com`, `test@snacklist.app` and `test+…@snacklist.app` are stored and mailed; others get the normal answer and are dropped | `WAITLIST_MAIL_ALLOW=*` |
 
 No build may contain a `⟦…⟧` placeholder: every build fails on one (preview and local too), so the
 CI `site` gate catches it. The edge function still refuses to send a mail with a `⟦` unless
@@ -181,7 +182,7 @@ every period to the minute.
 
 ## Mails
 
-From `"Peter von Snacklist" <hello@snacklist.app>` (English: `"Peter from Snacklist"`), Reply-To
+From `"Peter · Snacklist" <hello@snacklist.app>` (same display name in German and English; the middle dot is U+00B7), Reply-To
 `hello@snacklist.app`, HTML and plain text, no images, no tracking, no tags or metadata. Resend's
 open and click tracking stay off in the domain settings.
 

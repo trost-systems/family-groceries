@@ -87,7 +87,7 @@ Deno.test('AC10: the German confirmation mail is doi-mail-de-v2 (M-1) with foote
     confirmUrl: confirmUrl('https://hummlist.com', 'de', TOKEN),
     unsubscribe,
   });
-  assertEquals(mail.from, '"Peter von Snacklist" <hello@snacklist.app>');
+  assertEquals(mail.from, '"Peter · Snacklist" <hello@snacklist.app>');
   assertEquals(mail.replyTo, 'hello@snacklist.app');
   assertEquals(mail.subject, 'Bitte bestätige deine E-Mail für Hummlist');
   assertEquals(mail.headers, {});
@@ -127,7 +127,7 @@ Deno.test('AC10: the English confirmation mail is doi-mail-en-v2 (M-2) with foot
     confirmUrl: confirmUrl('https://hummlist.com', 'en', TOKEN),
     unsubscribe: unsubscribeEn,
   });
-  assertEquals(mail.from, '"Peter from Snacklist" <hello@snacklist.app>');
+  assertEquals(mail.from, '"Peter · Snacklist" <hello@snacklist.app>');
   assertEquals(mail.subject, 'Please confirm your email for Hummlist');
   assert(mail.html.includes("One tap and you're on the beta waitlist."), 'preheader');
   assertEquals(
@@ -224,7 +224,15 @@ Deno.test('refusal: test addresses only unless *, and no draft text without the 
   assertEquals(mailAllowFrom(''), 'test');
   assertEquals(mailAllowFrom('yes'), 'test');
   assertEquals(mailAllowFrom('*'), 'all');
-  for (const ok of ['hello+x@hummlist.com', 'HELLO+waitlisttest@HUMMLIST.COM']) {
+  for (
+    const ok of [
+      'hello+x@hummlist.com',
+      'HELLO+waitlisttest@HUMMLIST.COM',
+      'test@snacklist.app',
+      'test+x@snacklist.app',
+      'TEST+waitlisttest@SNACKLIST.APP',
+    ]
+  ) {
     assert(recipientAllowed(ok, 'test'), ok);
   }
   for (
@@ -234,6 +242,13 @@ Deno.test('refusal: test addresses only unless *, and no draft text without the 
       'hello+x@hummlist.com.evil.de',
       'xhello+x@hummlist.com',
       'hello+@hummlist.com',
+      'test+@snacklist.app',
+      'test@snacklist.app.evil.de',
+      'xtest@snacklist.app',
+      'test@snacklist.appx',
+      'hello+x@snacklist.app',
+      'test@hummlist.com',
+      'testing@snacklist.app',
     ]
   ) {
     assert(!recipientAllowed(no, 'test'), no);
@@ -244,10 +259,57 @@ Deno.test('refusal: test addresses only unless *, and no draft text without the 
   assertEquals(refusal('hello+x@hummlist.com', draft, test), 'placeholder');
   assertEquals(refusal('hello+x@hummlist.com', draft, { ...test, allowPlaceholders: true }), null);
   assertEquals(refusal('hello+x@hummlist.com', approved, test), null);
+  assertEquals(refusal('test@snacklist.app', approved, test), null);
+  assertEquals(refusal('test+x@snacklist.app', approved, test), null);
+  assertEquals(refusal('test@snacklist.app', draft, test), 'placeholder');
   assertEquals(
     refusal('peter@example.com', approved, { allow: 'all', allowPlaceholders: false }),
     null,
   );
+});
+
+Deno.test('From is the language-neutral Peter · Snacklist (U+00B7) for DE and EN, and Resend gets that exact UTF-8 string', async () => {
+  const from = '"Peter \u00B7 Snacklist" <hello@snacklist.app>';
+  assertEquals(from, '"Peter · Snacklist" <hello@snacklist.app>');
+  assertEquals(from.codePointAt(from.indexOf('\u00B7')), 0x00B7);
+  const de = confirmationMail('de', {
+    confirmUrl: confirmUrl('https://hummlist.com', 'de', TOKEN),
+    unsubscribe,
+  });
+  const en = confirmationMail('en', {
+    confirmUrl: confirmUrl('https://hummlist.com', 'en', TOKEN),
+    unsubscribe: unsubscribeEn,
+  });
+  const welcome = welcomeMail('en', { unsubscribe: unsubscribeEn, launchNews: false });
+  const invite = inviteMail('de', { platform: 'ios', unsubscribe });
+  for (const mail of [de, en, welcome, invite]) {
+    assertEquals(mail.from, from);
+    assertEquals(mail.replyTo, 'hello@snacklist.app');
+  }
+  const requests: Request[] = [];
+  const mailer = resendMailer('re_test_key', 'https://resend.test/', (input, init) => {
+    requests.push(new Request(input, init));
+    return Promise.resolve(new Response('{"id":"x"}', { status: 200 }));
+  });
+  await mailer.send('hello+resend@hummlist.com', en, 'confirm/from');
+  assertEquals(requests.length, 1);
+  const [req] = requests;
+  assertExists(req, 'the request');
+  const raw = new Uint8Array(await req.arrayBuffer());
+  const decoded = new TextDecoder().decode(raw);
+  assertEquals(JSON.parse(decoded).from, from);
+  // Resend's JSON body carries U+00B7 as UTF-8 C2 B7, not as a \\u escape or ASCII substitute.
+  // Quotes around the display name are JSON-escaped, so search the name itself.
+  const utf8Name = new TextEncoder().encode('Peter \u00B7 Snacklist');
+  let found = false;
+  for (let i = 0; i <= raw.length - utf8Name.length; i++) {
+    if (utf8Name.every((b, j) => raw[i + j] === b)) {
+      found = true;
+      break;
+    }
+  }
+  assert(found, 'the Resend payload encodes the display name as UTF-8 (U+00B7 is C2 B7)');
+  assert(!decoded.includes('\\u00b7') && !decoded.includes('\\u00B7'));
 });
 
 Deno.test('Resend: one single send with an idempotency key, reply-to and the mail headers, no tags', async () => {
@@ -265,7 +327,7 @@ Deno.test('Resend: one single send with an idempotency key, reply-to and the mai
   assertEquals(req.headers.get('authorization'), 'Bearer re_test_key');
   assertEquals(req.headers.get('idempotency-key'), `welcome/${ID}`);
   assertEquals(await req.json(), {
-    from: '"Peter von Snacklist" <hello@snacklist.app>',
+    from: '"Peter · Snacklist" <hello@snacklist.app>',
     to: ['hello+resend@hummlist.com'],
     reply_to: 'hello@snacklist.app',
     subject: mail.subject,

@@ -68,10 +68,13 @@ export type MailAllow = 'test' | 'all';
 export const mailAllowFrom = (value: string | undefined): MailAllow =>
   value?.trim() === '*' ? 'all' : 'test';
 
-const TEST_ADDRESS = /^hello\+[^@]+@hummlist\.com$/i;
+const TEST_ADDRESSES = [
+  /^hello\+[^@]+@hummlist\.com$/i,
+  /^test(?:\+[^@]+)?@snacklist\.app$/i,
+];
 
 export function recipientAllowed(email: string, allow: MailAllow): boolean {
-  return allow === 'all' || TEST_ADDRESS.test(email);
+  return allow === 'all' || TEST_ADDRESSES.some((re) => re.test(email));
 }
 
 export const hasPlaceholder = (mail: Mail): boolean =>
@@ -100,10 +103,7 @@ export function refusal(
 type Segment = string | { text: string; url: string };
 type Paragraph = Segment[];
 
-const SENDER = {
-  de: '"Peter von Snacklist" <hello@snacklist.app>',
-  en: '"Peter from Snacklist" <hello@snacklist.app>',
-};
+const SENDER = '"Peter · Snacklist" <hello@snacklist.app>';
 const REPLY_TO = 'hello@snacklist.app';
 
 const escape = (s: string) =>
@@ -151,7 +151,7 @@ function render(
   ].join('\n');
   const text = [...body.map(textParagraph), '--', ...footer.map(textParagraph)].join('\n\n') +
     '\n';
-  return { from: SENDER[locale], replyTo: REPLY_TO, subject, html, text, headers };
+  return { from: SENDER, replyTo: REPLY_TO, subject, html, text, headers };
 }
 
 const IMPRINT = {
