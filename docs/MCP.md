@@ -31,20 +31,20 @@ page instead, in German or English, that says what the address is for. The Lead 
 Both URLs reach the same function and stay valid. A client keeps the URL it
 was set up with; one token works on both.
 
-| | `https://mcp.hummlist.com` | `…supabase.co/functions/v1/mcp` |
+| | `https://mcp.hummlist.com` or `https://mcp.snacklist.app` | `…supabase.co/functions/v1/mcp` |
 | --- | --- | --- |
-| `resource` in the metadata | `https://mcp.hummlist.com` | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp` |
-| `resource_metadata` in a 401 | `https://mcp.hummlist.com/.well-known/oauth-protected-resource` | `<endpoint>/.well-known/oauth-protected-resource` |
+| `resource` in the metadata | the host the client called | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp` |
+| `resource_metadata` in a 401 | `https://<host>/.well-known/oauth-protected-resource` | `<endpoint>/.well-known/oauth-protected-resource` |
 | Authorization server | Supabase Auth on supabase.co | Supabase Auth on supabase.co |
 
-How the function knows which host the client used: every rewrite adds the
-query marker `via=mcp-hummlist`, which makes the function advertise the
-public URL; anything else gets the supabase.co values. (It would also accept
-`x-forwarded-host: mcp.hummlist.com`, but Supabase's gateway replaces that
-header.) Only
-the public host from `MCP_PUBLIC_URL` (default `https://mcp.hummlist.com`)
-can be advertised, so a spoofed signal cannot point a client anywhere
-else (`docs/DECISIONS.md`, Job 26).
+How the function knows which host the client used: every rewrite adds a
+query marker (`via=mcp-hummlist` or `via=mcp-snacklist`), which makes the
+function advertise that public URL; anything else gets the supabase.co
+values. (It would also accept `x-forwarded-host` for those same hosts, but
+Supabase's gateway replaces that header.) Only the public hosts from
+`MCP_PUBLIC_URL` (default both `https://mcp.hummlist.com` and
+`https://mcp.snacklist.app`) can be advertised, so a spoofed signal cannot
+point a client anywhere else (`docs/DECISIONS.md`, Job 26).
 
 `scripts/mcp-smoke.sh <endpoint>` checks a host the way a client discovers
 it: the 401, metadata on the same host, the authorization server metadata

@@ -1,6 +1,6 @@
 import { assertEquals, assertExists, assertMatch, assertStringIncludes } from '@std/assert';
 import { type Auth, AuthError } from '../_shared/auth.ts';
-import { type Deps, handle, publicOriginFromEnv } from './handler.ts';
+import { type Deps, handle, publicOriginFromEnv, publicOriginsFromEnv } from './handler.ts';
 
 function headerOf(res: Response, name: string): string {
   const value = res.headers.get(name);
@@ -12,7 +12,9 @@ const RESOURCE = 'https://ref.supabase.co/functions/v1/mcp';
 const METADATA = `${RESOURCE}/.well-known/oauth-protected-resource`;
 const ISSUER = 'https://ref.supabase.co/auth/v1';
 const PUBLIC = 'https://mcp.hummlist.com';
+const PUBLIC_SNACK = 'https://mcp.snacklist.app';
 const PUBLIC_METADATA = `${PUBLIC}/.well-known/oauth-protected-resource`;
+const PUBLIC_SNACK_METADATA = `${PUBLIC_SNACK}/.well-known/oauth-protected-resource`;
 const USER = { userId: 'u', householdId: 'h' };
 const AS_METADATA = {
   issuer: ISSUER,
@@ -30,7 +32,7 @@ function deps(auth: Auth | AuthError): Deps {
         metadata: METADATA,
         authorizationServer: ISSUER,
       }),
-    publicOrigin: () => PUBLIC,
+    publicOrigins: () => [PUBLIC, PUBLIC_SNACK],
     authServerMetadata: () => Promise.resolve(AS_METADATA),
     authenticate: () => auth instanceof AuthError ? Promise.reject(auth) : Promise.resolve(auth),
     serve: (_req, a) => Promise.resolve(Response.json({ served: a.via })),
@@ -46,13 +48,22 @@ const post = (headers: Record<string, string> = {}, query = '') =>
 const prm = ({ headers = {}, query = '' }: Via) =>
   new Request(`http://edge/mcp/.well-known/oauth-protected-resource${query}`, { headers });
 
-/** What mcp-proxy/vercel.json sends, by either signal. */
+/** What mcp-proxy/vercel.json sends for mcp.hummlist.com, by either signal. */
 const PROXIED: Via[] = [
   { query: '?via=mcp-hummlist' },
   { headers: { 'x-forwarded-host': 'mcp.hummlist.com' } },
   { headers: { 'x-forwarded-host': 'MCP.Hummlist.com:443' } },
   { headers: { 'x-forwarded-host': 'mcp.hummlist.com, edge.internal' } },
   { headers: { 'x-forwarded-host': 'ref.supabase.co' }, query: '?via=mcp-hummlist' },
+];
+
+/** What mcp-proxy/vercel.json sends for mcp.snacklist.app. */
+const PROXIED_SNACK: Via[] = [
+  { query: '?via=mcp-snacklist' },
+  { headers: { 'x-forwarded-host': 'mcp.snacklist.app' } },
+  { headers: { 'x-forwarded-host': 'MCP.Snacklist.app:443' } },
+  { headers: { 'x-forwarded-host': 'mcp.snacklist.app, edge.internal' } },
+  { headers: { 'x-forwarded-host': 'ref.supabase.co' }, query: '?via=mcp-snacklist' },
 ];
 
 /** The resource and metadata URL a client is told to use: from the PRM and from a 401. */
@@ -165,26 +176,37 @@ Deno.test('a request through the proxy advertises the public URL, same issuer', 
       metadata: PUBLIC_METADATA,
     }, JSON.stringify(via));
   }
+  for (const via of PROXIED_SNACK) {
+    assertEquals(await advertised(via), {
+      resource: PUBLIC_SNACK,
+      authorizationServers: [ISSUER],
+      metadata: PUBLIC_SNACK_METADATA,
+    }, JSON.stringify(via));
+  }
 });
 
 Deno.test('a rejected token through the proxy also points at the public metadata', async () => {
-  for (const { headers, query } of PROXIED) {
-    for (
-      const auth of [new AuthError('invalid_token', 'x'), { ...USER, via: 'session' } as const]
-    ) {
-      const res = await handle(post(headers, query), deps(auth));
-      assertEquals(res.status, 401);
-      assertStringIncludes(
-        headerOf(res, 'www-authenticate'),
-        `resource_metadata="${PUBLIC_METADATA}"`,
+  for (
+    const [cases, metadata] of [[PROXIED, PUBLIC_METADATA], [
+      PROXIED_SNACK,
+      PUBLIC_SNACK_METADATA,
+    ]] as const
+  ) {
+    for (const { headers, query } of cases) {
+      for (
+        const auth of [new AuthError('invalid_token', 'x'), { ...USER, via: 'session' } as const]
+      ) {
+        const res = await handle(post(headers, query), deps(auth));
+        assertEquals(res.status, 401);
+        assertStringIncludes(headerOf(res, 'www-authenticate'), `resource_metadata="${metadata}"`);
+      }
+      const forbidden = await handle(
+        post(headers, query),
+        deps(new AuthError('no_household', 'kein Haushalt')),
       );
+      assertEquals(forbidden.status, 403);
+      assertStringIncludes(headerOf(forbidden, 'www-authenticate'), metadata);
     }
-    const forbidden = await handle(
-      post(headers, query),
-      deps(new AuthError('no_household', 'kein Haushalt')),
-    );
-    assertEquals(forbidden.status, 403);
-    assertStringIncludes(headerOf(forbidden, 'www-authenticate'), PUBLIC_METADATA);
   }
 });
 
@@ -193,8 +215,11 @@ Deno.test('any other forwarded host or marker gets the project URL', async () =>
     const via of [
       { headers: { 'x-forwarded-host': 'evil.example' } },
       { headers: { 'x-forwarded-host': 'mcp.hummlist.com.evil.example' } },
+      { headers: { 'x-forwarded-host': 'mcp.snacklist.app.evil.example' } },
       { headers: { 'x-forwarded-host': 'evil.example, mcp.hummlist.com' } },
+      { headers: { 'x-forwarded-host': 'evil.example, mcp.snacklist.app' } },
       { query: '?via=evil.example' },
+      { query: '?via=__proto__' },
       { query: '?mcp-hummlist' },
     ]
   ) {
@@ -206,8 +231,10 @@ Deno.test('MCP_PUBLIC_URL replaces the public origin', async () => {
   try {
     Deno.env.delete('MCP_PUBLIC_URL');
     assertEquals(publicOriginFromEnv(), PUBLIC);
+    assertEquals(publicOriginsFromEnv(), [PUBLIC, PUBLIC_SNACK]);
     Deno.env.set('MCP_PUBLIC_URL', 'https://mcp.example.test/');
-    const d = { ...deps(new AuthError('missing_token', 'x')), publicOrigin: publicOriginFromEnv };
+    assertEquals(publicOriginsFromEnv(), ['https://mcp.example.test']);
+    const d = { ...deps(new AuthError('missing_token', 'x')), publicOrigins: publicOriginsFromEnv };
     const expected = {
       resource: 'https://mcp.example.test',
       authorizationServers: [ISSUER],
@@ -222,6 +249,10 @@ Deno.test('MCP_PUBLIC_URL replaces the public origin', async () => {
       (await advertised({ headers: { 'x-forwarded-host': 'mcp.hummlist.com' } }, d)).resource,
       RESOURCE,
     );
+    assertEquals(
+      (await advertised({ query: '?via=mcp-snacklist' }, d)).resource,
+      RESOURCE,
+    );
   } finally {
     Deno.env.delete('MCP_PUBLIC_URL');
   }
@@ -230,6 +261,7 @@ Deno.test('MCP_PUBLIC_URL replaces the public origin', async () => {
 Deno.test('the public origin is an allowed browser origin', async () => {
   const pat = deps({ ...USER, via: 'pat' });
   assertEquals((await handle(post({ origin: PUBLIC }), pat)).status, 200);
+  assertEquals((await handle(post({ origin: PUBLIC_SNACK }), pat)).status, 200);
   for (const { headers, query } of [{}, ...PROXIED]) {
     assertEquals(
       (await handle(post({ ...headers, origin: 'https://evil.example' }, query), pat)).status,
@@ -257,7 +289,7 @@ Deno.test('serves Supabase Auth metadata at the discovery paths without a token'
     for (
       const suffix of ['.well-known/openid-configuration', '.well-known/oauth-authorization-server']
     ) {
-      for (const query of ['', '?via=mcp-hummlist']) {
+      for (const query of ['', '?via=mcp-hummlist', '?via=mcp-snacklist']) {
         const url = `${base.replace(/\/$/, '')}/${suffix}${query}`;
         const res = await handle(
           new Request(url),
