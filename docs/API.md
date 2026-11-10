@@ -48,7 +48,7 @@ https://<project-ref>.supabase.co/functions/v1/api/v1
 ```
 
 Production: `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/api/v1`. A short public
-domain (for example `api.hummlist.com`, a rewrite like `mcp-proxy/`) needs Peter's OK and is not
+domain (for example `api.snacklist.app`, a rewrite like `mcp-proxy/`) needs Peter's OK and is not
 set up (NEEDS_LEAD "Job 73").
 
 ## Authentication
@@ -308,5 +308,5 @@ curl -s -X POST "$API/items/<id>/tick" -H "Authorization: Bearer $KEY"
 - **OAuth for third-party apps**: Supabase's OAuth server already serves the MCP connectors;
   an integration like Zapier's would register as a client and get `read`/`write` scopes there.
 - **Webhooks** (outgoing events such as "item added"), so automations need not poll.
-- **A public domain** such as `api.hummlist.com` (Vercel rewrite like `mcp-proxy/`).
+- **A public domain** such as `api.snacklist.app` (Vercel rewrite like `mcp-proxy/`).
 - **Editing names and quantities** (`PATCH` of `name`, `quantity`, `brand`, `properties`).

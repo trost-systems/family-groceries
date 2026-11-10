@@ -32,7 +32,7 @@ production (public; [`RELEASE.md`](RELEASE.md)):
 
 | URL | Serves | Who can open it |
 | --- | --- | --- |
-| `https://preview.app.hummlist.com` | the newest build of `main` (a branch domain on `main`) | Vercel Authentication: members of the Vercel team only, or a share link |
+| `https://preview.app.hummlist.com` (no `preview.app.snacklist.app` yet: that domain is not set up in Vercel) | the newest build of `main` (a branch domain on `main`) | Vercel Authentication: members of the Vercel team only, or a share link |
 | `https://app.snacklist.app` and `https://app.hummlist.com` (alias `family-groceries-pied.vercel.app`) | the newest build of the `release` branch, Vercel's production branch | everyone |
 | `https://family-groceries-git-<branch>-peter-trost.vercel.app` | each branch's newest build | Vercel Authentication |
 
@@ -88,9 +88,10 @@ Hummlist builds keep `https://app.hummlist.com`.
 The Vercel project `hummlist-site` (Root Directory `site`, `site/vercel.json`)
 builds the site from every push: the landing pages `/de` and `/en` (where `/`
 redirects by `Accept-Language`), the guides, the changelog and the legal pages. A push to `main` is its production
-deployment and goes live on `https://snacklist.app` and `https://hummlist.com`
-without a manual step (`www.snacklist.app` redirects to the first,
-`www.hummlist.com` and `hummlist-site.vercel.app` to the second). Since job 174
+deployment and goes live on `https://snacklist.app` without a manual step
+(`www.snacklist.app` redirects to it; `hummlist.com`, and through it
+`www.hummlist.com` and `hummlist-site.vercel.app`, 308 to it by the host rules
+in `site/vercel.json`). Since job 174
 the pages name snacklist.app as canonical (`siteUrl` in `site/config.json`). Every other
 branch gets a preview deployment behind Vercel Authentication; the PR shows it
 as the commit status "Vercel – hummlist-site".
@@ -119,10 +120,10 @@ check. It exits 1 if any check fails.
 | `POST /functions/v1/voice` with a made-up bearer token | 401 and `WWW-Authenticate: Bearer`. |
 | `scripts/mcp-smoke.sh <project>/functions/v1/mcp` | Its discovery checks pass: 401 without a token and with a made-up one, both pointing at the metadata on the same host; the metadata names the endpoint as `resource`; the authorization server's metadata has the authorize, token and registration endpoints. `initialize` + `tools/list` report `SKIP` (no token in CI; set `MCP_SMOKE_TOKEN` to run them). |
 
-The public MCP URL `https://mcp.hummlist.com` is a Vercel proxy in front of
-the same function ([`MCP.md`](MCP.md#public-url-mcphummlistcom)). It needs no
+The public MCP URL `https://mcp.snacklist.app` (also `https://mcp.hummlist.com`) is a Vercel proxy in front of
+the same function ([`MCP.md`](MCP.md#public-url-mcpsnacklistapp)). It needs no
 deploy of its own beyond Vercel building `mcp-proxy/` from `main`; check it
-with `scripts/mcp-smoke.sh https://mcp.hummlist.com`.
+with `scripts/mcp-smoke.sh https://mcp.snacklist.app`.
 
 Run it from any machine with `curl` and `jq`:
 

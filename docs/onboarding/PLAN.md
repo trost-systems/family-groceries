@@ -11,12 +11,12 @@ and the two research files above, and gets a pass against it once it arrives.
 
 ## The decision in 10 lines
 
-1. Aha moment: something one member adds or ticks shows up on the other member's phone. Hummlist
+1. Aha moment: something one member adds or ticks shows up on the other member's phone. Snacklist
    is multiplayer, so activation is counted per household, not per user.
 2. Activation metric: a household with 2 or more members and 5 or more items, where a member other
    than the creator wrote at least once, all within 7 days of creation (`household_activated`).
 3. Today: sign-in, analytics question, two cards, name and stores, invite, then an empty list.
-   Nothing says what Hummlist is before sign-in, the first list is empty, and a skipped invite is
+   Nothing says what Snacklist is before sign-in, the first list is empty, and a skipped invite is
    never offered again.
 4. O1 Polish (2.5 lane-days): same screens, plus starter chips in the empty list, a value line on
    sign-in, the invite offered again from the list, and a 3-step "Erste Schritte" card.
@@ -40,7 +40,7 @@ and the two research files above, and gets a pass against it once it arrives.
 
 | Step | Screen | Facts |
 | --- | --- | --- |
-| 0 | `/login` | Icon, wordmark, Google, Apple, "Weiter mit E-Mail". No sentence about what Hummlist is. No guest use (`enable_anonymous_sign_ins = false`). |
+| 0 | `/login` | Icon, wordmark, Google, Apple, "Weiter mit E-Mail". No sentence about what Snacklist is. No guest use (`enable_anonymous_sign_ins = false`). |
 | 1 | `/analytics-consent` | Builds with an analytics key ask once per install, equal buttons, versioned text (2026-11-01). The legal text is fixed. |
 | 2 | `/welcome` | "Haushalt erstellen" or "Einladung annehmen". An invite link skips to `/join/<code>`. |
 | 3 | `/welcome/create` | Name (prefilled "Unser Haushalt"), 11 store chips, own stores, "Überspringen". |
@@ -121,7 +121,7 @@ O1, plus two steps inside onboarding. Order (new steps marked):
 5. Name and stores (today's screen, prefilled from step 4).
 6. **New: „Was fehlt gerade?“ / "What do you need right now?"** 12 staple chips and a field. Each
    tap drops the item into a live mini-list grouped by the stores and categories just picked, with
-   the line „Hummlist sortiert für dich“. This is the labor-illusion payoff for step 5 and ends the
+   the line „Snacklist sortiert für dich“. This is the labor-illusion payoff for step 5 and ends the
    empty first list. Button „Weiter“ (it says how many items were added) and „Überspringen“.
 7. Invite (today's screen), copy by `kind`, for a partner: „Teile die Liste mit der Person, mit
    der du einkaufst. Sie sieht deine 4 Artikel sofort.“ / "Share the list with the person you shop
@@ -224,7 +224,7 @@ remote switch can be added later on top of H2 if the first weeks show a hint tha
 | Starter items picked | They are list items | 6(1)(b) | No | `items` |
 | Hint state (ids, counters, dates) | Honour "hide", retire on use, cooldown | § 25 (2) no. 2 TDDDG, 6(1)(f) | No | Device only, never sent |
 | Onboarding and hint events (`kind`, step, hint id) | Funnel, activation, which hints help | 6(1)(a) | Yes, the existing analytics yes | PostHog EU |
-| Referral source („Wie hast du von Hummlist erfahren?“, fixed choices plus „Keine Angabe“) | Which channels work, for marketing spend | 6(1)(a), sent only after the analytics yes | Yes (Q-O3) | PostHog event property |
+| Referral source („Wie hast du von Snacklist erfahren?“, fixed choices plus „Keine Angabe“) | Which channels work, for marketing spend | 6(1)(a), sent only after the analytics yes | Yes (Q-O3) | PostHog event property |
 | Activation counts | Is onboarding working, for everyone | 6(1)(f) on the service's own data, counts only | No; listed in the privacy policy | Postgres aggregate, nothing exported |
 
 Not collected, on purpose: diet, allergies or religion-linked preferences (Art. 9 risk, CJEU
@@ -256,7 +256,7 @@ creation), with a fixture test in the analytics gate like the existing gate insi
   first adds the column; both plans use the same name and values.
 - Three invite moments from onboarding: the invite step (with the item count), the checklist's
   invite item, and the `invite-partner` hint after a day alone. All use `invite_share.dart` and the
-  user's own share sheet (N-18: Hummlist never emails an invitee).
+  user's own share sheet (N-18: Snacklist never emails an invitee).
 - The join side: an invite link already skips to the join screen; O2 adds nothing before it, so a
   joiner reaches the shared list in sign-in, consent, join. Joiners skip "Mit wem" and the starter
   step (the list already has items) and see the checklist without the invite item.
@@ -279,7 +279,7 @@ creation), with a fixture test in the analytics gate like the existing gate insi
 - **Q-O2** Starter step: should tapped staples go on the real list (they can be ticked or deleted),
   or only fill a preview that the user confirms? Default: the real list, because it teaches
   ticking on the user's own items.
-- **Q-O3** Ask „Wie hast du von Hummlist erfahren?“ once, after the first finished shop, only for
+- **Q-O3** Ask „Wie hast du von Snacklist erfahren?“ once, after the first finished shop, only for
   users who said yes to analytics? Default: no until Legal confirms the row.
 - **Q-O4** Hints: H2 (recommended), H1 or H3? And is 1 hint per 24 h right, or quieter (1 per
   week)? Default: H2, 24 h.
@@ -291,7 +291,7 @@ creation), with a fixture test in the analytics gate like the existing gate insi
 Peter's picks: O2 with a welcome screen first and the sign-in as late as possible, H2 with his
 texts. Decisions in detail: docs/DECISIONS.md, „Job 168b: guided start (O2)“ and „Job 168b: hints“.
 
-**Flow, signed out:** welcome screen (`/start`: hex mark, „Hummlist“, „Eure Einkaufsliste. Live auf
+**Flow, signed out:** welcome screen (`/start`: hex mark, „Snacklist“, „Eure Einkaufsliste. Live auf
 jedem Handy.“, a welcome line, „Los geht's“, „Schon ein Konto? Anmelden“) → usage data (the consent
 question, unchanged words; skipped when this install answered) → „Mit wem kaufst du ein?“
 (multi-select, „Andere“ with a field) → household name (suggested per answer) → stores → „Was fehlt

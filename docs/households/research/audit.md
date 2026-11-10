@@ -80,15 +80,15 @@ Create (app):
 - Open invites: direct select on `invites` (invite_repository.dart:144-155), revoke via `revoke_invite` (157-160).
 
 What is shared:
-- Link `https://app.hummlist.com/join/<CODE>` in apps (`Environment.appUrl`), page origin on web: `inviteLink` A/household/invite_share.dart:74-77, `joinPath` A/app/router.dart:92.
-- Text (ARB): DE "Komm in unseren Hummlist-Haushalt: {link} · Code: {code}" (app/l10n/app_de.arb:524), EN "Join our Hummlist household: {link} · Code: {code}" (app/l10n/app_en.arb:496); code-only variant if no APP_URL.
+- Link `https://app.snacklist.app/join/<CODE>` in apps (`Environment.appUrl`), page origin on web: `inviteLink` A/household/invite_share.dart:74-77, `joinPath` A/app/router.dart:92.
+- Text (ARB): DE "Komm in unseren Snacklist-Haushalt: {link} · Code: {code}" (app/l10n/app_de.arb:524), EN "Join our Snacklist household: {link} · Code: {code}" (app/l10n/app_en.arb:496); code-only variant if no APP_URL.
 - Channels tracked: share_sheet / copy_link / copy_code (invite_share.dart:27-31).
 - Copy is partner-specific ("Partner einladen", "Invite your partner", app_de.arb:72, app_en.arb:66; page text "valid 7 days and for one person").
 
 Link handling:
 - Routes: `/join` and `/join/:code` (router.dart:436-440), `/more/join` (376). `inviteIn(uri)` reads `/join/<code>` or `?invite=` (172-179).
-- Universal links: app/ios/Runner/Runner.entitlements (`applinks:app.hummlist.com`); app/web/.well-known/apple-app-site-association (`/join/*` component); Android app/android/app/src/main/AndroidManifest.xml:43-54 (autoVerify, pathPrefix `/join/`); app/web/.well-known/assetlinks.json; app table A/app/deep_links.dart:15-22 (checked by test/app/deep_links_config_test.dart). vercel.json:9-11 SPA rewrite excludes `.well-known`, serves AASA as JSON. docs/DEEP_LINKS.md:30.
-- **No deferred deep linking**: a user without the app who taps the link gets the web app (sign-in) at app.hummlist.com; if they install from a store instead, the code must be typed (share text includes the code for that reason). No store-redirect / smart banner / install attribution.
+- Universal links: app/ios/Runner/Runner.entitlements (`applinks:app.snacklist.app`); app/web/.well-known/apple-app-site-association (`/join/*` component); Android app/android/app/src/main/AndroidManifest.xml:43-54 (autoVerify, pathPrefix `/join/`); app/web/.well-known/assetlinks.json; app table A/app/deep_links.dart:15-22 (checked by test/app/deep_links_config_test.dart). vercel.json:9-11 SPA rewrite excludes `.well-known`, serves AASA as JSON. docs/DEEP_LINKS.md:30.
+- **No deferred deep linking**: a user without the app who taps the link gets the web app (sign-in) at app.snacklist.app; if they install from a store instead, the code must be typed (share text includes the code for that reason). No store-redirect / smart banner / install attribution.
 
 Signed-out invitee:
 - Router stores the code immediately (`pendingInvite.remember`, router.dart:458-461) in `PendingInvite` (A/household/pending_invite.dart, device storage, 7-day lifetime, line 46) - survives sign-up, custom-scheme callback, app kill, consent, onboarding.
@@ -158,7 +158,7 @@ docs/ANALYTICS.md: event table lines 146-148 (household_created, invite_accepted
 - Job 73/75 (6713+, 6783): API key household-bound; per-household rate limit; integration lock.
 - Job 31 #2 (Alexa, ~3837): linked token's user, their current household, read at request time.
 
-## 10. Feature map (.cursor/skills/verify-hummlist/features/)
+## 10. Feature map (.cursor/skills/verify-snacklist/features/)
 - `household-invites.md` (only matching file; also onboarding.md and app-links.md cover joins). Says today: one household shares one list; a member creates an 8-char code + link (7 days, single use), shares/copies, revokes; join by code or link; someone in a household is warned that joining moves them; link survives sign-in/onboarding; rate limit; premium notes on join; archive off in prod. **"There is no screen to rename a household, list its members or leave it without joining another (or deleting the account)"**; no remove-member; no revoke-all.
 - `onboarding.md`: Step 1 welcome (create vs accept invite), 2a create (name + stores), 3 invite partner ("Später"), 2b join.
 - `app-links.md`: `/join/<code>` opens join screen; signed out -> `/login?invite=<code>`.

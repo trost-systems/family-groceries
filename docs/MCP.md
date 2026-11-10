@@ -6,7 +6,7 @@ function `mcp` and speaks MCP over streamable HTTP.
 
 | | |
 | --- | --- |
-| Endpoint (public) | `https://mcp.hummlist.com` (Vercel proxy, see [Public URL](#public-url-mcphummlistcom)) |
+| Endpoint (public) | `https://mcp.snacklist.app` (Vercel proxy, see [Public URL](#public-url-mcpsnacklistapp)); `https://mcp.hummlist.com` keeps working |
 | Endpoint (hosted function) | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp` |
 | Endpoint (local stack) | `http://127.0.0.1:54321/functions/v1/mcp` |
 | Protected Resource Metadata | `<endpoint>/.well-known/oauth-protected-resource` |
@@ -15,18 +15,19 @@ function `mcp` and speaks MCP over streamable HTTP.
 | Protocol versions | 2026-07-28 (`server/discover`) and 2025-11-25 down to 2024-11-05 (`initialize`) |
 
 The app shows the endpoint under **Mehr → Zugänge → MCP-Server**, with a copy
-button: `https://mcp.hummlist.com` in builds for the production project, the
+button: `https://mcp.snacklist.app` in builds for the production project, the
 function URL `<project>/functions/v1/mcp` in builds for any other project
 (the local stack).
 
-## Public URL (mcp.hummlist.com)
+## Public URL (mcp.snacklist.app)
 
-`https://mcp.hummlist.com` is the public MCP URL. The Vercel project
+`https://mcp.snacklist.app` is the public MCP URL, and `https://mcp.hummlist.com`
+(the URL before the rename) serves the same. The Vercel project
 `hummlist-mcp` serves it from [`mcp-proxy/`](../mcp-proxy/README.md): a
 `vercel.json` that rewrites every request to the edge function, with no
 build or secrets. A person who opens the URL in a browser gets a static
 page instead, in German or English, that says what the address is for. The Lead created that project
-([`NEEDS_LEAD.md`](NEEDS_LEAD.md#mcphummlistcom)).
+([`NEEDS_LEAD.md`](NEEDS_LEAD.md#mcpsnacklistapp-set-up-as-mcphummlistcom)).
 
 Both URLs reach the same function and stay valid. A client keeps the URL it
 was set up with; one token works on both.
@@ -53,7 +54,7 @@ holds a token (a personal access token or an OAuth access token), it also
 runs the handshake and `tools/list`. It never prints the token.
 
 ```bash
-scripts/mcp-smoke.sh https://mcp.hummlist.com
+scripts/mcp-smoke.sh https://mcp.snacklist.app
 scripts/mcp-smoke.sh https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp
 MCP_SMOKE_TOKEN=fgp_… MCP_PROTOCOL_VERSION=2026-07-28 scripts/mcp-smoke.sh <endpoint>
 ```
@@ -79,7 +80,7 @@ revisions against the local stack, with a throwaway household's token.
 Vercel's limits for the proxy are in
 [`mcp-proxy/README.md`](../mcp-proxy/README.md#vercel-limits-docs-read-2026-10-28).
 They matter for one case only: a tool call that sends no byte for 120 s
-fails on mcp.hummlist.com with `ROUTER_EXTERNAL_TARGET_ERROR`. The tools
+fails on mcp.snacklist.app (and mcp.hummlist.com) with `ROUTER_EXTERNAL_TARGET_ERROR`. The tools
 answer in well under a second, and the supabase.co URL has no such limit.
 
 ## Tools
@@ -139,7 +140,7 @@ e2e test allows 3 s).
 
 ## Connecting a client
 
-Use `https://mcp.hummlist.com` as the endpoint URL below; the supabase.co
+Use `https://mcp.snacklist.app` as the endpoint URL below; the supabase.co
 URL works the same way. Two ways to authenticate:
 
 - **OAuth (recommended).** The client discovers everything from the endpoint
@@ -188,14 +189,14 @@ Our only share of Claude's wait is the token call and a cold function start
 ### Claude Code
 
 ```bash
-claude mcp add --transport http einkauf https://mcp.hummlist.com
+claude mcp add --transport http einkauf https://mcp.snacklist.app
 # then run /mcp in Claude Code and choose "Authenticate"
 ```
 
 With a personal access token instead:
 
 ```bash
-claude mcp add --transport http einkauf https://mcp.hummlist.com \
+claude mcp add --transport http einkauf https://mcp.snacklist.app \
   --header "Authorization: Bearer fgp_…"
 ```
 
@@ -230,7 +231,7 @@ Zugriffstoken → Token erstellen**, route `/more/access`):
 ```toml
 # ~/.codex/config.toml
 [mcp_servers.snacklist]
-url = "https://mcp.hummlist.com"
+url = "https://mcp.snacklist.app"
 bearer_token_env_var = "SNACKLIST_TOKEN"   # export SNACKLIST_TOKEN=fgp_…
 ```
 
@@ -241,7 +242,7 @@ With OAuth instead, leave out `bearer_token_env_var` and sign in once:
 
 ```toml
 [mcp_servers.snacklist]
-url = "https://mcp.hummlist.com"
+url = "https://mcp.snacklist.app"
 ```
 
 ```bash
@@ -309,7 +310,7 @@ The function (`supabase/functions/mcp/handler.ts`):
    An edge function cannot serve the root `/.well-known/…` path of
    supabase.co, so clients find the document through the
    `WWW-Authenticate` header, which the MCP specification lists first. On
-   mcp.hummlist.com the proxy serves it at the root path as well.
+   mcp.snacklist.app and mcp.hummlist.com the proxy serves it at the root path as well.
    It also serves Supabase Auth's Authorization Server Metadata, unchanged,
    at `<endpoint>/.well-known/openid-configuration` and
    `<endpoint>/.well-known/oauth-authorization-server`, without a token.
@@ -319,15 +320,15 @@ The function (`supabase/functions/mcp/handler.ts`):
    URL as the authorization server and probe those paths. Until 2026-10-31
    that last probe got 401 too, so such a connector on the supabase.co URL
    lost access about an hour after connecting (access tokens live one hour)
-   and could not start a new sign-in either. `https://mcp.hummlist.com`
-   never had this problem (its root `/.well-known/oauth-protected-resource`
-   works), so it stays the URL to connect with.
+   and could not start a new sign-in either. The public hosts
+   never had this problem (their root `/.well-known/oauth-protected-resource`
+   works), so `https://mcp.snacklist.app` stays the URL to connect with.
 2. Answers requests without a valid credential with `401` and
    `WWW-Authenticate: Bearer resource_metadata="…", scope="openid email"`,
    plus `error="invalid_token"` when a token was sent but rejected. A valid
    user without a household gets `403`.
 3. Rejects browser requests whose `Origin` is not the project's host, the
-   public host (`mcp.hummlist.com`), localhost, or listed in the `MCP_ALLOWED_ORIGIN_HOSTS` secret
+   public hosts (`mcp.snacklist.app`, `mcp.hummlist.com`), localhost, or listed in the `MCP_ALLOWED_ORIGIN_HOSTS` secret
    (comma-separated hostnames).
 4. Authenticates (`supabase/functions/_shared/auth.ts`, shared with the Siri
    endpoint):

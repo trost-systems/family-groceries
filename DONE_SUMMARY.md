@@ -14,15 +14,15 @@
 - Job 9, in-app account deletion and data export: [docs/done/09-account-deletion.md](docs/done/09-account-deletion.md)
 - Job 13, keepalive for the free Supabase project, deploy smoke test, edge-function rollback: [docs/done/13-ops-keepalive.md](docs/done/13-ops-keepalive.md)
 - Job 11b, job 11's loose ends (PR description as landed body, model trailer from MODEL_CO_AUTHOR, MERGE_WAIT_MINUTES check, list.spec undo-snackbar flake): [docs/done/11b-ci-followups.md](docs/done/11b-ci-followups.md)
-- Job 24a, guides site on hummlist.com (`site/`, its own Vercel project): [docs/done/24a-guides-site.md](docs/done/24a-guides-site.md)
+- Job 24a, guides site on snacklist.app (`site/`, its own Vercel project): [docs/done/24a-guides-site.md](docs/done/24a-guides-site.md)
 - Job 17b, hide stores with no items on the list (they show only during an item drag, as drop targets): [docs/done/17b-hide-empty-stores.md](docs/done/17b-hide-empty-stores.md)
 - Job 29c, swipe left opens edit instead of delete; no item action needs a hold; a finger hold tolerates 18 px of drift (plus the review follow-up: recipes and fg help): [docs/done/29c-swipe-edit.md](docs/done/29c-swipe-edit.md)
 - Job 29b, no undo snackbar on a tick; "Zuletzt verwendet" shows the list's own rows, a tap puts an item back: [docs/done/29b-recently-used.md](docs/done/29b-recently-used.md)
 - Job 29d, More: Zugänge (`/more/access`) and Konto (`/more/account`) on separate pages, old `/settings` links redirect: [docs/done/29d-more-access-account.md](docs/done/29d-more-access-account.md)
 - Job 29a, fixed-height top bar (the sync icon no longer moves the list), no household name or item count on the list: [docs/done/29a-topbar-header.md](docs/done/29a-topbar-header.md)
 - Job 32a, spelling variants, synonyms and typos in the classifier (Spec #8 Part A), `items.canonical_key` for 32b, `item_categorized` analytics: [docs/done/32a-synonyms-classifier.md](docs/done/32a-synonyms-classifier.md)
-- Job 49, Hummlist Premium as a yearly plan and Lifetime under one entitlement (lifecycle webhook, `household_has_premium`, Premium page with the store's own prices, Legal Review K.13 must-fixes, price drift check): [docs/done/49-premium-yearly.md](docs/done/49-premium-yearly.md)
-- Job 50, integration lock: Siri, Alexa and MCP need Hummlist Premium behind the server switch `integration_lock` and the app define `INTEGRATION_LOCK` (both off): [docs/done/50-integration-lock.md](docs/done/50-integration-lock.md)
+- Job 49, Snacklist Premium as a yearly plan and Lifetime under one entitlement (lifecycle webhook, `household_has_premium`, Premium page with the store's own prices, Legal Review K.13 must-fixes, price drift check): [docs/done/49-premium-yearly.md](docs/done/49-premium-yearly.md)
+- Job 50, integration lock: Siri, Alexa and MCP need Snacklist Premium behind the server switch `integration_lock` and the app define `INTEGRATION_LOCK` (both off): [docs/done/50-integration-lock.md](docs/done/50-integration-lock.md)
 - Job 63, Home Screen widgets on iPhone (WidgetKit) and Android (Glance) with home_widget, held (`home-widgets`) and waiting for Apple portal steps before merge: [docs/done/63-home-widgets.md](docs/done/63-home-widgets.md)
 - Job 70, sign-in without autofocus; Google and Apple first, email behind „Weiter mit E-Mail“: [docs/done/70-login-no-autofocus.md](docs/done/70-login-no-autofocus.md)
 - Job 74, one privacy-safe log line per Alexa request: [docs/done/74-alexa-request-log.md](docs/done/74-alexa-request-log.md)
@@ -240,7 +240,7 @@ See [docs/done/18-test-fixtures-sync.md](docs/done/18-test-fixtures-sync.md).
 
 See [docs/done/23-release-pipeline.md](docs/done/23-release-pipeline.md).
 
-## Job 26: public MCP URL mcp.hummlist.com
+## Job 26: public MCP URL mcp.snacklist.app
 
 See [docs/done/26-mcp-domain.md](docs/done/26-mcp-domain.md).
 
@@ -296,20 +296,20 @@ See [docs/done/22-onboarding.md](docs/done/22-onboarding.md).
 
 See [docs/done/33b-legal-app.md](docs/done/33b-legal-app.md).
 
-- Job 33a, privacy policy on hummlist.com (/datenschutz, /en/privacy), corrected and published deletion page, error reports scrubbed to their shape (wording approved by Peter, lead merges): [docs/done/33a-legal-site.md](docs/done/33a-legal-site.md)
+- Job 33a, privacy policy on snacklist.app (/datenschutz, /en/privacy), corrected and published deletion page, error reports scrubbed to their shape (wording approved by Peter, lead merges): [docs/done/33a-legal-site.md](docs/done/33a-legal-site.md)
 
 ## Job 33c: self-host CanvasKit and fonts, nothing from gstatic.com
 
 See [docs/done/33c-legal-canvaskit.md](docs/done/33c-legal-canvaskit.md).
 
-## Job 31: Alexa skill "Hummlist" (Spec #7)
+## Job 31: Alexa skill "Snacklist" (Spec #7)
 
-"Alexa, sag Hummlist, füg Milch und Eier hinzu" adds to the linked household, read back in German; ReadListIntent reads the list; account linking through Supabase's OAuth server (confidential client, PKCE). Live after the Amazon steps in NEEDS_PETER. Details: [docs/done/31-alexa.md](docs/done/31-alexa.md).
+"Alexa, sag Snacklist, füg Milch und Eier hinzu" adds to the linked household, read back in German; ReadListIntent reads the list; account linking through Supabase's OAuth server (confidential client, PKCE). Live after the Amazon steps in NEEDS_PETER. Details: [docs/done/31-alexa.md](docs/done/31-alexa.md).
 - Job 31b, Alexa skill deployed to the developer account (de-DE, beta running, no testers): [docs/done/31b-alexa-deploy.md](docs/done/31b-alexa-deploy.md)
 
 ## Job 24: help and contact page (draft) and the privacy data map
 
-`/support` and `/en/support` on hummlist.com as drafts (banner and noindex on previews, 404 in
+`/support` and `/en/support` on snacklist.app as drafts (banner and noindex on previews, 404 in
 production until Peter's OK), More → "Hilfe & Kontakt" (debug/test builds only until then),
 `docs/PRIVACY_DATA_MAP.md` for the store privacy forms, stale "Menü" directions fixed in the Siri
 texts. The privacy policy itself is 33a's. See [docs/done/24-privacy-page.md](docs/done/24-privacy-page.md).
@@ -328,16 +328,16 @@ restores both items exactly. MCP and Siri report the similar item. Details:
 
 On the web a key typed right after tapping an unfocused text field was erased by the engine's late hand-over of the DOM input ("rot" for "Brot" in the add field after Schließen). `EarlyKeys` (app-wide, web only) types those keys through Flutter's key events. Before: 1/30 of the original test and 60/60 of the frame-held test failed; after: 0. Details: [docs/done/34-add-sheet-first-key.md](docs/done/34-add-sheet-first-key.md).
 
-## Job 25: Hummlist Lifetime in-app purchase (sandbox)
+## Job 25: Snacklist Lifetime in-app purchase (sandbox)
 
 One non-consumable (`com.hummlist.app.lifetime`, EUR 9.99 in Germany) that unlocks the buyer's
 household, verified by the new `purchases` edge function (Apple JWS chain to the pinned Apple root,
 App Store Server API with a key, Server Notifications V2; Google Play Developer API, Orders API,
-daily voided poll) before `entitlements` unlocks it; More → Hummlist Lifetime in the iOS and
+daily voided poll) before `entitlements` unlocks it; More → Snacklist Lifetime in the iOS and
 Android app, a note plus the unlock on the web. Inert until NEEDS_PETER/NEEDS_LEAD "Job 25" are
 done. Details, tests, screenshots: `docs/done/25-iap-sandbox.md`; design: `docs/PURCHASES.md`.
 
-## Job 25b: Hummlist Lifetime review follow-ups
+## Job 25b: Snacklist Lifetime review follow-ups
 
 A receipt the server refuses for good is finished with the store and shown once, not re-sent on every retry and launch. Production-only `PURCHASES_ENVIRONMENTS` is inert, so App Review's sandbox purchases wait instead of being refused. Apple notifications must carry a transaction from their own environment. `scripts/gates/e2e.sh -- <spec>` runs only that spec. Details: [docs/done/25b-iap-followups.md](docs/done/25b-iap-followups.md).
 
@@ -345,19 +345,19 @@ A receipt the server refuses for good is finished with the store and shown once,
 
 The debug app launches without Flutter's "Zone mismatch" EXCEPTION block, and a regression now fails the launch. The docs point to Mehr → Zugänge, the health comment no longer duplicates the response, and the unused `menu` string is gone. The voice 401 text was already right. Details: [docs/done/37-voice-error-copy.md](docs/done/37-voice-error-copy.md).
 
-## Job 38: hummlist.com guides follow the live store version; public release record
+## Job 38: snacklist.app guides follow the live store version; public release record
 
-Guides, sections and blocks tagged `since` an unreleased version stay off hummlist.com until a public release; preview shows them with a banner. `releases/releases.json` records public releases (empty today) with History-ready git stats; `public-release-record.yml` appends one and its push redeploys the site. Details: [docs/done/38-site-deploy-versioning.md](docs/done/38-site-deploy-versioning.md).
+Guides, sections and blocks tagged `since` an unreleased version stay off snacklist.app until a public release; preview shows them with a banner. `releases/releases.json` records public releases (empty today) with History-ready git stats; `public-release-record.yml` appends one and its push redeploys the site. Details: [docs/done/38-site-deploy-versioning.md](docs/done/38-site-deploy-versioning.md).
 
-## Job 39: user-facing changelog (store "What's new" + hummlist.com/changelog) from PR notes
+## Job 39: user-facing changelog (store "What's new" + snacklist.app/changelog) from PR notes
 
-PRs carry a `## Changelog` note (de/en items or `none`), checked by push-pr.sh and the `changelog` CI gate. `scripts/release/changelog.mjs` collects the notes from main's commits into a reviewed draft with App Store and Play "What's new" texts. `record.mjs` moves the draft into the public release record, and hummlist.com/de/changelog and /en/changelog show recorded releases (empty state today). Details: [docs/done/39-changelog.md](docs/done/39-changelog.md).
+PRs carry a `## Changelog` note (de/en items or `none`), checked by push-pr.sh and the `changelog` CI gate. `scripts/release/changelog.mjs` collects the notes from main's commits into a reviewed draft with App Store and Play "What's new" texts. `record.mjs` moves the draft into the public release record, and snacklist.app/de/changelog and /en/changelog show recorded releases (empty state today). Details: [docs/done/39-changelog.md](docs/done/39-changelog.md).
 
 ## Job 40: flag/hold-gated changelog items, pending.json, 1.0 launch "What's new" override
 
 PR notes may add `flag:` / `hold:` lines. `releases/flags.json` decides what is public, and the Alexa skill is held. Held items wait in `releases/changelog/pending.json` (written by `record.mjs`) until their gate opens. `releases/changelog/1.0.0.override.md` is the 1.0 launch "What's new", still a draft for Peter's review. Details: [docs/done/40-changelog-flags.md](docs/done/40-changelog-flags.md).
 
-## Job 43: Hummlist Lifetime as a household-bound unlock (model A), on RevenueCat
+## Job 43: Snacklist Lifetime as a household-bound unlock (model A), on RevenueCat
 
 A purchase belongs to the household it was bought in, for good: RevenueCat's App User ID is the household, and the server refuses it anywhere else, also after deletion (a tombstone stays 30 days after the purge of its rows). Our own Apple/Google verification is replaced by RevenueCat's webhook, and the SDK starts only on the purchase page with the household id. The purchase screen is off in every build until Peter approves the legal texts. Buy shows only when the household is known to have no Lifetime, and the join screen explains Lifetime around a join, with archiving behind the default-off `HOUSEHOLD_ARCHIVE`. There is DE/EN refund help, tester grants stay with households, members can't read who paid, and two paying-household queries back the kill gate. Details: [docs/done/43-iap-household-a.md](docs/done/43-iap-household-a.md).
 
@@ -388,20 +388,20 @@ RevenueCat's SDK starts only on a tap on "Weiter zum Kauf" or "Kauf wiederherste
 
 ## Job 51: native Siri (App Intents, English and German)
 
-Siri adds items to the household's Hummlist on iOS 17+ without a Shortcut: "Add to Hummlist" / "Füge etwas zu Hummlist hinzu", then the items, read back only after the server confirmed; "What's on my Hummlist?" reads the list. A session-bound "Siri (dieses iPhone)" credential replaces token copying; the old Shortcut keeps working. Details: [docs/done/51-native-siri.md](docs/done/51-native-siri.md).
+Siri adds items to the household's Snacklist on iOS 17+ without a Shortcut: "Add to Snacklist" / "Füge etwas zu Snacklist hinzu", then the items, read back only after the server confirmed; "What's on my Snacklist?" reads the list. A session-bound "Siri (dieses iPhone)" credential replaces token copying; the old Shortcut keeps working. Details: [docs/done/51-native-siri.md](docs/done/51-native-siri.md).
 
 ## Job 52: the design system (6b Hex Frische with option 6's yellow) in the app, app icon #5
 
 The app wears the locked 6b Hex Frische design: one token source for app and site, cobalt, lemon and mint, Bricolage Grotesque over Inter, lemon hex buttons that sink into their edge when pressed, and app icon #5 Wabenstapel with splash screens on iOS (also as the iOS 26 layered icon), Android and web. A Widgetbook shows every component in every state. On the way it fixes main's flaky add-field tap on the web. The changelog note waits for Peter's TestFlight look (hold `new-design`). Details: [docs/done/52-design-6b-app.md](docs/done/52-design-6b-app.md).
-## Job 53: first hummlist.com homepage (landing pages /de and /en), PR #157, not merged
+## Job 53: first snacklist.app homepage (landing pages /de and /en), PR #157, not merged
 
 German and English landing pages in the 6b Hex Frische design with design 6's yellow, built by the existing site generator from one copy file (`site/content/landing/copy.yml`), with filmed product stills and three demo-video slots for job 54. `/` now redirects to them by language. Every page shares the new header and footer. The noindex header, the legal texts and every old route are unchanged; there is no pricing and Siri is "coming soon". Checks: 96 site tests, axe 0 violations on 17 pages in 4 modes, contrast passes, Lighthouse accessibility 100. Peter approves and merges (NEEDS_PETER "Job 53"); Launch reviews `site/COPY_NEEDED.md`. Preview: https://hummlist-site-git-job-53-homepage-v1-peter-trost.vercel.app/ (Vercel login). Details: [docs/done/53-homepage-v1.md](docs/done/53-homepage-v1.md).
-## Job 54: demo videos for hummlist.com, PR into job 53's branch, not merged
+## Job 54: demo videos for snacklist.app, PR into job 53's branch, not merged
 
-Three silent, captioned loops from the real Hummlist app fill job 53's video slots: adding and ticking off items, one household on three phones syncing live (real measured latency), and a generic AI chat adding and ticking items through the real MCP server. German and English, wide and compact, WebM and MP4 of 0.28 to 0.45 MB each, posters and captions. Made with a capture driver for the Linux build and HyperFrames (`marketing/videos/`). Site checks pass (97 tests, crawl, contrast, Lighthouse a11y 100, mobile perf 94–95). Review 0 fixed: the compact household-sync cut now shows both receiving phones; the English MCP cut's German list is the first item of Peter's check. Peter watches each loop on a phone and approves with job 53 (NEEDS_LEAD "Job 54"). Details: [docs/done/54-demo-videos.md](docs/done/54-demo-videos.md).
-## Job 60: Hummlist feature map and how-to clips
+Three silent, captioned loops from the real Snacklist app fill job 53's video slots: adding and ticking off items, one household on three phones syncing live (real measured latency), and a generic AI chat adding and ticking items through the real MCP server. German and English, wide and compact, WebM and MP4 of 0.28 to 0.45 MB each, posters and captions. Made with a capture driver for the Linux build and HyperFrames (`marketing/videos/`). Site checks pass (97 tests, crawl, contrast, Lighthouse a11y 100, mobile perf 94–95). Review 0 fixed: the compact household-sync cut now shows both receiving phones; the English MCP cut's German list is the first item of Peter's check. Peter watches each loop on a phone and approves with job 53 (NEEDS_LEAD "Job 54"). Details: [docs/done/54-demo-videos.md](docs/done/54-demo-videos.md).
+## Job 60: Snacklist feature map and how-to clips
 
-verify-hummlist skill (web build + Playwright, launch/doctor/drive/cleanup proven on hz), 23-feature map with FEATURES-FOR-WRITERS.md for Hummlist Launch, hummlist-howto-clips skill (email GIF, MP4/WebM, PNG; quick-add DE+EN proven). Details: [docs/done/60-feature-map.md](docs/done/60-feature-map.md).
+verify-snacklist skill (web build + Playwright, launch/doctor/drive/cleanup proven on hz), 23-feature map with FEATURES-FOR-WRITERS.md for Snacklist Launch, snacklist-howto-clips skill (email GIF, MP4/WebM, PNG; quick-add DE+EN proven). Details: [docs/done/60-feature-map.md](docs/done/60-feature-map.md).
 
 ## Job 57: list rows without a check box, a polished strike-through, design alignment
 
@@ -492,7 +492,7 @@ The paywall go-live is now the ordered checklist `docs/PAYWALL_RELEASE.md`, with
 
 ## Job 68: account deletion Premium warning, Alexa read-back wording (2026-11-02), PR #191
 
-The deletion dialog warns the last member of a household with Hummlist Premium that Premium ends and isn't refunded automatically (a box to tick, refund help), and names archived households, which go with the account; shown with `HOUSEHOLD_ARCHIVE` or the `premium_offer` switch, so not in today's releases. Deleting the account never archives (DECISIONS and NEEDS_LEAD "Job 68"). Alexa and Siri now say one sentence for what was added and one for what was already there. The onboarding skip hint names Mehr → Läden. Details: [docs/done/68-delete-warn-alexa.md](docs/done/68-delete-warn-alexa.md).
+The deletion dialog warns the last member of a household with Snacklist Premium that Premium ends and isn't refunded automatically (a box to tick, refund help), and names archived households, which go with the account; shown with `HOUSEHOLD_ARCHIVE` or the `premium_offer` switch, so not in today's releases. Deleting the account never archives (DECISIONS and NEEDS_LEAD "Job 68"). Alexa and Siri now say one sentence for what was added and one for what was already there. The onboarding skip hint names Mehr → Läden. Details: [docs/done/68-delete-warn-alexa.md](docs/done/68-delete-warn-alexa.md).
 ## Job 69: Alexa skill icon, phrasings, English and certification readiness, PR #193
 
 The Alexa skill's icons are the Hummlist app icon, generated with the app icons and checked by the lint gate. The guide says which sentences reach the skill („Alexa, sag Hummlist, …“, „Alexa, öffne Hummlist“), warns that „auf die Hummlist setzen“ goes to Alexa's own lists, and gives the „Humm-list“ tip; a site test keeps its phrasings in the skill model. „Setz Milch drauf“ now adds Milch, by Siri and by Alexa. The skill also speaks English (en-US, en-GB, en-AU, en-CA, en-IN), is set to worldwide and is ready for Amazon's validation; „Alexa, öffne Hummlist“ never reached the skill on Peter's Echo (logs), so his device check decides between a misheard name and the wrong account (inferred from logs). No Alexa line mentions Premium any more. Amazon's validation, the simulator and the development deploy have not run (ASK login is on the box only), and the testing instructions are not Ops' draft yet. Details: [docs/done/69-alexa-icon-invocation.md](docs/done/69-alexa-icon-invocation.md).
@@ -515,7 +515,7 @@ rest of the list fit or scroll. Details, tests and screenshots: [docs/done/64b-d
 
 The alexa function logs `alexa: <type> <intent|-> <locale|-> linked=<bool> -> <kind>` once per request (skill events included), with no tokens, ids, item names, utterances or addresses; a test feeds them through every reply kind and checks none appears. docs/ALEXA.md "Request log" has the logs query. PR only, deploys from main after the lead merges. Details: [docs/done/74-alexa-request-log.md](docs/done/74-alexa-request-log.md).
 
-## Job 73: the Hummlist API, PR #197, not merged
+## Job 73: the Snacklist API, PR #197, not merged
 
 A versioned REST API (`/v1`) next to the MCP server lets people automate their list (curl, Shortcuts, n8n, Home Assistant) with API keys made under Mehr → Zugänge (read, or read and write), with Postgres rate limits, idempotency keys, cursor pages and the Premium lock. MCP and API share one list module. The key UI waits for the PostHog flag `public-api` (off). Review 0 fixes: the migration runs after job 72's and keeps Alexa free, the address throttle keys on the gateway's `X-Real-IP` (verified on hosted: `X-Forwarded-For` is forgeable), and only unknown keys count or get blocked. Details: [docs/done/73-public-api.md](docs/done/73-public-api.md).
 
@@ -533,7 +533,7 @@ Dictating „Gurken zwei“ (in-app dictation, Siri, Alexa; DE and EN „cucumbe
 ## Job 88: an own store named like an offered chain ticks the chain
 
 In onboarding, typing an own store such as „edeka“ now ticks the EDEKA chip instead of keeping a hidden store; server already deduplicated. PR #214. Details: [docs/done/88-fix-onboarding-own-store-chain.md](docs/done/88-fix-onboarding-own-store-chain.md).
-## Job 93: hummlist.com for AI agents, deterministic checks
+## Job 93: snacklist.app for AI agents, deterministic checks
 
 Agents get llms.txt, a Markdown twin of every page, a sitemap, robots and JSON-LD. Each is checked in CI with fixture tests, and so are the launch guard, the MCP probe (live discovery plus a throwaway household on the local stack) and the waitlist form, which stays skipped until job 82. PR #223, not merged (lead review). Details: [docs/done/93-agent-first-site-checks.md](docs/done/93-agent-first-site-checks.md).
 
@@ -543,7 +543,7 @@ Alexa's „Verbindungsproblem“ comes from Amazon: no spoken request has ever r
 
 
 
-## Job 87: PW-P4 „Haushalt“ is the Hummlist Premium page
+## Job 87: PW-P4 „Haushalt“ is the Snacklist Premium page
 
 Peter's pick from job 81 is now the real paywall at `/more/lifetime`. Every state shows the household hero. When a plan is on offer, the page shows two plan tiles side by side with the store's prices, the household binding line, one Buy button for the picked plan, its terms, Restore, Terms and Privacy. Beta builds (flags off) show no price and no Buy. A free unlock shows Legal's approved beta texts (title, subtitle, privacy link) while `premium_offer` is off; „bald verfügbar“, „Danke!“ and the web's buy-in-the-app note are hidden until sales start. The web shows the hero only. Merge waits for Legal Review sign-off (NEEDS_LEAD "Job 87"). Details: [docs/done/87-paywall-pw-p4.md](docs/done/87-paywall-pw-p4.md).
 
@@ -580,21 +580,21 @@ The ios CI job built the app twice and timed out on a slow runner; it builds onc
 
 `delete_category` hands over only real seed keys, each once (no more `{NULL}`); a migration strips the NULLs it left and a check stops new ones. `store_name_key` and `store_name` collapse whitespace before trimming, like `category_name_key`; stores that clash under the new key are renamed „Name (n)“ and keep their items. Details: [docs/done/109-fix-category-store-keys.md](docs/done/109-fix-category-store-keys.md).
 
-## Job 82: the hummlist.com waitlist (Spec #10)
+## Job 82: the snacklist.app waitlist (Spec #10)
 
-hummlist.com gets a waitlist instead of browser-app links: a double opt-in form, confirm and unsubscribe pages, a Vercel function in fra1 in front of a Supabase edge function, locked-down tables with Legal's retention purge, and a manual invite script. Everything is off in production until Peter sets the env vars and approves the texts, and a production build fails while a placeholder is left. PR #210 is open (Peter OKs the copy, Legal reviews). Requeue 2026-11-04 (Addenda 5 to 10): main's landing page with stage CTAs (`site/config/stage.ts`), consent on the confirmation page, Legal's v2 texts, `form-action 'self'`, `/get`; no placeholders can ship. Head `2d303956` (ci-ok green), preview https://hummlist-site-git-job-82-waitlist-peter-trost.vercel.app/de (Vercel login). Details: [docs/done/82-waitlist.md](docs/done/82-waitlist.md).
+snacklist.app gets a waitlist instead of browser-app links: a double opt-in form, confirm and unsubscribe pages, a Vercel function in fra1 in front of a Supabase edge function, locked-down tables with Legal's retention purge, and a manual invite script. Everything is off in production until Peter sets the env vars and approves the texts, and a production build fails while a placeholder is left. PR #210 is open (Peter OKs the copy, Legal reviews). Requeue 2026-11-04 (Addenda 5 to 10): main's landing page with stage CTAs (`site/config/stage.ts`), consent on the confirmation page, Legal's v2 texts, `form-action 'self'`, `/get`; no placeholders can ship. Head `2d303956` (ci-ok green), preview https://hummlist-site-git-job-82-waitlist-peter-trost.vercel.app/de (Vercel login). Details: [docs/done/82-waitlist.md](docs/done/82-waitlist.md).
 - Job 134, no hint text inside the store name pill: [docs/done/134-store-rename-hint-out.md](docs/done/134-store-rename-hint-out.md)
 - Job 135, the add field floats over the list: [docs/done/135-floating-add-field.md](docs/done/135-floating-add-field.md)
 - Job 144, the tabs float as a hex pill: [docs/done/144-bottom-nav-floating-pill.md](docs/done/144-bottom-nav-floating-pill.md)
 - Job 147, item icons for 1,430 items and a neutral fallback: [docs/done/147-item-icon-coverage.md](docs/done/147-item-icon-coverage.md)
 - Job 148, UI consistency pass (floating top bar, hex Anpassen, one 3D depth switch, no category numbers, one hex per store row, centred hex text): [docs/done/148-ui-consistency-pass.md](docs/done/148-ui-consistency-pass.md)
 - Job 145, interactive store chips on the landing page (PR #290, not merged, lead review): [docs/done/145-landing-store-chips.md](docs/done/145-landing-store-chips.md)
-- Job 156, nexus.hummlist.com ops dashboard (not merged, lead review; live after one Vercel token, NEEDS_LEAD): [docs/done/156-nexus-dashboard.md](docs/done/156-nexus-dashboard.md)
+- Job 156, nexus.snacklist.app ops dashboard (not merged, lead review; live after one Vercel token, NEEDS_LEAD): [docs/done/156-nexus-dashboard.md](docs/done/156-nexus-dashboard.md)
 
 ## Job 113: CI tool downloads cached and retried
 
 A short 504 from GitHub releases or dl.deno.land no longer fails the gitleaks, lint, functions, fg-cli, db or e2e setup. Pinned tools (gitleaks, actionlint, ast-grep, squawk) and the Deno binary come from the Actions cache; their downloads retry with backoff through `scripts/ci/download.sh`, and npm and apt get their own retry settings. Not covered: Docker image pulls, Playwright (its own retries), setup-cli's `bun install`. Workflows with secrets download and checksum-verify Deno instead of using the cache. Pins (lint's `.dvmrc` 2.9.8, `v2.x` elsewhere), `ci-ok` and the gates are unchanged, and a download that still fails after its retries fails the job (proved on the PR with a temporary actionlint pin whose URL answers 404). The PR is ready for review and not merged (the Lead merges). Details: [docs/done/113-ci-download-resilience.md](docs/done/113-ci-download-resilience.md).
-- Job 158 (mcp.hummlist.com page for people): [docs/done/158-mcp-landing.md](docs/done/158-mcp-landing.md)
+- Job 158 (mcp.snacklist.app page for people): [docs/done/158-mcp-landing.md](docs/done/158-mcp-landing.md)
 - Job 150, the site videos show the add field's microphone (scripted recognizer in the Linux capture build), a new voice-add video in the voice block, and two dictation fixes (the field follows the words, rows land in their category at once): [docs/done/150-site-videos-mic-voice.md](docs/done/150-site-videos-mic-voice.md)
 - Job 159, three small gaps: a store name the household has keeps the add dialog open with why, „Drei Glocken Nudeln“ said stays one item, the mouse wheel over the add field and the tab pill scrolls the list: [docs/done/159-small-gaps.md](docs/done/159-small-gaps.md)
 - Job 162, legal and help texts follow the app (tester list, archived households, Alexa 12-month purge, Zugriffstoken): [docs/done/162-legal-copy-sync.md](docs/done/162-legal-copy-sync.md)
@@ -611,7 +611,7 @@ A short 504 from GitHub releases or dl.deno.land no longer fails the gitleaks, l
 
 ## Job 155: native store rating prompt
 
-Public store builds ask for the system rating dialog 3 s after a completed trip (3 or more own ticks), behind every gate of the brief; More gets „Hummlist bewerten“ / "Rate Hummlist" (iOS and Android) opening the store listing. iPhone release builds may ask (TestFlight never shows the dialog); Android asks only in the future Play production build with `STORE_RELEASE=true`; no device proof (no device or emulator on the runner). Not merged (the Lead merges). Details: [docs/done/155-review-prompt.md](docs/done/155-review-prompt.md).
+Public store builds ask for the system rating dialog 3 s after a completed trip (3 or more own ticks), behind every gate of the brief; More gets „Snacklist bewerten“ / "Rate Snacklist" (iOS and Android) opening the store listing. iPhone release builds may ask (TestFlight never shows the dialog); Android asks only in the future Play production build with `STORE_RELEASE=true`; no device proof (no device or emulator on the runner). Not merged (the Lead merges). Details: [docs/done/155-review-prompt.md](docs/done/155-review-prompt.md).
 
 ## Job 164: ios gate StoreKit simulator search
 
@@ -623,11 +623,11 @@ Each Siri and Alexa request now writes one log line on the server (`voice` new, 
 
 ## Job 170b: Alexa logs why a linked token is rejected
 
-A rejected Alexa link now logs its reason, as in `-> link invalid_token:expired` or `-> link invalid_token:not_oauth`, and so does a `SkillAccountLinked` event whose new token Hummlist rejects. `diagnose.sh` prints each reason with its next step. The runbook's X5 row and docs/ALEXA.md's troubleshooting table are split by reason. This supersedes #321 and carries all of it. Details: [docs/done/170b-alexa-link-reason.md](docs/done/170b-alexa-link-reason.md)
+A rejected Alexa link now logs its reason, as in `-> link invalid_token:expired` or `-> link invalid_token:not_oauth`, and so does a `SkillAccountLinked` event whose new token Snacklist rejects. `diagnose.sh` prints each reason with its next step. The runbook's X5 row and docs/ALEXA.md's troubleshooting table are split by reason. This supersedes #321 and carries all of it. Details: [docs/done/170b-alexa-link-reason.md](docs/done/170b-alexa-link-reason.md)
 
 ## Job 154: design hill-climb with a frozen rubric and a blind council (app and site)
 
-A researched, frozen 10-aspect rubric and three blind Opus judges (absolute scores plus a blind pairwise per step) climbed the app from 4 to 5 (mean 5.3 to 6.2, 11 kept steps: wrapping and iconed field errors, edit-sheet reflow, visible 44 px hex targets, hex label clearance at large text, 12 px overlines, aligned edges, the empty list heading) and hummlist.com from 4 to 7 (mean 6.6 to 7.7, 12 kept CSS steps: one depth style in dark mode, empty and 404 states, German hyphenation, hex form controls, even paddings and gaps, nav reflow, tracking). Two PRs: #300 (app, closed; its commit landed through #320) and #299 (site). Details: [docs/done/154-hc-design-v2-app.md](docs/done/154-hc-design-v2-app.md).
+A researched, frozen 10-aspect rubric and three blind Opus judges (absolute scores plus a blind pairwise per step) climbed the app from 4 to 5 (mean 5.3 to 6.2, 11 kept steps: wrapping and iconed field errors, edit-sheet reflow, visible 44 px hex targets, hex label clearance at large text, 12 px overlines, aligned edges, the empty list heading) and snacklist.app from 4 to 7 (mean 6.6 to 7.7, 12 kept CSS steps: one depth style in dark mode, empty and 404 states, German hyphenation, hex form controls, even paddings and gaps, nav reflow, tracking). Two PRs: #300 (app, closed; its commit landed through #320) and #299 (site). Details: [docs/done/154-hc-design-v2-app.md](docs/done/154-hc-design-v2-app.md).
 
 ## Job 154b: app design climb on harness v3
 

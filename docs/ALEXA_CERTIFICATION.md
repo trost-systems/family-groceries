@@ -11,17 +11,17 @@ live stage is untouched: the lead submits after Peter's device retest.
 
 | Field | Value | Checked by |
 | --- | --- | --- |
-| Name, invocation | „Hummlist“, `humm list`, every locale | `skill_package_test.ts` AC11 |
+| Name, invocation | „Snacklist“, `snacklist`, every locale | `skill_package_test.ts` AC11 |
 | Locales | de-DE (German model and replies), en-US, en-GB, en-AU, en-CA, en-IN (one English model and English replies) | `skill_package_test.ts`, `handler_test.ts` (English …), `e2e/tests/alexa-en.spec.ts` |
 | Availability | worldwide (`isAvailableWorldwide: true`, no country list; Peter Q38 AV3) | `skill_package_test.ts` |
 | Category | `SHOPPING` | |
 | Summary, description, keywords | per locale; keywords without retailer names (Legal N-23) | `skill_package_test.ts` (lengths) |
 | Example phrases | three per locale, each matching a sample utterance word for word | `skill_package_test.ts` |
 | Icons | 108 and 512 px PNG from the app icon, every locale | `design/app-icon/build.mjs --check` (lint gate) |
-| Privacy policy | de-DE `https://hummlist.com/datenschutz`, en-* `https://hummlist.com/en/privacy` (both 200 on 2026-11-02) | `skill_package_test.ts` |
+| Privacy policy | de-DE `https://snacklist.app/datenschutz`, en-* `https://snacklist.app/en/privacy` (both 200 on 2026-11-10; the 2026-11-02 run had the hummlist.com URLs) | `skill_package_test.ts` |
 | Terms of use | none yet: `/nutzungsbedingungen` and `/en/terms` answer 404 on 2026-11-02; the lead adds `termsOfUseUrl` once they are live (optional field) | `skill_package_test.ts` |
 | Purchases, ads, child-directed, export compliant | no, no, no, yes | `skill_package_test.ts` |
-| Uses personal info | yes: account linking signs in to a Hummlist account (e-mail), and the skill reads and writes that household's list | |
+| Uses personal info | yes: account linking signs in to a Snacklist account (e-mail), and the skill reads and writes that household's list | |
 | Premium | not mentioned anywhere in the package or in any reply, German or English; the lock lines say only that Alexa isn't available for the household (Alexa is free, Legal N-27; job 72 removes the lock) | `skill_package_test.ts` (package, `speech.ts`, `speech_en.ts`) |
 | Testing instructions | German and English, no credentials ("Test account credentials: see the certification test-account field", ADDENDUM 5 wording). **Not Ops' draft**: ADDENDUM 6 asks for `/workspace/hummlist/alexa-cert/testing-instructions-draft.txt` with its `<PASSWORT>`/`<PASSWORD>` placeholders, and that file is on the box only. Replace the text with the draft once it is copied (the test allows the placeholders, not a real password) | `skill_package_test.ts` |
 
@@ -38,7 +38,7 @@ ALEXA_SKILL_ID=<skill id> scripts/alexa/smoke.sh        # Amazon signs a LaunchR
 ```
 
 `alexa-simulate.sh` types, it does not speak: it shows whether an utterance reaches the skill and
-which intent it becomes, never whether Alexa hears „Hummlist“ right. Results go in the section
+which intent it becomes, never whether Alexa hears „Snacklist“ right. Results go in the section
 below.
 
 ## Results
@@ -87,11 +87,11 @@ The lead ran smoke.sh on the box on 2026-11-03: `PASS unlinked` (LinkAccount car
 Amazon). diagnose.sh then showed
 `21:42:37 POST 200 alexa: LaunchRequest - de-DE linked=false -> link`. So the endpoint and its
 signature check work. For a device, ALEXA.md „Troubleshooting“ says how to tell whether a spoken
-request reached Hummlist at all. On 2026-11-03 none did (DECISIONS „Job 91“).
+request reached Snacklist at all. On 2026-11-03 none did (DECISIONS „Job 91“).
 
 ## Left for the console (lead, after Peter's retest)
 
-1. The test account: a fresh Hummlist account with a household and a few items, its e-mail and
+1. The test account: a fresh Snacklist account with a household and a few items, its e-mail and
    password in the certification form's test-account field only.
 2. If Ops' testing-instructions draft replaces the text in `skill.json`: keep its
    `<PASSWORT>`/`<PASSWORD>` placeholders in the repo and write the credentials through SMAPI or

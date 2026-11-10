@@ -7,8 +7,8 @@ has a URL. Claims with no source, or only a weak one, are marked **unverified**.
 first-run steps, invite placement in onboarding and the email-based sharing of Bring!, AnyList,
 OurGroceries and Splitwise.
 
-Hummlist today (repo, for context): invites are 8-character codes, single use, valid 7 days
-(DECISIONS "Job 22"). `https://app.hummlist.com/join/<code>` opens the installed app through
+Snacklist today (repo, for context): invites are 8-character codes, single use, valid 7 days
+(DECISIONS "Job 22"). `https://app.snacklist.app/join/<code>` opens the installed app through
 Universal Links and App Links. Without the app, the same URL opens the **web app**, which can
 complete the join. `PendingInvite` keeps the code through an app kill, but not through an App
 Store install (`docs/DEEP_LINKS.md`). `preview_invite` already exists server-side.
@@ -39,7 +39,7 @@ The levers for a shared grocery list are:
   for a couple, so i is high for the first partner. After that, i depends on new groups (family,
   shared flat, club).
 - **c (conversion):** friction between tapping the link and seeing the shared list: install,
-  account, consent screens. This is the lever Hummlist controls most.
+  account, consent screens. This is the lever Snacklist controls most.
 - **Cycle time:** a partner usually joins within hours, so the cycle is short.
 
 ### 1.2 Published numbers (what exists, and what does not)
@@ -54,7 +54,7 @@ The levers for a shared grocery list are:
 | Notion | Template share-and-duplicate loop. All figures (e.g. "95 % organic") come from secondary blogs | https://blog.vortexsoftware.com/how-notion-cracked-the-template-viral-loop-code (secondary, **unverified** numbers) |
 | Bring!, Todoist, Cozi, Tricount | No published invite rate, K or share of members who invite | Gap (Bring! sizes are in the 168 file) |
 
-Bottom line: no shared-list app publishes K or invite-to-join conversion. Hummlist has to measure
+Bottom line: no shared-list app publishes K or invite-to-join conversion. Snacklist has to measure
 its own (PostHog: `invite_created` -> link opened -> `invite_accepted`).
 
 ### 1.3 Invite moments
@@ -63,14 +63,14 @@ its own (PostHog: `invite_created` -> link opened -> `invite_accepted`).
   advice comes from the same family of growth blogs, **weak**)
 - Bring! asks for an invite ~28 s into onboarding (in the 168 file). Splitwise and Doodle invite
   *as part of the task itself*: you cannot split a bill or schedule a poll without naming the
-  others. For Hummlist, the matching moments are:
+  others. For Snacklist, the matching moments are:
   1. Creating a household ("Who shops with you?").
   2. The first item added. The list now has something to share.
   3. Creating a second household (club, family). The invite is the reason to create it.
   4. After a shopping trip ("Lea could have taken the milk"). **Unverified** idea, not from a
      source.
 - Doodle and Spond show a second loop: **each invitee sees the product in use**. A club list that
-  members open from a link exposes every member to Hummlist.
+  members open from a link exposes every member to Snacklist.
 
 ### 1.4 Invite copy and the landing page
 - WhatsApp group link preview: group name, photo, member count, description, then a Join button.
@@ -94,7 +94,7 @@ its own (PostHog: `invite_created` -> link opened -> `invite_accepted`).
   (search found only vendor pages). The value is plausible but **unverified**. A/B test it if
   traffic allows.
 - Copy pattern seen across these apps (**synthesis, unverified as data**): "<Name> invites you to
-  <household> on Hummlist" + what you get ("shared shopping list, live sync") + one button. The
+  <household> on Snacklist" + what you get ("shared shopping list, live sync") + one button. The
   share-sheet message is written by the inviter, so pre-fill it in the inviter's voice
   ("Hier ist unsere Einkaufsliste: <link>").
 - Preview content: showing a few list items before joining leaks household data to anyone who
@@ -134,9 +134,9 @@ its own (PostHog: `invite_created` -> link opened -> `invite_accepted`).
 - Many vendors sell themselves as the replacement (AppsOnAir, Airbridge, Linkrunner, Dynalinks,
   Branch...): https://www.branch.io/resources/blog/firebase-dynamic-links-shutting-down ,
   https://linkrunner.io/blog/firebase-dynamic-links-migration-guide-2026-what-to-do-now-that-it-s-shut-down
-  (vendor). Hummlist does not need them (below).
+  (vendor). Snacklist does not need them (below).
 
-### 2.2 Installed app: Universal Links + App Links (Hummlist has these)
+### 2.2 Installed app: Universal Links + App Links (Snacklist has these)
 - Flutter supports both through its deep-linking support plus the platform cookbooks:
   https://docs.flutter.dev/ui/navigation/deep-linking
 - Known iOS gaps: Universal Links do not fire in some in-app browsers (Instagram, Pinterest,
@@ -151,9 +151,9 @@ its own (PostHog: `invite_created` -> link opened -> `invite_accepted`).
 ### 2.3 Carrying an invite through a store install: free options
 | Option | Platform | How | Cost and limits | Privacy |
 | --- | --- | --- | --- | --- |
-| **Join on the web first** | all | `/join/<code>` works in the browser. The invitee signs in on the web and joins; the server stores the membership. When they later install the app and sign in with the same account, the household is there | Free. Hummlist already does this. Needs the same sign-in method in both places | None (account data, no device matching) |
+| **Join on the web first** | all | `/join/<code>` works in the browser. The invitee signs in on the web and joins; the server stores the membership. When they later install the app and sign in with the same account, the household is there | Free. Snacklist already does this. Needs the same sign-in method in both places | None (account data, no device matching) |
 | **Play Install Referrer API** | Android | Landing page links to `play.google.com/store/apps/details?id=…&referrer=<url-encoded invite=CODE>`. On first launch the app reads `installReferrer` | Free Google library. Data kept **90 days**, read once after install; Play Store installs only. https://developer.android.com/google/play/installreferrer/library . Flutter wrappers: https://pub.dev/documentation/play_install_referrer/latest , https://pub.dev/documentation/flutter_play_install_referrer/latest/ . Link format: https://dub.co/docs/concepts/deep-links/deferred-deep-linking.md | Deterministic: the string the user's own click carried. No fingerprint |
-| **Smart App Banner `app-argument`** | iOS Safari | `<meta name="apple-itunes-app" content="app-id=…, app-argument=https://app.hummlist.com/join/CODE">` on the join page. Apple: after the download "the View button changes to an Open button, and tapping the banner opens the app while preserving the user's content from your website" | Free. Works only if the user goes back to Safari and taps Open. Not shown in in-app browsers or frames. https://developer.apple.com/documentation/webkit/promoting-apps-with-smart-app-banners | None |
+| **Smart App Banner `app-argument`** | iOS Safari | `<meta name="apple-itunes-app" content="app-id=…, app-argument=https://app.snacklist.app/join/CODE">` on the join page. Apple: after the download "the View button changes to an Open button, and tapping the banner opens the app while preserving the user's content from your website" | Free. Works only if the user goes back to Safari and taps Open. Not shown in in-app browsers or frames. https://developer.apple.com/documentation/webkit/promoting-apps-with-smart-app-banners | None |
 | **Clipboard handoff** | iOS (and Android) | Landing page button "Code kopieren & App laden" copies the link on a user tap. On first launch the app offers "Einladung einfügen" | Since iOS 16 a programmatic read shows the system "Allow Paste" prompt. A `UIPasteControl` button, the edit menu or a keyboard shortcut does not prompt. iOS 16.1 added a per-app Ask/Deny/Allow setting. https://www.branch.io/resources/blog/everything-you-need-to-know-about-ios-16-and-pasteboard-opt-ins/ (vendor), https://macrumors.com/2022/10/17/ios-16-1-paste-from-other-apps-settings . `detectPatterns`/`detectValues` (`probableWebURL`) read metadata without the prompt, so the app can check first and only offer the paste button when a URL is there: https://developer.apple.com/forums/thread/649996 , https://developer.apple.com/documentation/uikit/uipasteboard/detectionpattern/probableweburl.md . Flutter has no built-in `UIPasteControl`; it needs a platform view or channel (**unverified** that a maintained plugin exists) | Silent clipboard reads on launch look like snooping. Read only after a user tap |
 | **Code to type** | all | Landing page shows the 8-character code large; onboarding has "Ich habe einen Code" | Free, robust, some friction. Spond does exactly this (5-letter code) | None |
 | **App Clip** | iOS 17+ | A light join experience from the link; data goes to the full app through an App Group container or the keychain (iOS 15.4+) | The size limit is 100 MB for digital-only invocation with iOS 17 minimum, 15 MB for iOS 16: https://developer.apple.com/help/app-store-connect/reference/app-uploads/maximum-build-file-sizes . Flutter supports an App Clip target, with manual Xcode work: https://docs.flutter.dev/platform-integration/ios/ios-app-clip . Handoff: https://developer.apple.com/documentation/appclip/sharing-data-between-your-app-clip-and-your-full-app . The invocation URL is not forwarded on install from the card: https://github.com/AppsFlyerSDK/appsflyer-apple-app-clips-sample-app (vendor sample) | None |
@@ -196,7 +196,7 @@ its own (PostHog: `invite_created` -> link opened -> `invite_accepted`).
 
 Patterns:
 - **Top-left name or avatar that opens a list** (Slack desktop, Notion, Todoist): best for 2-5
-  groups. It shows the current group name all the time, which Hummlist needs because the list
+  groups. It shows the current group name all the time, which Snacklist needs because the list
   screen must say whose list it is.
 - **Bottom sheet with checkmark, role and member count** (most mobile apps): fits Flutter's modal
   sheet. The repo rule `popups-on-root-navigator` applies.
@@ -208,7 +208,7 @@ Patterns:
   that it works better.
 - **Default on launch**: no app documents it. Last used is the common behaviour (**unverified**).
   The Bring! voice switch hints at a "current list" state kept per user.
-- **Never show the old group's data under the new name** (screensdesign). In Hummlist this is the
+- **Never show the old group's data under the new name** (screensdesign). In Snacklist this is the
   known "shell state survives household switch" trap (memory note): key the list state on the
   household id.
 
@@ -235,7 +235,7 @@ Platform mechanics:
   Reports say it cannot be turned off once on (**unverified**).
   https://developer.apple.com/news/?id=ksfkdwpr
 - **RevenueCat**: an entitlement belongs to an App User ID. Using the household id as the App
-  User ID makes Premium follow the household; that is Hummlist's job-43 design. Store-account
+  User ID makes Premium follow the household; that is Snacklist's job-43 design. Store-account
   overlap (one Apple ID buying for two App User IDs) is handled by the project's
   "restore/transfer" setting.
   https://community.revenuecat.com/general-questions-7/1-store-account-multiple-app-user-id-with-different-subscription-plans-7410
@@ -263,7 +263,7 @@ What happens with several groups (synthesis):
 
 ---
 
-## Implications for Hummlist
+## Implications for Snacklist
 
 1. **Measure our own K.** Instrument `invite_created` -> join page opened (web, anonymous count,
    no consent needed for a server counter) -> `invite_accepted`, per invite moment. No benchmark
@@ -288,7 +288,7 @@ What happens with several groups (synthesis):
    could have one reusable link for clubs and the current single-use 7-day code for partners.
    This needs the rate limit and a "who joined" list.
 8. **Invite moments:** at household creation, after the first items, and as the reason to create
-   a second household. Pre-fill the share-sheet text in the inviter's voice. Hummlist still never
+   a second household. Pre-fill the share-sheet text in the inviter's voice. Snacklist still never
    sends anything itself (legal rule).
 9. **Switcher: household name top-left of the list, opening a bottom sheet** with a checkmark,
    member count, a "Premium" badge and "n neu" per household, plus "Haushalt erstellen" and
@@ -303,5 +303,5 @@ What happens with several groups (synthesis):
     if users ask (**untested**; no competitor documents it).
 12. **Clubs: do not price per member.** The comparable market is per team or group (TeamSnap) or
     free (Spond). A flat per-household Premium, perhaps a "club" tier later, fits. The viral value
-    of a 40-member club list (every member sees Hummlist, as with Doodle polls) is worth more
+    of a 40-member club list (every member sees Snacklist, as with Doodle polls) is worth more
     than seat fees.

@@ -12,8 +12,8 @@ Done from the box (details in the sections below):
   enabled. The "Supabase deploy" workflow redeploys from every push to
   `main` over the Management API and fails red when a credential is
   missing (section 1).
-- Web app on Vercel at `https://app.hummlist.com` (job 20;
-  `https://family-groceries-pied.vercel.app` still serves it as an alias), moved
+- Web app on Vercel at `https://app.snacklist.app` (job 174; `https://app.hummlist.com`
+  since job 20 and `https://family-groceries-pied.vercel.app` still serve it as aliases), moved
   only by a store release since 2026-10-29; `main` is on
   `https://preview.app.hummlist.com` behind Vercel login (section "Job 7: web
   hosting on Vercel", `DEPLOY.md` section "Web app"). Site URL,
@@ -64,16 +64,19 @@ supabase functions deploy --use-api --project-ref "$SUPABASE_PROJECT_REF"
 
 Done (job 7, 2026-10-23, Management API via `supabase/deploy/auth_urls.ts`):
 
-- Site URL: `https://app.hummlist.com` (set by the Engineering Lead on
-  2026-10-25, job 20; it was `https://family-groceries-pied.vercel.app`).
-- Redirect URLs: `https://app.hummlist.com` and `https://app.hummlist.com/**`,
+- Site URL: `https://app.snacklist.app` (set on 2026-11-10, job 174; it was
+  `https://app.hummlist.com` from 2026-10-25, job 20, and before that
+  `https://family-groceries-pied.vercel.app`).
+- Redirect URLs: `https://app.snacklist.app` and `https://app.snacklist.app/**`,
+  `https://app.hummlist.com` and `https://app.hummlist.com/**` (kept until R1),
   `https://family-groceries-pied.vercel.app/**`,
   `https://family-groceries-*-peter-trost.vercel.app/**` (Vercel previews
-  of this team), `com.hummlist.app://login-callback` and
+  of this team), `com.snacklist.app://login-callback`,
+  `com.hummlist.app://login-callback` (Hummlist builds, until R1) and
   `com.petertrost.familygroceries://login-callback` (builds from before
   job 20). No localhost entries on production (DECISIONS 7.9).
 - OAuth server: enabled, authorization path `/oauth/consent`, so MCP
-  clients land on `https://app.hummlist.com/oauth/consent`.
+  clients land on `https://app.snacklist.app/oauth/consent`.
 
 To change the URL later, rerun
 `deno run --allow-env --allow-net supabase/deploy/auth_urls.ts <new-url> --preview <pattern>`
@@ -175,7 +178,7 @@ The variable names are in `.env.example`.
     then. The script prints the expiry date. Native iOS sign-in keeps
     working without it.
 14. Done (job 7, job 20): the redirect URLs list the web app and both deep
-    links, `com.hummlist.app://login-callback` and the pre-rename
+    links, `com.snacklist.app://login-callback`, `com.hummlist.app://login-callback` (until R1) and the pre-rename
     `com.petertrost.familygroceries://login-callback` (section 2).
 
 ### The app
@@ -187,7 +190,7 @@ The variable names are in `.env.example`.
     { "GOOGLE_WEB_CLIENT_ID": "<web client id>",
       "GOOGLE_IOS_CLIENT_ID": "<ios client id>",
       "SIGN_IN_WITH_APPLE": "true",
-      "APP_URL": "https://app.hummlist.com" }
+      "APP_URL": "https://app.snacklist.app" }
     ```
 
     In `app/ios/Flutter/Auth.xcconfig`, set `GOOGLE_REVERSED_CLIENT_ID` to
@@ -214,7 +217,8 @@ enabled, dynamic client registration enabled, authorization path
 Done since: migrations and `mcp` deployed (section 1), web app hosted and
 Site URL set (section 2); an MCP client registered by DCR reaches
 `https://family-groceries-pied.vercel.app/oauth/consent` (job 7), since
-job 20 `https://app.hummlist.com/oauth/consent`.
+job 20 `https://app.hummlist.com/oauth/consent`, since job 174
+`https://app.snacklist.app/oauth/consent`.
 
 Still yours:
 
@@ -247,7 +251,7 @@ Still yours:
 The Shortcut itself needs no Apple account setting, but creating the token
 needs a running app on the hosted project: the TestFlight or Play build
 (job 4 release section below) or the web app at
-`https://app.hummlist.com`.
+`https://app.snacklist.app`.
 
 ## Job 4b: the microphone on a real phone
 
@@ -392,8 +396,9 @@ Done. The Vercel project `peter-trost/family-groceries` (created by
 Engineering Lead on 2026-10-23) is linked to this repo and builds every
 push from `vercel.json`:
 
-- Production: `https://app.hummlist.com` (custom domain since job 20), also
-  reachable as `https://family-groceries-pied.vercel.app`. Since 2026-10-29
+- Production: `https://app.snacklist.app` (custom domain since job 174), also
+  reachable as `https://app.hummlist.com` (job 20) and
+  `https://family-groceries-pied.vercel.app`. Since 2026-10-29
   the production branch is `release`, which `release.yml` moves when it ships
   a store build; `main` is on `https://preview.app.hummlist.com` behind
   Vercel Authentication (`DEPLOY.md`, section "Web app").
@@ -410,8 +415,8 @@ push from `vercel.json`:
   (after `cd e2e && npm ci`): SPA routes, cache headers, and the Google and
   Apple buttons reaching the providers' sign-in pages.
 
-Nothing is needed from you here. The custom domain `app.hummlist.com` is
-attached (job 20); for another one, rerun `auth_urls.ts` with it (section 2)
+Nothing is needed from you here. The custom domain `app.snacklist.app` is
+attached (job 174, next to `app.hummlist.com` from job 20); for another one, rerun `auth_urls.ts` with it (section 2)
 and change `APP_URL` in `app/config/auth.json`.
 
 ## Job 9: account deletion and data export
@@ -423,7 +428,7 @@ Three things need you.
 
 1. `app/web/konto-loeschen.html`: the public "Konto und Daten löschen"
    page Google Play asks for. After the merge it is served at
-   `https://app.hummlist.com/konto-loeschen.html` with
+   `https://app.snacklist.app/konto-loeschen.html` with
    `noindex` and a red ENTWURF banner. Check the wording, the developer
    name ("Peter Trost", which must match the Play listing), the support
    address `peter@petertrost.com` and the promise "innerhalb von 30 Tagen"
@@ -440,7 +445,7 @@ Apple wants the app to revoke Sign in with Apple tokens when a user deletes
 their account. The `account` function does that on iPhones, but only when
 it has the Sign in with Apple key. The function deploys with every merge to
 `main`. Until the secrets below exist, it deletes accounts without revoking,
-and the app tells Apple users to remove "Hummlist" in their Apple ID
+and the app tells Apple users to remove "Snacklist" in their Apple ID
 settings (Apple's documented fallback, TN3194).
 
 3. Set the function secrets once, from your Mac or the build box (the key
@@ -454,9 +459,9 @@ settings (Apple's documented fallback, TN3194).
    supabase secrets list --project-ref jdwqrallbpdbshrdhenk | grep APPLE_
    ```
 
-   The function tries the bundle IDs `com.hummlist.app` and
-   `com.petertrost.familygroceries` in turn (job 20), so the key must cover
-   both App IDs (job 20, step 3). An `APPLE_BUNDLE_ID` secret from before
+   The function tries the bundle IDs `com.hummlist.app`, `com.snacklist.app` and
+   `com.petertrost.familygroceries` in turn (job 20, job 174), so the key must cover
+   all three App IDs (job 20, step 3). An `APPLE_BUNDLE_ID` secret from before
    job 20 is ignored; remove it with `supabase secrets unset`. Unlike
    the Supabase Apple client secret, nothing here expires: the function
    signs a fresh 5-minute client secret per deletion.
@@ -647,17 +652,18 @@ steps are the Lead's, with you only signing in
    only the web build proves this today.
 
 
-## Job 24a: guides on hummlist.com
+## Job 24a: guides on snacklist.app
 
 The guides site is `site/` on `main`. The Lead creates its Vercel project
 (Root Directory `site`, everything else from `site/vercel.json`) and
-attaches hummlist.com and www. Yours:
+attaches the domain and www (snacklist.app since job 174; hummlist.com redirects
+there). Yours:
 
 1. **Remove noindex at the beta launch.** Every page carries
    `X-Robots-Tag: noindex` so search engines skip it while the pages change.
    At launch, delete that header entry from `site/vercel.json` (or ask a
    job to).
-2. **The support@hummlist.com mailbox must receive mail** before the site
+2. **The support@snacklist.app mailbox must receive mail** before the site
    goes live: the Impressum lists it as the contact address.
 
 ## Job 16: the design H list
@@ -695,9 +701,9 @@ box, and the agent made the change with it:
 ## Job 17: legal pages and the guides site
 
 - **Datenschutz.** Done in job 33b: More → Datenschutz, the login footer
-  and the consent screen open https://hummlist.com/datenschutz (English:
+  and the consent screen open https://snacklist.app/datenschutz (English:
   /en/privacy), the pages job 33a publishes.
-- **Impressum.** More → Impressum opens https://hummlist.com/impressum
+- **Impressum.** More → Impressum opens https://snacklist.app/impressum
   (English: /en/imprint), the page job 24a wrote in `site/`. On 2026-10-29
   hummlist.com answered 404 for every path, so the site is not deployed
   yet. Deploying it (docs/DEPLOY.md, the site's Vercel project) makes the
@@ -799,7 +805,7 @@ Live with the next release; nothing to switch on. Details in [FEEDBACK.md](FEEDB
    app version and build, platform and OS version (on the web the browser family and OS), the
    app language, the name of the screen they came from, their account id and household id. No
    list items, no screenshots, no device model; the e-mail is not copied. Stored at Supabase
-   (EU, Frankfurt), readable only by Peter and the Hummlist PM. Deleted 12 months after sending
+   (EU, Frankfurt), readable only by Peter and the Snacklist PM. Deleted 12 months after sending
    (daily cleanup), at once when the account is deleted; the encrypted nightly backups keep a
    deleted note up to 90 more days. Contact happens only by Peter and only when the user ticked
    "Peter darf mich dazu kontaktieren". Legal basis: the user sends it on purpose (Art. 6(1)(b)
@@ -814,18 +820,18 @@ Live with the next release; nothing to switch on. Details in [FEEDBACK.md](FEEDB
 
 ## Job 22: onboarding and invites
 
-Live with the next release. Invite links open the installed apps only once app.hummlist.com
+Live with the next release. Invite links open the installed apps only once app.snacklist.app
 serves `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`, that is
 after the next *dispatched* Release run (the web follows the store release). Check them with
-`node e2e/web-smoke.mjs https://app.hummlist.com`. The Apple and Play steps for the domains were
+`node e2e/web-smoke.mjs https://app.snacklist.app`. The Apple and Play steps for the domains were
 already done (NEEDS_LEAD L3 and L6).
 
 1. **Device check, iPhone and Android** (no simulator or emulator on the build machines). On
    each phone, with the TestFlight / Play internal build installed and signed out:
    1. On a second device, create a household, tap "Partner einladen" and send the link to the
       phone (e.g. by a message to yourself).
-   2. Tap the link on the phone: the Hummlist app opens (not the browser) on the sign-in screen.
-      If the browser opens instead, long-press the link and choose "In Hummlist öffnen", and
+   2. Tap the link on the phone: the Snacklist app opens (not the browser) on the sign-in screen.
+      If the browser opens instead, long-press the link and choose "In Snacklist öffnen", and
       tell the lead (the domain files are not live yet).
    3. Sign in with Apple. After the consent screen comes the join screen with the household's
       name and "Haushalt beitreten". Join: the shared list appears; an item added on the other
@@ -839,7 +845,7 @@ already done (NEEDS_LEAD L3 and L6).
    7. On a phone already in a household, open an invite link: "Du bist schon in einem Haushalt"
       with Abbrechen (prominent) and Haushalt beitreten.
    8. In Mehr, "Partner einladen": "Neue Einladung" opens the share sheet; the text reads "Komm
-      in unseren Hummlist-Haushalt: https://app.hummlist.com/join/… · Code: …". Widerrufen
+      in unseren Snacklist-Haushalt: https://app.snacklist.app/join/… · Code: …". Widerrufen
       removes it; its link then says "Dieser Code ist ungültig oder abgelaufen."
    9. With the phone set to English, the same screens are in English.
 2. **Country-specific store sets for Austria and Switzerland later?** Today everyone gets dm,
@@ -850,7 +856,7 @@ already done (NEEDS_LEAD L3 and L6).
    code, who created it, when, when it expires (7 days), whether and when it was used and by
    whom, and when it was revoked. Failed code entries are logged with the account id and time
    for one day, to rate-limit guessing (10 per hour). Invites are part of "Meine Daten
-   exportieren" for the person who created them. Nothing is sent by Hummlist; the user shares
+   exportieren" for the person who created them. Nothing is sent by Snacklist; the user shares
    the link themselves.
 
 ## Job 33b: legal fixes in the app
@@ -863,7 +869,7 @@ every changed text in German and English under "Wording (approved by Peter
 2026-10-30)".
 
 1. **Nothing to approve any more.** Before a public release, enter
-   https://hummlist.com/datenschutz as the privacy policy URL in Play Console
+   https://snacklist.app/datenschutz as the privacy policy URL in Play Console
    and App Store Connect (review H-01).
 2. **Optional (H-21): split usage data and error reports into two
    switches. Not built; say if you want it.
@@ -873,7 +879,7 @@ every changed text in German and English under "Wording (approved by Peter
 ## Job 33a: privacy policy and deletion page (2026-10-30)
 
 PR: see BOARD.md (`33a-legal-site`). Nothing is live until the PR merges, and
-hummlist.com's production build fails while a `[PETER: …]` is left.
+snacklist.app's production build fails while a `[PETER: …]` is left.
 
 - Wording approved 2026-10-30 07:51. The deletion page is published with
   the next web release (no ENTWURF banner, no noindex).
@@ -889,15 +895,15 @@ hummlist.com's production build fails while a `[PETER: …]` is left.
   transfer basis for Anysphere** (section 13). Anysphere is not
   DPF-certified, and its DPA with SCCs covers Teams/Enterprise contracts
   (MSA), not an individual subscription. Pick the basis, e.g. a plan with
-  the DPA, then tell the lead the exact wording. hummlist.com publishes the policy only once all are
+  the DPA, then tell the lead the exact wording. snacklist.app publishes the policy only once all are
   filled (Vercel's production build refuses otherwise); merging alone does
   not.
 - **Google Play payments profile:** change the address from Yalovastraße 7
   to Yalovastraße 5 (H-14).
 - **USt-IdNr:** do you have one? Then the Impressum needs it (DDG §5 Nr. 6).
-- **After merge:** enter https://hummlist.com/datenschutz in Play Console
+- **After merge:** enter https://snacklist.app/datenschutz in Play Console
   (App content, Privacy policy) and App Store Connect (Privacy Policy URL);
-  https://hummlist.com/datenschutz#rechte is the User Privacy Choices URL.
+  https://snacklist.app/datenschutz#rechte is the User Privacy Choices URL.
 - **Follow-ups, your decisions:** move the backups off the public repo (H-11:
   make the repo private, or private EU storage); a retention period and cron
   for the list history `item_events` (H-12); pin the edge functions to
@@ -908,11 +914,11 @@ hummlist.com's production build fails while a `[PETER: …]` is left.
 ## Job 31: Alexa skill "Hummlist"
 
 Everything on our side is built and tested on the CI stack ([ALEXA.md](ALEXA.md)). These steps
-need you or Hummlist Ops at Amazon; nothing was done there.
+need you or Snacklist Ops at Amazon; nothing was done there.
 
 1. **Amazon Developer account on hello@hummlist.com** (decided). You create it and do the
-   sign-in and 2FA once; Hummlist Ops takes over the console after that.
-2. **Create and deploy the skill (Hummlist Ops, after 1).** The exact commands are in
+   sign-in and 2FA once; Snacklist Ops takes over the console after that.
+2. **Create and deploy the skill (Snacklist Ops, after 1).** The exact commands are in
    [ALEXA.md, "Deploy"](ALEXA.md#deploy-after-peters-amazon-developer-sign-in): `ask configure`,
    `ask deploy --target skill-metadata` from `alexa/`, `scripts/alexa-oauth-client.sh <vendor id>`
    (registers the account-linking client; prints its secret once, straight into the Alexa
@@ -926,17 +932,17 @@ need you or Hummlist Ops at Amazon; nothing was done there.
    (Milch visible in the app within 5 s), AC3 (spoken read-back), AC12 (the four of you use it
    through the invite).
 4. **Certification (needs your yes, and the public privacy policy naming the skill).** Job 24's
-   privacy page must say: the Alexa skill "Hummlist" sends what you say to Amazon, which turns it
-   into text; Hummlist receives only that text for the items to add or the request to read the
+   privacy page must say: the Alexa skill "Snacklist" sends what you say to Amazon, which turns it
+   into text; Snacklist receives only that text for the items to add or the request to read the
    list, from the account you linked, and stores the items like any others; the link can be
    removed in the Alexa app or under Mehr → Zugänge; with analytics consent in the app, an add
-   over Alexa is counted without its content. Hummlist Ops prepares the certification form
+   over Alexa is counted without its content. Snacklist Ops prepares the certification form
    (privacy URL, testing instructions draft in ALEXA.md, a test account) as a draft for your
-   review. Amazon may ask why the invocation name is one word: "Hummlist" is the app's brand.
-5. **Approve the skill name and invocation name "Hummlist"** (`hummlist`), as in
+   review. Amazon may ask why the invocation name is one word: "Snacklist" is the app's brand.
+5. **Approve the skill name and invocation name "Snacklist"** (`snacklist`), as in
    `alexa/skill-package/skill.json` and `interactionModels/custom/de-DE.json`, and the example
-   phrases "Alexa, sag Hummlist, füg Milch und Eier hinzu", "Alexa, frag Hummlist, was auf der
-   Liste steht", "Alexa, öffne Hummlist".
+   phrases "Alexa, sag Snacklist, füg Milch und Eier hinzu", "Alexa, frag Snacklist, was auf der
+   Liste steht", "Alexa, öffne Snacklist".
 
 ## Job 31b: Alexa skill deployed (2026-10-30)
 
@@ -953,7 +959,7 @@ are on, the function has the skill id, and a beta test is running with no tester
    skill, while Amazon-signed requests through `invoke-skill-end-point` reach it and pass. If
    the console says the same, your amazon.com account probably has no Alexa setup yet: sign in
    once in the Alexa app (or alexa.amazon.com) with that account, then try again.
-2. **Beta invites** stay with Hummlist Ops (job 31 step 3), after your yes to the tester list.
+2. **Beta invites** stay with Snacklist Ops (job 31 step 3), after your yes to the tester list.
 3. **Certification** stays off until you say yes (job 31 step 4).
 
 ## Job 24: help and contact page (2026-10-30)
@@ -964,18 +970,18 @@ data map behind the store forms.
 - ~~**Approve the text** of the help page, German and English~~ **Done 2026-10-30, 15:40
   CET:** Peter approved `site/content/legal/support.md` and `support-en.md` ("support page
   approved.").
-- **Support address:** the page uses support@hummlist.com, as the Impressum does. Keep it, or
+- **Support address:** the page uses support@snacklist.app, as the Impressum does. Keep it, or
   name another (hello@ / feedback@ exist per 33a's policy). No placeholder is left on the page.
 - ~~**OK to publish**~~ **Done 2026-10-30 (Job 24 publish PR):** both files are `draft: false`,
   the footer links the page (`supportPublished` in `site/config.json`), and
   `supportPagePublished = true` in `app/lib/app/guides.dart`, so More shows "Hilfe & Kontakt" in
-  release builds. hummlist.com/support and /en/support are live (still noindex, like every page).
+  release builds. snacklist.app/support and /en/support are live (still noindex, like every page).
 - **Data map:** `docs/PRIVACY_DATA_MAP.md` collects what is stored where, why and how long. Job
   14 fills the App Store privacy label and Play's data safety form from it. It has no open
   `[PETER: …]` items.
 - Optional: have a lawyer or a generator check the policy and this page.
 
-## Job 25: Hummlist Lifetime (in-app purchase, sandbox)
+## Job 25: Snacklist Lifetime (in-app purchase, sandbox)
 
 Everything that needs no money, contract or identity is built (docs/PURCHASES.md). Until the items
 below are done the purchase flow is inert: the app says "not available yet", the server answers
@@ -995,8 +1001,8 @@ below are done the purchase flow is inert: the app says "not available yet", the
    the first USD 1M a year once the developer account is in an account group (Play Console →
    Settings → Account groups). The revenue estimate assumes 15 % (docs/ANALYTICS.md).
 4. **Confirm or change the product decisions** (DECISIONS 25.1 to 25.5):
-   - 25.1 One non-consumable, id `com.hummlist.app.lifetime` on both stores, name "Hummlist
-     Lifetime" (DE and EN), EUR 9.99 with Germany as base; other countries from Apple's and
+   - 25.1 One non-consumable, id `com.snacklist.app.lifetime` on both stores (Hummlist builds:
+     `com.hummlist.app.lifetime` until R1), name "Snacklist Lifetime" (DE and EN), EUR 9.99 with Germany as base; other countries from Apple's and
      Google's automatic prices (AT and CH are printed by the setup scripts once they can run).
    - 25.2 The unlock is the household's (both partners) and stays with the household where it
      was bought, also when the buyer leaves or deletes the account. **Answered by Peter
@@ -1007,13 +1013,13 @@ below are done the purchase flow is inert: the app says "not available yet", the
    - 25.5 Web: no buying; More shows that it is in the iOS and Android app, and the unlocked state.
 5. **Approve the privacy text** for purchases, German and English: draft section 5a in
    `site/content/legal/datenschutz-kaeufe.md` and `privacy-purchases.md` (preview only, banner
-   "ENTWURF"). It says the anonymous transaction record is kept while Hummlist runs (against
+   "ENTWURF"). It says the anonymous transaction record is kept while Snacklist runs (against
    double use and to match refunds); confirm that period or name one. Then a small PR moves the
    text into the policy. Not legal advice; Apple sells as commissionaire and Google as merchant
    of record, so we keep no tax records about buyers (DECISIONS 25.9). Your tax adviser may want
    to confirm that for your bookkeeping of the store payouts.
 6. **Say yes to the store screen copy** (draft): "Ein Kauf, für euren ganzen Haushalt …" on the
-   Hummlist Lifetime page (`app/l10n/app_de.arb`, keys `lifetime…`), and the store description
+   Snacklist Lifetime page (`app/l10n/app_de.arb`, keys `lifetime…`), and the store description
    "Ein Kauf für den ganzen Haushalt." / "One purchase for the whole household."
    (`scripts/iap/product.ts`).
 7. **Sandbox purchase on a device** (with the Lead, after NEEDS_LEAD Job 25): a TestFlight
@@ -1032,7 +1038,7 @@ below are done the purchase flow is inert: the app says "not available yet", the
    **Answered by Peter 2026-10-31:** keep them; testers also get free grants that stay with their
    households (DECISIONS 43.12, 43.13).
 
-## Job 43: Hummlist Lifetime, household-bound (model A)
+## Job 43: Snacklist Lifetime, household-bound (model A)
 
 Built as decided on 2026-10-31 (DECISIONS "Job 43"), on RevenueCat. Four calls are left for you:
 
@@ -1051,7 +1057,7 @@ Built as decided on 2026-10-31 (DECISIONS "Job 43"), on RevenueCat. Four calls a
 3. **Google refund notifications need a billed Cloud project.** RevenueCat learns of Play
    purchases and refunds in real time through a Pub/Sub topic (NEEDS_LEAD "Job 43 – RevenueCat
    setup", step 4). Pub/Sub needs a Google Cloud project with billing enabled, which job 25 avoided
-   (DECISIONS 25.8: no paid resources). At Hummlist's volume it stays inside Pub/Sub's free tier,
+   (DECISIONS 25.8: no paid resources). At Snacklist's volume it stays inside Pub/Sub's free tier,
    but a billing account has to be attached. **Allow it, or launch on Android without real-time
    notifications** (a Play refund then reaches us only as RevenueCat finds it)?
 4. **Approve the new purchase legal texts, then the purchase screen goes on.** Every build hides
@@ -1069,20 +1075,20 @@ Built as decided on 2026-10-31 (DECISIONS "Job 43"), on RevenueCat. Four calls a
    Anpassen) and the launch screen. The changelog note "Neues Design …" stays out of the public
    changelog until you say it's good: then the Lead sets `new-design` to `"released": true` in
    `releases/flags.json`.
-2. **The Widgetbook** (the component catalogue) is not on hummlist.com. Open the latest
+2. **The Widgetbook** (the component catalogue) is not on snacklist.app. Open the latest
    `widgetbook` artifact of the "Widgetbook" workflow on GitHub Actions (docs/DESIGN.md,
    "Widgetbook"), unzip it and serve it, or ask the Lead for a link.
 ## Job 53: approve the first homepage (2026-11-01)
 
 PR #157 adds the landing pages `/de` and `/en` and points `/` at them. It is not merged: every
-push to `main` goes live on hummlist.com.
+push to `main` goes live on snacklist.app.
 
 1. **Look at the preview** (Vercel login):
    https://hummlist-site-git-job-53-homepage-v1-peter-trost.vercel.app/de and `/en`, in light and
    dark mode, on the phone and the desktop. The guides, the changelog and the legal pages now
    share the new header and footer; their texts are unchanged.
 2. **Copy is a draft.** `site/COPY_NEEDED.md` lists every new or changed string (DE and EN) for
-   Hummlist Launch. Approve them as they are, or have Launch change them in
+   Snacklist Launch. Approve them as they are, or have Launch change them in
    `site/content/landing/copy.yml`. The Siri card says „Bald“ / "Coming soon" until native Siri
    (job 51) is in the stores.
 3. **Merge** when you're happy: on the box, under the merge lock,
@@ -1108,8 +1114,10 @@ push to `main` goes live on hummlist.com.
 
 ## Job 63: Home Screen widgets (2026-11-01)
 
-The iOS widget is a new app extension, `com.hummlist.app.HomeWidget`, that
-reads the list from the App Group `group.com.hummlist.app`. The App Store
+The iOS widget is an app extension, `com.snacklist.app.HomeWidget`, that
+reads the list from the App Group `group.com.snacklist.app` (Hummlist builds:
+`com.hummlist.app.HomeWidget` and `group.com.hummlist.app`, which the steps below
+registered on 2026-11-01). The App Store
 Connect API key can register an App ID but cannot create an App Group or
 assign one to an App ID, so these steps are in the browser. Until they are
 done and the profiles are renewed, the iOS release on `main` fails in
@@ -1147,7 +1155,7 @@ before step 7.
 Then the device test, on an iPhone (TestFlight build) and an Android phone:
 
 - [ ] Add the small and the medium widget (iPhone: Bearbeiten → Widget
-  hinzufügen → Hummlist; Android: Widgets → Hummlist, 2x2 and 4x2).
+  hinzufügen → Snacklist; Android: Widgets → Snacklist, 2x2 and 4x2).
 - [ ] Both show the open count and the next items; medium shows the store
   pills with the store's full name and the Add button.
 - [ ] Add and tick in the app: the count and rows follow within a second or
@@ -1160,11 +1168,12 @@ Then the device test, on an iPhone (TestFlight build) and an Android phone:
 - [ ] If all is well, set `home-widgets` to `"released": true` in
   `releases/flags.json` and remove `draft: true` from both widget guides.
 
-## Job 66: deep links (app.hummlist.com opens the app)
+## Job 66: deep links (app.snacklist.app opens the app)
 
 Nothing to set up: Associated Domains is on for `com.hummlist.app` (L6, again confirmed by Ops on
-2026-11-02 for job 63) and Google already verifies app.hummlist.com for the Play signing key. The
-new paths open the iPhone app once app.hummlist.com serves the new
+2026-11-02 for job 63) and Google already verifies app.hummlist.com for the Play signing key
+(Hummlist builds; the old invite links on app.hummlist.com keep working until R1). The
+new paths open the iPhone app once app.snacklist.app serves the new
 `/.well-known/apple-app-site-association`, that is with the next *dispatched* Release run (the
 web follows the store release), and Apple's CDN has fetched it (up to a day). Android needs only
 the new build. Route table: `docs/DEEP_LINKS.md`.
@@ -1172,21 +1181,21 @@ the new build. Route table: `docs/DEEP_LINKS.md`.
 1. **Device check, iPhone and Android** (no simulator or emulator on the build machines), with
    the TestFlight / Play internal build of this release installed. Send yourself these links in
    a message (Notes or Mail work too; typing them into Safari does not trigger the app):
-   `https://app.hummlist.com/more/invites`, `https://app.hummlist.com/add`,
-   `https://app.hummlist.com/more/settings`, `https://app.hummlist.com/list`,
-   `https://app.hummlist.com/irgendwas` and `https://app.hummlist.com/stores/<id>` (the id of one
+   `https://app.snacklist.app/more/invites`, `https://app.snacklist.app/add`,
+   `https://app.snacklist.app/more/settings`, `https://app.snacklist.app/list`,
+   `https://app.snacklist.app/irgendwas` and `https://app.snacklist.app/stores/<id>` (the id of one
    of your stores: `select id, name from stores` in the SQL editor, or ask the lead).
-   1. Signed in: each link opens the Hummlist app (not the browser). `/more/invites` shows
+   1. Signed in: each link opens the Snacklist app (not the browser). `/more/invites` shows
       „Einladungen“, `/add` the list with the add field open, `/more/settings` „Einstellungen“,
       `/list` and `/irgendwas` the list, `/stores/<id>` the list at that store.
    2. Signed out (Mehr → Konto → „Abmelden“): tap `/more/invites`. The app opens on „Anmelden“;
       sign in with Apple or Google: „Einladungen“ opens.
-   3. If the browser opens instead: long-press the link, choose „In Hummlist öffnen“, and tell the
+   3. If the browser opens instead: long-press the link, choose „In Snacklist öffnen“, and tell the
       lead which link and phone (the domain file is not live yet, or Apple has not fetched it).
    4. Invite links (`/join/<code>`) and sign-in by email link still work as before (job 22 list).
 
-   Not checked on a device yet: the Associated Domains entitlement (`applinks:app.hummlist.com`
-   in `Runner.entitlements`) and the Android filter were checked by reading the files and by
+   Not checked on a device yet: the Associated Domains entitlement (`applinks:app.snacklist.app` and
+   `applinks:app.hummlist.com` in `Runner.entitlements`) and the Android filter were checked by reading the files and by
    `deep_links_config_test.dart`; the routing itself by the web build (`e2e/tests/deep-links.spec.ts`).
 ## Job 67: the paywall release (2026-11-02)
 
@@ -1288,12 +1297,12 @@ after the lead merges; nothing was uploaded by this job):
    hinzufügen“, „Meine Hummlist vorlesen“, „Hummlist öffnen“.
 3. **iPhones on iOS 15 or 16** no longer get updates. Nothing to do; they keep the last build and
    the Shortcut recipe.
-## Job 82: the hummlist.com waitlist (2026-11-02)
+## Job 82: the snacklist.app waitlist (2026-11-02)
 
 Built and off (`docs/WAITLIST.md`). Three steps turn it on, in this order. Nothing here costs
 money. Keep every secret out of the repo, PR texts and chats.
 
-1. **Resend key** (only you can make it): in Resend, domain hummlist.com, create an API key with
+1. **Resend key** (only you can make it): in Resend, domain snacklist.app, create an API key with
    "Sending access" for that domain. Check that open and click tracking are off for the domain.
 2. **Supabase secrets** (project `jdwqrallbpdbshrdhenk`, Edge Functions › Secrets, or
    `supabase secrets set --project-ref jdwqrallbpdbshrdhenk ...`):
@@ -1302,13 +1311,13 @@ money. Keep every secret out of the repo, PR texts and chats.
      into Vercel in step 3.
    - `WAITLIST_HMAC_SECRET`: another random value. Never change it later: it signs every
      unsubscribe link and the proof records.
-   - Leave `WAITLIST_MAIL_ALLOW` unset while testing: then only `hello+…@hummlist.com`
-     addresses are stored and mailed. Set it to `*` on the day the waitlist goes public.
-3. **Vercel** (project of hummlist.com, Settings › Environment Variables), first for **Preview**
+   - Leave `WAITLIST_MAIL_ALLOW` unset while testing: then only `test@snacklist.app`, `test+…@snacklist.app`
+     and (until after the weekend) `hello+…@hummlist.com` addresses are stored and mailed. Set it to `*` on the day the waitlist goes public.
+3. **Vercel** (project of snacklist.app, `hummlist-site`, Settings › Environment Variables), first for **Preview**
    only:
    - `WAITLIST_UPSTREAM_URL` = `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/waitlist`
    - `WAITLIST_PROXY_SECRET` = the value from step 2.
-   Then sign up on the PR's preview with a `hello+waitlisttest…@hummlist.com` address, confirm,
+   Then sign up on the PR's preview with a `test+waitlisttest…@snacklist.app` address, confirm,
    and unsubscribe. Region proof: `curl -si -X POST <preview>/api/waitlist ...` with your Vercel
    login's bypass, and check that `x-vercel-id` contains `::fra1::`; save the output to
    `docs/legal/waitlist-region-proof.txt` (Addendum 4).
@@ -1321,7 +1330,7 @@ money. Keep every secret out of the repo, PR texts and chats.
 Off again: unset `WAITLIST_PROXY_SECRET` in Supabase (every request 404 at once, the form says it
 didn't work); taking the form off the page is a PR (revert, or another stage).
 
-Requests by mail: an unsubscribe or deletion request at support@hummlist.com is yours the same day
+Requests by mail: an unsubscribe or deletion request at support@snacklist.app is yours the same day
 (Legal). Without the person's link, delete by SQL in the SQL editor (this writes the proof
 record for a confirmed row):
 `select public.waitlist_unsubscribe(id, now()) from public.waitlist where lower(email) = lower('<address>');`
@@ -1367,7 +1376,7 @@ debug builds; Android only for an app installed from Play).
 ## Job 149: deleting single items, after the edit sheet lost Löschen (2026-11-06)
 
 The edit sheet has no Löschen any more (your call, t612u). The public deletion page
-`app.hummlist.com/konto-loeschen.html#einzelne-daten` (Legal N-11, approved Nov 1) said „Tippe auf
+`app.snacklist.app/konto-loeschen.html#einzelne-daten` (Legal N-11, approved Nov 1) said „Tippe auf
 Löschen“ in that sheet. It now says: tick an item to take it off the list; with a screen reader
 each item has the action Löschen (with Rückgängig); single items and history entries are deleted
 on request by email. A ticked item stays under „Zuletzt verwendet“, so on the web a sighted user
@@ -1393,8 +1402,8 @@ order, with the expected answer and a fix for each failure. It replaces the open
 ## Job 172: „26 Artikel auf deiner Einkaufsliste“ was Alexa's own list (2026-11-08)
 
 The answer you heard at about 14:35 did not come from Hummlist: no read request reached the skill
-after your add at 14:33, and Hummlist never says „Artikel“ (it says „Auf der Hummlist stehen 3
-Sachen: …“). Alexa's built-in shopping list answered. Hummlist's read-back (Alexa, Siri, the AI
+after your add at 14:33, and the skill never says „Artikel“ (it said „Auf der Hummlist stehen 3
+Sachen: …“, now „Auf der Snacklist stehen …“). Alexa's built-in shopping list answered. Snacklist's read-back (Alexa, Siri, the AI
 assistants) counts only open items; a test now holds that with ticked items present.
 
 - [ ] Optional: Alexa app › Listen › Einkaufsliste. If it holds 26 old entries, clear them, so
@@ -1429,7 +1438,7 @@ Built and merged (#327, #332, #333). What only Peter can do:
 3. **Play Console "Data safety".** The Android app now includes Google's Play Install Referrer
    library (`play_install_referrer`), read once on the first start, keeping only `invite=<code>`
    on the device. Check whether the Data safety form needs an answer for it (it is Google's own
-   API; nothing leaves the device to Hummlist beyond the join that the user then does).
+   API; nothing leaves the device to Snacklist beyond the join that the user then does).
 4. **Decide later (product):** a removed member can be re-invited by any member after 30 days
    (removal records are purged for privacy; DECISIONS 169b W2 item 10); a club has no signal for
    open join requests outside More → household; any member can rename or delete a list or rename
@@ -1518,6 +1527,9 @@ Built and merged (#327, #332, #333). What only Peter can do:
    consent texts still name support@, hello@ and feedback@hummlist.com: the snacklist.app
    mailboxes don't exist yet. When they do (S3: Workspace secondary domain, Resend), say which
    addresses Snacklist uses; one PR then swaps them together with the privacy and imprint pages.
+   Done the same day: the mailboxes exist, mail goes out from hello@snacklist.app (#356 to #358),
+   and the final sweep put support@, hello@ and feedback@snacklist.app in the app, the legal and
+   support pages.
 2. **Siri's alternative names, on your iPhone.** Siri gets „Snacklist“ as the spoken name and,
    for what it may write instead, de „Snack List“, „Snäcklist“, „Snecklist“ and en „Snack List“,
    „Snack-list“, „Snack Lists“. The brief also listed „Snacklist“ itself; the repo's Siri checks
@@ -1531,6 +1543,9 @@ Built and merged (#327, #332, #333). What only Peter can do:
    Trost (Hummlist)“, sender „Peter von Hummlist“). Those consent texts are versioned records the
    waitlist function checks, so a Snacklist version goes in together with the new mail sender
    (S3). Say if the waitlist should rather stay all-Hummlist until then.
+   Done the same day: the sender is „Peter · Snacklist“ (#357), and the final sweep added new
+   consent text versions (`waitlist-*-v3`, `waitlist-confirm-*-v2`) with only the name and
+   address swapped.
 4. **Apple's sign-in list may still say Hummlist.** After an account deletion the app tells
    Apple users to remove „Snacklist“ under „Mit Apple anmelden“. Apple shows the name of the
    primary App ID or Services ID the user signed in with; Snacklist's App ID is grouped under

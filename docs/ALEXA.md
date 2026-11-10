@@ -13,7 +13,7 @@ and eggs" does the same in English (job 69). Certification readiness:
 | Skill ids | Hummlist `amzn1.ask.skill.fee316d1-e9c1-44a4-a06e-955fbda63a1b` (job 31b), Snacklist `amzn1.ask.skill.ad766331-e979-4a6e-95f1-30198b0a34cb` (job 174, development only). The hosted `ALEXA_SKILL_ID` lists both |
 | Endpoint (and skill events) | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa` (`sslCertificateType: Wildcard`) |
 | Function | [`supabase/functions/alexa/`](../supabase/functions/alexa/) |
-| Replies | The quoted replies below are the Snacklist wording of the speech PR #353. Until it is deployed, the function still says „Hummlist“ in their place |
+| Replies | The quoted replies below are the Snacklist wording of the speech PR #353 (deployed 2026-11-10) |
 | Skill package | [`alexa/skill-package/`](../alexa/skill-package/) (`skill.json`, `interactionModels/custom/de-DE.json` and the five identical `en-*.json`, icons from `design/app-icon/build.mjs`), [`alexa/ask-resources.json`](../alexa/ask-resources.json) |
 | Account linking | [`alexa/account-linking.json`](../alexa/account-linking.json) (no secret), [`scripts/alexa-oauth-client.sh`](../scripts/alexa-oauth-client.sh) |
 | Local testing | [`scripts/alexa-test-ca.sh`](../scripts/alexa-test-ca.sh), [`scripts/alexa-say.sh`](../scripts/alexa-say.sh) (`--locale en-US`), [`e2e/tests/alexa.spec.ts`](../e2e/tests/alexa.spec.ts), [`alexa-en.spec.ts`](../e2e/tests/alexa-en.spec.ts) |

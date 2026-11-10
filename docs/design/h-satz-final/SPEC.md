@@ -41,7 +41,7 @@ Build the left column, not the right.
 | Categories in a store | Each category is one contiguous block in its store and never repeats. Items are in walk order inside it. This is the prototype's behaviour, decided as open question 1. | Same. |
 | Added-by on rows | No initial and no badge. `added_by` stays in the database, and "N neu von Lea" stays. This is the prototype's behaviour, decided as open question 3. | Same, no badge. |
 | Store fold state | Persisted across app restarts, per household on the device. | `sessionStorage`, lost with the tab. |
-| Header title | The household name, or "Hummlist" when there is none. Never "Familieneinkauf" or "Family Groceries". | "FAMILIENEINKAUF" / "Family Groceries". |
+| Header title | The household name, or "Snacklist" when there is none. Never "Familieneinkauf" or "Family Groceries". | "FAMILIENEINKAUF" / "Family Groceries". |
 | Language toggle and back link | Not in the header. Language is a setting under More (job 17). | A DE/EN pill and a "‹" link back to the index in the header. |
 | Data | Real household data through Supabase. Brand, properties and walk order are real columns (part 3). The parser is server-side (part 3). | Mock data and a client-side mock parser with about 40 products. |
 | Edit category chip | The household's categories, in route order. The chip leads with a generic category icon (`Icons.category_outlined`), because the app's categories carry no emoji of their own. The seeded "👶 Drogerie" has its emoji in the name, so that chip shows both. The add sheet (job 17) reuses `FoldoutChips` and inherits this; give categories their own emoji first if the prototype's look is wanted. | Each category's own emoji in the chip and the options. |
