@@ -96,21 +96,27 @@ void main() {
         applicationId(),
         hummlistId,
       ]);
-      // Play App Signing reuses Hummlist's key for Snacklist.
-      final fingerprints = (targets.first['sha256_cert_fingerprints']! as List)
-          .cast<String>();
-      expect(targets.last['sha256_cert_fingerprints'], fingerprints);
-      final sha256 = RegExp(r'^([0-9A-F]{2}:){31}[0-9A-F]{2}$');
-      expect(fingerprints, everyElement(matches(sha256)));
+      // Each app has its own Play app-signing key; both share the upload key.
       // Play App Signing signs what testers install; the upload key what CI
-      // builds. Both are in RELEASE.md's "Android signing" table.
+      // builds. All three SHA-256 values are in RELEASE.md's "Android signing"
+      // table.
+      final sha256 = RegExp(r'^([0-9A-F]{2}:){31}[0-9A-F]{2}$');
+      final snacklist = (targets.first['sha256_cert_fingerprints']! as List)
+          .cast<String>();
+      final hummlist = (targets.last['sha256_cert_fingerprints']! as List)
+          .cast<String>();
+      expect(snacklist, everyElement(matches(sha256)));
+      expect(hummlist, everyElement(matches(sha256)));
+      expect(snacklist, hasLength(2));
+      expect(hummlist, hasLength(2));
+      expect(snacklist.toSet().intersection(hummlist.toSet()), hasLength(1));
       final release = File('../docs/RELEASE.md').readAsStringSync();
       final table = RegExp('`((?:[0-9A-F]{2}:){31}[0-9A-F]{2})`')
           .allMatches(release)
           .map((m) => m[1])
           .toSet();
-      expect(fingerprints, hasLength(2));
-      expect(table, containsAll(fingerprints));
+      expect(table, containsAll(snacklist));
+      expect(table, containsAll(hummlist));
     },
   );
 
