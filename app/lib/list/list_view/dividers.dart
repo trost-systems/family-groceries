@@ -72,7 +72,7 @@ class const _Head({
     final l10n = AppLocalizations.of(context);
     final scheme = Theme.of(context).colorScheme;
     final store = section.store;
-    final t = HummlistColors.of(scheme.brightness);
+    final t = SnacklistColors.of(scheme.brightness);
     final tint = store == null ? scheme.outline : t.brand;
     final reduce = MediaQuery.disableAnimationsOf(context);
     return LayoutBuilder(

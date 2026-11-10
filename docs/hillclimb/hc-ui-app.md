@@ -16,7 +16,7 @@ hill-climb tooling exists in the repo). It runs under
    (`app/test/design/screens_golden_test.dart`, real Bricolage/Inter fonts,
    device pixel ratio 1) via `flutter test --update-goldens`, copies the 20
    PNGs out and restores the committed goldens byte for byte.
-2. Hands the PNGs, `docs/DESIGN.md` and `design/tokens/hummlist.tokens.json`
+2. Hands the PNGs, `docs/DESIGN.md` and `design/tokens/snacklist.tokens.json`
    to 3 judges: fresh `claude -p --model opus` sessions (`bin/cc`,
    `--no-session-persistence --setting-sources ''`, Read tool only, cwd a
    per-judge copy dir under /tmp), prompt `tool/hillclimb/hc-ui-app/judge-prompt.md`,

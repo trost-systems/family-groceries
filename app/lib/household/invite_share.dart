@@ -76,7 +76,7 @@ class PlatformInviteSharer() implements InviteSharer {
 }
 
 /// The link of invite [code]: the page's origin on the web, APP_URL in the
-/// apps (https://app.hummlist.com, which opens the installed app through
+/// apps (https://app.snacklist.app, which opens the installed app through
 /// universal links and App Links). Null in a build without APP_URL.
 String? inviteLink(String code) {
   final base = kIsWeb ? webRoot : Environment.appUrl;
@@ -85,7 +85,7 @@ String? inviteLink(String code) {
 
 /// What the share sheet sends, in the app's language, worded for who
 /// shops in [household] (its kind): the link and the code, which can be
-/// typed after installing the app. The user sends it; Hummlist never does
+/// typed after installing the app. The user sends it; Snacklist never does
 /// (N-18).
 String inviteShareText(
   AppLocalizations l10n,

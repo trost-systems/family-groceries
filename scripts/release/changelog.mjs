@@ -351,8 +351,8 @@ export function loadOverride(dir, version) {
 // --- store texts -------------------------------------------------------------------------------
 
 const STORE_WORDS = {
-  de: { new: 'Neu:', improved: 'Verbessert:', fixed: 'Behoben:', nothing: 'Fehlerbehebungen und Verbesserungen.', more: (anchor) => `Alle Änderungen: hummlist.com/de/changelog${anchor}` },
-  en: { new: 'New:', improved: 'Improved:', fixed: 'Fixed:', nothing: 'Bug fixes and improvements.', more: (anchor) => `All changes: hummlist.com/en/changelog${anchor}` },
+  de: { new: 'Neu:', improved: 'Verbessert:', fixed: 'Behoben:', nothing: 'Fehlerbehebungen und Verbesserungen.', more: (anchor) => `Alle Änderungen: snacklist.app/de/changelog${anchor}` },
+  en: { new: 'New:', improved: 'Improved:', fixed: 'Fixed:', nothing: 'Bug fixes and improvements.', more: (anchor) => `All changes: snacklist.app/en/changelog${anchor}` },
 };
 // What pilot's sanitize_changelog takes out because Apple rejects it: emoji and "<" (it then cuts at
 // 4000 bytes; storeText never lets it get there).

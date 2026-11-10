@@ -27,7 +27,7 @@ Future<void> _pump(
 
 void main() {
   for (final brightness in Brightness.values) {
-    final t = HummlistColors.of(brightness);
+    final t = SnacklistColors.of(brightness);
     group('$brightness', () {
       testWidgets('shows the full name on token colours only', (tester) async {
         await _pump(tester, _lidl, brightness);

@@ -25,7 +25,7 @@ class const SiriKeychainEntry({
 
 /// The app's door to native Siri (`hummlist/siri` in AppDelegate.swift):
 /// the credential the intents send to `voice`, and the item names Siri
-/// offers for "Add `<item>` to Hummlist". Only iOS has it; elsewhere a call
+/// offers for "Add `<item>` to Snacklist". Only iOS has it; elsewhere a call
 /// throws [MissingPluginException].
 abstract interface class SiriChannel() {
   Future<SiriKeychainEntry?> read();
@@ -43,7 +43,7 @@ abstract interface class SiriChannel() {
   Future<void> suggestions(List<SiriSuggestion> items);
 }
 
-/// One item Siri offers for "Add `<item>` to Hummlist", with the household's
+/// One item Siri offers for "Add `<item>` to Snacklist", with the household's
 /// other names for it: names on its items that share the `canonical_key`
 /// ("Möhren" for "Karotten"), at most [maxSiriSynonyms].
 @immutable

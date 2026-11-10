@@ -1,9 +1,9 @@
 import Foundation
 import Intents
 
-/// SiriKit's Lists domain, for what no App Shortcut phrase matches. "Füge Zahnpasta zu Hummlist
+/// SiriKit's Lists domain, for what no App Shortcut phrase matches. "Füge Zahnpasta zu Snacklist
 /// hinzu" with an item the app never suggested reaches the app as an INAddTasksIntent; without
-/// these handlers Siri answered "Hummlist unterstützt das nicht" (job 92). AppDelegate hands them
+/// these handlers Siri answered "Snacklist unterstützt das nicht" (job 92). AppDelegate hands them
 /// out in-app (`application(_:handlerFor:)`, no Intents extension). The titles go to `voice` like
 /// AddItemsIntent's dictation; the household has one list, so a named list is ignored.
 ///
@@ -56,7 +56,7 @@ final class AddTasksHandler: NSObject, INAddTasksIntentHandling {
   }
 }
 
-/// "Was steht auf Hummlist?" in a wording no App Shortcut phrase has: Siri reads the open items
+/// "Was steht auf Snacklist?" in a wording no App Shortcut phrase has: Siri reads the open items
 /// it gets back as tasks.
 final class SearchTasksHandler: NSObject, INSearchForNotebookItemsIntentHandling {
   let client: VoiceClient
@@ -79,7 +79,7 @@ final class SearchTasksHandler: NSObject, INSearchForNotebookItemsIntentHandling
       response.tasks = tasks
       response.taskLists = [
         INTaskList(
-          title: INSpeakableString(spokenPhrase: "Hummlist"), tasks: tasks, groupName: nil,
+          title: INSpeakableString(spokenPhrase: "Snacklist"), tasks: tasks, groupName: nil,
           createdDateComponents: nil, modifiedDateComponents: nil, identifier: nil)
       ]
       return response

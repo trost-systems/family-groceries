@@ -758,7 +758,7 @@ h1 {
     gap: var(--hl-space-7);
   }
 
-  /* A see-through hex cluster fills the empty corner above the scene, as on hummlist.com. */
+  /* A see-through hex cluster fills the empty corner above the scene, as on snacklist.app. */
   .block {
     background: url("/static/hex/block-hex.svg") right 48px top -60px / 240px auto no-repeat, var(--hl-color-cobalt);
   }

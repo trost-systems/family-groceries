@@ -263,10 +263,10 @@ test('a user without a household deletes their account from the welcome screen',
 test('the public deletion page is served', async ({ page }) => {
   const response = await page.goto('/konto-loeschen.html');
   expect(must(response, 'response').status()).toBe(200);
-  await expect(page).toHaveTitle('Hummlist: Konto und Daten löschen');
+  await expect(page).toHaveTitle('Snacklist: Konto und Daten löschen');
   await expect(page.getByText('ENTWURF')).toHaveCount(0);
   await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'support@hummlist.com' }).first()).toHaveAttribute('href', /^mailto:support@hummlist\.com/);
   await expect(page.locator('#einzelne-daten')).toHaveText('Einzelne Daten löschen, ohne das Konto zu löschen');
-  await expect(page.getByRole('link', { name: 'Datenschutzerklärung' })).toHaveAttribute('href', 'https://hummlist.com/datenschutz');
+  await expect(page.getByRole('link', { name: 'Datenschutzerklärung' })).toHaveAttribute('href', 'https://snacklist.app/datenschutz');
 });

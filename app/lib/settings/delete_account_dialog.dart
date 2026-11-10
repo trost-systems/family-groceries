@@ -88,7 +88,7 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
   final _confirmation = TextEditingController();
   _Step _step = const _LoadingFate();
 
-  /// The user ticked that Hummlist Premium is not refunded.
+  /// The user ticked that Snacklist Premium is not refunded.
   var _premiumAcknowledged = false;
 
   @override

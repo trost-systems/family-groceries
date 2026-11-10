@@ -15,7 +15,7 @@ import {
   ToolError,
 } from '../_shared/list.ts';
 
-const INSTRUCTIONS = `Hummlist: die gemeinsame Einkaufsliste eines Haushalts (deutsch).
+const INSTRUCTIONS = `Snacklist: die gemeinsame Einkaufsliste eines Haushalts (deutsch).
 Einträge haben einen Namen (z. B. "Windeln"), optional eine Marke ("Pampers"), Eigenschaften
 ("Größe 3, Big Pack"), eine Menge ("2", "500 g"), eine Kategorie (Gang im Laden, z. B.
 "Kühlregal") und optional einen Laden (z. B. "dm"). Neue Einträge werden automatisch zerlegt und
@@ -28,15 +28,16 @@ Ein Haushalt kann mehrere Listen haben (list_lists, z. B. "Wocheneinkauf" und "B
 Werkzeuge nehmen dann "list" (id oder genauer Name), ohne Angabe gilt die erste Liste.`;
 
 /**
- * Job 50: what a tool call of a household without Hummlist Premium gets while the lock is on. A
+ * Job 50: what a tool call of a household without Snacklist Premium gets while the lock is on. A
  * tool result, not a 401/403: the client keeps its token and needs no new sign-in once the
- * household unlocks. PLACEHOLDER copy (Spec #4); the final text comes from Hummlist Launch.
+ * household unlocks. PLACEHOLDER copy (Spec #4); the final text comes from Snacklist Launch.
  */
 export const premiumRequired: Record<Lang, string> = {
   de:
-    'Dieser Haushalt braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in ' +
-    'der Hummlist-App frei. Es wurde nichts gelesen oder geändert.',
-  en: 'This household needs Hummlist Premium for AI assistant access. Unlock it in the Hummlist ' +
+    'Dieser Haushalt braucht Snacklist Premium für den Zugang über KI-Assistenten. Schalte es in ' +
+    'der Snacklist-App frei. Es wurde nichts gelesen oder geändert.',
+  en:
+    'This household needs Snacklist Premium for AI assistant access. Unlock it in the Snacklist ' +
     'app. Nothing was read or changed.',
 };
 
@@ -164,7 +165,7 @@ export async function listLists(tx: Tx, household: string): Promise<ListEntry[]>
 
 export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServer {
   const server = new McpServer(
-    { name: 'hummlist', title: 'Hummlist', version: '1.0.0' },
+    { name: 'snacklist', title: 'Snacklist', version: '1.0.0' },
     { instructions: INSTRUCTIONS },
   );
   const asked = new Map<string, Promise<Access>>();

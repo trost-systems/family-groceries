@@ -22,8 +22,8 @@ test('a skipped heading level fails the build', () => failsWith('# One\n\n### Th
 test('an image without alt text fails the build', () => failsWith('# One\n\n![](/favicon.png)\n', /bad\.html: <img src="\/favicon.png"> has no alt text/));
 test('an external image fails the build', () => failsWith('# One\n\n![Logo](https://example.com/x.png)\n', /external resource https:\/\/example.com\/x.png/));
 test('an image with alt text builds', () => {
-  const { page } = buildSite({ files: { 'guides/en/ok.md': guide({ locale: 'en', slug: 'ok', body: '# One\n\n![Hummlist logo](/favicon.png)\n' }) } });
-  assert.equal(page('/en/guides/ok').querySelector('main img').getAttribute('alt'), 'Hummlist logo');
+  const { page } = buildSite({ files: { 'guides/en/ok.md': guide({ locale: 'en', slug: 'ok', body: '# One\n\n![Snacklist logo](/favicon.png)\n' }) } });
+  assert.equal(page('/en/guides/ok').querySelector('main img').getAttribute('alt'), 'Snacklist logo');
 });
 
 test('OG and Twitter tags equal the frontmatter', () => {
@@ -46,10 +46,10 @@ test('OG and Twitter tags equal the frontmatter', () => {
     assert.equal(meta(doc, 'description'), description, route);
     assert.equal(meta(doc, 'og:type'), type, route);
     assert.equal(meta(doc, 'og:locale'), locale, route);
-    assert.equal(meta(doc, 'og:url'), `https://hummlist.com${route}`, route);
-    assert.equal(meta(doc, 'og:site_name'), 'Hummlist', route);
+    assert.equal(meta(doc, 'og:url'), `https://snacklist.app${route}`, route);
+    assert.equal(meta(doc, 'og:site_name'), 'Snacklist', route);
     assert.equal(meta(doc, 'twitter:card'), 'summary', route);
-    assert.equal(doc.querySelector('link[rel="canonical"]').getAttribute('href'), `https://hummlist.com${route}`, route);
+    assert.equal(doc.querySelector('link[rel="canonical"]').getAttribute('href'), `https://snacklist.app${route}`, route);
   }
 });
 

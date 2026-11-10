@@ -1,4 +1,4 @@
-// Job 50: Siri and MCP / AI assistants are part of Hummlist Premium (Spec #4), and the API (job
+// Job 50: Siri and MCP / AI assistants are part of Snacklist Premium (Spec #4), and the API (job
 // 73); Alexa stays free (job 72, Legal Review N-27) and never asks. Every other integration
 // endpoint asks requirePremium once it knows the caller's household; the rule itself
 // lives in Postgres (public.integration_gate: the integration_lock switch, then job 49's

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Writes the Hummlist app icon (5 "Wabenstapel") and the splash screens for iOS, Android and
-// the web, and the Alexa skill's icons, from the geometry below and the colours in design/tokens/hummlist.tokens.json.
+// Writes the Snacklist app icon (5 "Wabenstapel") and the splash screens for iOS, Android and
+// the web, and the Alexa skill's icons, from the geometry below and the colours in design/tokens/snacklist.tokens.json.
 // Node only, no packages and no network.
 //   node design/app-icon/build.mjs             writes every platform file
 //   node design/app-icon/build.mjs --check     writes nothing, exits 1 when a file differs
@@ -16,7 +16,7 @@ import { Canvas, coverage, png } from './raster.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
-const tokens = JSON.parse(readFileSync(join(root, 'design/tokens/hummlist.tokens.json'), 'utf8'));
+const tokens = JSON.parse(readFileSync(join(root, 'design/tokens/snacklist.tokens.json'), 'utf8'));
 const resolve = (v) => (typeof v === 'string' && /^\{.+\}$/.test(v) ? resolve(v.slice(1, -1).split('.').reduce((n, k) => n[k], tokens).$value) : v);
 const color = (mode, name) => resolve(tokens.color[mode][name].$value).hex.toLowerCase();
 const MODES = ['light', 'dark'];
@@ -121,7 +121,7 @@ const markD = (pts) => `M${pts.map(([x, y]) => `${f(x)} ${f(y)}`).join(' L')}`;
 
 function markSvg(mode) {
   const m = markColors(mode);
-  return svgDoc(`<title>Hummlist</title><path d="${MARK.body.d}" fill="${m.body}" stroke="${m.edge}" stroke-width="3" stroke-linejoin="round"/><path d="${markD(MARK.tick)}" fill="none" stroke="${m.tick}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="${MARK.cell.d}" fill="${m.cell}" stroke="${m.edge}" stroke-width="3"/>`, `0 0 ${MARK_BOX} ${MARK_BOX}`);
+  return svgDoc(`<title>Snacklist</title><path d="${MARK.body.d}" fill="${m.body}" stroke="${m.edge}" stroke-width="3" stroke-linejoin="round"/><path d="${markD(MARK.tick)}" fill="none" stroke="${m.tick}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="${MARK.cell.d}" fill="${m.cell}" stroke="${m.edge}" stroke-width="3"/>`, `0 0 ${MARK_BOX} ${MARK_BOX}`);
 }
 
 // The favicon follows the browser's colour scheme on its own.

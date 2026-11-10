@@ -9,7 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 @immutable
 class const ServerLock({
   /// `integration_lock` is on: Siri and MCP refuse a household without
-  /// Hummlist Premium. Alexa stays free (Legal Review N-27).
+  /// Snacklist Premium. Alexa stays free (Legal Review N-27).
   required final bool enforced,
 
   /// `premium_offer` is on, or could not be read: the card links to the
@@ -42,7 +42,7 @@ class IntegrationLockCubit(
   }
 }
 
-/// What the integration settings say about Hummlist Premium.
+/// What the integration settings say about Snacklist Premium.
 sealed class const IntegrationAccess();
 
 /// Nothing: the lock is off, the household has premium, or either is not
@@ -55,7 +55,7 @@ final class const IntegrationsLocked(final LockOffer offer)
     extends IntegrationAccess;
 
 enum LockOffer() {
-  /// A button to the Hummlist Premium page.
+  /// A button to the Snacklist Premium page.
   buy,
 
   /// This build or the server does not sell it yet.

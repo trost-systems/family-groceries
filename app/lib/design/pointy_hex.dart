@@ -20,7 +20,7 @@ class const PointyHex({
 
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Container(
       width: size * aspect,
       height: size,

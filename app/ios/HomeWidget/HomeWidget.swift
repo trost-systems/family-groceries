@@ -33,7 +33,7 @@ struct HomeWidget: Widget {
     StaticConfiguration(kind: HomeWidget.kind, provider: HomeWidgetProvider()) { entry in
       HomeWidgetView(snapshot: entry.snapshot)
     }
-    .configurationDisplayName(String("Hummlist"))
+    .configurationDisplayName(String("Snacklist"))
     .description("Your shopping list at a glance")
     .supportedFamilies([.systemSmall, .systemMedium])
   }

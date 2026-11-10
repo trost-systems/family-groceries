@@ -12,12 +12,12 @@
 		218F2517BB5EB58D32F5C859 /* Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57210B2C1B35E8492FE37E9D /* Hex.swift */; };
 		2595C942F484DF14A65AC851 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 421F6E38150E49E2E5EC89A6 /* Localizable.xcstrings */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
-		3749194B78FC03F09FF1CA2B /* HummlistColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = F910BEC84D4D5510E9ABFEC9 /* HummlistColors.swift */; };
+		3749194B78FC03F09FF1CA2B /* SnacklistColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = F910BEC84D4D5510E9ABFEC9 /* SnacklistColors.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		51A1E0022EF0000000000000 /* VoiceClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A1E0012EF0000000000000 /* VoiceClient.swift */; };
 		51A1E0042EF0000000000000 /* SiriCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A1E0032EF0000000000000 /* SiriCredentialStore.swift */; };
 		51A1E0062EF0000000000000 /* SiriAnswer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A1E0052EF0000000000000 /* SiriAnswer.swift */; };
-		51A1E0082EF0000000000000 /* HummlistIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A1E0072EF0000000000000 /* HummlistIntents.swift */; };
+		51A1E0082EF0000000000000 /* SnacklistIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A1E0072EF0000000000000 /* SnacklistIntents.swift */; };
 		51A1E00A2EF0000000000000 /* SiriBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A1E0092EF0000000000000 /* SiriBridge.swift */; };
 		92A1E0022EF0000000000000 /* SiriKitLists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A1E0012EF0000000000000 /* SiriKitLists.swift */; };
 		51A1E00C2EF0000000000000 /* AppShortcuts.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 51A1E00B2EF0000000000000 /* AppShortcuts.xcstrings */; };
@@ -94,7 +94,7 @@
 		51A1E0012EF0000000000000 /* VoiceClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceClient.swift; sourceTree = "<group>"; };
 		51A1E0032EF0000000000000 /* SiriCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriCredentialStore.swift; sourceTree = "<group>"; };
 		51A1E0052EF0000000000000 /* SiriAnswer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriAnswer.swift; sourceTree = "<group>"; };
-		51A1E0072EF0000000000000 /* HummlistIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HummlistIntents.swift; sourceTree = "<group>"; };
+		51A1E0072EF0000000000000 /* SnacklistIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnacklistIntents.swift; sourceTree = "<group>"; };
 		51A1E0092EF0000000000000 /* SiriBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriBridge.swift; sourceTree = "<group>"; };
 		92A1E0012EF0000000000000 /* SiriKitLists.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriKitLists.swift; sourceTree = "<group>"; };
 		51A1E00B2EF0000000000000 /* AppShortcuts.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AppShortcuts.xcstrings; sourceTree = "<group>"; };
@@ -125,7 +125,7 @@
 		AB6FAC910042F3257617F13D /* HomeWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HomeWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DA2E25C33577B1674BAFEB1F /* HomeWidgetBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeWidgetBundle.swift; sourceTree = "<group>"; };
 		F0BEF0CEEA25437E671CDFCB /* ListSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ListSnapshot.swift; sourceTree = "<group>"; };
-		F910BEC84D4D5510E9ABFEC9 /* HummlistColors.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HummlistColors.swift; sourceTree = "<group>"; };
+		F910BEC84D4D5510E9ABFEC9 /* SnacklistColors.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SnacklistColors.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,7 +157,7 @@
 				8DD1480B8E189FB2B21131A8 /* HomeWidget.swift */,
 				DA2E25C33577B1674BAFEB1F /* HomeWidgetBundle.swift */,
 				839B7CAA8C3E555CD204B7E9 /* HomeWidgetView.swift */,
-				F910BEC84D4D5510E9ABFEC9 /* HummlistColors.swift */,
+				F910BEC84D4D5510E9ABFEC9 /* SnacklistColors.swift */,
 				28E6644036BDE33E0B2BCEE6 /* Info.plist */,
 				F0BEF0CEEA25437E671CDFCB /* ListSnapshot.swift */,
 				421F6E38150E49E2E5EC89A6 /* Localizable.xcstrings */,
@@ -181,7 +181,7 @@
 				51A1E0012EF0000000000000 /* VoiceClient.swift */,
 				51A1E0032EF0000000000000 /* SiriCredentialStore.swift */,
 				51A1E0052EF0000000000000 /* SiriAnswer.swift */,
-				51A1E0072EF0000000000000 /* HummlistIntents.swift */,
+				51A1E0072EF0000000000000 /* SnacklistIntents.swift */,
 				51A1E0092EF0000000000000 /* SiriBridge.swift */,
 				92A1E0012EF0000000000000 /* SiriKitLists.swift */,
 			);
@@ -447,7 +447,7 @@
 				51A1E0022EF0000000000000 /* VoiceClient.swift in Sources */,
 				51A1E0042EF0000000000000 /* SiriCredentialStore.swift in Sources */,
 				51A1E0062EF0000000000000 /* SiriAnswer.swift in Sources */,
-				51A1E0082EF0000000000000 /* HummlistIntents.swift in Sources */,
+				51A1E0082EF0000000000000 /* SnacklistIntents.swift in Sources */,
 				51A1E00A2EF0000000000000 /* SiriBridge.swift in Sources */,
 				92A1E0022EF0000000000000 /* SiriKitLists.swift in Sources */,
 			);
@@ -461,7 +461,7 @@
 				7C60C062A4C5E03A3B508084 /* HomeWidget.swift in Sources */,
 				1ECC9E93ECF1DCC2F3D68BBE /* HomeWidgetBundle.swift in Sources */,
 				76840D4F996A0E593DD9D0D8 /* HomeWidgetView.swift in Sources */,
-				3749194B78FC03F09FF1CA2B /* HummlistColors.swift in Sources */,
+				3749194B78FC03F09FF1CA2B /* SnacklistColors.swift in Sources */,
 				F65D341907D821E7804212D3 /* ListSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

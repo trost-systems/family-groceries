@@ -23,12 +23,17 @@ const cross = (...parts: string[][]) =>
 const onTheList = cross(
   ['to', 'on', 'onto', 'in'],
   ['', 'my', 'the', 'our'],
-  // How Siri may write the app name (INAlternativeAppNames in app/ios, job 71).
+  // How Siri may write the app name (INAlternativeAppNames in app/ios, job 71), Hummlist's until
+  // Snacklist replaces it (job 174).
   [
     'list',
     'shopping list',
     'grocery list',
     'groceries list',
+    'snacklist',
+    'snack list',
+    'snack-list',
+    'snack lists',
     'hummlist',
     'humm list',
     'hum list',
@@ -38,7 +43,7 @@ const onTheList = cross(
 
 const leadingFiller = [
   ...words(
-    'hey siri|siri|hummlist|humm list|hum list|humlist|ok|okay|so|um|uh|er|oh|well|yes|yeah|then|please|' +
+    'hey siri|siri|snacklist|snack list|snack-list|snack lists|hummlist|humm list|hum list|humlist|ok|okay|so|um|uh|er|oh|well|yes|yeah|then|please|' +
       'add|put|get|buy|pick up|grab|write down|write|remember|remind me to buy|' +
       "don't forget|do not forget|we need|we need some|i need|need|we're out of|we are out of|" +
       "i'm out of|out of|can you add|could you add|can you|could you|can you please|" +

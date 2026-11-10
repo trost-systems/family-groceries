@@ -1,4 +1,4 @@
-// A household's promotional Hummlist Premium as RevenueCat has it now (docs/PURCHASES.md,
+// A household's promotional Snacklist Premium as RevenueCat has it now (docs/PURCHASES.md,
 // "Free premium: RevenueCat promotional grants"). A grant from the RevenueCat dashboard or from API v2
 // grant_entitlement is a promotional subscription of the customer (App User ID = household id):
 // store "promotional", gives_access while it runs, ends_at its end. We read

@@ -181,7 +181,7 @@ export type PurchaseEvent = 'purchase_completed' | 'purchase_refunded' | 'purcha
 export type Revenue = Omit<VerifiedTransaction, 'kind' | 'price' | 'currency'> & {
   price: number | null;
   currency: string | null;
-  /** Job 49: the Hummlist Premium product's plan; job 19's harness has none. */
+  /** Job 49: the Snacklist Premium product's plan; job 19's harness has none. */
   premiumSource?: 'yearly' | 'lifetime';
 };
 

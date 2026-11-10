@@ -123,7 +123,7 @@ Deno.test('locked, native Siri: outcome premium_required in its language, for ad
 Deno.test('the premium sentences say nothing was added', () => {
   assert(copy.de.failures.premium_required.includes('Ich habe nichts hinzugefügt.'));
   assert(copy.en.failures.premium_required.includes("I didn't add anything."));
-  assert(copy.de.failures.premium_required.includes('Hummlist Premium'));
+  assert(copy.de.failures.premium_required.includes('Snacklist Premium'));
 });
 
 Deno.test("the app's own session (in-app dictation) never asks the gate", async () => {

@@ -2,7 +2,7 @@
   "flags": {
     "public-api": {
       "rollout": "off",
-      "note": "the Hummlist API keys under Mehr > Zugänge show only while the PostHog flag public-api is on (job 73)"
+      "note": "the Snacklist API keys under Mehr > Zugänge show only while the PostHog flag public-api is on (job 73)"
     }
   },
   "holds": {
@@ -13,12 +13,12 @@
     },
     "premium-launch": {
       "released": false,
-      "note": "Hummlist Premium (yearly and Lifetime) is not on sale yet: nothing is sold or gated",
+      "note": "Snacklist Premium (yearly and Lifetime) is not on sale yet: nothing is sold or gated",
       "match": ["lifetime", "premium"]
     },
     "native-siri": {
       "released": false,
-      "note": "native Siri (no Shortcut setup) waits for Hummlist Launch and Peter's device test"
+      "note": "native Siri (no Shortcut setup) waits for Snacklist Launch and Peter's device test"
     },
     "new-design": {
       "released": true,
@@ -31,7 +31,7 @@
     },
     "integration-lock": {
       "released": false,
-      "note": "Siri, Alexa and AI assistants need Hummlist Premium only once Peter turns the integration lock on (server switch, then the INTEGRATION_LOCK define)"
+      "note": "Siri, Alexa and AI assistants need Snacklist Premium only once Peter turns the integration lock on (server switch, then the INTEGRATION_LOCK define)"
     }
   }
 }

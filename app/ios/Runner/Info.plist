@@ -11,7 +11,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Hummlist</string>
+	<string>Snacklist</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -19,11 +19,11 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Hummlist</string>
+	<string>Snacklist</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSpokenName</key>
-	<string>Hummlist</string>
+	<string>Snacklist</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
@@ -67,21 +67,21 @@
 	<array>
 		<dict>
 			<key>INAlternativeAppName</key>
-			<string>HUMMLIST_NAME_1</string>
+			<string>SNACKLIST_NAME_1</string>
 			<key>INAlternativeAppNamePronunciationHint</key>
-			<string>HUMMLIST_HINT_1</string>
+			<string>SNACKLIST_HINT_1</string>
 		</dict>
 		<dict>
 			<key>INAlternativeAppName</key>
-			<string>HUMMLIST_NAME_2</string>
+			<string>SNACKLIST_NAME_2</string>
 			<key>INAlternativeAppNamePronunciationHint</key>
-			<string>HUMMLIST_HINT_2</string>
+			<string>SNACKLIST_HINT_2</string>
 		</dict>
 		<dict>
 			<key>INAlternativeAppName</key>
-			<string>HUMMLIST_NAME_3</string>
+			<string>SNACKLIST_NAME_3</string>
 			<key>INAlternativeAppNamePronunciationHint</key>
-			<string>HUMMLIST_HINT_3</string>
+			<string>SNACKLIST_HINT_3</string>
 		</dict>
 	</array>
 	<key>INIntentsSupported</key>
@@ -90,11 +90,11 @@
 		<string>INSearchForNotebookItemsIntent</string>
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Hummlist braucht das Mikrofon, damit du Einträge diktieren kannst.</string>
+	<string>Snacklist braucht das Mikrofon, damit du Einträge diktieren kannst.</string>
 	<key>NSSiriUsageDescription</key>
-	<string>Mit Siri setzt du Einträge auf deine Hummlist und lässt sie dir vorlesen.</string>
+	<string>Mit Siri setzt du Einträge auf deine Snacklist und lässt sie dir vorlesen.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Hummlist wandelt deine Sprache in Text um, damit du Einträge diktieren kannst.</string>
+	<string>Snacklist wandelt deine Sprache in Text um, damit du Einträge diktieren kannst.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSRequiresIPhoneOS</key>

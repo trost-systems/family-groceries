@@ -100,6 +100,6 @@ struct HexPill<Content: View>: View {
       .padding(.horizontal, Hex.tip * height + 4)
       .frame(height: height)
       .background(Hex().fill(fill))
-      .overlay(Hex().strokeBorder(HummlistColors.border, lineWidth: contour))
+      .overlay(Hex().strokeBorder(SnacklistColors.border, lineWidth: contour))
   }
 }

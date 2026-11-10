@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Opens a page on hummlist.com in the system browser (a new tab on the
+/// Opens a page on snacklist.app in the system browser (a new tab on the
 /// web), never in an in-app browser view: the app offers no web browsing
 /// of its own (App Store age rating, "Unrestricted Web Access: No").
 Future<void> openLegalPage(Uri url) =>

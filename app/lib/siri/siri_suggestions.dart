@@ -6,7 +6,7 @@ import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-/// The items Siri offers for "Add `<item>` to Hummlist": the household's
+/// The items Siri offers for "Add `<item>` to Snacklist": the household's
 /// usuals first, then what is on its lists, then what was bought last; each
 /// item once (by name, and by `canonical_key` where the server set one), at
 /// most [maxSiriSuggestions].

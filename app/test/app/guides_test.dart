@@ -7,7 +7,7 @@ void main() {
   test('German UI opens the German Siri guide', () {
     expect(
       siriGuideUrl('de').toString(),
-      'https://hummlist.com/de/anleitungen/siri-kurzbefehl',
+      'https://snacklist.app/de/anleitungen/siri-kurzbefehl',
     );
   });
 
@@ -15,7 +15,7 @@ void main() {
     for (final code in ['en', 'fr']) {
       expect(
         siriGuideUrl(code).toString(),
-        'https://hummlist.com/en/guides/siri-shortcut',
+        'https://snacklist.app/en/guides/siri-shortcut',
       );
     }
   });

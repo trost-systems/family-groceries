@@ -54,6 +54,6 @@ final class SiriBridge: NSObject, FlutterPlugin {
   }
 
   private static func refreshShortcuts() {
-    HummlistShortcuts.updateAppShortcutParameters()
+    SnacklistShortcuts.updateAppShortcutParameters()
   }
 }

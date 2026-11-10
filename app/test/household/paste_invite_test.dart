@@ -38,7 +38,7 @@ void main() {
       'as paste', (tester) async {
     final reads = _clipboard(
       tester,
-      'Komm in unseren Hummlist-Haushalt: '
+      'Komm in unseren Snacklist-Haushalt: '
       'https://app.hummlist.com/join/ABCD2345 · Code: ABCD2345',
     );
     final o = await pumpOnboarding(tester, location: '/welcome');

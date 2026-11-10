@@ -311,6 +311,11 @@ for (
     ['Füge Milch zur Hummliste hinzu', ['Milch']],
     ['Setz Milch und Eier auf die Hummelliste', ['Milch', 'Eier']],
     ['Hummliste, Milch', ['Milch']],
+    // Job 174: Snacklist's names, as German Siri may write them.
+    ['Füge Milch zu Snacklist hinzu', ['Milch']],
+    ['Setz Milch und Eier auf meine Snack List', ['Milch', 'Eier']],
+    ['Füge Milch zur Snäcklist hinzu', ['Milch']],
+    ['Snacklist, Milch', ['Milch']],
     ['Füge Karotten 2 zur Hummliste hinzu', ['2 Karotten']],
     ['zwei Karotten und Milch', ['2 Karotten', 'Milch']],
   ] as [string, string[]][]

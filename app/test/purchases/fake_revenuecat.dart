@@ -87,8 +87,8 @@ class FakeRevenueCat() {
             if (wanted.any((w) => id == w || id.startsWith('$w:')))
               {
                 'identifier': id,
-                'description': 'Hummlist Premium',
-                'title': 'Hummlist Premium',
+                'description': 'Snacklist Premium',
+                'title': 'Snacklist Premium',
                 'price': id == lifetimeProductId ? 29.99 : 9.99,
                 'priceString': id == lifetimeProductId ? '29,99 €' : '9,99 €',
                 'currencyCode': 'EUR',

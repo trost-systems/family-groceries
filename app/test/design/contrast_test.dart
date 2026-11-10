@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// The token source; `flutter test` runs in app/.
 final _tokens = jsonDecode(
-  File('../design/tokens/hummlist.tokens.json').readAsStringSync(),
+  File('../design/tokens/snacklist.tokens.json').readAsStringSync(),
 ) as Map<String, dynamic>;
 
 Color _color(String mode, String name) {
@@ -25,7 +25,7 @@ double _ratio(String mode, String a, String b) =>
     contrastRatio(_color(mode, a), _color(mode, b));
 
 Map<String, dynamic> get _rules =>
-    (_tokens[r'$extensions'] as Map<String, dynamic>)['com.hummlist']
+    (_tokens[r'$extensions'] as Map<String, dynamic>)['com.snacklist']
         as Map<String, dynamic>;
 
 void main() {

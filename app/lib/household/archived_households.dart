@@ -135,7 +135,7 @@ class _ArchivedHouseholdsState() extends State<ArchivedHouseholds> {
     );
   }
 
-  /// With Hummlist Lifetime, and when it is deleted unless brought back.
+  /// With Snacklist Lifetime, and when it is deleted unless brought back.
   static Widget? _subtitle(AppLocalizations l10n, ArchivedHousehold household) {
     final deletesAt = household.deletesAt;
     final lines = [

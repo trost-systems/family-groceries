@@ -302,7 +302,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Dein Konto wurde gelöscht.'), findsOneWidget);
-    expect(find.textContaining('Entferne „Hummlist“'), findsOneWidget);
+    expect(find.textContaining('Entferne „Snacklist“'), findsOneWidget);
     expect(find.textContaining('Mit Apple anmelden'), findsOneWidget);
   });
 
@@ -467,9 +467,9 @@ void main() {
       await tapDelete(tester);
       expect(
         find.text(
-          'Dein Jahresabo für Hummlist Premium läuft weiter und wird über dein '
-          'Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. Löschen '
-          'oder Verlassen kündigt es nicht.',
+          'Dein Jahresabo für Snacklist Premium läuft weiter und wird über '
+          'dein Apple- bzw. Google-Konto abgerechnet, bis du es kündigst. '
+          'Löschen oder Verlassen kündigt es nicht.',
         ),
         findsOneWidget,
       );
@@ -542,7 +542,7 @@ void main() {
     });
   });
 
-  group('Hummlist Premium that ends with the account (job 68)', () {
+  group('Snacklist Premium that ends with the account (job 68)', () {
     /// The dialog alone, with the archive UI's flag as [archiveTexts].
     Future<void> openWith(
       WidgetTester tester, {
@@ -574,13 +574,13 @@ void main() {
     }
 
     const premiumText =
-        '„Zuhause“ hat Hummlist Premium. Es gehört zum Haushalt und endet mit '
+        '„Zuhause“ hat Snacklist Premium. Es gehört zum Haushalt und endet mit '
         'ihm. Archivieren geht hier nicht, denn ein archivierter Haushalt wird '
         'mit deinem Konto gelöscht. Soll der Haushalt mit Premium bleiben, '
         'lade vorher jemanden ein und lösche dein Konto erst, wenn die Person '
         'beigetreten ist.';
     const releaseText =
-        '„Zuhause“ hat Hummlist Premium. Das gehört zum Haushalt. Löschst du '
+        '„Zuhause“ hat Snacklist Premium. Das gehört zum Haushalt. Löschst du '
         'dein Konto, endet es. Soll es bleiben? Dann lad erst jemand ein. '
         'Warte, bis die Person beigetreten ist. Lösch dann dein Konto.';
     final ack = find.byKey(const ValueKey('account-delete-premium-ack'));
@@ -684,7 +684,7 @@ void main() {
       expect(
         find.text(
           'Dein archivierter Haushalt „Ferien“ wird mit deinem Konto '
-          'gelöscht, und mit ihm sein Hummlist Premium.',
+          'gelöscht, und mit ihm sein Snacklist Premium.',
         ),
         findsOneWidget,
       );
@@ -778,7 +778,7 @@ void main() {
       await openWith(tester, archiveTexts: false, locale: const Locale('en'));
       expect(
         find.text(
-          '“Home” has Hummlist Premium. It belongs to the household. If you '
+          '“Home” has Snacklist Premium. It belongs to the household. If you '
           'delete your account, it ends. Do you want to keep it? Then ask '
           'someone to join first. Wait until they have joined. Then delete '
           'your account.',
@@ -798,7 +798,7 @@ void main() {
       await openWith(tester, archiveTexts: true, locale: const Locale('en'));
       expect(
         find.text(
-          '“Home” has Hummlist Premium. It belongs to the household and ends '
+          '“Home” has Snacklist Premium. It belongs to the household and ends '
           "with it. Archiving isn't possible here, because an archived "
           'household is deleted with your account. To keep the household '
           'with Premium, invite someone first and delete your account only '

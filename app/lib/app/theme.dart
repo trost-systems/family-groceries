@@ -13,11 +13,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// modal bottom sheet's barrier.
 const sheetBarrier = Color(0x66000000);
 
-/// The Material roles of the Hummlist palette (6b Hex Frische, design job
+/// The Material roles of the Snacklist palette (6b Hex Frische, design job
 /// 52): cobalt is primary, lemon ("honey") secondary, mint tertiary; outline
 /// is the navy contour. Every colour comes from `tokens.g.dart`.
-ColorScheme hummlistColorScheme(Brightness brightness) {
-  final t = HummlistColors.of(brightness);
+ColorScheme snacklistColorScheme(Brightness brightness) {
+  final t = SnacklistColors.of(brightness);
   final light = brightness == Brightness.light;
   return ColorScheme(
     brightness: brightness,
@@ -67,7 +67,7 @@ ColorScheme hummlistColorScheme(Brightness brightness) {
   );
 }
 
-/// Material's type scale in the Hummlist fonts: Bricolage Grotesque for
+/// Material's type scale in the Snacklist fonts: Bricolage Grotesque for
 /// display, headline and title, Inter for everything else. The sizes stay
 /// Material's ([geometry]: ThemeData only applies them in `Theme.of`), so
 /// layouts and text scaling behave as before, except the small roles, which
@@ -117,12 +117,12 @@ TextTheme _textTheme(TextTheme base, TextTheme geometry) {
 }
 
 /// The app's theme in [brightness], built from the design tokens
-/// (`design/tokens/hummlist.tokens.json`): the colour scheme above, the
+/// (`design/tokens/snacklist.tokens.json`): the colour scheme above, the
 /// fonts, and the 6b shapes: tactile hex buttons on a hard edge, hex chips
 /// and indicators, rounded cards and sheets with the navy contour.
 ThemeData appTheme(Brightness brightness) {
-  final t = HummlistColors.of(brightness);
-  final scheme = hummlistColorScheme(brightness);
+  final t = SnacklistColors.of(brightness);
+  final scheme = snacklistColorScheme(brightness);
   final base = ThemeData(
     colorScheme: scheme,
     brightness: brightness,
@@ -275,7 +275,7 @@ ThemeData appTheme(Brightness brightness) {
 }
 
 /// A disabled tactile button: flush on its edge, in muted colours.
-TactileColors _muted(HummlistColors t) => TactileColors(
+TactileColors _muted(SnacklistColors t) => TactileColors(
   face: t.surfaceSunken,
   contour: t.textMuted,
   edge: t.textMuted,
@@ -286,7 +286,7 @@ TactileColors _muted(HummlistColors t) => TactileColors(
 /// navy edge, tactile like every other button.
 ButtonStyle dangerButtonStyle(BuildContext context) {
   final theme = Theme.of(context);
-  final t = HummlistColors.of(theme.brightness);
+  final t = SnacklistColors.of(theme.brightness);
   return tactileButtonStyle(
     colors: (states) => states.contains(WidgetState.disabled)
         ? _muted(t)

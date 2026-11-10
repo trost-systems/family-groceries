@@ -17,7 +17,7 @@ class const ItemIconFallback({required final double size, super.key})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return ExcludeSemantics(
       child: SizedBox.square(
         dimension: size,

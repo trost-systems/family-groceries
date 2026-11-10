@@ -1,13 +1,13 @@
 import { expect, type Locator, test, type Page } from './fixtures';
 import { newEmail, screenshot, signUpWithHousehold, wheelTo } from './helpers';
 
-// Job 24: More -> "Hilfe & Kontakt" opens the help page on hummlist.com in a new browser tab, by
+// Job 24: More -> "Hilfe & Kontakt" opens the help page on snacklist.app in a new browser tab, by
 // UI language. The page is a draft until Peter approves it, so release builds hide the row; the
 // e2e build shows it (LEGAL_DRAFTS in app/config/e2e.json), as debug builds do.
 
-/** Answers hummlist.com locally: the test must not depend on the live site. */
+/** Answers snacklist.app locally: the test must not depend on the live site. */
 async function stubSite(page: Page): Promise<void> {
-  await page.context().route('https://hummlist.com/**', (route) =>
+  await page.context().route('https://snacklist.app/**', (route) =>
     route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>stub</title>' }));
 }
 
@@ -32,11 +32,11 @@ test('Hilfe & Kontakt opens the German help page outside the app', async ({ page
   await wheelTo(page, help);
   await expect(help, 'job 85: no hint under the row').toHaveAccessibleName('Hilfe & Kontakt');
   await screenshot(page, 'job24-more-help-de-390');
-  await opensInNewTab(page, help, 'https://hummlist.com/support');
+  await opensInNewTab(page, help, 'https://snacklist.app/support');
   await page.setViewportSize({ width: 1366, height: 1024 });
   await wheelTo(page, help);
   await screenshot(page, 'job24-more-help-de-1366');
-  await opensInNewTab(page, help, 'https://hummlist.com/support');
+  await opensInNewTab(page, help, 'https://snacklist.app/support');
 });
 
 test('Help & contact opens the English help page in an English UI', async ({ page }) => {
@@ -58,11 +58,11 @@ test('Help & contact opens the English help page in an English UI', async ({ pag
   const helpEn = page.getByRole('button', { name: /^Help & contact/ });
   await wheelTo(page, helpEn);
   await screenshot(page, 'job24-more-help-en-390');
-  await opensInNewTab(page, helpEn, 'https://hummlist.com/en/support');
+  await opensInNewTab(page, helpEn, 'https://snacklist.app/en/support');
 
   // Wide: More's list beside a page, the row in it.
   await page.setViewportSize({ width: 1366, height: 1024 });
   await wheelTo(page, helpEn);
   await screenshot(page, 'job24-more-help-en-1366');
-  await opensInNewTab(page, helpEn, 'https://hummlist.com/en/support');
+  await opensInNewTab(page, helpEn, 'https://snacklist.app/en/support');
 });

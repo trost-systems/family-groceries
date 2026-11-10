@@ -29,6 +29,7 @@ const PLAY_TESTING_URL = 'https://play.google.com/apps/testing/com.hummlist.app'
 
 const ORIGINS = [
   /^https:\/\/hummlist\.com$/,
+  /^https:\/\/snacklist\.app$/,
   /^https:\/\/hummlist-site-[a-z0-9-]+-peter-trost\.vercel\.app$/,
   /^http:\/\/127\.0\.0\.1:[0-9]{1,5}$/,
 ];

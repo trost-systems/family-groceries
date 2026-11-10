@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Writes the hex shapes of the Android Home Screen widget (job 63) from the geometry and colours
-// in design/tokens/hummlist.tokens.json. Glance cannot clip a view to a path, so the store pill
+// in design/tokens/snacklist.tokens.json. Glance cannot clip a view to a path, so the store pill
 // and the Add button are nine-patch PNGs (light and dark): only the flat middle stretches, the
 // hexagonal ends keep their 120° corners. The empty list's hex is a vector with colour
 // resources, so it follows night mode by itself. Node only, no packages and no network.
@@ -16,7 +16,7 @@ import { Canvas, coverage, png } from '../app-icon/raster.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
-const tokens = JSON.parse(readFileSync(join(root, 'design/tokens/hummlist.tokens.json'), 'utf8'));
+const tokens = JSON.parse(readFileSync(join(root, 'design/tokens/snacklist.tokens.json'), 'utf8'));
 const resolve = (v) => (typeof v === 'string' && /^\{.+\}$/.test(v) ? resolve(v.slice(1, -1).split('.').reduce((n, k) => n[k], tokens).$value) : v);
 const color = (mode, name) => resolve(tokens.color[mode][name].$value).hex.toLowerCase();
 const TIP = resolve(tokens.shape.hex.tip.$value);

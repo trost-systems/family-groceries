@@ -2,30 +2,30 @@ import { expect, test, type Page } from './fixtures';
 import { screenshot } from './helpers';
 
 // Job 33b (legal review H-07): Impressum and Datenschutz are reachable before anyone signs in,
-// below the sign-in form and without scrolling. Both open hummlist.com in a new tab. The guided
+// below the sign-in form and without scrolling. Both open snacklist.app in a new tab. The guided
 // start's first screen (job 168b), where a signed-out `/` lands, has them too.
 
 const pages = {
   de: {
     locale: 'de-DE',
     links: [
-      ['Impressum', 'https://hummlist.com/impressum'],
-      ['Datenschutz', 'https://hummlist.com/datenschutz'],
+      ['Impressum', 'https://snacklist.app/impressum'],
+      ['Datenschutz', 'https://snacklist.app/datenschutz'],
     ],
   },
   en: {
     locale: 'en-US',
     links: [
-      ['Imprint', 'https://hummlist.com/en/imprint'],
-      ['Privacy', 'https://hummlist.com/en/privacy'],
+      ['Imprint', 'https://snacklist.app/en/imprint'],
+      ['Privacy', 'https://snacklist.app/en/privacy'],
     ],
   },
 } as const;
 
-/** Answers hummlist.com inside [page]'s context, so following a link never leaves the machine. */
+/** Answers snacklist.app inside [page]'s context, so following a link never leaves the machine. */
 async function stubSite(page: Page): Promise<void> {
-  await page.context().route('https://hummlist.com/**', (route) =>
-    route.fulfill({ contentType: 'text/html', body: '<title>hummlist.com</title>' }));
+  await page.context().route('https://snacklist.app/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<title>snacklist.app</title>' }));
 }
 
 for (const [lang, { locale, links }] of Object.entries(pages)) {

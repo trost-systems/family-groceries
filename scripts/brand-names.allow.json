@@ -18,7 +18,7 @@
     },
     {
       "file": "site/content/llms.md",
-      "contains": "https://hummlist.com/en/guides/claude.md",
+      "contains": "https://snacklist.app/en/guides/claude.md",
       "reason": "Example URL of that guide."
     },
     {
@@ -63,7 +63,7 @@
     },
     {
       "file": "site/content/comparisons/de/einkaufsliste-vergleich-bring.md",
-      "contains": "Die Schritt-für-Schritt-Anleitung findest du hier: [Anleitung: Hummlist mit Claude verbinden](https://hummlist.com/de/anleitungen/claude).",
+      "contains": "Die Schritt-für-Schritt-Anleitung findest du hier: [Anleitung: Snacklist mit Claude verbinden](https://snacklist.app/de/anleitungen/claude).",
       "reason": "Link to the Claude guide (Legal N-81, referential use). Peter approved publishing BP1 (lead chat 2026-11-05 18:12 CET)."
     }
   ]

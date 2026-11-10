@@ -105,7 +105,7 @@ describe('store texts', () => {
     const c = changelog({ new: 4, improved: 4, fixed: 4 }, long);
     const text = storeText(c, 'play', 'de', '1.2.0');
     assert.ok([...text].length <= 500, `${[...text].length} characters`);
-    assert.match(text, /\n\nAlle Änderungen: hummlist\.com\/de\/changelog#v1-2-0$/);
+    assert.match(text, /\n\nAlle Änderungen: snacklist\.app\/de\/changelog#v1-2-0$/);
     for (let i = 0; i < 4; i++) assert.ok(text.includes(`new item ${i}`), `new ${i} kept`);
     assert.ok(!text.includes('Behoben:'), 'fixed went first');
     const kept = text.split('\n').filter((l) => l.startsWith('• '));
@@ -121,7 +121,7 @@ describe('store texts', () => {
     assert.equal(STORE_LIMITS.app_store.length('Grüße'), 7);
     // 4000 bytes: 1999 "ü" plus the bullet and the heading do not fit, so the item goes.
     const c = changelog({ new: 1 }, (_, __, lang) => (lang === 'de' ? 'ü'.repeat(1999) : 'u'));
-    assert.match(storeText(c, 'app_store', 'de', '1.0.0'), /^Alle Änderungen: hummlist\.com\/de\/changelog#v1-0-0$/);
+    assert.match(storeText(c, 'app_store', 'de', '1.0.0'), /^Alle Änderungen: snacklist\.app\/de\/changelog#v1-0-0$/);
     assert.match(storeText(c, 'play', 'de', '1.0.0'), /^Alle Änderungen/, 'over 500 characters on Play too');
     assert.equal(storeText(c, 'app_store', 'en', '1.0.0'), 'New:\n• u');
   });

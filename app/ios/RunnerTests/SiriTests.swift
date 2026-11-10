@@ -116,8 +116,8 @@ final class VoiceClientTests: XCTestCase {
   }
 
   func testSuccessNeedsTheServersOutcome() async {
-    let added = await send(.http(200, #"{"outcome":"added","speech":"Added milk, eggs and bread to Hummlist."}"#))
-    XCTAssertEqual(added, .added(speech: "Added milk, eggs and bread to Hummlist."))
+    let added = await send(.http(200, #"{"outcome":"added","speech":"Added milk, eggs and bread to Snacklist."}"#))
+    XCTAssertEqual(added, .added(speech: "Added milk, eggs and bread to Snacklist."))
     let already = await send(.http(200, #"{"outcome":"nothing_added","speech":"Already on the list: milk."}"#))
     XCTAssertEqual(already, .nothingAdded(speech: "Already on the list: milk."))
     let read = await send(.http(200, #"{"outcome":"read","speech":"Milk and eggs.","items":[],"total":2}"#), mode: .read)
@@ -202,7 +202,7 @@ final class VoiceClientTests: XCTestCase {
   }
 
   func testPremiumRequiredLocksAtAnyStatus() async {
-    let speech = "Voice commands are part of Hummlist Premium. You can unlock it in the app under More, Hummlist Premium. I didn't add anything."
+    let speech = "Voice commands are part of Snacklist Premium. You can unlock it in the app under More, Snacklist Premium. I didn't add anything."
     for status in [200, 403, 402] {
       let result = await send(.http(status, #"{"outcome":"premium_required","error":"premium_required","speech":"\#(speech)"}"#))
       XCTAssertEqual(result, .lockedHousehold(speech: speech), "\(status)")
@@ -365,19 +365,19 @@ final class SiriAnswerTests: XCTestCase {
     let en = SiriCopy(.en), de = SiriCopy(.de)
     XCTAssertEqual(
       VoiceResult.failed(.signedOut).answer(mode: .add, copy: en),
-      "Open Hummlist and sign in again. I didn't add anything.")
+      "Open Snacklist and sign in again. I didn't add anything.")
     XCTAssertEqual(
       VoiceResult.failed(.notSignedIn).answer(mode: .add, copy: de),
-      "Öffne Hummlist und melde dich an. Ich habe nichts hinzugefügt.")
+      "Öffne Snacklist und melde dich an. Ich habe nichts hinzugefügt.")
     XCTAssertEqual(
       VoiceResult.failed(.offline).answer(mode: .add, copy: en),
-      "Hummlist can't reach the internet right now. I didn't add anything.")
+      "Snacklist can't reach the internet right now. I didn't add anything.")
     XCTAssertEqual(
       VoiceResult.failed(.offline).answer(mode: .read, copy: de),
-      "Hummlist hat gerade keine Internetverbindung. Ich konnte deine Liste nicht vorlesen.")
+      "Snacklist hat gerade keine Internetverbindung. Ich konnte deine Liste nicht vorlesen.")
     XCTAssertEqual(
-      VoiceResult.added(speech: "Added milk to Hummlist.").answer(mode: .add, copy: en),
-      "Added milk to Hummlist.")
+      VoiceResult.added(speech: "Added milk to Snacklist.").answer(mode: .add, copy: en),
+      "Added milk to Snacklist.")
   }
 
   func testANoToTheQuestionSaysWhatIsOnTheList() {
@@ -396,10 +396,10 @@ final class SiriAnswerTests: XCTestCase {
       "Server words.")
     XCTAssertEqual(
       VoiceResult.lockedHousehold(speech: nil).answer(mode: .add, copy: de),
-      "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.")
+      "Sprachbefehle sind Teil von Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.")
     XCTAssertEqual(
       VoiceResult.lockedHousehold(speech: nil).answer(mode: .add, copy: en),
-      "Voice commands are part of Hummlist Premium. You can unlock it in the app under More, Hummlist Premium. I didn't add anything.")
+      "Voice commands are part of Snacklist Premium. You can unlock it in the app under More, Snacklist Premium. I didn't add anything.")
   }
 
   func testEveryKeyIsTranslatedInBothLanguages() {
@@ -567,14 +567,14 @@ final class OpenListIntentTests: XCTestCase {
   }
 }
 
-/// The phrases in HummlistShortcuts against Runner/AppShortcuts.xcstrings (job 97): each one has en
+/// The phrases in SnacklistShortcuts against Runner/AppShortcuts.xcstrings (job 97): each one has en
 /// and de variants that name the app once and keep its one parameter.
 final class AppShortcutPhraseTests: XCTestCase {
   private let runner = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Runner")
 
   private func intentsSource() throws -> String {
-    try String(contentsOf: runner.appendingPathComponent("AppIntents/HummlistIntents.swift"), encoding: .utf8)
+    try String(contentsOf: runner.appendingPathComponent("AppIntents/SnacklistIntents.swift"), encoding: .utf8)
   }
 
   private func codePhrases() throws -> [String] {
@@ -657,7 +657,7 @@ final class AppShortcutPhraseTests: XCTestCase {
         let values = try XCTUnwrap(sets[negative], "\(lang) lacks the negative \(negative)")
         XCTAssertFalse(values.isEmpty, negative)
         for value in values {
-          XCTAssertFalse(value.lowercased().contains("hummlist") || value.contains("${applicationName}"), value)
+          XCTAssertFalse(value.lowercased().contains("snacklist") || value.contains("${applicationName}"), value)
         }
       }
     }
@@ -678,7 +678,7 @@ final class AppShortcutPhraseTests: XCTestCase {
       names[lang] = try variables.map { try XCTUnwrap(table[$0], "\(lang) lacks \($0)") }
     }
     for name in names.values.joined() {
-      XCTAssertNotEqual(name.lowercased(), "humm", "the brand is never Humm alone")
+      XCTAssertNotEqual(name.lowercased(), "snack", "the brand is never Snack alone")
     }
     for name in names["de"]! {
       XCTAssertFalse(name.lowercased().hasSuffix("liste"), "\(name): „zur … Liste“ is Reminders' grammar (job 97)")
@@ -693,7 +693,7 @@ final class AppShortcutPhraseTests: XCTestCase {
   }
 
   /// German Siri hands "Füge X zur <…>liste hinzu" and "Einkaufsliste" to Reminders, and a bare
-  /// "Auf meine Hummlist" is a fragment of that grammar (jobs 92, 97).
+  /// "Auf meine Snacklist" is a fragment of that grammar (jobs 92, 97).
   func testGermanPhrasesStayOutOfRemindersGrammar() throws {
     let prepositions: Set<String> = ["auf", "zu", "zur", "zum", "in", "im", "an", "mit", "für"]
     let sets = try catalog("de")
@@ -723,14 +723,14 @@ final class AppShortcutPhraseTests: XCTestCase {
     let entries = try XCTUnwrap(
       Bundle.main.object(forInfoDictionaryKey: "INAlternativeAppNames") as? [[String: String]])
     XCTAssertLessThanOrEqual(entries.count, 3)
-    XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "CFBundleSpokenName") as? String, "Hummlist")
+    XCTAssertEqual(Bundle.main.object(forInfoDictionaryKey: "CFBundleSpokenName") as? String, "Snacklist")
     for lang in ["en", "de", "Base"] {
       let strings = try table("InfoPlist", lang)
       for entry in entries {
         let hint = try XCTUnwrap(entry["INAlternativeAppNamePronunciationHint"], "\(entry)")
         XCTAssertFalse((strings[hint] ?? "").isEmpty, "\(lang) lacks \(hint)")
       }
-      XCTAssertEqual(strings["CFBundleSpokenName"], "Hummlist", lang)
+      XCTAssertEqual(strings["CFBundleSpokenName"], "Snacklist", lang)
       XCTAssertFalse((strings["NSSiriUsageDescription"] ?? "").isEmpty, "\(lang) lacks NSSiriUsageDescription")
     }
   }
@@ -739,7 +739,7 @@ final class AppShortcutPhraseTests: XCTestCase {
     let source = try intentsSource()
     let count = source.components(separatedBy: "AppShortcut(\n").count - 1
     XCTAssertEqual(count, 3)
-    XCTAssertEqual(HummlistShortcuts.appShortcuts.count, 3, "Apple allows at most ten")
+    XCTAssertEqual(SnacklistShortcuts.appShortcuts.count, 3, "Apple allows at most ten")
     for intent in ["AddItemsIntent()", "ReadListIntent()", "OpenListIntent()"] {
       XCTAssertTrue(source.contains("intent: \(intent)"), intent)
     }

@@ -1,11 +1,11 @@
 # The landing pages /de and /en (site/landing.mjs). One entry per string: `de` and `en` (inline
-# Markdown: **bold**, [link](/path)), `status` (`draft`: new or changed, waiting for Hummlist
+# Markdown: **bold**, [link](/path)), `status` (`draft`: new or changed, waiting for Snacklist
 # Launch; `reused`: taken word for word from published copy) and `source` (where it comes from,
 # or why it is new). `node scripts/copy-needed.mjs` writes site/COPY_NEEDED.md from this file.
 
 meta.title:
-  de: "Hummlist: die Einkaufsliste für euren Haushalt"
-  en: "Hummlist: the shopping list for your household"
+  de: "Snacklist: die Einkaufsliste für euren Haushalt"
+  en: "Snacklist: the shopping list for your household"
   status: draft
   source: "Title of the 6b prototype homepage; English new."
 meta.description:
@@ -15,8 +15,8 @@ meta.description:
   source: "New: search and share description, built from the hero lead."
 
 footer.tagline:
-  de: "Hummlist ist eine Einkaufsliste für einen Haushalt. Für iPhone und Android."
-  en: "Hummlist is a shopping list for one household. For iPhone and Android."
+  de: "Snacklist ist eine Einkaufsliste für einen Haushalt. Für iPhone und Android."
+  en: "Snacklist is a shopping list for one household. For iPhone and Android."
   status: draft
   source: "Job 82: no browser mention (Addendum 1)."
 
@@ -29,21 +29,21 @@ hero.title:
   de: "Gemeinsam einkaufen, ohne Werbung"
   en: "Shop together, no ads"
   status: draft
-  source: "Peter 2026-11-01 (FG2, via Hummlist Launch); English approved too."
+  source: "Peter 2026-11-01 (FG2, via Snacklist Launch); English approved too."
 hero.lead:
   de: "Einer tippt „Milch“, alle sehen es sofort. Sortiert nach Laden und nach dem Weg durch die Regale."
   en: "One of you types “milk”, everyone sees it right away. Sorted by store and by your way through the aisles."
   status: draft
   source: "6b prototype hero; English new."
 hero.image:
-  de: "Die Hummlist-App mit der Liste von „Unser Haushalt“, dazu Wochenmarkt, Bäckerei, Drogerie und Supermarkt: Zahnpasta bei der Drogerie, im Supermarkt sind die Bananen abgehakt und die Hafermilch ist neu. Darüber die Meldung „Anna hat ‚Hafermilch‘ hinzugefügt“."
-  en: "The Hummlist app with the list of “Our household”, with farmers’ market, bakery, drugstore and supermarket: toothpaste at the drugstore, at the supermarket the bananas are ticked off and the oat milk is new. Above it the note “Anna added ‘Oat milk’”."
+  de: "Die Snacklist-App mit der Liste von „Unser Haushalt“, dazu Wochenmarkt, Bäckerei, Drogerie und Supermarkt: Zahnpasta bei der Drogerie, im Supermarkt sind die Bananen abgehakt und die Hafermilch ist neu. Darüber die Meldung „Anna hat ‚Hafermilch‘ hinzugefügt“."
+  en: "The Snacklist app with the list of “Our household”, with farmers’ market, bakery, drugstore and supermarket: toothpaste at the drugstore, at the supermarket the bananas are ticked off and the oat milk is new. Above it the note “Anna added ‘Oat milk’”."
   status: draft
   source: "New: text alternative of the hero illustration; must match site/public/media/hero-*."
 
 features.title:
-  de: "Was Hummlist für euch erledigt"
-  en: "What Hummlist does for you"
+  de: "Was Snacklist für euch erledigt"
+  en: "What Snacklist does for you"
   status: draft
   source: "6b prototype; English new."
 features.lead:
@@ -68,8 +68,8 @@ feature.household.title:
   status: draft
   source: "New: the prototype's sync card, now for any number of members."
 feature.household.body:
-  de: "Was einer einträgt, sehen alle anderen sofort auf ihrem Handy. Was jemand im Laden abhakt, verschwindet bei allen. Ohne Netz geht es auch: Hummlist holt alles nach, sobald ihr wieder online seid."
-  en: "What one of you adds, everyone else sees on their phone right away. What someone ticks off in the store disappears for all of you. It works offline too: Hummlist catches up as soon as you are back online."
+  de: "Was einer einträgt, sehen alle anderen sofort auf ihrem Handy. Was jemand im Laden abhakt, verschwindet bei allen. Ohne Netz geht es auch: Snacklist holt alles nach, sobald ihr wieder online seid."
+  en: "What one of you adds, everyone else sees on their phone right away. What someone ticks off in the store disappears for all of you. It works offline too: Snacklist catches up as soon as you are back online."
   status: draft
   source: "6b prototype „Eine Liste für alle“ (Peter and Lea made general); English new."
 feature.household.invite:
@@ -83,8 +83,8 @@ feature.stores.title:
   status: draft
   source: "6b prototype; English new."
 feature.stores.body:
-  de: "Jeder Artikel landet von selbst in seiner Kategorie, von Obst & Gemüse bis Drogerie. Lege deine Läden an, vom Supermarkt bis zum Wochenmarkt, jeder mit eigenem Laufweg. Hummlist merkt sich, wo du was meistens kaufst."
-  en: "Every item lands in its category by itself, from fruit & vegetables to toiletries. Add your stores, from the supermarket to the farmers’ market, each with its own route. Hummlist remembers where you usually buy what."
+  de: "Jeder Artikel landet von selbst in seiner Kategorie, von Obst & Gemüse bis Drogerie. Lege deine Läden an, vom Supermarkt bis zum Wochenmarkt, jeder mit eigenem Laufweg. Snacklist merkt sich, wo du was meistens kaufst."
+  en: "Every item lands in its category by itself, from fruit & vegetables to toiletries. Add your stores, from the supermarket to the farmers’ market, each with its own route. Snacklist remembers where you usually buy what."
   status: draft
   source: "6b prototype; English new. Generic store types only, no retailer names (N-23)."
 feature.stores.more:
@@ -164,8 +164,8 @@ feature.stores.category.drugstore:
   source: "Job 145: the app's seeded category name (app/l10n/app_*.arb); keep them equal."
 
 voice.title:
-  de: "Sag es einfach. Hummlist hört zu."
-  en: "Just say it. Hummlist is listening."
+  de: "Sag es einfach. Snacklist hört zu."
+  en: "Just say it. Snacklist is listening."
   status: draft
   source: "6b prototype; English new."
 voice.lead:
@@ -179,8 +179,8 @@ voice.app.title:
   status: draft
   source: "New (job 150): card of the in-app dictation video."
 voice.app.body:
-  de: "In der iPhone- und Android-App tippst du auf das Mikrofon im Eingabefeld und sagst, was fehlt. Hummlist hört direkt auf dem Handy zu, auf Deutsch, und sortiert jedes Teil in seine Kategorie."
-  en: "In the iPhone and Android app, tap the microphone in the input field and say what you need. Hummlist listens right on your phone, in German, and sorts each item into its category."
+  de: "In der iPhone- und Android-App tippst du auf das Mikrofon im Eingabefeld und sagst, was fehlt. Snacklist hört direkt auf dem Handy zu, auf Deutsch, und sortiert jedes Teil in seine Kategorie."
+  en: "In the iPhone and Android app, tap the microphone in the input field and say what you need. Snacklist listens right on your phone, in German, and sorts each item into its category."
   status: draft
   source: "New (job 150), from FEATURES-FOR-WRITERS \"Dictation\": iPhone and Android app only, German, on the device; the splitting needs a connection. Replaces the Siri card's in-app sentence."
 voice.ai.title:
@@ -189,8 +189,8 @@ voice.ai.title:
   status: draft
   source: "New: replaces the prototype's one-line MCP mention."
 voice.ai.body:
-  de: "Verbinde einen KI-Assistenten, der MCP unterstützt, über den MCP-Server von Hummlist mit eurer Liste. Dann schreibst oder sagst du ihm, was fehlt, und er setzt es auf die Liste."
-  en: "Connect an AI assistant that supports MCP to your list through the Hummlist MCP server. Then write or tell it what's missing, and it puts it on the list."
+  de: "Verbinde einen KI-Assistenten, der MCP unterstützt, über den MCP-Server von Snacklist mit eurer Liste. Dann schreibst oder sagst du ihm, was fehlt, und er setzt es auf die Liste."
+  en: "Connect an AI assistant that supports MCP to your list through the Snacklist MCP server. Then write or tell it what's missing, and it puts it on the list."
   status: draft
   source: "New, from the help page's MCP answer (MCP server under More › Connections)."
 voice.siri.title:
@@ -210,8 +210,8 @@ privacy.title:
   status: draft
   source: "6b prototype; English new."
 privacy.lead:
-  de: "Hummlist zeigt keine Werbung und verkauft keine Daten."
-  en: "Hummlist shows no ads and sells no data."
+  de: "Snacklist zeigt keine Werbung und verkauft keine Daten."
+  en: "Snacklist shows no ads and sells no data."
   status: reused
   source: "Privacy policy (/datenschutz, /en/privacy), word for word."
 privacy.frankfurt:
@@ -251,8 +251,8 @@ founder.title:
   status: draft
   source: "Peter 2026-11-05 (job 139): founder note between the privacy block and the sign-up form."
 founder.body:
-  de: "Ich wollte eine App, die ich mit meiner Frau teilen und KI für mich verwalten kann. Darum baue ich Hummlist: Wir schreiben beide auf dieselbe Liste, und über MCP können KI-Assistenten Sachen hinzufügen, abhaken und die Liste lesen. In der Beta testest du Hummlist mit uns und sagst uns, was dir noch fehlt. — Peter"
-  en: "I wanted an app I can share with my wife and that AI can manage. So I'm building Hummlist: we both use the same list, and via MCP, AI assistants can add items, check them off and read the list. In the beta you test Hummlist with us and tell us what's still missing. — Peter"
+  de: "Ich wollte eine App, die ich mit meiner Frau teilen und KI für mich verwalten kann. Darum baue ich Snacklist: Wir schreiben beide auf dieselbe Liste, und über MCP können KI-Assistenten Sachen hinzufügen, abhaken und die Liste lesen. In der Beta testest du Snacklist mit uns und sagst uns, was dir noch fehlt. — Peter"
+  en: "I wanted an app I can share with my wife and that AI can manage. So I'm building Snacklist: we both use the same list, and via MCP, AI assistants can add items, check them off and read the list. In the beta you test Snacklist with us and tell us what's still missing. — Peter"
   status: draft
   source: "Peter 2026-11-05 (job 139), word for word; brand-free AI line (Legal L-1). Waitlist and beta stages only."
 
@@ -273,8 +273,8 @@ demo.pause:
   status: draft
   source: "New: label of the demo videos' pause button."
 demo.add-tick:
-  de: "Video ohne Ton: Ins Eingabefeld der Hummlist-App tippt jemand „Honig“ und „Marmelade“, beide landen unter Vorrat & Konserven. Danach hakt je ein Tipp sie wieder ab."
-  en: "Silent video: someone types “Honey” and “Jam” into the Hummlist app’s input field, and both land under Pantry. Then one tap each ticks them off again."
+  de: "Video ohne Ton: Ins Eingabefeld der Snacklist-App tippt jemand „Honig“ und „Marmelade“, beide landen unter Vorrat & Konserven. Danach hakt je ein Tipp sie wieder ab."
+  en: "Silent video: someone types “Honey” and “Jam” into the Snacklist app’s input field, and both land under Pantry. Then one tap each ticks them off again."
   status: draft
   source: "Job 54: text alternative of the add-tick video; matches its take (marketing/videos/capture/shots.ts)."
 demo.household-sync:
@@ -283,18 +283,18 @@ demo.household-sync:
   status: draft
   source: "Job 54: text alternative of the household-sync video; job 146 re-filmed it after the UI changes; under a second is the measured sync time of the takes (0.58 to 0.80 s)."
 demo.voice-add:
-  de: "Video ohne Ton: Mia tippt auf das Mikrofon im Eingabefeld der Hummlist-App und sagt „Pizza, Orangensaft und zwei Packungen Fischstäbchen“. Die Wörter erscheinen im Feld, während sie spricht. Sie tippt auf Stopp, und gleich darauf stehen Orangensaft unter Getränke und Pizza und 2 Packungen Fischstäbchen unter Tiefkühl. Im Laden hakt sie alle drei ab."
-  en: "Silent video: Mia taps the microphone in the Hummlist app’s input field and says, in German, “Pizza, Orangensaft und zwei Packungen Fischstäbchen” (pizza, orange juice and two packs of fish fingers). The words appear in the field as she speaks. She taps stop, and right after, Orangensaft is under Drinks and Pizza and 2 Packungen Fischstäbchen under Frozen. In the store she ticks all three off."
+  de: "Video ohne Ton: Mia tippt auf das Mikrofon im Eingabefeld der Snacklist-App und sagt „Pizza, Orangensaft und zwei Packungen Fischstäbchen“. Die Wörter erscheinen im Feld, während sie spricht. Sie tippt auf Stopp, und gleich darauf stehen Orangensaft unter Getränke und Pizza und 2 Packungen Fischstäbchen unter Tiefkühl. Im Laden hakt sie alle drei ab."
+  en: "Silent video: Mia taps the microphone in the Snacklist app’s input field and says, in German, “Pizza, Orangensaft und zwei Packungen Fischstäbchen” (pizza, orange juice and two packs of fish fingers). The words appear in the field as she speaks. She taps stop, and right after, Orangensaft is under Drinks and Pizza and 2 Packungen Fischstäbchen under Frozen. In the store she ticks all three off."
   status: draft
   source: "Job 150: text alternative of the voice-add video; matches its take (marketing/videos/capture/shots.ts). The app listens in German in every language."
 demo.mcp-chat:
-  de: "Video ohne Ton: Ein KI-Chat bekommt „Schreib Honig und Marmelade auf“. Hummlist meldet beide unter Vorrat & Konserven, und sie erscheinen in der App. Per Sprache folgt „Hab beides gekauft, hak es ab“, und beide verschwinden wieder."
-  en: "Silent video: an AI chat gets “Put honey and jam on the list”. Hummlist reports both under Pantry, and they appear in the app. By voice follows “Bought both, tick them off”, and both disappear again."
+  de: "Video ohne Ton: Ein KI-Chat bekommt „Schreib Honig und Marmelade auf“. Snacklist meldet beide unter Vorrat & Konserven, und sie erscheinen in der App. Per Sprache folgt „Hab beides gekauft, hak es ab“, und beide verschwinden wieder."
+  en: "Silent video: an AI chat gets “Put honey and jam on the list”. Snacklist reports both under Pantry, and they appear in the app. By voice follows “Bought both, tick them off”, and both disappear again."
   status: draft
   source: "Job 54: text alternative of the mcp-chat video; the results are the real MCP answers of the take."
 
 # The waitlist and the stage CTAs (job 82, docs/WAITLIST.md; the stage is site/config/stage.ts).
-# Texts from the V1 variant and the shared building blocks of Hummlist Launch (job 83 brief,
+# Texts from the V1 variant and the shared building blocks of Snacklist Launch (job 83 brief,
 # 2026-11-02) and Legal Review's handoffs of 2026-11-02 and 2026-11-04. All drafts until Peter
 # approves them in his own words; the PR is not merged before that.
 
@@ -314,8 +314,8 @@ launch.cta:
   status: draft
   source: "Job 82 Addendum 8: the CTA of the launch stage (store badges, QR code)."
 launch.title:
-  de: "Hol dir Hummlist"
-  en: "Get Hummlist"
+  de: "Hol dir Snacklist"
+  en: "Get Snacklist"
   status: draft
   source: "Job 82 Addendum 8: heading of the launch stage's download block."
 launch.lead:
@@ -327,7 +327,7 @@ launch.qr:
   de: "Mit dem Handy scannen, dann landest du im passenden Store."
   en: "Scan it with your phone to open the right store."
   status: draft
-  source: "Job 82 Addendum 8: caption of the QR code (hummlist.com/get)."
+  source: "Job 82 Addendum 8: caption of the QR code (snacklist.app/get)."
 launch.app-store:
   de: "Download on the App Store"
   en: "Download on the App Store"
@@ -439,8 +439,8 @@ waitlist.thanks.small:
   status: draft
   source: "Launch shared blocks, state 1, small line."
 waitlist.back:
-  de: "Zurück zu hummlist.com"
-  en: "Back to hummlist.com"
+  de: "Zurück zu snacklist.app"
+  en: "Back to snacklist.app"
   status: draft
   source: "Launch shared blocks, state 2 link."
 
@@ -450,8 +450,8 @@ waitlist.confirm.meta-title:
   status: draft
   source: "New draft: title of the page behind the confirmation mail's link."
 waitlist.confirm.description:
-  de: "Bestätige deine E-Mail für die Warteliste der Hummlist-Beta."
-  en: "Confirm your email for the Hummlist beta waitlist."
+  de: "Bestätige deine E-Mail für die Warteliste der Snacklist-Beta."
+  en: "Confirm your email for the Snacklist beta waitlist."
   status: draft
   source: "New draft."
 waitlist.confirm.title:
@@ -460,8 +460,8 @@ waitlist.confirm.title:
   status: draft
   source: "New draft: before the button is pressed."
 waitlist.confirm.body:
-  de: "Diese Adresse wurde für die Warteliste der Hummlist-Beta eingetragen, von dir selbst oder zum Beispiel von einem KI-Assistenten für dich. Auf der Liste stehst du erst, wenn du hier selbst auf „E-Mail bestätigen“ tippst."
-  en: "This address was entered for the Hummlist beta waitlist, by you or, for example, by an AI assistant for you. You're only on the list once you tap \"Confirm email\" here yourself."
+  de: "Diese Adresse wurde für die Warteliste der Snacklist-Beta eingetragen, von dir selbst oder zum Beispiel von einem KI-Assistenten für dich. Auf der Liste stehst du erst, wenn du hier selbst auf „E-Mail bestätigen“ tippst."
+  en: "This address was entered for the Snacklist beta waitlist, by you or, for example, by an AI assistant for you. You're only on the list once you tap \"Confirm email\" here yourself."
   status: draft
   source: "Legal Review 2026-11-04, C-1/C-2 intro (N-73), word for word."
 waitlist.confirm.button:
@@ -506,8 +506,8 @@ waitlist.unsubscribe.meta-title:
   status: draft
   source: "New draft: title of the page behind every mail's unsubscribe link."
 waitlist.unsubscribe.description:
-  de: "Lösche deinen Eintrag auf der Warteliste der Hummlist-Beta."
-  en: "Delete your sign-up for the Hummlist beta waitlist."
+  de: "Lösche deinen Eintrag auf der Warteliste der Snacklist-Beta."
+  en: "Delete your sign-up for the Snacklist beta waitlist."
   status: draft
   source: "New draft."
 waitlist.unsubscribe.title:

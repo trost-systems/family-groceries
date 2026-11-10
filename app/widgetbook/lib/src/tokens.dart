@@ -8,9 +8,9 @@ import 'package:hummlist_widgetbook/src/story.dart';
 
 const _path = 'Tokens';
 
-typedef ColorToken = ({String name, Color Function(HummlistColors) of});
+typedef ColorToken = ({String name, Color Function(SnacklistColors) of});
 
-/// Every colour token by its name in `design/tokens/hummlist.tokens.json`
+/// Every colour token by its name in `design/tokens/snacklist.tokens.json`
 /// (the catalogue's test holds the two in step).
 const List<ColorToken> colorTokens = [
   (name: 'brand', of: _brand),
@@ -53,44 +53,44 @@ const List<ColorToken> colorTokens = [
   (name: 'on-inverse', of: _onInverse),
 ];
 
-Color _brand(HummlistColors t) => t.brand;
-Color _onBrand(HummlistColors t) => t.onBrand;
-Color _honey(HummlistColors t) => t.honey;
-Color _onHoney(HummlistColors t) => t.onHoney;
-Color _honeySoft(HummlistColors t) => t.honeySoft;
-Color _accent(HummlistColors t) => t.accent;
-Color _onAccent(HummlistColors t) => t.onAccent;
-Color _accentSoft(HummlistColors t) => t.accentSoft;
-Color _surface(HummlistColors t) => t.surface;
-Color _surfaceRaised(HummlistColors t) => t.surfaceRaised;
-Color _surfaceSunken(HummlistColors t) => t.surfaceSunken;
-Color _text(HummlistColors t) => t.text;
-Color _textMuted(HummlistColors t) => t.textMuted;
-Color _border(HummlistColors t) => t.border;
-Color _divider(HummlistColors t) => t.divider;
-Color _ink(HummlistColors t) => t.ink;
-Color _success(HummlistColors t) => t.success;
-Color _onSuccess(HummlistColors t) => t.onSuccess;
-Color _successSoft(HummlistColors t) => t.successSoft;
-Color _warning(HummlistColors t) => t.warning;
-Color _onWarning(HummlistColors t) => t.onWarning;
-Color _error(HummlistColors t) => t.error;
-Color _onError(HummlistColors t) => t.onError;
-Color _edge(HummlistColors t) => t.edge;
-Color _honeyEdge(HummlistColors t) => t.honeyEdge;
-Color _surfaceEdge(HummlistColors t) => t.surfaceEdge;
-Color _mint(HummlistColors t) => t.mint;
-Color _onMint(HummlistColors t) => t.onMint;
-Color _mintSoft(HummlistColors t) => t.mintSoft;
-Color _mintEdge(HummlistColors t) => t.mintEdge;
-Color _cobalt(HummlistColors t) => t.cobalt;
-Color _onCobalt(HummlistColors t) => t.onCobalt;
-Color _onAccentSoft(HummlistColors t) => t.onAccentSoft;
-Color _tomato(HummlistColors t) => t.tomato;
-Color _onTomato(HummlistColors t) => t.onTomato;
-Color _tomatoEdge(HummlistColors t) => t.tomatoEdge;
-Color _inverse(HummlistColors t) => t.inverse;
-Color _onInverse(HummlistColors t) => t.onInverse;
+Color _brand(SnacklistColors t) => t.brand;
+Color _onBrand(SnacklistColors t) => t.onBrand;
+Color _honey(SnacklistColors t) => t.honey;
+Color _onHoney(SnacklistColors t) => t.onHoney;
+Color _honeySoft(SnacklistColors t) => t.honeySoft;
+Color _accent(SnacklistColors t) => t.accent;
+Color _onAccent(SnacklistColors t) => t.onAccent;
+Color _accentSoft(SnacklistColors t) => t.accentSoft;
+Color _surface(SnacklistColors t) => t.surface;
+Color _surfaceRaised(SnacklistColors t) => t.surfaceRaised;
+Color _surfaceSunken(SnacklistColors t) => t.surfaceSunken;
+Color _text(SnacklistColors t) => t.text;
+Color _textMuted(SnacklistColors t) => t.textMuted;
+Color _border(SnacklistColors t) => t.border;
+Color _divider(SnacklistColors t) => t.divider;
+Color _ink(SnacklistColors t) => t.ink;
+Color _success(SnacklistColors t) => t.success;
+Color _onSuccess(SnacklistColors t) => t.onSuccess;
+Color _successSoft(SnacklistColors t) => t.successSoft;
+Color _warning(SnacklistColors t) => t.warning;
+Color _onWarning(SnacklistColors t) => t.onWarning;
+Color _error(SnacklistColors t) => t.error;
+Color _onError(SnacklistColors t) => t.onError;
+Color _edge(SnacklistColors t) => t.edge;
+Color _honeyEdge(SnacklistColors t) => t.honeyEdge;
+Color _surfaceEdge(SnacklistColors t) => t.surfaceEdge;
+Color _mint(SnacklistColors t) => t.mint;
+Color _onMint(SnacklistColors t) => t.onMint;
+Color _mintSoft(SnacklistColors t) => t.mintSoft;
+Color _mintEdge(SnacklistColors t) => t.mintEdge;
+Color _cobalt(SnacklistColors t) => t.cobalt;
+Color _onCobalt(SnacklistColors t) => t.onCobalt;
+Color _onAccentSoft(SnacklistColors t) => t.onAccentSoft;
+Color _tomato(SnacklistColors t) => t.tomato;
+Color _onTomato(SnacklistColors t) => t.onTomato;
+Color _tomatoEdge(SnacklistColors t) => t.tomatoEdge;
+Color _inverse(SnacklistColors t) => t.inverse;
+Color _onInverse(SnacklistColors t) => t.onInverse;
 
 /// A pair the design puts together, the contrast it needs, and the mode
 /// it is used in (null: both).
@@ -137,7 +137,7 @@ const List<ContrastPair> contrastPairs = [
 
 Color tokenColor(String name, Brightness brightness) => colorTokens
     .firstWhere((t) => t.name == name)
-    .of(HummlistColors.of(brightness));
+    .of(SnacklistColors.of(brightness));
 
 String hex(Color color) =>
     '#${(color.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
@@ -198,10 +198,10 @@ class const _Swatch(final ColorToken token) extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     Widget half(Brightness brightness) {
-      final color = token.of(HummlistColors.of(brightness));
+      final color = token.of(SnacklistColors.of(brightness));
       final ink = color.computeLuminance() > 0.4
-          ? HummlistColors.light.ink
-          : HummlistColors.dark.text;
+          ? SnacklistColors.light.ink
+          : SnacklistColors.dark.text;
       return Container(
         height: 44,
         color: color,
@@ -363,7 +363,7 @@ class const _TypeRamp() extends StatelessWidget {
           row(
             name,
             style,
-            name == 'caption' ? 'LIDL · 3 EINTRÄGE' : 'Hummlist',
+            name == 'caption' ? 'LIDL · 3 EINTRÄGE' : 'Snacklist',
           ),
         const SizedBox(height: HlSpace.s4),
         Text('Material-Rollen im App-Theme', style: text.titleMedium),
@@ -416,7 +416,7 @@ class const _Radii() extends StatelessWidget {
 class const _Depth() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final colors = TactileColors(
       face: t.honey,
       contour: t.edge,

@@ -29,7 +29,7 @@ Read [`references/framing.md`](references/framing.md) before you compose a shot,
 
 ## The Hummlist look (6b Hex Frische, design 6's yellow)
 
-Take values from the shared tokens, never by eye: `design/tokens/hummlist.tokens.json`,
+Take values from the shared tokens, never by eye: `design/tokens/snacklist.tokens.json`,
 generated into `site/public/tokens.css` (`--hl-*`) and `app/lib/design/tokens.g.dart`
 (`HummlistColors`, `HlSpace`, `HlRadius`, `HlDuration`, `HlEasing`). Never hand-edit either.
 

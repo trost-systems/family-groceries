@@ -6,7 +6,7 @@ NSExtensionAttributes IntentsSupported or an IN...Intent in NSUserActivityTypes 
 IntentExamples entry in the app's <lang>.lproj/AppIntentVocabulary.plist (ITMS-90626, build 1130).
 Each example must name the app. The languages are de, en and every other .lproj but Base.
 
-Usage: scripts/siri-vocabulary.py [app/ios | Runner.app | Hummlist.ipa]
+Usage: scripts/siri-vocabulary.py [app/ios | Runner.app | Snacklist.ipa]
 The source tree reads Runner/ as the app and every sibling folder whose Info.plist has an
 NSExtension as an extension; a built app reads PlugIns/*.appex. Built plists may be binary.
 """

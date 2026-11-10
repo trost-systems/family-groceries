@@ -163,7 +163,7 @@ async function authorized(
     throw new ApiError(
       402,
       'premium_required',
-      'This household needs Hummlist Premium to use the API. Unlock it in the Hummlist app. ' +
+      'This household needs Snacklist Premium to use the API. Unlock it in the Snacklist app. ' +
         'Nothing was read or changed.',
     );
   }

@@ -737,7 +737,7 @@ class const _AppDetails({
                     Icon(
                       Icons.check,
                       size: 20,
-                      color: HummlistColors.of(theme.brightness).brand,
+                      color: SnacklistColors.of(theme.brightness).brand,
                     ),
                     const SizedBox(width: 12),
                     Expanded(child: Text(sentence)),
@@ -793,7 +793,7 @@ class const _Subtitle(final String details, {required final bool paused})
   }
 }
 
-/// Job 50: Siri and AI assistants are part of Hummlist Premium (Alexa stays
+/// Job 50: Siri and AI assistants are part of Snacklist Premium (Alexa stays
 /// free), for a household known to have none while the server enforces the
 /// lock. Nothing is removed; [offer] says how to unlock it.
 class const _PremiumCard({required final LockOffer offer})

@@ -106,7 +106,7 @@ test('Siri adds Karotten with Möhren open and says Möhren is on the list (job 
 test('errors come back as German sentences Siri can speak', async ({ page }) => {
   expect(await say('fgp_not-a-token', 'Milch', '?format=text')).toEqual({
     status: 401,
-    body: 'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Mehr, Zugänge einen neuen.',
+    body: 'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Snacklist-App unter Mehr, Zugänge einen neuen.',
   });
 
   const email = newEmail('voice-errors');
@@ -252,7 +252,7 @@ test('native Siri: the credential the app mints adds in English, reads back, and
   const added = await ask(token, { text: 'milk, eggs and bread', mode: 'add', lang: 'en' });
   expect(added.status).toBe(200);
   expect(added.body.outcome).toBe('added');
-  expect(added.body.speech).toBe('Added milk, eggs and bread to Hummlist.');
+  expect(added.body.speech).toBe('Added milk, eggs and bread to Snacklist.');
   expect(added.body.items.map((i: { name: string; category: string }) => [i.name, i.category])).toEqual([
     ['milk', 'Kühlregal'],
     ['eggs', 'Kühlregal'],
@@ -270,13 +270,13 @@ test('native Siri: the credential the app mints adds in English, reads back, and
     status: 200,
     body: {
       outcome: 'read',
-      speech: expect.stringMatching(/^There are 3 things on your Hummlist: /),
+      speech: expect.stringMatching(/^There are 3 things on your Snacklist: /),
       items: expect.arrayContaining([{ name: 'milk', quantity: null }, { name: 'bread', quantity: null }]),
       total: 3,
     },
   });
   const gelesen = await ask(token, { mode: 'read', lang: 'de' });
-  expect(gelesen.body.speech).toMatch(/^Auf der Hummlist stehen 3 Sachen: /);
+  expect(gelesen.body.speech).toMatch(/^Auf der Snacklist stehen 3 Sachen: /);
 
   const mcp = await fetch(`${functionsUrl}/mcp`, {
     method: 'POST',

@@ -50,13 +50,13 @@ class FakeInvites() implements InviteRepository {
   /// Codes of the household the user is in.
   final own = <String>{};
 
-  /// What `preview_invite` says about Hummlist Lifetime, by code.
+  /// What `preview_invite` says about Snacklist Lifetime, by code.
   final lifetime = <String, JoinLifetime>{};
 
   /// Each household's members, by household id.
   final memberLists = <String, List<HouseholdMember>>{};
 
-  /// Households whose Hummlist Premium ends when the last member leaves.
+  /// Households whose Snacklist Premium ends when the last member leaves.
   final unlocked = <String>{};
   final created = <Invite>[];
   final revoked = <String>[];

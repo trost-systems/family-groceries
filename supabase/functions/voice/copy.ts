@@ -13,7 +13,7 @@ export const failureCodes = [
   'too_long',
   'nothing_understood',
   'server',
-  // Job 50's integration lock: the household has no Hummlist Premium.
+  // Job 50's integration lock: the household has no Snacklist Premium.
   'premium_required',
 ] as const;
 
@@ -50,16 +50,16 @@ export const copy: Record<Lang, Copy> = {
     failures: {
       method: 'Bitte schick den Text per POST.',
       unauthorized:
-        'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Mehr, Zugänge einen neuen.',
+        'Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Snacklist-App unter Mehr, Zugänge einen neuen.',
       no_household:
-        'Du bist noch in keinem Haushalt. Leg in der Hummlist-App einen an oder tritt einem bei.',
+        'Du bist noch in keinem Haushalt. Leg in der Snacklist-App einen an oder tritt einem bei.',
       no_text: `Ich habe keinen Text bekommen. ${exampleDe}`,
       too_long: 'Das war zu lang. Sag höchstens dreißig Dinge auf einmal.',
       nothing_understood: `Ich habe nichts verstanden, was auf die Liste soll. ${exampleDe}`,
       server: 'Das hat leider nicht geklappt. Versuch es gleich noch einmal.',
-      // PLACEHOLDER copy (Spec #4 AC2); the final text comes from Hummlist Launch.
+      // PLACEHOLDER copy (Spec #4 AC2); the final text comes from Snacklist Launch.
       premium_required:
-        'Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.',
+        'Sprachbefehle sind Teil von Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.',
     },
     tooMany: 'Mehr als dreißig auf einmal gehen nicht; sag den Rest bitte noch einmal.',
     spoken,
@@ -71,10 +71,10 @@ export const copy: Record<Lang, Copy> = {
       } trotzdem dazuschreiben?`,
     parsed: (said) => `Verstanden: ${said.join(', ')}.`,
     listing: (said, total) => {
-      if (total === 0) return 'Die Hummlist ist leer.';
+      if (total === 0) return 'Die Snacklist ist leer.';
       const head = total === 1
-        ? 'Auf der Hummlist steht eine Sache'
-        : `Auf der Hummlist stehen ${total} Sachen`;
+        ? 'Auf der Snacklist steht eine Sache'
+        : `Auf der Snacklist stehen ${total} Sachen`;
       const rest = total - said.length;
       if (rest === 0) return `${head}: ${und(said)}.`;
       return `${head}: ${said.join(', ')} und ${rest === 1 ? 'eine' : rest} weitere.`;
@@ -84,20 +84,20 @@ export const copy: Record<Lang, Copy> = {
     failures: {
       method: 'Please send the text with POST.',
       unauthorized:
-        "I couldn't sign in to Hummlist, so nothing was added. Open Hummlist and sign in again.",
+        "I couldn't sign in to Snacklist, so nothing was added. Open Snacklist and sign in again.",
       no_household:
-        "You're not in a household yet, so nothing was added. Create one or join one in the Hummlist app.",
+        "You're not in a household yet, so nothing was added. Create one or join one in the Snacklist app.",
       no_text: `I didn't get any text, so nothing was added. ${exampleEn}`,
       too_long: 'That was too long, so nothing was added. Say at most thirty things at once.',
       nothing_understood: `I didn't understand anything to put on the list. ${exampleEn}`,
       server: "Sorry, that didn't work, nothing was added. Please try again in a moment.",
-      // PLACEHOLDER copy (Spec #4 AC2); the final text comes from Hummlist Launch.
+      // PLACEHOLDER copy (Spec #4 AC2); the final text comes from Snacklist Launch.
       premium_required:
-        "Voice commands are part of Hummlist Premium. You can unlock it in the app under More, Hummlist Premium. I didn't add anything.",
+        "Voice commands are part of Snacklist Premium. You can unlock it in the app under More, Snacklist Premium. I didn't add anything.",
     },
     tooMany: "More than thirty at once doesn't work; please say the rest again.",
     spoken: spokenEnglish,
-    added: (said) => `Added ${and(said)} to Hummlist.`,
+    added: (said) => `Added ${and(said)} to Snacklist.`,
     existing: (said) => `Already on the list: ${and(said)}.`,
     ask: (open, wanted) =>
       `${and(open)} ${open.length === 1 ? 'is' : 'are'} already on the list. Should I add ${
@@ -105,10 +105,10 @@ export const copy: Record<Lang, Copy> = {
       } anyway?`,
     parsed: (said) => `Got it: ${and(said)}.`,
     listing: (said, total) => {
-      if (total === 0) return 'Your Hummlist is empty.';
+      if (total === 0) return 'Your Snacklist is empty.';
       const head = total === 1
-        ? 'There is one thing on your Hummlist'
-        : `There are ${total} things on your Hummlist`;
+        ? 'There is one thing on your Snacklist'
+        : `There are ${total} things on your Snacklist`;
       const rest = total - said.length;
       if (rest === 0) return `${head}: ${and(said)}.`;
       return `${head}: ${said.join(', ')} and ${rest} more.`;

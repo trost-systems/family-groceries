@@ -34,7 +34,7 @@ class const HexPill({
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final t = HummlistColors.of(brightness);
+    final t = SnacklistColors.of(brightness);
     final lifted =
         context.dependOnInheritedWidgetOfExactType<_Lifted>() != null;
     final face = Material(
@@ -119,7 +119,7 @@ class const PillTitle(final String text, {super.key}) extends StatelessWidget {
         fontSize: 17,
         fontWeight: FontWeight.w700,
         height: 1.15,
-        color: HummlistColors.of(Theme.of(context).brightness).text,
+        color: SnacklistColors.of(Theme.of(context).brightness).text,
       ),
     ),
   );
@@ -142,7 +142,7 @@ class const PillDragHandle({
         child: Icon(
           Icons.drag_handle,
           semanticLabel: label,
-          color: HummlistColors.of(Theme.of(context).brightness).textMuted,
+          color: SnacklistColors.of(Theme.of(context).brightness).textMuted,
         ),
       ),
     ),

@@ -70,7 +70,7 @@ class _JoinRequestWaitingState() extends State<JoinRequestWaiting> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final session = context.watch<SessionCubit>();
     final inHousehold = session.state is InHousehold;
     final problem = _problem;

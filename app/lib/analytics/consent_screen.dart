@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Asked once per install, right after the first sign-in and before
-/// onboarding or the list: may Hummlist send usage data and error reports?
+/// onboarding or the list: may Snacklist send usage data and error reports?
 /// Both answers are one tap and equally prominent; the router moves on as
 /// soon as one is stored. Peter approved the wording on 2026-10-30.
 class const AnalyticsConsentScreen({super.key}) extends StatelessWidget {

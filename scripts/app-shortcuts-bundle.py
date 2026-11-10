@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """The built app carries the App Shortcuts Siri matches (job 97), not only the source tree.
 
-Metadata.appintents/extract.actionsdata must list the App Shortcuts of HummlistShortcuts
+Metadata.appintents/extract.actionsdata must list the App Shortcuts of SnacklistShortcuts
 (AddItemsIntent, ReadListIntent, OpenListIntent) with phrase templates that each name the app,
 the negative phrases, and the item entity; the phrases and negative phrases must be localized for
-de and en; Siri says "Hummlist", and no German alternative name ends in "Liste".
+de and en; Siri says "Snacklist", and no German alternative name ends in "Liste".
 
-Usage: scripts/app-shortcuts-bundle.py [Runner.app | Hummlist.ipa]
+Usage: scripts/app-shortcuts-bundle.py [Runner.app | Snacklist.ipa]
 """
 import json
 import plistlib
@@ -54,7 +54,7 @@ def check(app: Path) -> tuple[list[str], list[str]]:
 
 
 def spoken_names(app: Path) -> list[str]:
-    """Siri says "Hummlist", and no German alternative name ends in "Liste", Reminders' grammar
+    """Siri says "Snacklist", and no German alternative name ends in "Liste", Reminders' grammar
     (job 97)."""
     info_path = app / "Info.plist"
     if not info_path.is_file():
@@ -66,10 +66,10 @@ def spoken_names(app: Path) -> list[str]:
         path = app / f"{lang}.lproj/InfoPlist.strings"
         table = strings(path) if path.is_file() else {}
         spoken = table.get("CFBundleSpokenName", info.get("CFBundleSpokenName"))
-        if spoken != "Hummlist":
-            found.append(f'{lang}.lproj: CFBundleSpokenName is "{spoken}", not "Hummlist"')
+        if spoken != "Snacklist":
+            found.append(f'{lang}.lproj: CFBundleSpokenName is "{spoken}", not "Snacklist"')
         names = [table.get(v, v) for v in variables]
-        found += [f'{lang}.lproj: alternative app name "{n}" is "Humm" alone' for n in names if n.lower() == "humm"]
+        found += [f'{lang}.lproj: alternative app name "{n}" is "Snack" alone' for n in names if n.lower() == "snack"]
         if lang == "de":
             found += [f'de.lproj: alternative app name "{n}" ends in Liste' for n in names if n.lower().endswith("liste")]
     return found
@@ -118,7 +118,7 @@ def localized(app: Path, keys: list[str], negatives: list[str]) -> list[str]:
             found += [
                 f'{lang}.lproj AppShortcuts: negative "{v}" names the app'
                 for v in values
-                if APP_NAME in v or "hummlist" in v.lower()
+                if APP_NAME in v or "snacklist" in v.lower()
             ]
     return found
 

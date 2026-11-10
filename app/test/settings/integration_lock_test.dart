@@ -15,7 +15,7 @@ import '../purchases/fakes.dart';
 
 /// Job 50: the integration settings with the integration lock. The card and
 /// its Buy button show only while the server enforces the lock and the
-/// household is known to have no Hummlist Premium (Spec #4 AC3); existing
+/// household is known to have no Snacklist Premium (Spec #4 AC3); existing
 /// connections stay listed as paused; a purchase by any member hides it all
 /// within one sync (AC4).
 void main() {
@@ -85,7 +85,7 @@ void main() {
   ) async {
     final more = await access(tester);
     expect(key('integration-premium'), findsOneWidget);
-    expect(find.text('Teil von Hummlist Premium'), findsOneWidget);
+    expect(find.text('Teil von Snacklist Premium'), findsOneWidget);
     expect(find.text('Siri auf dem iPhone'), findsOneWidget);
     expect(
       find.textContaining('Alexa'),
@@ -120,8 +120,8 @@ void main() {
     expect(key('api-premium'), findsOneWidget);
     expect(
       find.text(
-        'Die Hummlist-API gehört zu Hummlist Premium. Deine Schlüssel bleiben '
-        'und funktionieren wieder, sobald dein Haushalt Premium hat.',
+        'Die Snacklist-API gehört zu Snacklist Premium. Deine Schlüssel '
+        'bleiben und funktionieren wieder, sobald dein Haushalt Premium hat.',
       ),
       findsOneWidget,
     );
@@ -132,9 +132,9 @@ void main() {
 
   testWidgets('English', (tester) async {
     await access(tester, language: 'en');
-    expect(find.text('Part of Hummlist Premium'), findsOneWidget);
-    expect(find.text('Unlock Hummlist Premium'), findsOneWidget);
-    expect(find.text('Paused: needs Hummlist Premium'), findsOneWidget);
+    expect(find.text('Part of Snacklist Premium'), findsOneWidget);
+    expect(find.text('Unlock Snacklist Premium'), findsOneWidget);
+    expect(find.text('Paused: needs Snacklist Premium'), findsOneWidget);
   });
 
   testWidgets('Buy opens the Premium page, marked as from the integrations', (
@@ -229,7 +229,7 @@ void main() {
     await tester.tap(key('integration-buy'));
     await tester.pumpAndSettle();
     expect(
-      find.text('Hummlist Premium ist gerade nicht verfügbar.'),
+      find.text('Snacklist Premium ist gerade nicht verfügbar.'),
       findsOneWidget,
     );
     expect(key('premium-buy-yearly'), findsNothing);
@@ -346,7 +346,11 @@ void main() {
     ]) {
       expect(key(k), findsNothing, reason: '$k on $where');
     }
-    expect(find.text('Teil von Hummlist Premium'), findsNothing, reason: where);
+    expect(
+      find.text('Teil von Snacklist Premium'),
+      findsNothing,
+      reason: where,
+    );
   }
 
   // Spec #4 AC5: the list, sync, categories, stores, settings (theme, app

@@ -1,8 +1,8 @@
 {
-  "$description": "Hummlist design tokens (job 52): option 6b Hex Frische (original 5 colours) with option 6s yellow in dark mode. Source of app/lib/design/tokens.g.dart and site/public/tokens.css (node design/tokens/build.mjs).",
+  "$description": "Snacklist design tokens (job 52): option 6b Hex Frische (original 5 colours) with option 6s yellow in dark mode. Source of app/lib/design/tokens.g.dart and site/public/tokens.css (node design/tokens/build.mjs).",
   "$extensions": {
-    "com.hummlist": {
-      "option": "hummlist (6b Hex Frische, original 5 colours, 6s yellow)",
+    "com.snacklist": {
+      "option": "snacklist (6b Hex Frische, original 5 colours, 6s yellow)",
       "contrastPairs": [
         [
           "on-honey",
@@ -1096,7 +1096,7 @@
           "sans-serif"
         ],
         "$extensions": {
-          "com.hummlist": {
+          "com.snacklist": {
             "license": "OFL-1.1",
             "source": "@fontsource-variable/bricolage-grotesque 5.3.0 (ateliertriay/bricolage)",
             "files": "fonts/bricolage-grotesque-latin-standard-normal.woff2",
@@ -1115,7 +1115,7 @@
           "sans-serif"
         ],
         "$extensions": {
-          "com.hummlist": {
+          "com.snacklist": {
             "license": "OFL-1.1",
             "source": "@fontsource-variable/inter 5.3.0 (rsms/inter)",
             "files": "fonts/inter-latin-wght-normal.woff2",

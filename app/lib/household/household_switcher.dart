@@ -145,7 +145,7 @@ class const HouseholdSheet({final int? openNow, super.key})
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final session = context.watch<SessionCubit>().state;
     if (session is! InHousehold) {
       return const SizedBox.shrink();

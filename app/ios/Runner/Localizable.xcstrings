@@ -1,34 +1,34 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Add to Hummlist": {
+    "Add to Snacklist": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zu Hummlist hinzufügen"
+            "value": "Zu Snacklist hinzufügen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Add to Hummlist"
+            "value": "Add to Snacklist"
           }
         }
       }
     },
-    "Adds items to your household's Hummlist.": {
+    "Adds items to your household's Snacklist.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fügt Einträge zur Hummlist deines Haushalts hinzu."
+            "value": "Fügt Einträge zur Snacklist deines Haushalts hinzu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adds items to your household's Hummlist."
+            "value": "Adds items to your household's Snacklist."
           }
         }
       }
@@ -65,66 +65,66 @@
         }
       }
     },
-    "Open Hummlist": {
+    "Open Snacklist": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hummlist öffnen"
+            "value": "Snacklist öffnen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Hummlist"
+            "value": "Open Snacklist"
           }
         }
       }
     },
-    "Opens your household's Hummlist.": {
+    "Opens your household's Snacklist.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Öffnet die Hummlist deines Haushalts."
+            "value": "Öffnet die Snacklist deines Haushalts."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Opens your household's Hummlist."
+            "value": "Opens your household's Snacklist."
           }
         }
       }
     },
-    "Read my Hummlist": {
+    "Read my Snacklist": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Meine Hummlist vorlesen"
+            "value": "Meine Snacklist vorlesen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Read my Hummlist"
+            "value": "Read my Snacklist"
           }
         }
       }
     },
-    "Reads the open items on your household's Hummlist.": {
+    "Reads the open items on your household's Snacklist.": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Liest die offenen Einträge der Hummlist deines Haushalts vor."
+            "value": "Liest die offenen Einträge der Snacklist deines Haushalts vor."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reads the open items on your household's Hummlist."
+            "value": "Reads the open items on your household's Snacklist."
           }
         }
       }
@@ -186,13 +186,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hummlist hat nicht rechtzeitig geantwortet."
+            "value": "Snacklist hat nicht rechtzeitig geantwortet."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hummlist didn't answer in time."
+            "value": "Snacklist didn't answer in time."
           }
         }
       }
@@ -203,13 +203,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Öffne Hummlist und richte zuerst deinen Haushalt ein."
+            "value": "Öffne Snacklist und richte zuerst deinen Haushalt ein."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Hummlist and set up your household first."
+            "value": "Open Snacklist and set up your household first."
           }
         }
       }
@@ -220,13 +220,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Öffne Hummlist und melde dich an."
+            "value": "Öffne Snacklist und melde dich an."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Hummlist and sign in first."
+            "value": "Open Snacklist and sign in first."
           }
         }
       }
@@ -254,13 +254,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hummlist hat gerade keine Internetverbindung."
+            "value": "Snacklist hat gerade keine Internetverbindung."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hummlist can't reach the internet right now."
+            "value": "Snacklist can't reach the internet right now."
           }
         }
       }
@@ -271,13 +271,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bei Hummlist ist etwas schiefgelaufen."
+            "value": "Bei Snacklist ist etwas schiefgelaufen."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Something went wrong at Hummlist."
+            "value": "Something went wrong at Snacklist."
           }
         }
       }
@@ -288,13 +288,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Öffne Hummlist und melde dich erneut an."
+            "value": "Öffne Snacklist und melde dich erneut an."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Open Hummlist and sign in again."
+            "value": "Open Snacklist and sign in again."
           }
         }
       }
@@ -322,13 +322,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten."
+            "value": "Sprachbefehle sind Teil von Snacklist Premium. Du kannst es in der App freischalten."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Voice commands are part of Hummlist Premium. You can unlock it in the app under More, Hummlist Premium."
+            "value": "Voice commands are part of Snacklist Premium. You can unlock it in the app under More, Snacklist Premium."
           }
         }
       }

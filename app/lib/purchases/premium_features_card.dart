@@ -3,7 +3,7 @@ import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
-/// What Hummlist Premium holds, as one sticker card: a [title], a [body], the
+/// What Snacklist Premium holds, as one sticker card: a [title], a [body], the
 /// three connections it unlocks and what comes later. Zugänge shows it for a
 /// household without Premium, the Premium page on top of its status; a
 /// [footer] (the buy button) goes at the bottom. [later] is the line about

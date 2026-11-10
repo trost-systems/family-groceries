@@ -321,7 +321,7 @@ Widget _grid(Brightness brightness) {
                 const SizedBox(height: HlSpace.s4),
                 Builder(
                   builder: (context) => Text(
-                    'Hummlist',
+                    'Snacklist',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ),

@@ -1,4 +1,4 @@
-// Job 50 (Spec #4): Siri and MCP are part of Hummlist Premium once the server's integration_lock
+// Job 50 (Spec #4): Siri and MCP are part of Snacklist Premium once the server's integration_lock
 // switch is on. A household without premium is refused in context and nothing is added; the
 // integration settings say so for every member, with connections paused, not removed; a yearly
 // plan opens both within one sync with the same credentials; its expiry locks them again and
@@ -30,9 +30,9 @@ import { connectWithToken } from './mcp-helpers';
 test.describe.configure({ mode: 'serial' });
 
 const voicePremium =
-  'Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.';
+  'Sprachbefehle sind Teil von Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.';
 const mcpPremium =
-  'Dieser Haushalt braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in der Hummlist-App frei. Es wurde nichts gelesen oder geändert.';
+  'Dieser Haushalt braucht Snacklist Premium für den Zugang über KI-Assistenten. Schalte es in der Snacklist-App frei. Es wurde nichts gelesen oder geändert.';
 
 async function lockSwitch(enabled: boolean) {
   const { error } = await adminClient().from('app_switches').update({ enabled }).eq('key', 'integration_lock');
@@ -84,14 +84,14 @@ const newPage = async (browser: Browser) => {
   return page;
 };
 
-const card = (page: Page) => page.getByRole('heading', { name: 'Teil von Hummlist Premium' });
+const card = (page: Page) => page.getByRole('heading', { name: 'Teil von Snacklist Premium' });
 /** A connection's tile: one group named by its texts, "Pausiert: …" last while locked. */
 // A token row is a group. A connected app's row opens its details (job 80), so it is a button,
 // told from its „<name> trennen“ button by the details after the name.
 const tile = (page: Page, name: string) =>
   page.getByRole('group', { name: new RegExp(`^${name} `) })
     .or(page.getByRole('button', { name: new RegExp(`^${name} .* · `) }));
-const paused = (page: Page) => page.getByRole('group', { name: /Pausiert: braucht Hummlist Premium$/ });
+const paused = (page: Page) => page.getByRole('group', { name: /Pausiert: braucht Snacklist Premium$/ });
 
 test('locked household: Siri and MCP refuse in context and add nothing, Alexa adds; a yearly plan opens '
   + 'both for every member with the same credentials; its expiry locks again and keeps everything', async ({ browser, baseURL }) => {
@@ -127,14 +127,14 @@ test('locked household: Siri and MCP refuse in context and add nothing, Alexa ad
   await openMore(lea, 'Zugänge');
   await expect(card(peter)).toBeVisible();
   await expect(card(lea)).toBeVisible();
-  await expect(peter.getByRole('group', { name: /Hummlist Premium kaufst du in der iPhone- oder Android-App\./ }))
+  await expect(peter.getByRole('group', { name: /Snacklist Premium kaufst du in der iPhone- oder Android-App\./ }))
     .toBeVisible();
-  await expect(peter.getByRole('button', { name: 'Hummlist Premium freischalten' }), 'no Buy on the web')
+  await expect(peter.getByRole('button', { name: 'Snacklist Premium freischalten' }), 'no Buy on the web')
     .toHaveCount(0);
   await expect(paused(peter).first(), 'the connections stay, paused').toBeVisible();
-  await expect(tile(peter, 'Kurzbefehl')).toHaveAccessibleName(/Pausiert: braucht Hummlist Premium$/);
+  await expect(tile(peter, 'Kurzbefehl')).toHaveAccessibleName(/Pausiert: braucht Snacklist Premium$/);
   await expect(tile(peter, 'Amazon Alexa'), 'Alexa is free, never paused')
-    .not.toHaveAccessibleName(/Pausiert: braucht Hummlist Premium$/);
+    .not.toHaveAccessibleName(/Pausiert: braucht Snacklist Premium$/);
   await screenshot(peter, 'job50-web-access-locked-de-390');
 
   // Peter subscribes on his iPhone: within one sync everything opens, for Lea too, same credentials.
@@ -160,9 +160,9 @@ test('locked household: Siri and MCP refuse in context and add nothing, Alexa ad
   const { data: tokens } = await (await apiAs(peterEmail)).from('personal_access_tokens').select('name, revoked_at');
   expect(tokens, 'no token revoked').toEqual([{ name: 'Kurzbefehl', revoked_at: null }]);
   await expect(tile(peter, 'Kurzbefehl'), 'the Shortcut token stays, paused')
-    .toHaveAccessibleName(/Pausiert: braucht Hummlist Premium$/, { timeout: 10_000 });
+    .toHaveAccessibleName(/Pausiert: braucht Snacklist Premium$/, { timeout: 10_000 });
   await expect(tile(peter, 'Amazon Alexa'), 'the Alexa link stays, never paused')
-    .not.toHaveAccessibleName(/Pausiert: braucht Hummlist Premium$/);
+    .not.toHaveAccessibleName(/Pausiert: braucht Snacklist Premium$/);
   await screenshot(peter, 'job50-web-access-paused-de-390');
 
   // Renewed: open again, still the same credentials.
@@ -211,7 +211,7 @@ test('English settings, locked', async ({ browser }) => {
   await page.getByRole('radio', { name: 'English', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Language' })).toBeVisible();
   await page.goto('/more/access');
-  await expect(page.getByRole('heading', { name: 'Part of Hummlist Premium' })).toBeVisible();
-  await expect(tile(page, 'Shortcut')).toHaveAccessibleName(/Paused: needs Hummlist Premium$/);
+  await expect(page.getByRole('heading', { name: 'Part of Snacklist Premium' })).toBeVisible();
+  await expect(tile(page, 'Shortcut')).toHaveAccessibleName(/Paused: needs Snacklist Premium$/);
   await screenshot(page, 'job50-web-access-locked-en-390');
 });

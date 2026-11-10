@@ -56,10 +56,11 @@ Deno.test('links: confirm and unsubscribe values sit in the fragment; one-click 
   );
 });
 
-Deno.test('siteOrigin accepts hummlist.com, its previews and a local site, nothing else', () => {
+Deno.test('siteOrigin accepts hummlist.com, snacklist.app, previews and a local site, nothing else', () => {
   for (
     const ok of [
       'https://hummlist.com',
+      'https://snacklist.app',
       'https://hummlist-site-git-job-82-waitlist-peter-trost.vercel.app',
       'https://hummlist-site-abc123-peter-trost.vercel.app',
       'http://127.0.0.1:4173',

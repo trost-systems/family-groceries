@@ -1,8 +1,8 @@
-# hummlist.com
+# snacklist.app
 
 The landing pages, guides, changelog and legal pages: static HTML from Markdown and YAML.
 `build.mjs` (markdown-it, gray-matter) writes `dist/`; it is its own Vercel project, separate from
-the app on app.hummlist.com. The JavaScript is `public/demo.js`, which starts and pauses the
+the app on app.snacklist.app. The JavaScript is `public/demo.js`, which starts and pauses the
 landing pages' demo videos, `public/stores.js`, which switches the stores card's route when a
 store button is pressed, and `public/waitlist.js`, the sign-up form and the pages behind the
 waitlist mails (below).
@@ -32,7 +32,7 @@ production build. The browser checks (axe, contrast, Lighthouse, CSP crawl) live
   videos' files; `public/media/README.md` names them. A missing poster, a poster of the wrong
   shape or half a video set fails the build. The illustrations are filmed from the HTML scenes in
   `scenes/` (`scenes/README.md`), which are not part of the build.
-- Styles: `public/tokens.css` is generated from `design/tokens/hummlist.tokens.json`
+- Styles: `public/tokens.css` is generated from `design/tokens/snacklist.tokens.json`
   (`node design/tokens/build.mjs`, never edit it); `public/styles.css` (every page: fonts, hex
   controls, header, footer, prose) and `public/landing.css` use its `--hl-*` variables. Fonts
   (Bricolage Grotesque, Inter, OFL texts beside them) are in `public/fonts/`.
@@ -54,7 +54,7 @@ The app (`app/lib/list/item_icons_remote.dart`) asks for it at most once a day w
 (no names, no cookies; on iOS and Android `If-None-Match` with the cached ETag) and uses it only
 when `schema` is 1 and `revision` is above the bundled table's. A file it cannot read changes
 nothing. `vercel.json` serves `/data/` to any origin (`Access-Control-Allow-Origin: *`, for the
-web app on app.hummlist.com) with a day's cache; Vercel sets the ETag. A new schema gets a new file
+web app on app.snacklist.app) with a day's cache; Vercel sets the ETag. A new schema gets a new file
 name (`item-icons.v2.json`), so apps in the stores keep reading v1.
 
 ## Adding a guide
@@ -236,7 +236,7 @@ one-line PR. It decides every call to action; no stage links the browser app (jo
 | --- | --- | --- |
 | `waitlist` (now) | „Auf die Warteliste“ / "Join the waitlist", to `#warteliste` / `#waitlist` | the sign-up form |
 | `beta` | „Zur Beta anmelden“ / "Join the beta", same anchor | the sign-up form |
-| `launch` | „App laden“ / "Get the app", to `#app`; the hero shows the store badges | badges and, from 720 px, a QR code for hummlist.com/get |
+| `launch` | „App laden“ / "Get the app", to `#app`; the hero shows the store badges | badges and, from 720 px, a QR code for snacklist.app/get |
 
 On other pages the header button links the landing page's anchor (`/de#warteliste`). The rest of
 the landing page is the same in every stage. The copy ids are `waitlist.cta`, `beta.cta` and
@@ -323,7 +323,7 @@ Delete the marker when Peter has approved that text.
 
 ## Vercel
 
-Every push to `main` is a production deployment and goes live on hummlist.com; other branches get
+Every push to `main` is a production deployment and goes live on snacklist.app; other branches get
 preview deployments behind Vercel Authentication. When a public release is recorded, the
 **Public release record** workflow pushes the record to `main`, and that build shows the content
 of the new version (`docs/DEPLOY.md`, "Guides site").

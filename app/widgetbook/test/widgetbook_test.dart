@@ -21,7 +21,7 @@ Future<void> _settle(WidgetTester tester, Scenario _) async {
 }
 
 Map<String, dynamic> _tokens() => jsonDecode(
-  File('../../design/tokens/hummlist.tokens.json').readAsStringSync(),
+  File('../../design/tokens/snacklist.tokens.json').readAsStringSync(),
 ) as Map<String, dynamic>;
 
 Future<void> main() async {
@@ -71,7 +71,7 @@ Future<void> main() async {
         };
         final shown = {
           for (final token in colorTokens)
-            token.name: hex(token.of(HummlistColors.of(brightness))),
+            token.name: hex(token.of(SnacklistColors.of(brightness))),
         };
         expect(shown, file);
       });
@@ -79,7 +79,7 @@ Future<void> main() async {
 
     test('every contrast pair', () {
       final rules =
-          (tokens[r'$extensions'] as Map<String, dynamic>)['com.hummlist']
+          (tokens[r'$extensions'] as Map<String, dynamic>)['com.snacklist']
               as Map<String, dynamic>;
       final file = [
         for (final pair in rules['contrastPairs'] as List<dynamic>)

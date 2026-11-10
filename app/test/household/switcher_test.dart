@@ -564,7 +564,7 @@ void main() {
       );
       expect(
         tester.widget<ListTile>(row).textColor,
-        HummlistColors.light.textMuted,
+        SnacklistColors.light.textMuted,
       );
       await tester.tap(row);
       await tester.pumpAndSettle();

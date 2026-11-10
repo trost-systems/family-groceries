@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The splash before Flutter's first frame (Android 11 and older): the Hummlist mark centred on
+<!-- The splash before Flutter's first frame (Android 11 and older): the Snacklist mark centred on
      the surface colour. Colour and mark come from design/app-icon/build.mjs, with night
      variants in values-night/ and drawable-night/. Android 12+ uses values-v31/styles.xml. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">

@@ -6,6 +6,6 @@ export const STORE_URLS = {
   googlePlay: 'TODO: Google Play URL once the listing is public',
 };
 
-export const GET_URL = 'https://hummlist.com/get';
+export const GET_URL = 'https://snacklist.app/get';
 
 export const storeUrlSet = (url) => url.startsWith('https://');

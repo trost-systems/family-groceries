@@ -11,7 +11,7 @@ struct HomeWidgetView: View {
     content
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
       .widgetURL(WidgetLinks.open)
-      .containerBackground(for: .widget) { HummlistColors.surface }
+      .containerBackground(for: .widget) { SnacklistColors.surface }
   }
 
   @ViewBuilder private var content: some View {
@@ -21,11 +21,11 @@ struct HomeWidgetView: View {
     case .ready(let open, let items):
       OpenList(open: open, items: items, medium: medium)
     case .signedOut:
-      Prompt(message: "Sign in to Hummlist")
+      Prompt(message: "Sign in to Snacklist")
     case .noHousehold:
-      Prompt(message: "Set up your household in Hummlist")
+      Prompt(message: "Set up your household in Snacklist")
     case .noData:
-      Prompt(message: "Open Hummlist to see your list")
+      Prompt(message: "Open Snacklist to see your list")
     }
   }
 }
@@ -34,10 +34,10 @@ struct HomeWidgetView: View {
 private func openCount(_ open: Int, size: CGFloat) -> Text {
   var text = AttributedString(localized: "\(open) open")
   text.font = Font.system(size: size * 0.5, weight: .semibold)
-  text.foregroundColor = HummlistColors.textMuted
+  text.foregroundColor = SnacklistColors.textMuted
   if let number = text.range(of: String(open)) {
     text[number].font = Font.system(size: size, weight: .heavy)
-    text[number].foregroundColor = HummlistColors.brand
+    text[number].foregroundColor = SnacklistColors.brand
   }
   return Text(text)
 }
@@ -79,7 +79,7 @@ private struct OpenList: View {
       if more > 0 {
         Text("+\(more) more")
           .font(.system(size: 12, weight: .medium))
-          .foregroundStyle(HummlistColors.textMuted)
+          .foregroundStyle(SnacklistColors.textMuted)
           .lineLimit(1)
           .padding(.top, 4)
       }
@@ -107,12 +107,12 @@ private struct Row: View {
   }
 
   private var label: Text {
-    let name = Text(row.item.name).foregroundStyle(HummlistColors.text)
+    let name = Text(row.item.name).foregroundStyle(SnacklistColors.text)
     guard let quantity = row.item.quantity, !quantity.isEmpty else { return name }
     return name
       + Text(verbatim: " \(quantity)")
       .fontWeight(.regular)
-      .foregroundStyle(HummlistColors.textMuted)
+      .foregroundStyle(SnacklistColors.textMuted)
   }
 }
 
@@ -121,10 +121,10 @@ private struct StorePill: View {
   let name: String
 
   var body: some View {
-    HexPill(fill: HummlistColors.surfaceRaised, height: 18, contour: 1.5) {
+    HexPill(fill: SnacklistColors.surfaceRaised, height: 18, contour: 1.5) {
       Text(verbatim: name)
         .font(.system(size: 11, weight: .heavy))
-        .foregroundStyle(HummlistColors.text)
+        .foregroundStyle(SnacklistColors.text)
         .lineLimit(1)
         .truncationMode(.tail)
     }
@@ -133,12 +133,12 @@ private struct StorePill: View {
 
 private struct AddButton: View {
   var body: some View {
-    HexPill(fill: HummlistColors.honey, height: 30) {
+    HexPill(fill: SnacklistColors.honey, height: 30) {
       HStack(spacing: 4) {
         Image(systemName: "plus").font(.system(size: 12, weight: .bold))
         Text("Add").font(.system(size: 13, weight: .bold)).lineLimit(1)
       }
-      .foregroundStyle(HummlistColors.onHoney)
+      .foregroundStyle(SnacklistColors.onHoney)
     }
   }
 }
@@ -167,11 +167,11 @@ private struct AllDone: View {
   /// A honey badge, pointed top and bottom like the app's hex tick.
   private var mark: some View {
     ZStack {
-      Hex(orientation: .pointyTop).fill(HummlistColors.honey)
-      Hex(orientation: .pointyTop).strokeBorder(HummlistColors.border, lineWidth: 2)
+      Hex(orientation: .pointyTop).fill(SnacklistColors.honey)
+      Hex(orientation: .pointyTop).strokeBorder(SnacklistColors.border, lineWidth: 2)
       Image(systemName: "checkmark")
         .font(.system(size: 18, weight: .heavy))
-        .foregroundStyle(HummlistColors.onHoney)
+        .foregroundStyle(SnacklistColors.onHoney)
     }
     .frame(width: 40, height: 46)
   }
@@ -179,7 +179,7 @@ private struct AllDone: View {
   private var label: some View {
     Text("All done")
       .font(.system(size: 16, weight: .bold))
-      .foregroundStyle(HummlistColors.text)
+      .foregroundStyle(SnacklistColors.text)
       .lineLimit(1)
   }
 }
@@ -189,12 +189,12 @@ private struct Prompt: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
-      Text(verbatim: "Hummlist")
+      Text(verbatim: "Snacklist")
         .font(.system(size: 17, weight: .heavy))
-        .foregroundStyle(HummlistColors.brand)
+        .foregroundStyle(SnacklistColors.brand)
       Text(message)
         .font(.system(size: 14, weight: .semibold))
-        .foregroundStyle(HummlistColors.text)
+        .foregroundStyle(SnacklistColors.text)
         .lineLimit(4)
         .minimumScaleFactor(0.8)
     }

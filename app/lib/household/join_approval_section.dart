@@ -154,7 +154,7 @@ class _JoinApprovalSectionState() extends State<JoinApprovalSection> {
     }
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final requests = _requests;
     final on = _turning ?? widget.household.joinApproval;
     return Column(
@@ -273,7 +273,7 @@ class const _CountBadge(final int count, {required final String label})
 
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Semantics(
       container: true,
       label: label,

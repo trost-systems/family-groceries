@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:hummlist_widgetbook/src/interaction.dart';
 import 'package:hummlist_widgetbook/src/story.dart';
 
-const _path = 'Hummlist/Auswahl';
+const _path = 'Snacklist/Auswahl';
 
 /// One switch state a story shows.
 typedef _SwitchState = ({
@@ -174,7 +174,7 @@ class _UsageDataState() extends State<_UsageData> {
     width: 360,
     child: HexSwitchTile(
       title: const Text('Nutzungsdaten senden'),
-      subtitle: const Text('Hilft uns, Hummlist zu verbessern'),
+      subtitle: const Text('Hilft uns, Snacklist zu verbessern'),
       value: _on,
       onChanged: (on) => setState(() => _on = on),
     ),

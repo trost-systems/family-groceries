@@ -207,7 +207,7 @@ class const _Tile({
     final item = row.item;
     final quantity = quantityLabel(item.quantity);
     final details = [?item.brand, ?item.properties].join(' · ');
-    final hl = HummlistColors.of(theme.brightness);
+    final hl = SnacklistColors.of(theme.brightness);
     final drawn = _draw.transform(t);
     // Yellow means new, mint means done, like the homepage hero (Peter).
     final base = row.fresh ? hl.honeySoft : scheme.surface;

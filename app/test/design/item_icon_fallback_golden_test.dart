@@ -82,7 +82,7 @@ void main() {
         ..devicePixelRatio = 1
         ..physicalSize = const Size(240, 200);
       addTearDown(tester.view.reset);
-      final hl = HummlistColors.of(brightness);
+      final hl = SnacklistColors.of(brightness);
       await tester.pumpWidget(
         MaterialApp(
           debugShowCheckedModeBanner: false,

@@ -1,6 +1,6 @@
 // The landing pages /de and /en: copy from content/landing/copy.yml, illustrations and demo videos
 // from public/media/ (media/README.md names the files). Every string carries its copy id in
-// `data-copy-id`, so Hummlist Launch finds it in the page and in COPY_NEEDED.md.
+// `data-copy-id`, so Snacklist Launch finds it in the page and in COPY_NEEDED.md.
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import yaml from 'js-yaml';
@@ -198,7 +198,7 @@ export const STAGE_CTA = {
 };
 export const STAGES = Object.keys(STAGE_CTA);
 
-// The QR code of hummlist.com/get as inline SVG, drawn at build time: no script ships.
+// The QR code of snacklist.app/get as inline SVG, drawn at build time: no script ships.
 export function qrSvg(url, label) {
   const { modules } = QRCode.create(url, { errorCorrectionLevel: 'M' });
   const quiet = 4;
@@ -213,7 +213,7 @@ export function qrSvg(url, label) {
 }
 
 // The launch stage's way to the app: the official badges (to the store, or to /get while the
-// listing URL is a TODO) and, on wide screens, a QR code for hummlist.com/get.
+// listing URL is a TODO) and, on wide screens, a QR code for snacklist.app/get.
 function getApp(locale, { text, el }, { qr }) {
   const href = (url) => (storeUrlSet(url) ? url : GET_URL);
   const badges = `<div class="store-badges">

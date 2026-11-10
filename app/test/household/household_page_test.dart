@@ -217,7 +217,7 @@ void main() {
     expect(_location(o), welcomePath);
   });
 
-  group('Hummlist Lifetime of the last member (job 43)', () {
+  group('Snacklist Lifetime of the last member (job 43)', () {
     FakeInvites unlocked() => FakeInvites()..unlocked.add('home');
 
     testWidgets('it ends with the household: said, with the refund help', (
@@ -232,7 +232,7 @@ void main() {
       await tester.tap(_key('household-leave'));
       await tester.pumpAndSettle();
       expect(
-        find.textContaining('Hummlist Lifetime endet mit ihm'),
+        find.textContaining('Snacklist Lifetime endet mit ihm'),
         findsOneWidget,
       );
       expect(_key('household-leave-refund-help'), findsOneWidget);

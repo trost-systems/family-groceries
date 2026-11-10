@@ -1,30 +1,30 @@
 ---
-title: "Hummlist per Siri: Kurzbefehl einrichten"
-description: "Mit einem Kurzbefehl setzt du per Siri Sachen auf deine Hummlist: „Hey Siri, Einkaufsliste“. So richtest du ihn in etwa fünf Minuten ein."
+title: "Snacklist per Siri: Kurzbefehl einrichten"
+description: "Mit einem Kurzbefehl setzt du per Siri Sachen auf deine Snacklist: „Hey Siri, Einkaufsliste“. So richtest du ihn in etwa fünf Minuten ein."
 slug: siri-kurzbefehl
 locale: de
 translation_key: siri-shortcut
 updated: 2026-10-30
 ---
 
-# Hummlist per Siri: Kurzbefehl einrichten
+# Snacklist per Siri: Kurzbefehl einrichten
 
-Mit einem Kurzbefehl setzt du Sachen per Siri auf deine Hummlist, ohne die App zu öffnen. Das ist kein fertiger Knopf in der App: Du legst den Kurzbefehl einmal selbst in der Kurzbefehle-App an. Danach läuft es so:
+Mit einem Kurzbefehl setzt du Sachen per Siri auf deine Snacklist, ohne die App zu öffnen. Das ist kein fertiger Knopf in der App: Du legst den Kurzbefehl einmal selbst in der Kurzbefehle-App an. Danach läuft es so:
 
 > **Du:** Hey Siri, Einkaufsliste.
 > **Siri:** Was soll auf die Liste?
 > **Du:** Milch, zwei Gurken und Klopapier.
 > **Siri:** Hinzugefügt: Milch, 2 Gurken, Klopapier.
 
-Siri schickt deinen Satz an Hummlist. Hummlist teilt ihn in einzelne Einträge auf, sortiert jeden in seine Kategorie ein, und die Einträge erscheinen sofort auf allen Geräten in eurem Haushalt. Das Aufteilen funktioniert bisher nur auf Deutsch.
+Siri schickt deinen Satz an Snacklist. Snacklist teilt ihn in einzelne Einträge auf, sortiert jeden in seine Kategorie ein, und die Einträge erscheinen sofort auf allen Geräten in eurem Haushalt. Das Aufteilen funktioniert bisher nur auf Deutsch.
 
-## Ohne Einrichtung: Siri kennt Hummlist {#ohne-einrichtung since=1.0.0 once=native-siri}
+## Ohne Einrichtung: Siri kennt Snacklist {#ohne-einrichtung since=1.0.0 once=native-siri}
 
-> Entwurf für Hummlist Launch: Text und Sätze bitte vor dem Start prüfen.
+> Entwurf für Snacklist Launch: Text und Sätze bitte vor dem Start prüfen.
 
-Mit der aktuellen App brauchst du keinen Kurzbefehl mehr. Sobald du in Hummlist angemeldet bist und zu einem Haushalt gehörst, versteht Siri Hummlist von selbst, auf Deutsch und auf Englisch. Du musst nichts einrichten und keinen Token kopieren.
+Mit der aktuellen App brauchst du keinen Kurzbefehl mehr. Sobald du in Snacklist angemeldet bist und zu einem Haushalt gehörst, versteht Siri Snacklist von selbst, auf Deutsch und auf Englisch. Du musst nichts einrichten und keinen Token kopieren.
 
-> **Du:** Hey Siri, etwas auf Hummlist setzen.
+> **Du:** Hey Siri, etwas auf Snacklist setzen.
 > **Siri:** Was soll auf die Liste?
 > **Du:** Milch, Eier und Brot.
 > **Siri:** Hinzugefügt: Milch, Eier, Brot.
@@ -33,16 +33,16 @@ Diese Sätze versteht Siri:
 
 | Du sagst | Was passiert |
 | --- | --- |
-| Etwas auf Hummlist setzen | Siri fragt, was auf die Liste soll. |
-| Hummlist, füge etwas hinzu | Siri fragt, was auf die Liste soll. |
-| Füge Zahnpasta zu Hummlist hinzu | Zahnpasta kommt direkt auf die Liste. |
-| Hummlist, was steht drauf? | Siri liest die ersten zehn offenen Einträge vor. |
+| Etwas auf Snacklist setzen | Siri fragt, was auf die Liste soll. |
+| Snacklist, füge etwas hinzu | Siri fragt, was auf die Liste soll. |
+| Füge Zahnpasta zu Snacklist hinzu | Zahnpasta kommt direkt auf die Liste. |
+| Snacklist, was steht drauf? | Siri liest die ersten zehn offenen Einträge vor. |
 
-Sag „Hummlist“ ruhig deutlich als „Humm-List“. Sätze mit „Einkaufsliste“ nimmt Siri für die Erinnerungen-App.
+Sag „Snacklist“ ruhig deutlich als „Snack-List“. Sätze mit „Einkaufsliste“ nimmt Siri für die Erinnerungen-App.
 
-Siri sagt erst „Hinzugefügt“, wenn Hummlist die Einträge gespeichert hat. Ohne Internet oder bei einem Fehler sagt Siri, dass nichts hinzugefügt wurde. Dann versuch es einfach noch einmal.
+Siri sagt erst „Hinzugefügt“, wenn Snacklist die Einträge gespeichert hat. Ohne Internet oder bei einem Fehler sagt Siri, dass nichts hinzugefügt wurde. Dann versuch es einfach noch einmal.
 
-Alle Sätze siehst du auch in der App unter **Mehr** → **Zugänge** → **Siri-Sätze anzeigen**. Dort steht auch „Siri (dieses iPhone)“: Das ist die Anmeldung, mit der Siri für dich spricht. Wenn du dich in Hummlist abmeldest, endet sie.
+Alle Sätze siehst du auch in der App unter **Mehr** → **Zugänge** → **Siri-Sätze anzeigen**. Dort steht auch „Siri (dieses iPhone)“: Das ist die Anmeldung, mit der Siri für dich spricht. Wenn du dich in Snacklist abmeldest, endet sie.
 
 Hast du dir früher den Kurzbefehl unten eingerichtet? Der funktioniert weiter. Du kannst ihn aber löschen und den alten Token widerrufen ([Siri wieder abschalten](#siri-wieder-abschalten)).
 
@@ -51,14 +51,14 @@ Den Kurzbefehl unten brauchst du nur noch, wenn du einen eigenen Satz wie „Ein
 ## Was du brauchst
 
 - ein iPhone mit der App **Kurzbefehle**
-- die Hummlist-App, in der du angemeldet bist und zu einem Haushalt gehörst
+- die Snacklist-App, in der du angemeldet bist und zu einem Haushalt gehörst
 - etwa fünf Minuten
 
-## Schritt 1: Zugriffstoken in Hummlist erstellen
+## Schritt 1: Zugriffstoken in Snacklist erstellen
 
 Der Kurzbefehl meldet sich mit einem persönlichen Zugriffstoken an, nicht mit deinem Passwort.
 
-1. Öffne die Hummlist-App.
+1. Öffne die Snacklist-App.
 2. Tippe auf **Mehr** und dann auf **Zugänge**.
 3. Tippe unter **Zugriffstoken** auf **Token erstellen**.
 4. Gib als Name `Siri` ein und tippe auf **Erstellen**.
@@ -146,24 +146,24 @@ Sag mehrere Dinge in einem Satz. Trenne sie mit einer kurzen Pause, mit „und�
 | Eine Packung Eier sowie zwei Flaschen Wein | 1 Packung Eier · 2 Flaschen Wein |
 | Einen Kasten Wasser, auch Kaffee | 1 Kasten Wasser · Kaffee |
 
-Füllwörter wie „bitte“, „wir brauchen“, „schreib auf“, „noch“, „auf die Liste“ und Artikel lässt Hummlist weg. Zahlwörter werden zu Ziffern („zwei“ wird 2). Mengen bleiben als Menge am Eintrag, die App zeigt sie vor dem Namen („2× Gurken“, „1 kg Äpfel“). Was schon auf der Liste steht, kommt nicht doppelt dazu. Siri sagt dann zum Beispiel „Schon auf der Liste: Milch.“ Steht etwas Ähnliches schon drauf, etwa Möhren, wenn du Karotten sagst, kommt der neue Eintrag trotzdem dazu, und Siri sagt „Möhren steht schon auf der Liste.“
+Füllwörter wie „bitte“, „wir brauchen“, „schreib auf“, „noch“, „auf die Liste“ und Artikel lässt Snacklist weg. Zahlwörter werden zu Ziffern („zwei“ wird 2). Mengen bleiben als Menge am Eintrag, die App zeigt sie vor dem Namen („2× Gurken“, „1 kg Äpfel“). Was schon auf der Liste steht, kommt nicht doppelt dazu. Siri sagt dann zum Beispiel „Schon auf der Liste: Milch.“ Steht etwas Ähnliches schon drauf, etwa Möhren, wenn du Karotten sagst, kommt der neue Eintrag trotzdem dazu, und Siri sagt „Möhren steht schon auf der Liste.“
 
 ## Wenn es nicht klappt
 
 | Siri sagt | Woran es liegt | Was hilft |
 | --- | --- | --- |
-| „Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Hummlist-App unter Mehr, Zugänge einen neuen.“ | Der Token fehlt im Kurzbefehl, ist falsch kopiert oder wurde widerrufen. | Erstell in Hummlist unter **Mehr** → **Zugänge** einen neuen Token (Schritt 1). Öffne dann den Kurzbefehl, geh in Aktion 2 zum Header `Authorization` und ersetze den alten Token: `Bearer `, Leerzeichen, dann der ganze neue Token, also `Bearer fgp_…`. |
+| „Der Zugriffstoken fehlt oder ist ungültig. Erstelle in der Snacklist-App unter Mehr, Zugänge einen neuen.“ | Der Token fehlt im Kurzbefehl, ist falsch kopiert oder wurde widerrufen. | Erstell in Snacklist unter **Mehr** → **Zugänge** einen neuen Token (Schritt 1). Öffne dann den Kurzbefehl, geh in Aktion 2 zum Header `Authorization` und ersetze den alten Token: `Bearer `, Leerzeichen, dann der ganze neue Token, also `Bearer fgp_…`. |
 | „Du bist noch in keinem Haushalt …“ | Das Konto, zu dem der Token gehört, ist in keinem Haushalt. | Leg in der App einen Haushalt an oder tritt einem bei. |
 | „Ich habe nichts verstanden, was auf die Liste soll …“ | Das Diktat war leer oder bestand nur aus Füllwörtern. | Versuch es noch einmal, zum Beispiel mit „Milch und Brot“. |
 | „Das war zu lang …“ | Mehr als 1000 Zeichen. | Sag weniger auf einmal (höchstens 30 Dinge). |
-| „Das hat leider nicht geklappt …“ | Hummlist ist gerade nicht erreichbar. | Versuch es später noch einmal. |
+| „Das hat leider nicht geklappt …“ | Snacklist ist gerade nicht erreichbar. | Versuch es später noch einmal. |
 
 Startet Siri bei „Einkaufsliste“ nicht deinen Kurzbefehl? Prüf, ob er genau so heißt. Sonst gib ihm einen eindeutigeren Namen, etwa `Einkauf notieren`, und sag „Hey Siri, Einkauf notieren“. Zum Umbenennen öffnest du den Kurzbefehl, tippst auf den Pfeil neben seinem Namen und dann auf **Umbenennen**.
 
 ## Siri wieder abschalten {#siri-wieder-abschalten}
 
 1. Lösch den Kurzbefehl in der Kurzbefehle-App: Leg den Finger auf **Einkaufsliste**, tippe auf **Löschen** und bestätige.
-2. Widerrufe den Token in Hummlist: **Mehr** → **Zugänge**, tippe auf **Siri widerrufen** (oder „[Name] widerrufen“, wenn du den Token anders genannt hast). Die App fragt „Token widerrufen?“. Bestätige mit **Widerrufen**.
+2. Widerrufe den Token in Snacklist: **Mehr** → **Zugänge**, tippe auf **Siri widerrufen** (oder „[Name] widerrufen“, wenn du den Token anders genannt hast). Die App fragt „Token widerrufen?“. Bestätige mit **Widerrufen**.
 
 Damit ist die Verbindung getrennt.
 

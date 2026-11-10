@@ -18,7 +18,7 @@ def write(path: Path, value: dict, binary: bool) -> None:
         plistlib.dump(value, f, fmt=plistlib.FMT_BINARY if binary else plistlib.FMT_XML)
 
 
-def vocabulary(intents=INTENTS, example="Add milk to Hummlist") -> dict:
+def vocabulary(intents=INTENTS, example="Add milk to Snacklist") -> dict:
     return {
         "IntentPhrases": [{"IntentName": i, "IntentExamples": [example]} for i in intents],
         "ParameterVocabularies": [],
@@ -33,7 +33,7 @@ class SiriVocabulary(unittest.TestCase):
 
     def source_tree(self) -> Path:
         ios = self.root / "ios"
-        write(ios / "Runner/Info.plist", {"CFBundleDisplayName": "Hummlist", "INIntentsSupported": INTENTS}, False)
+        write(ios / "Runner/Info.plist", {"CFBundleDisplayName": "Snacklist", "INIntentsSupported": INTENTS}, False)
         write(ios / "HomeWidget/Info.plist", {"NSExtension": {"NSExtensionPointIdentifier": "com.apple.widgetkit-extension"}}, False)
         for lang in ("de", "en"):
             write(ios / f"Runner/{lang}.lproj/AppIntentVocabulary.plist", vocabulary(), False)
@@ -42,14 +42,14 @@ class SiriVocabulary(unittest.TestCase):
 
     def built_app(self) -> Path:
         app = self.root / "Runner.app"
-        write(app / "Info.plist", {"CFBundleDisplayName": "Hummlist", "INIntentsSupported": INTENTS}, True)
+        write(app / "Info.plist", {"CFBundleDisplayName": "Snacklist", "INIntentsSupported": INTENTS}, True)
         write(app / "PlugIns/HomeWidget.appex/Info.plist", {"NSExtension": {}}, True)
         for lang in ("de", "en"):
             write(app / f"{lang}.lproj/AppIntentVocabulary.plist", vocabulary(), True)
         return app
 
     def ipa(self, app: Path) -> Path:
-        ipa = self.root / "Hummlist.ipa"
+        ipa = self.root / "Snacklist.ipa"
         with zipfile.ZipFile(ipa, "w") as z:
             for f in app.rglob("*"):
                 z.write(f, Path("Payload") / f.relative_to(app.parent))
@@ -103,7 +103,7 @@ class SiriVocabulary(unittest.TestCase):
     def test_example_without_app_name_fails(self):
         ios = self.source_tree()
         write(ios / "Runner/en.lproj/AppIntentVocabulary.plist", vocabulary(example="Add milk"), False)
-        self.assert_fails(ios, 'INAddTasksIntent example "Add milk" does not name Hummlist')
+        self.assert_fails(ios, 'INAddTasksIntent example "Add milk" does not name Snacklist')
 
     def test_extension_intent_needs_examples(self):
         app = self.built_app()
@@ -113,7 +113,7 @@ class SiriVocabulary(unittest.TestCase):
 
     def test_user_activity_intent_needs_examples(self):
         ios = self.source_tree()
-        write(ios / "Runner/Info.plist", {"CFBundleDisplayName": "Hummlist", "INIntentsSupported": INTENTS,
+        write(ios / "Runner/Info.plist", {"CFBundleDisplayName": "Snacklist", "INIntentsSupported": INTENTS,
                                           "NSUserActivityTypes": ["INPlayMediaIntent", "com.example.open"]}, False)
         result = self.run_check(ios)
         self.assertEqual(result.returncode, 1)

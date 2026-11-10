@@ -68,7 +68,7 @@ abstract final class Environment() {
     'ANALYTICS_HOUSEHOLD_GROUPS',
   );
 
-  /// Shows links to hummlist.com pages that are still drafts (the help
+  /// Shows links to snacklist.app pages that are still drafts (the help
   /// page, job 24). On in debug builds, widget tests and e2e
   /// (`config/e2e.json`); off in release builds, where the page answers 404.
   static const legalDrafts = bool.fromEnvironment(
@@ -83,14 +83,14 @@ abstract final class Environment() {
   static const householdArchive = bool.fromEnvironment('HOUSEHOLD_ARCHIVE');
 
   /// Shows in the integration settings that Siri and AI assistants are part
-  /// of Hummlist Premium (Alexa stays free), for a household without it,
+  /// of Snacklist Premium (Alexa stays free), for a household without it,
   /// while the server's `integration_lock` switch is on (job 50). Off by
   /// default; on only after the switch, in the order docs/PURCHASES.md gives
   /// ("Integration lock"). Turn it on with
   /// `--dart-define=INTEGRATION_LOCK=true`.
   static const integrationLock = bool.fromEnvironment('INTEGRATION_LOCK');
 
-  /// Offers Hummlist Lifetime's purchase and restore through RevenueCat on
+  /// Offers Snacklist Lifetime's purchase and restore through RevenueCat on
   /// iOS and Android. Off, the default, the Lifetime page says "coming
   /// soon": the purchase reaches no one until Peter has approved the new
   /// legal texts (Legal Review K.9.9, release gate). Turn it on with
@@ -100,7 +100,7 @@ abstract final class Environment() {
   );
 
   /// Native Siri (job 51, with the German fix of PR #194) is live in this
-  /// build: the beta-end notice (N-55) then names Siri among Hummlist
+  /// build: the beta-end notice (N-55) then names Siri among Snacklist
   /// Premium's features. Store builds pass it exactly when
   /// `releases/flags.json` releases the `native-siri` hold (Fastfile).
   static const nativeSiriLive = bool.fromEnvironment('NATIVE_SIRI_LIVE');
@@ -155,7 +155,7 @@ abstract final class Environment() {
   /// empty turns the fetch off (e2e: `config/e2e.json`).
   static const itemIconsUrl = String.fromEnvironment(
     'ITEM_ICONS_URL',
-    defaultValue: 'https://hummlist.com/data/item-icons.v1.json',
+    defaultValue: 'https://snacklist.app/data/item-icons.v1.json',
   );
 
   /// Where native Siri's intents send what was said (job 51).

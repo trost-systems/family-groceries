@@ -36,11 +36,11 @@ for (const { asset, build } of [{ asset: 'main.dart.wasm', build: 'wasm' }, { as
   });
 }
 
-test('the app is called Hummlist in the tab and when installed', async ({ page, request }) => {
+test('the app is called Snacklist in the tab and when installed', async ({ page, request }) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: "Los geht's" })).toBeVisible({ timeout: 15_000 });
-  await expect(page).toHaveTitle('Hummlist');
-  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Hummlist');
+  await expect(page).toHaveTitle('Snacklist');
+  await expect(page.locator('meta[name="apple-mobile-web-app-title"]')).toHaveAttribute('content', 'Snacklist');
   const manifest = await (await request.get('/manifest.json')).json();
-  expect([manifest.name, manifest.short_name]).toEqual(['Hummlist', 'Hummlist']);
+  expect([manifest.name, manifest.short_name]).toEqual(['Snacklist', 'Snacklist']);
 });

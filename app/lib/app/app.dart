@@ -55,10 +55,10 @@ class const App({
   required final StoreReview storeReview,
   required final InviteRepository invites,
 
-  /// Whether the household has Hummlist Premium.
+  /// Whether the household has Snacklist Premium.
   required final Entitlements entitlements,
 
-  /// Hummlist Premium's purchase; asks RevenueCat only on Buy or Restore.
+  /// Snacklist Premium's purchase; asks RevenueCat only on Buy or Restore.
   required final PurchaseCubit purchases,
 
   /// The purchase offer's server switch and the subscriber's own plan.

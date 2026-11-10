@@ -80,7 +80,7 @@ class _ListTabsState() extends State<ListTabs> {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
-    final t = HummlistColors.of(brightness);
+    final t = SnacklistColors.of(brightness);
     final l10n = AppLocalizations.of(context);
     final (lists, shown) = context
         .select<ListCubit, (List<HouseholdList>, String?)>(
@@ -279,7 +279,7 @@ class _TabState() extends State<_Tab> {
 
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final _Tab(:label, :selected, :onTap, :icon) = widget;
     final color = selected ? t.onHoney : t.text;
     final indicator = Container(

@@ -51,12 +51,12 @@ class const FoldoutChips({
   /// The category chip without a category.
   required final String categoryLabel,
 
-  /// Hummlist picks the store until the user does (the add sheet): the
+  /// Snacklist picks the store until the user does (the add sheet): the
   /// chip shows its pick muted with the automatic mark, and no store means
   /// "not known yet", with no option selected.
   final bool storeAuto = false,
 
-  /// Hummlist picks the category until the user does, like [storeAuto].
+  /// Snacklist picks the category until the user does, like [storeAuto].
   final bool categoryAuto = false,
 
   /// Beside the chips on their first line (the add sheet's Schließen).
@@ -198,7 +198,7 @@ class const _Chip({
   /// Names the chip apart from the option of the same name.
   required final String semanticsLabel,
 
-  /// Hummlist's pick, not the user's: muted, with the automatic mark.
+  /// Snacklist's pick, not the user's: muted, with the automatic mark.
   required final bool auto,
   required final bool open,
   required final bool changed,
@@ -207,7 +207,7 @@ class const _Chip({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     // A value the user picked is their choice, honey like a selected chip;
     // an open chip is lit softly while its options show.
     final (face, edge, onFace) = switch ((changed, open)) {
@@ -253,7 +253,7 @@ class const _Chip({
           mainAxisSize: MainAxisSize.min,
           spacing: HlSpace.s1,
           children: [
-            // Hummlist's pick wears the automatic mark where the chip's
+            // Snacklist's pick wears the automatic mark where the chip's
             // icon goes; the user's pick brings the icon back.
             if (auto)
               Icon(autoMark, size: 18, color: t.accent)
@@ -287,7 +287,7 @@ const _optionText = TextStyle(
   fontWeight: FontWeight.w600,
 );
 
-/// Marks a chip whose value Hummlist picked.
+/// Marks a chip whose value Snacklist picked.
 const autoMark = Icons.hdr_auto_outlined;
 
 /// More stores than this get a search field above them: two rows of
@@ -497,7 +497,7 @@ class const OptionChip({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Semantics(
       button: true,
       selected: selected,

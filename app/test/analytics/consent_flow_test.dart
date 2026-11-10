@@ -157,17 +157,17 @@ void main() {
   for (final (locale, title, link, url, yes, no) in [
     (
       const Locale('de'),
-      'Darf Hummlist Nutzungsdaten erfassen?',
+      'Darf Snacklist Nutzungsdaten erfassen?',
       'Datenschutzerklärung',
-      'https://hummlist.com/datenschutz',
+      'https://snacklist.app/datenschutz',
       'Erlauben',
       'Nicht erlauben',
     ),
     (
       const Locale('en'),
-      'May Hummlist collect usage data?',
+      'May Snacklist collect usage data?',
       'privacy policy',
-      'https://hummlist.com/en/privacy',
+      'https://snacklist.app/en/privacy',
       'Allow',
       "Don't allow",
     ),

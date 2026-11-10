@@ -9,6 +9,8 @@ Deno.test('the app URL becomes the Site URL and leads the redirect list', () => 
   assertEquals(d.site_url, 'https://app.hummlist.com');
   assertEquals(d.uri_allow_list.split(','), [
     'https://app.hummlist.com/**',
+    'https://app.snacklist.app/**',
+    'com.snacklist.app://login-callback',
     'com.hummlist.app://login-callback',
     'com.petertrost.familygroceries://login-callback',
     'https://family-groceries-pied.vercel.app/**',

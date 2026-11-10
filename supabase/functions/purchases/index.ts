@@ -1,4 +1,4 @@
-// Hummlist Lifetime purchases: /functions/v1/purchases (docs/PURCHASES.md).
+// Snacklist Lifetime purchases: /functions/v1/purchases (docs/PURCHASES.md).
 import { telemetryFor, withTelemetry } from '../_shared/telemetry.ts';
 import { configFrom } from './config.ts';
 import { productionDeps } from './deps.ts';

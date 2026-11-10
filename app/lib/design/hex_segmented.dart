@@ -39,7 +39,7 @@ class const HexSegmented<T>({
   @override
   Widget build(BuildContext context) {
     assert(segments.isNotEmpty, 'a segmented control needs options');
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final enabled = onChanged != null;
     final picked = segments.indexWhere((s) => s.value == value);
     // The indicator's slanted sides sit [_gap] from the track's.
@@ -187,7 +187,7 @@ class _SegmentState<T>() extends State<_Segment<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final registry = RadioGroup.maybeOf<T>(context);
     final (segment, picked, enabled, slide) = (
       widget.segment,

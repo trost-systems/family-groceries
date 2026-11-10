@@ -16,7 +16,7 @@ const REPO_DIR = join(SITE_DIR, '..');
 export const HISTORY_FIXTURE = join(SITE_DIR, 'test/fixtures/history-record.json');
 
 const outDir = resolve(process.argv[2] ?? join(SITE_DIR, 'dist-history'));
-const repo = mkdtempSync(join(tmpdir(), 'hummlist-history-'));
+const repo = mkdtempSync(join(tmpdir(), 'snacklist-history-'));
 try {
   for (const rel of ['releases/flags.json', 'app/pubspec.yaml', 'docs/api/openapi.yaml']) {
     mkdirSync(dirname(join(repo, rel)), { recursive: true });

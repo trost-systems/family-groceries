@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:hummlist_widgetbook/src/interaction.dart';
 import 'package:hummlist_widgetbook/src/story.dart';
 
-const _path = 'Hummlist/Auswahl';
+const _path = 'Snacklist/Auswahl';
 
 const _modes = ['System', 'Hell', 'Dunkel'];
 const _icons = [

@@ -13,7 +13,7 @@ class const BrandBlock({super.key}) extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     return Column(
       children: [
         ExcludeSemantics(

@@ -12,7 +12,7 @@ import '../list/fake_repository.dart';
 import '../list/memory_cache.dart';
 
 void main() {
-  const t = HummlistColors.light;
+  const t = SnacklistColors.light;
 
   Future<void> pumpField(WidgetTester tester, Widget field) async {
     await tester.pumpWidget(

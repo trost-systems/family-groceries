@@ -2,7 +2,7 @@ import 'package:family_groceries/design/field_border.dart';
 import 'package:flutter/material.dart';
 import 'package:hummlist_widgetbook/src/story.dart';
 
-const _path = 'Hummlist/Felder';
+const _path = 'Snacklist/Felder';
 
 /// Text fields through the app theme: single-line fields are hexes,
 /// multi-line ones keep the rounded contour.

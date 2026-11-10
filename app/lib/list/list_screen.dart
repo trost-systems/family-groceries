@@ -643,7 +643,7 @@ class const _AddBar({
     final sheet = context.watch<AddSheetCubit>().state;
     final list = context.watch<ListCubit>();
     final open = sheet.open;
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     void show() {
       cubit.show();
       // Text the microphone left behind.
@@ -879,7 +879,7 @@ class const _Header({
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final state = context.watch<ListCubit>().state;
     final top = MediaQuery.paddingOf(context).top;
     return Column(
@@ -1088,7 +1088,7 @@ class const _Status({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final brightness = Theme.of(context).brightness;
-    final t = HummlistColors.of(brightness);
+    final t = SnacklistColors.of(brightness);
     final cubit = context.watch<ListCubit>();
     final state = cubit.state;
     final fresh = cubit.fresh;

@@ -53,7 +53,7 @@ enum MorePage() {
   /// (`/more/household`, job 169b).
   household,
 
-  /// Hummlist Premium's purchase, restore and status (`/more/lifetime`).
+  /// Snacklist Premium's purchase, restore and status (`/more/lifetime`).
   premium,
 
   /// Theme and language (`/more/settings`).
@@ -267,7 +267,7 @@ class _MoreListState() extends State<_MoreList> {
     return FutureBuilder(
       future: _offerOpen,
       builder: (context, offer) {
-        // Hummlist Premium is listed only once it may be offered (the
+        // Snacklist Premium is listed only once it may be offered (the
         // server's `premium_offer` and, in the iPhone and Android apps,
         // `REVENUECAT_PURCHASES`), or for a household that has it. Before
         // the launch nobody sees it (job 64); the page stays reachable from
@@ -468,7 +468,7 @@ class const _Row(
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return ListTile(
       key: ValueKey(item.key),
       minTileHeight: 52,
@@ -561,7 +561,7 @@ class const _UpdateCard(
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final (title, body, action, icon) = switch (update) {
       PatchReady() => (
         l10n.updatePatchTitle,
@@ -593,10 +593,10 @@ class const _UpdateCard(
             Padding(
               padding: const EdgeInsets.only(top: HlSpace.s1),
               child: PointyHex(
-                face: HummlistColors.light.surfaceRaised,
-                contour: HummlistColors.light.edge,
+                face: SnacklistColors.light.surfaceRaised,
+                contour: SnacklistColors.light.edge,
                 size: 36,
-                child: Icon(icon, size: 20, color: HummlistColors.light.ink),
+                child: Icon(icon, size: 20, color: SnacklistColors.light.ink),
               ),
             ),
             Expanded(
@@ -714,6 +714,6 @@ class const _Version() extends StatelessWidget {
 
   /// Thrown outside any handler, so it takes the path a real crash takes.
   static void _raiseTestError() => Timer.run(
-    () => throw StateError('Hummlist test error (More, internal install)'),
+    () => throw StateError('Snacklist test error (More, internal install)'),
   );
 }

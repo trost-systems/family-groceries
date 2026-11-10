@@ -11,7 +11,7 @@ import { RecordError, parseRecord } from '../releases.mjs';
 const PROD = { VERCEL_ENV: 'production' };
 const DE = '/history';
 const EN = '/en/history';
-const SITE = 'https://hummlist.com';
+const SITE = 'https://snacklist.app';
 const FIXTURE = readFileSync(join(SITE_DIR, 'test/fixtures/history-record.json'), 'utf8');
 
 // What a reader gets from one entry, in order.
@@ -34,8 +34,8 @@ test('with no public release both pages show the empty state, served like every 
   assert.deepEqual(de.querySelectorAll('main p').map((p) => p.text), [HISTORY_COPY['history.empty'].de]);
   assert.deepEqual(en.querySelectorAll('main p').map((p) => p.text), [HISTORY_COPY['history.empty'].en]);
   assert.equal(de.querySelector('main ol'), null);
-  assert.equal(de.querySelector('title').text, 'Chronik | Hummlist');
-  assert.equal(en.querySelector('title').text, 'History | Hummlist');
+  assert.equal(de.querySelector('title').text, 'Chronik | Snacklist');
+  assert.equal(en.querySelector('title').text, 'History | Snacklist');
   assert.equal(meta(de, 'description'), HISTORY_COPY['history.description'].de);
   assert.equal(meta(en, 'description'), HISTORY_COPY['history.description'].en);
   const res = await serve(outDir, [DE, EN, '/de/changelog']);
@@ -51,7 +51,7 @@ test('with no public release both pages show the empty state, served like every 
 test('the fixture record: every public release, newest first, in German', () => {
   const { page } = buildSite({ env: PROD, repo: { record: FIXTURE } });
   const doc = page(DE);
-  assert.equal(doc.querySelector('.history-intro').text, 'Jede öffentliche Version von Hummlist, die neueste zuerst, mit Zahlen aus dem Code. Tag 0 ist der 22. Oktober 2026, der Tag des ersten Commits.');
+  assert.equal(doc.querySelector('.history-intro').text, 'Jede öffentliche Version von Snacklist, die neueste zuerst, mit Zahlen aus dem Code. Tag 0 ist der 22. Oktober 2026, der Tag des ersten Commits.');
   const list = entries(doc);
   assert.deepEqual(list.map((e) => e.id), ['v1-1-0', 'v1-0-1', 'v1-0-0']);
   assert.deepEqual(list[0], {

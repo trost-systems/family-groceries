@@ -304,7 +304,7 @@ void main() {
   });
 
   group('the share text', () {
-    const link = 'https://app.hummlist.com/join/ABCD2345';
+    const link = 'https://app.snacklist.app/join/ABCD2345';
     for (final locale in AppLocalizations.supportedLocales) {
       for (final kind in HouseholdKind.values.map((k) => k.name)) {
         test('${locale.languageCode}, $kind: the link and the code', () {

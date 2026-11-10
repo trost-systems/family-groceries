@@ -75,18 +75,18 @@ Deno.test('lang en adds the split items and reads them back in English', async (
   );
   assertEquals(status, 200);
   assertEquals(body.outcome, 'added');
-  assertEquals(body.speech, 'Added eggs, bread and 2 cucumbers to Hummlist.');
+  assertEquals(body.speech, 'Added eggs, bread and 2 cucumbers to Snacklist.');
   assertEquals(body.items.map((i: Added) => i.name), ['eggs', 'bread', 'cucumbers']);
 });
 
 Deno.test('English: one item, and items already on the list', async () => {
   const { handle } = fakeDeps();
   assertEquals(
-    (await answer(handle, post({ text: 'add eggs to Hummlist', lang: 'en' }))).body.speech,
-    'Added eggs to Hummlist.',
+    (await answer(handle, post({ text: 'add eggs to Snacklist', lang: 'en' }))).body.speech,
+    'Added eggs to Snacklist.',
   );
   const { body } = await answer(handle, post({ text: 'milk and eggs', lang: 'en' }));
-  assertEquals(body.speech, 'Added eggs to Hummlist. Already on the list: milk.');
+  assertEquals(body.speech, 'Added eggs to Snacklist. Already on the list: milk.');
   assertEquals(body.outcome, 'added');
 });
 
@@ -115,7 +115,7 @@ Deno.test('English: an open variant is named with the items already on the list'
   });
   assertEquals(
     (await answer(handle, post({ text: 'carrot', lang: 'en' }))).body.speech,
-    'Added carrot to Hummlist. Already on the list: Carrots.',
+    'Added carrot to Snacklist. Already on the list: Carrots.',
   );
 });
 
@@ -141,13 +141,13 @@ Deno.test('lang is de unless it is en; a plain-text body is German', async () =>
 Deno.test('a list id is accepted and ignored', async () => {
   const { handle } = fakeDeps();
   const { status, body } = await answer(handle, post({ text: 'eggs', lang: 'en', list: 'any' }));
-  assertEquals([status, body.speech], [200, 'Added eggs to Hummlist.']);
+  assertEquals([status, body.speech], [200, 'Added eggs to Snacklist.']);
 });
 
 Deno.test('?format=text answers in the request language', async () => {
   const { handle } = fakeDeps();
   const res = await handle(post({ text: 'eggs', lang: 'en' }, { query: '?format=text' }));
-  assertEquals(await res.text(), 'Added eggs to Hummlist.');
+  assertEquals(await res.text(), 'Added eggs to Snacklist.');
 });
 
 Deno.test('parse mode in English', async () => {
@@ -175,21 +175,21 @@ const openItems = (n: number): ParsedItem[] =>
 
 Deno.test('mode read reads the open items, ten at most, and returns all of them', async () => {
   const cases: [number, 'en' | 'de', string][] = [
-    [0, 'en', 'Your Hummlist is empty.'],
-    [0, 'de', 'Die Hummlist ist leer.'],
-    [1, 'en', 'There is one thing on your Hummlist: 2 item1.'],
-    [1, 'de', 'Auf der Hummlist steht eine Sache: 2 item1.'],
-    [3, 'en', 'There are 3 things on your Hummlist: 2 item1, item2 and item3.'],
-    [3, 'de', 'Auf der Hummlist stehen 3 Sachen: 2 item1, item2 und item3.'],
+    [0, 'en', 'Your Snacklist is empty.'],
+    [0, 'de', 'Die Snacklist ist leer.'],
+    [1, 'en', 'There is one thing on your Snacklist: 2 item1.'],
+    [1, 'de', 'Auf der Snacklist steht eine Sache: 2 item1.'],
+    [3, 'en', 'There are 3 things on your Snacklist: 2 item1, item2 and item3.'],
+    [3, 'de', 'Auf der Snacklist stehen 3 Sachen: 2 item1, item2 und item3.'],
     [
       11,
       'de',
-      'Auf der Hummlist stehen 11 Sachen: 2 item1, item2, item3, item4, item5, item6, item7, item8, item9, item10 und eine weitere.',
+      'Auf der Snacklist stehen 11 Sachen: 2 item1, item2, item3, item4, item5, item6, item7, item8, item9, item10 und eine weitere.',
     ],
     [
       14,
       'en',
-      'There are 14 things on your Hummlist: 2 item1, item2, item3, item4, item5, item6, item7, item8, item9, item10 and 4 more.',
+      'There are 14 things on your Snacklist: 2 item1, item2, item3, item4, item5, item6, item7, item8, item9, item10 and 4 more.',
     ],
   ];
   for (const [n, lang, speech] of cases) {
@@ -304,11 +304,11 @@ Deno.test('every failure code has a German and an English answer', () => {
   }
   assertEquals(
     copy.de.failures.premium_required,
-    'Sprachbefehle sind Teil von Hummlist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.',
+    'Sprachbefehle sind Teil von Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.',
   );
   assertEquals(
     copy.en.failures.premium_required,
-    "Voice commands are part of Hummlist Premium. You can unlock it in the app under More, Hummlist Premium. I didn't add anything.",
+    "Voice commands are part of Snacklist Premium. You can unlock it in the app under More, Snacklist Premium. I didn't add anything.",
   );
 });
 

@@ -63,7 +63,7 @@ judge() {
   local k="$1" dir="$run/judge-$1"
   mkdir -p "$dir"
   cp "$run/shots/"*.png "$run/shots.txt" "$dir/"
-  cp "$repo/docs/DESIGN.md" "$repo/design/tokens/hummlist.tokens.json" "$dir/"
+  cp "$repo/docs/DESIGN.md" "$repo/design/tokens/snacklist.tokens.json" "$dir/"
   for attempt in 1 2; do
     (cd "$dir" && env -u CLAUDECODE -u CLAUDE_CODE_SESSION_ID -u CLAUDE_CODE_CHILD_SESSION \
       -u CLAUDE_CODE_MESSAGING_SOCKET -u CLAUDE_CODE_MESSAGING_TOKEN -u CLAUDE_CODE_ENTRYPOINT \

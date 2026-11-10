@@ -60,7 +60,7 @@ test('clean URLs, trailing slashes and 404', async () => {
   const page = await get('/de/anleitungen/siri-kurzbefehl');
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-type'), /text\/html/);
-  assert.match(await page.text(), /<h1>Hummlist per Siri: Kurzbefehl einrichten<\/h1>/);
+  assert.match(await page.text(), /<h1>Snacklist per Siri: Kurzbefehl einrichten<\/h1>/);
   const html = await get('/de/anleitungen/siri-kurzbefehl.html');
   assert.equal(html.status, 308);
   assert.equal(html.headers.get('location'), '/de/anleitungen/siri-kurzbefehl');

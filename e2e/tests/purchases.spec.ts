@@ -16,7 +16,7 @@ import {
 } from './helpers';
 import { buy, claim, householdOf, rcEvent, report } from './iap';
 
-// Job 25, as of job 43: Hummlist Lifetime on the web (docs/PURCHASES.md). The web never sells: More
+// Job 25, as of job 43: Snacklist Lifetime on the web (docs/PURCHASES.md). The web never sells: More
 // shows the household's unlock, and (job 87, Legal Review's final texts) says where to buy only once
 // sales start (premium_offer on; off on the e2e stack). RevenueCat's
 // part is played by events posted to the real webhook with the local secret (iap.ts), so the
@@ -24,12 +24,12 @@ import { buy, claim, householdOf, rcEvent, report } from './iap';
 
 const newPage = async (browser: Browser) => await (await browser.newContext()).newPage();
 
-const lifetimeRow = (page: Page) => page.getByRole('button', { name: /^Hummlist Premium/ });
-const webNote = (page: Page) => page.getByText(/^Hummlist Premium kaufst du in der iPhone- oder Android-App\./);
+const lifetimeRow = (page: Page) => page.getByRole('button', { name: /^Snacklist Premium/ });
+const webNote = (page: Page) => page.getByText(/^Snacklist Premium kaufst du in der iPhone- oder Android-App\./);
 /** The status tile: its title says which Premium the household has (job 49). */
-const unlocked = (page: Page) => page.getByText(/^Hummlist Premium (Lifetime|aktiv|über)/);
+const unlocked = (page: Page) => page.getByText(/^Snacklist Premium (Lifetime|aktiv|über)/);
 /** Job 87: PW-P4's hero body, on every state of the page, the web's included. */
-const hero = (page: Page) => page.getByText('Hummlist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.');
+const hero = (page: Page) => page.getByText('Snacklist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.');
 /** Its buying slogan, only while sales are on (Legal Review N-68): never on the e2e stack. */
 const slogan = (page: Page) => page.getByText('Einer kauft. Alle haben es.');
 
@@ -143,14 +143,14 @@ test('a household given Premium in the beta sees the approved beta texts, nothin
   expect(error).toBeNull();
   expect(data).toBe('granted');
   await openPremium(page);
-  await expect(page.getByText('In der Beta kostenlos freigeschaltet, bis Hummlist Premium startet'))
+  await expect(page.getByText('In der Beta kostenlos freigeschaltet, bis Snacklist Premium startet'))
     .toBeVisible({ timeout: 10_000 });
   await expect(hero(page)).toBeVisible();
   await expect(slogan(page), 'no buying slogan above „Du zahlst nichts“ (N-68)').toHaveCount(0);
   await expect(page.getByText('Du zahlst nichts, und nichts verlängert sich automatisch. Bevor die kostenlose '
     + 'Freischaltung endet, sagen wir dir mindestens 4 Wochen vorher Bescheid.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Mehr dazu in der Datenschutzerklärung' }))
-    .toHaveAttribute('href', 'https://hummlist.com/datenschutz#premium-beta');
+    .toHaveAttribute('href', 'https://snacklist.app/datenschutz#premium-beta');
   await expect(page.getByText(/Test und App-Prüfung/), 'premium_offer is off: the beta line').toHaveCount(0);
   await expect(page.getByText(/Danke!|bald verfügbar|kaufst du in der/), 'hidden before sales start').toHaveCount(0);
   await expect(page.getByText(/€/)).toHaveCount(0);
@@ -175,16 +175,16 @@ test.describe('in English', () => {
     await page.getByRole('button', { name: 'Later', exact: true }).click();
     await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeVisible();
     await page.goto('/more/lifetime');
-    await expect(page.getByText('Hummlist Premium covers your whole household, including everyone who joins later.')).toBeVisible();
+    await expect(page.getByText('Snacklist Premium covers your whole household, including everyone who joins later.')).toBeVisible();
     await expect(page.getByText('One buys. Everyone has it.')).toHaveCount(0);
-    await expect(page.getByText(/^You can buy Hummlist Premium in the iPhone or Android app\./),
+    await expect(page.getByText(/^You can buy Snacklist Premium in the iPhone or Android app\./),
       'nothing about buying before sales start').toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Restore purchase' })).toHaveCount(0);
     await screenshot(page, 'job25-web-en-390');
     await page.setViewportSize({ width: 1366, height: 1024 });
     await screenshot(page, 'job25-web-en-1366');
     expect(await buy(email, `2002${Date.now()}`)).toBe('granted');
-    await expect(page.getByText(/^Hummlist Premium Lifetime/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/^Snacklist Premium Lifetime/)).toBeVisible({ timeout: 10_000 });
     await screenshot(page, 'job25-unlocked-web-en-1366');
     await page.setViewportSize({ width: 390, height: 844 });
     await screenshot(page, 'job25-unlocked-web-en-390');

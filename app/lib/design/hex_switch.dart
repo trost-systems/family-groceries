@@ -70,7 +70,7 @@ class _HexSwitchState()
   Widget build(BuildContext context) {
     positionController.duration = hlMotion(context, HlDuration.medium);
     reactionController.duration = hlMotion(context, HlDuration.press);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Semantics(
       toggled: widget.value,
       child: buildToggleable(
@@ -98,7 +98,7 @@ final class const _HexSwitchColors({
   required final Color thumbContour,
 }) {
   /// A sunken track with a raised thumb; disabled, the contours step back.
-  factory off(HummlistColors t, {required bool enabled}) => _HexSwitchColors(
+  factory off(SnacklistColors t, {required bool enabled}) => _HexSwitchColors(
     track: t.surfaceSunken,
     contour: enabled ? t.border : t.divider,
     thumb: t.surfaceRaised,
@@ -107,7 +107,7 @@ final class const _HexSwitchColors({
 
   /// A lemon track with a navy thumb; disabled, pale lemon and a muted
   /// thumb, so the value still reads.
-  factory on(HummlistColors t, {required bool enabled}) => _HexSwitchColors(
+  factory on(SnacklistColors t, {required bool enabled}) => _HexSwitchColors(
     track: enabled ? t.honey : t.honeySoft,
     contour: enabled ? t.edge : t.divider,
     thumb: enabled ? t.onHoney : t.textMuted,

@@ -137,7 +137,7 @@ class const _StoreName(final Store store) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     final cubit = context.read<ListCubit>();
     void rename() => unawaited(
       showNameDialog(

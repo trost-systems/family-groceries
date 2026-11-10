@@ -11,7 +11,7 @@ from pathlib import Path
 
 CHECK = Path(__file__).with_name("app-shortcuts-bundle.py")
 NEGATIVE = "Add something to my shopping list"
-NAMES = {"de": ["Humlist", "Hamlist", "Homlist"], "en": ["Humm List", "Hum List", "Humlist"]}
+NAMES = {"de": ["Snack List", "Snäcklist", "Snecklist"], "en": ["Snack List", "Snack-list", "Snack Lists"]}
 TEMPLATES = {
     "AddItemsIntent": ["Add to ${applicationName}", "Add ${item} to ${applicationName}"],
     "ReadListIntent": ["What's on my ${applicationName}"],
@@ -47,8 +47,8 @@ class AppShortcutsBundle(unittest.TestCase):
         table[NEGATIVE] = NEGATIVE if lang == "en" else f"{lang}: shopping list"
         return table
 
-    def write_info(self, spoken="Hummlist", names=NAMES) -> None:
-        variables = [f"HUMMLIST_NAME_{i}" for i in (1, 2, 3)]
+    def write_info(self, spoken="Snacklist", names=NAMES) -> None:
+        variables = [f"SNACKLIST_NAME_{i}" for i in (1, 2, 3)]
         with (self.app / "Info.plist").open("wb") as f:
             plistlib.dump(
                 {"CFBundleSpokenName": spoken, "INAlternativeAppNames": [{"INAlternativeAppName": v} for v in variables]},
@@ -85,7 +85,7 @@ class AppShortcutsBundle(unittest.TestCase):
         self.assertIn("OpenListIntent", result.stdout)
 
     def test_a_signed_ipa_passes(self):
-        ipa = self.app.parent / "Hummlist.ipa"
+        ipa = self.app.parent / "Snacklist.ipa"
         with zipfile.ZipFile(ipa, "w") as z:
             for f in self.app.rglob("*"):
                 z.write(f, Path("Payload") / f.relative_to(self.app.parent))
@@ -137,16 +137,16 @@ class AppShortcutsBundle(unittest.TestCase):
         self.assertFails(f'de.lproj AppShortcuts: the negative "{NEGATIVE}" is not translated')
 
     def test_a_negative_phrase_that_names_the_app_fails(self):
-        self.write_phrases("en", {**self.complete("en"), f"#!SET#!_{NEGATIVE}[1]": "Add milk to Hummlist"})
-        self.assertFails('negative "Add milk to Hummlist" names the app')
+        self.write_phrases("en", {**self.complete("en"), f"#!SET#!_{NEGATIVE}[1]": "Add milk to Snacklist"})
+        self.assertFails('negative "Add milk to Snacklist" names the app')
 
     def test_a_german_name_ending_in_liste_fails(self):
-        self.write_info(names={**NAMES, "de": ["Humlist", "Hummliste", "Homlist"]})
-        self.assertFails('de.lproj: alternative app name "Hummliste" ends in Liste')
+        self.write_info(names={**NAMES, "de": ["Snack List", "Snackliste", "Snecklist"]})
+        self.assertFails('de.lproj: alternative app name "Snackliste" ends in Liste')
 
     def test_the_spoken_name_must_be_hummlist(self):
-        self.write_info(spoken="Humm List")
-        self.assertFails('CFBundleSpokenName is "Humm List", not "Hummlist"')
+        self.write_info(spoken="Snack List")
+        self.assertFails('CFBundleSpokenName is "Snack List", not "Snacklist"')
 
     def test_a_text_strings_table_reads_too(self):
         lines = [f'"{k}" = "{v}";' for k, v in self.complete("de").items()]

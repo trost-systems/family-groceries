@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildSite, guide, legal, alternates, htmlRoutes } from './helpers.mjs';
 
-const SITE = 'https://hummlist.com';
+const SITE = 'https://snacklist.app';
 const switchLink = (doc) => {
   const a = doc.querySelector('header nav.lang a');
   return { href: a.getAttribute('href'), lang: a.getAttribute('lang'), hreflang: a.getAttribute('hreflang') };

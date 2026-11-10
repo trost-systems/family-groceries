@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Writes the Hummlist design tokens for the app and the site from hummlist.tokens.json:
+// Writes the Snacklist design tokens for the app and the site from snacklist.tokens.json:
 //   app/lib/design/tokens.g.dart  colours (light and dark) as a ThemeExtension, type, space,
 //                                 radius, depth, shape, focus and motion constants
 //   site/public/tokens.css        the same as --hl-* custom properties, dark under
 //                                 prefers-color-scheme
 //   app/web/join/tokens.css       the same file for the web app's join page (job 169b)
-//   app/ios/HomeWidget/HummlistColors.swift, app/android/.../values{,-night}/hummlist_tokens.xml
+//   app/ios/HomeWidget/SnacklistColors.swift, app/android/.../values{,-night}/snacklist_tokens.xml
 //                                 the colours for the Home Screen widgets (job 63)
 // Node only, no packages and no network. `--check` writes nothing and fails when an output
 // differs from what the source makes.
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
-const tokens = JSON.parse(readFileSync(join(here, 'hummlist.tokens.json'), 'utf8'));
+const tokens = JSON.parse(readFileSync(join(here, 'snacklist.tokens.json'), 'utf8'));
 
 const groups = (node) => Object.entries(node).filter(([k]) => !k.startsWith('$'));
 const resolve = (v) => {
@@ -70,7 +70,7 @@ function cssLines() {
   return out;
 }
 
-const css = `/* Generated from design/tokens/hummlist.tokens.json by design/tokens/build.mjs. Do not edit. */
+const css = `/* Generated from design/tokens/snacklist.tokens.json by design/tokens/build.mjs. Do not edit. */
 
 :root {
   color-scheme: light dark;
@@ -119,41 +119,41 @@ const dartShadow = (shadows) => shadows.map((s) => {
 const dartShadows = groups(tokens.shadow).map(([k, n]) => `${doc(n)}  static const ${camel(k)} = [\n${dartShadow(value(n))}\n  ];`).join('\n');
 const hex = tokens.shape.hex;
 
-const dart = `// GENERATED from design/tokens/hummlist.tokens.json by design/tokens/build.mjs. Do not edit.
+const dart = `// GENERATED from design/tokens/snacklist.tokens.json by design/tokens/build.mjs. Do not edit.
 import 'package:flutter/material.dart';
 
 /// Every colour token, in light or dark. Read it with
-/// \`Theme.of(context).extension<HummlistColors>()!\` or [HummlistColors.of].
+/// \`Theme.of(context).extension<SnacklistColors>()!\` or [SnacklistColors.of].
 @immutable
-class HummlistColors extends ThemeExtension<HummlistColors> {
-  const HummlistColors({
+class SnacklistColors extends ThemeExtension<SnacklistColors> {
+  const SnacklistColors({
 ${colorNames.map((k) => `    required this.${camel(k)},`).join('\n')}
   });
 
 ${colorNames.map((k) => `${doc(tokens.color.light[k])}  final Color ${camel(k)};`).join('\n')}
 
-  static const light = HummlistColors(
+  static const light = SnacklistColors(
 ${dartColors('light')}
   );
 
-  static const dark = HummlistColors(
+  static const dark = SnacklistColors(
 ${dartColors('dark')}
   );
 
-  static HummlistColors of(Brightness brightness) => switch (brightness) {
+  static SnacklistColors of(Brightness brightness) => switch (brightness) {
     Brightness.light => light,
     Brightness.dark => dark,
   };
 
   @override
-  HummlistColors copyWith() => this;
+  SnacklistColors copyWith() => this;
 
   @override
-  HummlistColors lerp(HummlistColors? other, double t) {
+  SnacklistColors lerp(SnacklistColors? other, double t) {
     if (other == null) {
       return this;
     }
-    return HummlistColors(
+    return SnacklistColors(
 ${colorNames.map((k) => `      ${camel(k)}: Color.lerp(${camel(k)}, other.${camel(k)}, t)!,`).join('\n')}
     );
   }
@@ -212,14 +212,14 @@ ${dartCurves}
 
 
 // ---- Home Screen widgets (job 63): the colours only, light and dark ----
-const generated = 'Generated from design/tokens/hummlist.tokens.json by design/tokens/build.mjs. Do not edit.';
+const generated = 'Generated from design/tokens/snacklist.tokens.json by design/tokens/build.mjs. Do not edit.';
 const rgb = (mode, k) => `0x${colorHex(value(tokens.color[mode][k])).slice(1)}`;
 const swift = `// ${generated}
 import SwiftUI
 import UIKit
 
 /// Every colour token, switching with the widget's light or dark appearance.
-enum HummlistColors {
+enum SnacklistColors {
 ${colorNames.map((k) => `  static let ${camel(k)} = dynamic(light: ${rgb('light', k)}, dark: ${rgb('dark', k)})`).join('\n')}
 
   private static func dynamic(light: UInt32, dark: UInt32) -> Color {
@@ -248,9 +248,9 @@ const outputs = [
   ['app/lib/design/tokens.g.dart', dart.replace(/\{\n\n/g, '{\n').replace(/\n\n\n/g, '\n\n')],
   ['site/public/tokens.css', css],
   ['app/web/join/tokens.css', css],
-  ['app/ios/HomeWidget/HummlistColors.swift', swift],
-  [`${androidRes}/values/hummlist_tokens.xml`, androidColors('light')],
-  [`${androidRes}/values-night/hummlist_tokens.xml`, androidColors('dark')],
+  ['app/ios/HomeWidget/SnacklistColors.swift', swift],
+  [`${androidRes}/values/snacklist_tokens.xml`, androidColors('light')],
+  [`${androidRes}/values-night/snacklist_tokens.xml`, androidColors('dark')],
 ];
 
 const check = process.argv.includes('--check');

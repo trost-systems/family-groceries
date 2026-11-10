@@ -23,7 +23,7 @@ const shots = [
   { name: 'button-states-dark', ui: 'dark', query: { path: states, theme: '{name:Dunkel}' } },
   { name: 'colour-tokens', ui: 'light', query: { path: 'Tokens/Farben/Palette', theme: '{name:Hell}' } },
   { name: 'contrast-pairs', ui: 'dark', query: { path: 'Tokens/Farben/Kontrastpaare', theme: '{name:Dunkel}' } },
-  { name: 'list-iphone-dark', ui: 'dark', query: { path: 'Hummlist/Liste/Ausschnitt', theme: '{name:Dunkel}', viewport: '{name:iPhone 13}' } },
+  { name: 'list-iphone-dark', ui: 'dark', query: { path: 'Snacklist/Liste/Ausschnitt', theme: '{name:Dunkel}', viewport: '{name:iPhone 13}' } },
 ];
 
 const url = (query) => {

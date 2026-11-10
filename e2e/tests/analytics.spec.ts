@@ -153,21 +153,21 @@ test('sign-in, then consent, then onboarding; declining sends nothing, ever', as
 
   await expect(page).toHaveURL(/\/analytics-consent$/);
   // Job 33b (legal review H-03): who asks, what for, pseudonymous, and a link to the policy.
-  await expect(page.getByRole('heading', { name: 'Darf Hummlist Nutzungsdaten erfassen?' })
-    .or(page.getByText('Darf Hummlist Nutzungsdaten erfassen?'))).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Darf Snacklist Nutzungsdaten erfassen?' })
+    .or(page.getByText('Darf Snacklist Nutzungsdaten erfassen?'))).toBeVisible();
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'the consent text as the review wrote it' })
-    .toMatch(/Hummlist \(Anbieter: Peter Trost\)[\s\S]*Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet\./);
+    .toMatch(/Snacklist \(Anbieter: Peter Trost\)[\s\S]*Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet\./);
   const policy = page.getByRole('link', { name: 'Datenschutzerklärung', exact: true });
-  await expect(policy).toHaveAttribute('href', 'https://hummlist.com/datenschutz');
+  await expect(policy).toHaveAttribute('href', 'https://snacklist.app/datenschutz');
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'approved wording: no draft mark' })
     .not.toMatch(/ENTWURF/);
   await screenshot(page, 'analytics-01-consent-after-sign-in');
-  await context.route('https://hummlist.com/**', (route) =>
-    route.fulfill({ contentType: 'text/html', body: '<title>hummlist.com</title>' }));
+  await context.route('https://snacklist.app/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<title>snacklist.app</title>' }));
   const popup = page.waitForEvent('popup');
   await policy.scrollIntoViewIfNeeded();
   await policy.click();
-  expect((await popup).url(), 'the policy opens in a new tab').toBe('https://hummlist.com/datenschutz');
+  expect((await popup).url(), 'the policy opens in a new tab').toBe('https://snacklist.app/datenschutz');
   await (await popup).close();
   await expect(page, 'still asking').toHaveURL(/\/analytics-consent$/);
   expect(collector.requests, 'the login screen sent nothing').toEqual([]);
@@ -289,15 +289,15 @@ test('in English: the consent text links the English policy; the switch under Mo
   await page.getByRole('button', { name: 'Sign up' }).click();
   await expect(page).toHaveURL(/\/analytics-consent$/);
   await expect.poll(() => page.locator('body').ariaSnapshot(), { message: 'the English consent text as the review wrote it' })
-    .toMatch(/May Hummlist collect usage data\?[\s\S]*Hummlist \(run by Peter Trost\)[\s\S]*List contents, names and e-mail addresses are never sent\./);
+    .toMatch(/May Snacklist collect usage data\?[\s\S]*Snacklist \(run by Peter Trost\)[\s\S]*List contents, names and e-mail addresses are never sent\./);
   await screenshot(page, 'analytics-07-consent-en');
-  await context.route('https://hummlist.com/**', (route) =>
-    route.fulfill({ contentType: 'text/html', body: '<title>hummlist.com</title>' }));
+  await context.route('https://snacklist.app/**', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<title>snacklist.app</title>' }));
   const english = page.getByRole('link', { name: 'privacy policy', exact: true });
-  await expect(english).toHaveAttribute('href', 'https://hummlist.com/en/privacy');
+  await expect(english).toHaveAttribute('href', 'https://snacklist.app/en/privacy');
   const popup = page.waitForEvent('popup');
   await english.click();
-  expect((await popup).url(), 'the English policy, in a new tab').toBe('https://hummlist.com/en/privacy');
+  expect((await popup).url(), 'the English policy, in a new tab').toBe('https://snacklist.app/en/privacy');
   await (await popup).close();
 
   const allow = page.getByRole('button', { name: 'Allow', exact: true });
@@ -453,7 +453,7 @@ function storedTextVersion(page: Page): Promise<{ key: string; raw: string } | n
 // app asks again and sends nothing to PostHog before the new yes, no event and no /flags lookup.
 for (const [label, outdate] of [
   ['without a version (an older build)', (_raw: string) => null],
-  ['under the 2026-10-30 text', (raw: string) => raw.replace('2026-11-01', '2026-10-30')],
+  ['under the 2026-10-30 text', (raw: string) => raw.replace('2026-11-10', '2026-10-30')],
 ] as const) {
   test(`a yes ${label} is asked again; nothing goes to PostHog before the new yes`, async ({ browser }) => {
     const context = await browser.newContext();
@@ -463,7 +463,7 @@ for (const [label, outdate] of [
     await expect(page).toHaveURL(/\/welcome$/);
     await expect.poll(() => storedInstallId(page)).toMatch(/^[0-9a-f-]{36}$/);
     const stored = await storedTextVersion(page);
-    expect(stored?.raw, 'the yes is stored with the current version').toContain('2026-11-01');
+    expect(stored?.raw, 'the yes is stored with the current version').toContain('2026-11-10');
     if (stored === null) throw new Error('no stored consent text version');
     await received(collector, ['first_open']);
     expect(collector.requests.some((r) => r.startsWith('POST /flags')), 'a current yes asks for flags')
@@ -489,7 +489,7 @@ for (const [label, outdate] of [
     expect(collector.leaks).toEqual([]);
 
     await answerConsent(page, 'accept');
-    await expect.poll(() => storedTextVersion(page).then((v) => v?.raw)).toContain('2026-11-01');
+    await expect.poll(() => storedTextVersion(page).then((v) => v?.raw)).toContain('2026-11-10');
     await received(collector, ['first_open']);
     await expect.poll(() => collector.requests.some((r) => r.startsWith('POST /flags')),
       { message: 'flags work again after the new yes' }).toBe(true);

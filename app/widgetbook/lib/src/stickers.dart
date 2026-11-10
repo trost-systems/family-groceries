@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:hummlist_widgetbook/src/interaction.dart';
 import 'package:hummlist_widgetbook/src/story.dart';
 
-const _path = 'Hummlist/Flächen';
+const _path = 'Snacklist/Flächen';
 
 /// The sticker and the opt-in check box built on the same contour. Light and
 /// dark come from the theme addon.
@@ -21,7 +21,7 @@ final stickerComponents = [
         ),
       ),
   ]),
-  component('Hummlist/Auswahl', 'HexCheckbox', [
+  component('Snacklist/Auswahl', 'HexCheckbox', [
     plain('Alle Zustände', (context) => const _AllCheckboxStates()),
     plain('Kontakt-Zeile', (context) => const _ContactRow()),
     plain('Spielwiese', (context) => const _CheckboxPlayground()),
@@ -48,7 +48,7 @@ const _states = [
 class const _Note() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const ListTile(
-    title: Text('Teil von Hummlist Premium'),
+    title: Text('Teil von Snacklist Premium'),
     subtitle: Text('Kontur und harter Schatten'),
   );
 }

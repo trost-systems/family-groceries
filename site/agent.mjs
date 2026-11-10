@@ -12,7 +12,7 @@ import { gfm } from 'turndown-plugin-gfm';
 import { matchesSource } from './scripts/preview.mjs';
 
 const SITE_DIR = dirname(fileURLToPath(import.meta.url));
-const SITE_NAME = 'Hummlist';
+const SITE_NAME = 'Snacklist';
 const MCP_URL = 'https://mcp.hummlist.com';
 const STAGES = ['waitlist', 'beta', 'launch'];
 const API_OFF = 'public-api rollout is off in releases/flags.json';
@@ -70,7 +70,7 @@ const SCHEMAS = {
     data: (page, url) =>
       page.kind === 'guide' && { headline: page.title, description: page.description, inLanguage: page.locale, dateModified: page.updated, url },
   },
-  // Comparison pages: the article, its breadcrumb, and Hummlist itself, without any rating. The
+  // Comparison pages: the article, its breadcrumb, and Snacklist itself, without any rating. The
   // compared product gets no markup of its own (no Product, Review or AggregateRating).
   Article: {
     required: ['headline', 'description', 'inLanguage', 'dateModified', 'url'],
@@ -182,7 +182,7 @@ function llmsTxt(head, published, siteUrl, publicApi) {
       .sort(pageOrder)
       .map((p) => ({ url: siteUrl + twinPath(p.route), line: item(p.title, siteUrl + twinPath(p.route), p.locale === 'de' ? `${p.description} (German)` : p.description) })),
   }));
-  const api = publicApi ? [{ title: 'API', items: [{ line: item('OpenAPI description', `${siteUrl}/openapi.yaml`, 'The Hummlist REST API (/v1), OpenAPI 3') }] }] : [];
+  const api = publicApi ? [{ title: 'API', items: [{ line: item('OpenAPI description', `${siteUrl}/openapi.yaml`, 'The Snacklist REST API (/v1), OpenAPI 3') }] }] : [];
   const full = { line: item('llms-full.txt', `${siteUrl}/llms-full.txt`, 'Every page listed here in one Markdown file') };
   const all = [...sections.slice(0, -1), ...api, { ...sections.at(-1), items: [...sections.at(-1).items, full] }];
   const text = `${head.trim()}\n${all.map((s) => `\n## ${s.title}\n\n${s.items.map((i) => i.line).join('\n')}\n`).join('')}`;

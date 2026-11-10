@@ -82,7 +82,7 @@ void main() {
   test('the list links of a location', () {
     expect(listLinkOf(Uri.parse('/add')), isA<AddLink>());
     expect(
-      listLinkOf(Uri.parse('https://app.hummlist.com/stores/s1')),
+      listLinkOf(Uri.parse('https://app.snacklist.app/stores/s1')),
       isA<StoreLink>().having((l) => l.storeId, 'storeId', 's1'),
     );
     for (final other in ['/', '/list', '/stores', '/stores/a/b', '/more']) {

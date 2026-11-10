@@ -50,7 +50,7 @@ class const InviteSheet({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     return SafeArea(
       child: InvitesScope(
         household: household,
@@ -198,7 +198,7 @@ class const _PremiumNote() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     return DecoratedBox(
       key: const ValueKey('invite-premium'),
       decoration: BoxDecoration(
@@ -486,7 +486,7 @@ class const _GroupLinkCard({
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final sharer = context.read<InviteSharer>();
     final link = inviteLink(invite.code);
     final until = invite.expiresAt.toLocal();
@@ -634,7 +634,7 @@ class const InviteQr(
           key: const ValueKey('invite-qr'),
           painter: _QrPainter(
             QrImage(QrCode(payload: QrPayload.fromString(data))),
-            HummlistColors.of(Brightness.light).text,
+            SnacklistColors.of(Brightness.light).text,
           ),
         ),
       ),
@@ -684,7 +684,7 @@ class const InviteJoinsList({super.key}) extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final t = HummlistColors.of(theme.brightness);
+    final t = SnacklistColors.of(theme.brightness);
     final state = context.watch<InvitesCubit>().state;
     if (state.group is GroupLinkNone) {
       return const SizedBox.shrink();

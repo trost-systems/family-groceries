@@ -10,7 +10,7 @@ section "Job 52".
 
 ## Tokens
 
-One source: [`design/tokens/hummlist.tokens.json`](../design/tokens/hummlist.tokens.json),
+One source: [`design/tokens/snacklist.tokens.json`](../design/tokens/snacklist.tokens.json),
 in the W3C design-tokens format with light and dark colours
 (`color.light.*`, `color.dark.*`), type, space, radius, border, shadow,
 depth, motion, the hex shape, the focus ring and the target size.

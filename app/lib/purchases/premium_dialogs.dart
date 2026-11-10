@@ -11,7 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Opens where the yearly plan is managed and cancelled (H-83): StoreKit's
 /// own sheet on iOS, else Apple's page; Google Play's page for the plan on
-/// Android. Hummlist itself never cancels or refunds it.
+/// Android. Snacklist itself never cancels or refunds it.
 Future<void> openManageSubscriptions(BuildContext context) async {
   final reader = context.read<StorePriceReader>();
   if (await reader.manageSubscriptions()) {

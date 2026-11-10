@@ -16,16 +16,16 @@ const flags = (released) => {
 // Claims only native Siri (App Intents, no Shortcut) makes true (Legal N-80).
 const NATIVE_SIRI_WORDING = [
   'ohne eigenen Kurzbefehl',
-  'Siri kennt Hummlist',
+  'Siri kennt Snacklist',
   'brauchst du keinen Kurzbefehl mehr',
   'Siri-Sätze anzeigen',
-  'Füge etwas zu Hummlist hinzu',
-  'Etwas auf Hummlist setzen',
+  'Füge etwas zu Snacklist hinzu',
+  'Etwas auf Snacklist setzen',
   'with no shortcut of your own',
-  'Siri knows Hummlist',
+  'Siri knows Snacklist',
   "you don't need a Shortcut",
   'Show Siri phrases',
-  'Add to Hummlist',
+  'Add to Snacklist',
 ];
 
 // Everything a person or an agent can read: pages, Markdown twins, llms*.txt, sitemap, JSON-LD.
@@ -101,7 +101,7 @@ test('the Claude guides say AI access needs Premium only once integration-lock i
     data.holds['integration-lock'].released = released;
     return JSON.stringify(data);
   };
-  const guides = [['/de/anleitungen/claude', /braucht Hummlist Premium/], ['/en/guides/claude', /needs Hummlist Premium/]];
+  const guides = [['/de/anleitungen/claude', /braucht Snacklist Premium/], ['/en/guides/claude', /needs Snacklist Premium/]];
   const off = buildSite({ env: PROD, repo: { flags: lock(false) } });
   const on = buildSite({ env: PROD, repo: { flags: lock(true) } });
   for (const [route, premium] of guides) {

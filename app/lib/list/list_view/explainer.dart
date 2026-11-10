@@ -12,7 +12,7 @@ class const EmptyList({super.key}) extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = HummlistColors.of(Theme.of(context).brightness);
+    final t = SnacklistColors.of(Theme.of(context).brightness);
     return Padding(
       key: const ValueKey('list-empty'),
       padding: const EdgeInsets.symmetric(
