@@ -45,6 +45,24 @@ test('the root redirects by Accept-Language to the landing pages', async () => {
   }
 });
 
+test('hummlist.com and www.hummlist.com redirect to snacklist.app, keeping path and query, except /data/ and /api/', async () => {
+  for (const host of ['hummlist.com', 'www.hummlist.com']) {
+    for (const [path, location] of [['/', 'https://snacklist.app/'], ['/datenschutz', 'https://snacklist.app/datenschutz'], ['/de/anleitungen/alexa?x=1', 'https://snacklist.app/de/anleitungen/alexa?x=1']]) {
+      const res = await get(path, { Host: host });
+      assert.equal(res.status, 308, `${host}${path}`);
+      assert.equal(res.headers.get('location'), location, `${host}${path}`);
+    }
+    const data = await get('/data/item-icons.v1.json', { Host: host });
+    assert.notEqual(data.status, 308, `${host} /data/ stays`);
+    const api = await get('/api/waitlist/unsubscribe', { Host: host });
+    assert.notEqual(api.status, 308, `${host} /api/ stays`);
+    const root = await get('/', { Host: host, 'Accept-Language': 'de-DE' });
+    assert.equal(root.headers.get('location'), 'https://snacklist.app/', `${host} / goes to snacklist.app first`);
+  }
+  const own = await get('/datenschutz', { Host: 'snacklist.app' });
+  assert.equal(own.status, 200, 'snacklist.app itself serves');
+});
+
 test('the privacy policy pages are served and /privacy goes to the English one', async () => {
   for (const [path, h1] of [['/datenschutz', 'Datenschutzerklärung'], ['/en/privacy', 'Privacy policy']]) {
     const res = await get(path);

@@ -10,6 +10,18 @@
   "rewrites": [{ "source": "/get", "destination": "/api/get" }],
   "redirects": [
     {
+      "source": "/((?!data/|api/).*)",
+      "has": [{ "type": "host", "value": "hummlist.com" }],
+      "destination": "https://snacklist.app/$1",
+      "permanent": true
+    },
+    {
+      "source": "/((?!data/|api/).*)",
+      "has": [{ "type": "host", "value": "www.hummlist.com" }],
+      "destination": "https://snacklist.app/$1",
+      "permanent": true
+    },
+    {
       "source": "/",
       "has": [{ "type": "header", "key": "accept-language", "value": "^\\s*de.*" }],
       "destination": "/de",
