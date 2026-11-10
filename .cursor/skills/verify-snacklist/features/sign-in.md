@@ -17,7 +17,7 @@ Signed out, Snacklist opens on the start screen of the guided start (`/start`, f
 - `legal-footer` Impressum and Datenschutz links under the form (see Gotchas).
 - `errors` failed sign-in snackbar „Anmeldung fehlgeschlagen: {message}“ / "Sign-in failed: {message}" (also as soon as the login screen opens after a failed Google or Apple redirect); a canceled or declined provider sign-in „Anmeldung abgebrochen“ / "Sign-in canceled".
 - `deleted-notice` right after an account deletion, a card above the sign-in methods: „Dein Konto wurde gelöscht.“ / "Your account was deleted."; when an Apple grant could not be revoked, also „Falls du dich mit Apple angemeldet hattest: Entferne „Snacklist“ auf deinem iPhone unter Einstellungen › [dein Name] › Anmelden & Sicherheit › Mit Apple anmelden.“ / "If you signed in with Apple, remove “Snacklist” on your iPhone under Settings › [your name] › Sign-In & Security › Sign in with Apple." (`e2e/tests/account.spec.ts`).
-- `sign-out` More tab, „Abmelden“ / "Sign out"; also the logout icon (tooltip „Abmelden“) in the app bar of the first-run screens (analytics question, „Willkommen bei Snacklist“) and „Abmelden“ in the guided start's leave dialog when signed in. A sign-out ends on the login screen, not the start screen.
+- `sign-out` More tab, „Abmelden“ / "Sign out"; also the logout icon (tooltip „Abmelden“) in the app bar of the first-run screens (analytics question, „Willkommen bei Snacklist“, the join request's waiting screen) and „Abmelden“ in the guided start's leave dialog when signed in. A sign-out ends on the login screen, not the start screen.
 
 ## How to get to it (user POV)
 

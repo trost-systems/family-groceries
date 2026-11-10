@@ -1,6 +1,6 @@
 # Working offline
 
-The list keeps working without a connection. Adding, ticking, putting back, editing, moving and deleting items all happen on screen at once, wait in a queue on the device and are sent once the connection returns. The last synced list is stored on the device, so the app starts and shows it even with no network, and the queue survives reloads and restarts. A floating hex card „Offline“ tells the user they are offline and folds into a small pill in the bar, right of the household's name, after about 3 s (job 161). A few things need a connection and say so (below). Signing out drops the stored list.
+The list keeps working without a connection. Adding, ticking, putting back, editing, moving and deleting items (deleting only through the row's screen-reader action since job 149, edit-item `ed-delete`) all happen on screen at once, wait in a queue on the device and are sent once the connection returns. The last synced list is stored on the device, so the app starts and shows it even with no network, and the queue survives reloads and restarts. A floating hex card „Offline“ tells the user they are offline and folds into a small pill in the bar, right of the household's name, after about 3 s (job 161). A few things need a connection and say so (below). Signing out drops the stored list.
 
 ## Sub-features
 

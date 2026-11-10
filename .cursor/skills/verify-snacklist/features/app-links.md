@@ -27,7 +27,7 @@ Preconditions:
 
 - Baseline household signed in (`signIn` in `helpers/lib.mjs`) for the signed-in recipes; a fresh browser context for the signed-out ones. For the store recipe add a store and tag an item first: `const mia = member(inst, 'mia'); const api = await apiAs(inst, mia); await api.rpc('add_store', { p_household: mia.householdId, p_name: 'Supermarkt' })`, then `.from('items').update({ store_id }).eq('name', 'Nudeln')`; store ids come from `.from('stores').select('id, name')`.
 
-- **Add sheet.** `page.goto('/add')`. Observable: URL ends in `/`, `addSheet(page)` visible, `addField(page)` focused.
+- **Add sheet.** `page.goto('/add')`. Observable: URL ends in `/`, `addSheet(page, L)` visible, `addField(page, L)` focused (the `helpers/lib.mjs` versions take the labels).
 - **Store.** Fold Supermarkt with `storeDivider(page, 'Supermarkt').click()`, then `page.goto('/stores/<supermarkt id>')`. Observable: URL `/`, `storeDivider(page, 'Supermarkt')` in the viewport, its items visible again.
 - **More page.** `page.goto('/more/invites')`. Observable: URL stays `/more/invites`, button „Neue Einladung“ visible; „Zurück“ goes to `/more`.
 - **Unknown.** `page.goto('/does/not/exist')`. Observable: URL `/`, the add field visible, no add sheet.

@@ -1,6 +1,6 @@
 # Tips on the list (hints) and „Erste Schritte“
 
-The List tab has one slot at the top of the list (job 168b, H2 trigger hints; before: job 80's fixed tip queue and the gesture card). While it is open, the slot holds the „Erste Schritte“ card („First steps“); after that, at most one hint per app start, chosen by what the user has done. A hint is a flat card at the top of the list, or a callout under „Anpassen“ or above the add field. Every hint can be read again under Mehr → „Tipps“.
+The List tab has one slot at the top of the list (job 168b, H2 trigger hints; before: job 80's fixed tip queue and the gesture card). While it is open, the slot holds the „Erste Schritte“ card („First steps“), shown only while the list has an active item (while the checklist is open, an empty list stays clean and shows neither the card nor a hint); after that, at most one hint per app start, chosen by what the user has done. A hint is a flat card at the top of the list, or a callout under „Anpassen“ or above the add field. Every hint can be read again under Mehr → „Tipps“.
 
 ## Sub-features
 
@@ -43,7 +43,7 @@ The List tab has one slot at the top of the list (job 168b, H2 trigger hints; be
 
 Not driven yet for job 168b (hints branch: widget tests only). Preconditions: `signIn` from helpers/lib.mjs dismisses the checklist („Erste Schritte ausblenden“), which takes that session's slot, so a hint shows only after a reload, 10 s after it.
 
-- **Checklist.** On a fresh account the list shows „Erste Schritte“; `page.getByText('Tippen hakt ab · Halten bearbeitet')` is visible; `page.getByRole('button', { name: 'Erste Schritte ausblenden' })` hides it.
+- **Checklist.** On a fresh account the list shows „Erste Schritte“ once it has an item (add one first); `page.getByText('Tippen hakt ab · Halten bearbeitet')` is visible; `page.getByRole('button', { name: 'Erste Schritte ausblenden' })` hides it.
 - **Hint.** After a reload with 5 or more open items, within 15 s the ARIA snapshot contains „Artikel bearbeiten Halte einen Artikel gedrückt …“ (title and text are one merged node). „Tipp ausblenden“ hides it and shows „Alle Tipps unter Mehr → Tipps.“; after another reload no hint comes back for 24 h.
 - **Tipps page.** `/more/tips` lists the cards. On the web exactly six (driven 2026-11-09): „Gemeinsam einkaufen“ with „Einladen“, „Artikel bearbeiten“, „Menge gleich mittippen“, „Sortiert wie dein Laden“, „Noch ein Laden?“, „Noch besser mit KI & Automatisierung“ with „Zugriffe verwalten“ (no `dictation`, `siri`, `home-widget`; `own-household` and `second-household` are off on every platform, see Gotchas).
 - **Scripted.** `helpers/drive.sh tips [--lang en] [--dark]` (`journeys/tips.mjs`).
