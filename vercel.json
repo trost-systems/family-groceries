@@ -3,6 +3,7 @@
   "framework": null,
   "installCommand": "bash scripts/vercel.sh install",
   "buildCommand": "bash scripts/vercel.sh build",
+  "ignoreCommand": "bash scripts/vercel-ignore.sh",
   "outputDirectory": "app/build/web",
   "cleanUrls": false,
   "trailingSlash": false,

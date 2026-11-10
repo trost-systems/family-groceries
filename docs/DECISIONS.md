@@ -11150,3 +11150,24 @@ main before the rename) keeps a Hummlist hotfix build possible.
     Feedback senden“; the app has it under Mehr („More“), so the drafts and the mails say that now.
     The password-changed notice told readers to reset their password, which the app does not offer;
     it now ends like the other security notices ("contact support").
+
+## Job 180: web production deploys failed in the Ignored Build Step (2026-11-10)
+
+- **Root cause.** The dashboard's Ignored Build Step ran
+  `git diff --quiet "$VERCEL_GIT_PREVIOUS_SHA" HEAD -- …`. Vercel clones 10 commits deep, and
+  `0873093e` was exactly 10 commits past the last production build `1f8e5edb`. That commit was not
+  in the clone, so `git diff` exited 128 (`fatal: bad object`). Vercel builds on 1, skips on 0 and
+  fails the deployment on anything else, so three release pushes in a row ended in ERROR. Each failed
+  build left the previous SHA where it was, so no later push could recover by itself.
+- **The step lives in the repo now.** `vercel.json`'s `ignoreCommand` overrides the dashboard
+  setting, so the fix needs no project change. Vercel reads `vercel.json` from the deployed commit,
+  so a `release` push of a commit older than this fix still runs the old one-liner and can fail the
+  same way. Releases only move forward, so that needs a hand-pushed old commit. `scripts/vercel-ignore.sh` keeps the old rules
+  (only `release` builds, and only when the app paths changed) and exits 1 when the previous commit is
+  empty or missing. It skips only when `git diff` proves the paths unchanged. It also watches
+  itself.
+- **No `git fetch` of the missing commit.** A rebuild after more than 10 commits costs one build, and
+  such a push almost always changes the app anyway. A fetch in Vercel's clone would add credentials
+  and a network step we cannot test here.
+- **Other projects unchanged.** `hummlist-site` decides by branch name only, `hummlist-mcp`'s
+  `git diff … || exit 1` turns any git error into a build, and `hummlist-nexus` has no git link.

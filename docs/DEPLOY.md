@@ -23,7 +23,8 @@ before it deploys anything.
 ## Web app: preview from main, production with the store release
 
 The Vercel project `peter-trost/family-groceries` builds the Flutter web app
-(`vercel.json`, `scripts/vercel.sh`) from every push. Since job
+(`vercel.json`, `scripts/vercel.sh`) only for the `release` branch, and only
+when the push changes the app (see "Build skips" below). Since job
 web-release-align (2026-10-29), production moves only with a store
 upload, so the web app never runs ahead of TestFlight and Play. Since job 30
 (2026-10-30) every green merge goes to the internal testers by itself, and
@@ -32,9 +33,9 @@ production (public; [`RELEASE.md`](RELEASE.md)):
 
 | URL | Serves | Who can open it |
 | --- | --- | --- |
-| `https://preview.app.hummlist.com` (no `preview.app.snacklist.app` yet: that domain is not set up in Vercel) | the newest build of `main` (a branch domain on `main`) | Vercel Authentication: members of the Vercel team only, or a share link |
+| `https://preview.app.hummlist.com` (no `preview.app.snacklist.app` yet: that domain is not set up in Vercel) | frozen: the last build of `main` from before 2026-11-09, since `main` no longer builds (a branch domain on `main`) | Vercel Authentication: members of the Vercel team only, or a share link |
 | `https://app.snacklist.app` and `https://app.hummlist.com` (alias `family-groceries-pied.vercel.app`) | the newest build of the `release` branch, Vercel's production branch | everyone |
-| `https://family-groceries-git-<branch>-peter-trost.vercel.app` | each branch's newest build | Vercel Authentication |
+| `https://family-groceries-git-<branch>-peter-trost.vercel.app` | frozen: no branch builds since 2026-11-09 | Vercel Authentication |
 
 How production moves:
 
@@ -52,12 +53,47 @@ How production moves:
    (rulesets, must print `[]`) and
    `gh api repos/trost-systems/family-groceries/branches/release --jq .protected`
    (classic protection, must print `false`).
-3. Vercel builds `release` as a production deployment and assigns
+3. If the push changes the app, Vercel builds `release` as a production deployment and assigns
    both production domains to it (a few minutes). No Vercel token is stored in
    GitHub. The production branch is a project setting (Settings,
    Environments, Production, Branch Tracking; API
    `PATCH /v9/projects/{id}/branch`, read back as `link.productionBranch`),
    and auto-assignment of production domains must stay on.
+
+### Build skips
+
+Each Flutter build costs Build CPU Minutes, so since 2026-11-09 only
+`release` builds, and only when the app changed. `vercel.json`'s
+`ignoreCommand` runs `scripts/vercel-ignore.sh` before the build (it
+overrides the project's Ignored Build Step setting, which still holds the
+old one-liner). Vercel skips the build on exit 0, builds on exit 1, and fails
+the deployment on any other exit code.
+
+- `main` and every other branch skip, so the preview and branch URLs stay
+  frozen. Check a merged change locally (`scripts/vercel-local.sh`) or on
+  `app.snacklist.app` after its Release run.
+- `release` skips only when `git diff` proves that `app/` (tests excluded),
+  `vercel.json`, `scripts/vercel.sh`, `scripts/vercel-ignore.sh` and
+  `scripts/join-config.sh` are unchanged since `VERCEL_GIT_PREVIOUS_SHA`, the
+  last production deployment's commit. A docs-only release push keeps the
+  current production build.
+- When that commit is empty or missing, `release` builds. Vercel clones 10
+  commits deep, so a release push 10 or more commits past the last
+  production build has no previous commit in the clone. The old dashboard
+  one-liner then let `git diff` exit 128, and the three production pushes of
+  2026-11-10 ended in ERROR before the build (job 180).
+- `scripts/vercel-ignore-test.sh` (lint gate) checks these cases in a
+  10-commit clone.
+- Vercel reads `vercel.json` from the deployed commit. A commit older than
+  job 180 still runs the dashboard's one-liner, so ship such a commit by hand
+  only when it is at most 9 commits past the last production build.
+- To build previews again, change the `case` in `scripts/vercel-ignore.sh`.
+
+The other projects keep their step in the dashboard. `hummlist-site` builds
+only `main` (`case "$VERCEL_GIT_COMMIT_REF" in main|"") exit 1;; *) exit 0;; esac`,
+no git), so PRs get no site preview. `hummlist-mcp` runs
+`git diff --quiet HEAD^ HEAD -- . || exit 1`, which exits 1 on any git error.
+`hummlist-nexus` has no git connection.
 
 A dry run (`upload=false`) or a skipped run leaves `release`, and so
 production, where it is. A failed `Web production` job fails the
@@ -86,15 +122,16 @@ Hummlist builds keep `https://app.hummlist.com`.
 ## Guides site: snacklist.app from every push to main
 
 The Vercel project `hummlist-site` (Root Directory `site`, `site/vercel.json`)
-builds the site from every push: the landing pages `/de` and `/en` (where `/`
+builds the site from every push to `main`: the landing pages `/de` and `/en` (where `/`
 redirects by `Accept-Language`), the guides, the changelog and the legal pages. A push to `main` is its production
 deployment and goes live on `https://snacklist.app` without a manual step
 (`www.snacklist.app` redirects to it; `hummlist.com`, and through it
 `www.hummlist.com` and `hummlist-site.vercel.app`, 308 to it by the host rules
 in `site/vercel.json`). Since job 174
 the pages name snacklist.app as canonical (`siteUrl` in `site/config.json`). Every other
-branch gets a preview deployment behind Vercel Authentication; the PR shows it
-as the commit status "Vercel – hummlist-site".
+branch skips the build since 2026-11-09 (its step is quoted at the end of
+"Build skips" above), so check a
+site change locally with `npm run build` in `site/`.
 
 The build reads two files outside `site/`, so the project setting "Include
 files outside the root directory in the Build Step" must stay on: the release
