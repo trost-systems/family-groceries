@@ -19,7 +19,7 @@ const rpc = (
     headers: {
       'content-type': 'application/json',
       accept: 'application/json, text/event-stream',
-      'mcp-protocol-version': '2025-06-18',
+      'mcp-protocol-version': '2025-11-25',
       ...(lang ? { 'accept-language': lang } : {}),
     },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
@@ -70,7 +70,7 @@ const calls: [string, Record<string, unknown>][] = [
 Deno.test('locked: initialize and tools/list answer without asking the gate', async () => {
   const s = serve(locked);
   const init = await s.handle(rpc('initialize', {
-    protocolVersion: '2025-06-18',
+    protocolVersion: '2025-11-25',
     capabilities: {},
     clientInfo: { name: 'test', version: '1' },
   }));

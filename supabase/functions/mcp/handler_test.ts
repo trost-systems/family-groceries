@@ -1,6 +1,12 @@
 import { assertEquals, assertExists, assertMatch, assertStringIncludes } from '@std/assert';
 import { type Auth, AuthError } from '../_shared/auth.ts';
-import { type Deps, handle, publicOriginFromEnv, publicOriginsFromEnv } from './handler.ts';
+import {
+  clientAddress,
+  type Deps,
+  handle,
+  publicOriginFromEnv,
+  publicOriginsFromEnv,
+} from './handler.ts';
 
 function headerOf(res: Response, name: string): string {
   const value = res.headers.get(name);
@@ -31,9 +37,17 @@ function deps(auth: Auth | AuthError): Deps {
         resource: RESOURCE,
         metadata: METADATA,
         authorizationServer: ISSUER,
+        cimdMetadata: `${METADATA}/cimd`,
+        cimdAuthorizationServer: `${RESOURCE}/oauth`,
       }),
     publicOrigins: () => [PUBLIC, PUBLIC_SNACK],
     authServerMetadata: () => Promise.resolve(AS_METADATA),
+    oauth: {
+      resolveClient: () => Promise.reject(new Error('no client registry in this test')),
+      lookupClient: () => Promise.resolve(null),
+      forwardToken: () => Promise.reject(new Error('no token endpoint in this test')),
+      allowTokenRequest: () => Promise.resolve(true),
+    },
     authenticate: () => auth instanceof AuthError ? Promise.reject(auth) : Promise.resolve(auth),
     serve: (_req, a) => Promise.resolve(Response.json({ served: a.via })),
     allowedOriginHosts: () => ['inspector.example'],
@@ -319,4 +333,25 @@ Deno.test('auth metadata: other methods get 405, an upstream failure 502', async
   });
   assertEquals(down.status, 502);
   assertEquals((await down.json()).error, 'temporarily_unavailable');
+});
+
+// Job 94 review: the token limit is per client address, also behind the Vercel proxy, where
+// Supabase's gateway sees Vercel's address in X-Real-IP.
+Deno.test("the client address: Vercel's header through the proxy, X-Real-IP directly", () => {
+  const req = (headers: Record<string, string>) => new Request('http://edge/mcp', { headers });
+  const proxied = req({
+    'x-real-ip': '76.76.21.9',
+    'x-vercel-forwarded-for': '203.0.113.7',
+    'x-forwarded-for': '203.0.113.7, 76.76.21.9',
+  });
+  assertEquals(clientAddress(proxied, true), '203.0.113.7');
+  assertEquals(clientAddress(proxied, false), '76.76.21.9');
+  const direct = req({ 'x-real-ip': '198.51.100.4', 'x-vercel-forwarded-for': '203.0.113.99' });
+  assertEquals(clientAddress(direct, false), '198.51.100.4', 'a forged Vercel header is ignored');
+  assertEquals(clientAddress(req({ 'x-real-ip': '198.51.100.4' }), true), '198.51.100.4');
+  assertEquals(
+    clientAddress(req({ 'x-forwarded-for': '192.0.2.1, 10.0.0.1' }), false),
+    '192.0.2.1',
+  );
+  assertEquals(clientAddress(req({}), true), 'unknown');
 });

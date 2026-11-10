@@ -10,13 +10,35 @@ import {
   authenticate,
   AuthError,
   discoverIssuer,
+  sha256Hex,
   supabaseUrl,
 } from '../_shared/auth.ts';
+import { serviceDb } from '../_shared/db.ts';
 import { requirePremiumWith } from '../_shared/premium.ts';
+import { fetchClientMetadata } from './cimd.ts';
+import {
+  LIMITS,
+  lookupClient,
+  resolveClient,
+  secretKeyFromEnv,
+  supabaseClientAdmin,
+  withinLimits,
+} from './cimd_clients.ts';
+import { type OAuthDeps, oauthRoute } from './oauth.ts';
 import { telemetry } from './telemetry.ts';
 import { buildServer, langOf } from './tools.ts';
 
 const PRM_SUFFIXES = ['/.well-known/oauth-protected-resource', '/oauth-protected-resource'];
+
+/**
+ * Protected Resource Metadata for 2026-era clients: the same resource, with the front in oauth.ts
+ * (Client ID Metadata Documents) as its authorization server. 2025-era clients keep Supabase Auth,
+ * so the client registrations they keyed by its issuer stay valid (DECISIONS, job 94).
+ */
+const CIMD_PRM_PATH = '/.well-known/oauth-protected-resource/cimd';
+
+/** The first protocol revision without `initialize`; requests from it on are 2026-era. */
+const MODERN_SINCE = '2026-07-28';
 
 /**
  * Authorization Server Metadata (RFC 8414) and OpenID discovery paths under the MCP URL. A client
@@ -48,6 +70,9 @@ export type Endpoints = {
   resource: string;
   metadata: string;
   authorizationServer: string;
+  /** The 2026-era metadata URL and its authorization server, the front at <resource>/oauth. */
+  cimdMetadata: string;
+  cimdAuthorizationServer: string;
 };
 
 export type Deps = {
@@ -57,30 +82,52 @@ export type Deps = {
   publicOrigins: () => string[];
   /** Supabase Auth's Authorization Server Metadata (RFC 8414), served unchanged. */
   authServerMetadata: () => Promise<Record<string, unknown>>;
+  /** The front's client mapping and token forwarding; it reads authServerMetadata above. */
+  oauth: Omit<OAuthDeps, 'authServerMetadata'>;
   authenticate: (req: Request) => Promise<Auth>;
   serve: (req: Request, auth: Auth) => Promise<Response>;
   allowedOriginHosts: () => string[];
 };
 
-export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Response> {
+export async function handle(req: Request, deps: Deps = productionDeps): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   const direct = await deps.endpoints();
   const publicOrigins = deps.publicOrigins();
   const publicOrigin = publicOriginFor(req, publicOrigins);
   const endpoints = publicOrigin ? proxied(publicOrigin, direct) : direct;
   const path = new URL(req.url).pathname;
+  const subpath = path.replace(/^(?:\/functions\/v1)?\/mcp(?=\/|$)/, '').replace(/\/$/, '');
 
-  if (PRM_SUFFIXES.some((suffix) => path.endsWith(suffix))) {
+  const cimdPrm = subpath === CIMD_PRM_PATH;
+  if (cimdPrm || PRM_SUFFIXES.some((suffix) => path.endsWith(suffix))) {
     if (req.method !== 'GET') return withCors(new Response(null, { status: 405 }));
+    // A 2026-era client that rediscovers without the 401's hint names its version here too.
+    const front = cimdPrm || isModern(req);
     return withCors(Response.json({
       resource: endpoints.resource,
-      authorization_servers: [endpoints.authorizationServer],
+      authorization_servers: [
+        front ? endpoints.cimdAuthorizationServer : endpoints.authorizationServer,
+      ],
       scopes_supported: SCOPES,
       bearer_methods_supported: ['header'],
       resource_name: 'Snacklist',
       resource_documentation:
         'https://github.com/trost-systems/family-groceries/blob/main/docs/MCP.md',
-    }));
+    }, { headers: { vary: 'mcp-protocol-version' } }));
+  }
+
+  try {
+    const front = await oauthRoute(req, subpath, endpoints.cimdAuthorizationServer, {
+      ...deps.oauth,
+      authServerMetadata: deps.authServerMetadata,
+    });
+    if (front) return withCors(front);
+  } catch (e) {
+    console.error('mcp oauth front:', e);
+    return withCors(Response.json(
+      { error: 'temporarily_unavailable', error_description: 'authorization server unavailable' },
+      { status: 502 },
+    ));
   }
 
   if (AS_SUFFIXES.some((suffix) => path.endsWith(suffix))) {
@@ -114,7 +161,7 @@ export async function handle(req: Request, deps: Deps = defaultDeps): Promise<Re
     }
   } catch (e) {
     if (!(e instanceof AuthError)) throw e;
-    return withCors(challenge(e, endpoints));
+    return withCors(challenge(e, isModern(req) ? endpoints.cimdMetadata : endpoints.metadata));
   }
   return withCors(await deps.serve(req, auth));
 }
@@ -151,19 +198,41 @@ function publicOriginFor(req: Request, origins: string[]): string | undefined {
   return origins.find((origin) => new URL(origin).hostname === host);
 }
 
+/**
+ * The caller's address for per-address limits. Through the proxy Supabase's gateway sees
+ * Vercel, so X-Real-IP would put every proxied client in one bucket; Vercel sets
+ * x-vercel-forwarded-for to the client's address and overwrites a client's own forwarding
+ * headers. Directly on supabase.co the gateway's X-Real-IP is the client (X-Forwarded-For is
+ * client-forgeable there). A direct caller adding the proxy marker can pick its own key, which
+ * only gets around this limit, as many addresses would; Supabase's own limit still applies.
+ */
+export function clientAddress(req: Request, proxied: boolean): string {
+  const first = (name: string) => req.headers.get(name)?.split(',')[0]?.trim() || undefined;
+  return (proxied ? first('x-vercel-forwarded-for') : undefined) ?? first('x-real-ip') ??
+    first('x-forwarded-for') ?? 'unknown';
+}
+
 /** The proxy serves the function at its root and the metadata at the RFC 9728 root path. */
 function proxied(publicOrigin: string, direct: Endpoints): Endpoints {
   return {
     resource: publicOrigin,
     metadata: `${publicOrigin}${PRM_SUFFIXES[0]}`,
     authorizationServer: direct.authorizationServer,
+    cimdMetadata: `${publicOrigin}${CIMD_PRM_PATH}`,
+    cimdAuthorizationServer: `${publicOrigin}/oauth`,
   };
 }
 
+/** Whether the request names a 2026-era protocol revision (MCP-Protocol-Version). */
+function isModern(req: Request): boolean {
+  const version = req.headers.get('mcp-protocol-version') ?? '';
+  return /^\d{4}-\d{2}-\d{2}$/.test(version) && version >= MODERN_SINCE;
+}
+
 /** 401 (or 403 without a household) pointing the client at the Protected Resource Metadata. */
-function challenge(error: AuthError, endpoints: Endpoints): Response {
+function challenge(error: AuthError, metadata: string): Response {
   const params = [
-    `resource_metadata="${endpoints.metadata}"`,
+    `resource_metadata="${metadata}"`,
     `scope="${SCOPES.join(' ')}"`,
     ...(error.reason === 'missing_token' ? [] : [
       `error="${error.reason === 'no_household' ? 'insufficient_scope' : 'invalid_token'}"`,
@@ -208,6 +277,8 @@ async function projectEndpoints(): Promise<Endpoints> {
     resource,
     metadata: `${resource}${PRM_SUFFIXES[0]}`,
     authorizationServer: issuer,
+    cimdMetadata: `${resource}${CIMD_PRM_PATH}`,
+    cimdAuthorizationServer: `${resource}/oauth`,
   };
 }
 
@@ -250,9 +321,45 @@ function supabaseAuthServerMetadata(): Promise<Record<string, unknown>> {
 
 const requirePremium = requirePremiumWith(telemetry);
 
-const defaultDeps: Deps = {
+export const productionDeps: Deps = {
   endpoints: projectEndpoints,
   authServerMetadata: supabaseAuthServerMetadata,
+  oauth: {
+    resolveClient: (url) =>
+      resolveClient(url, {
+        sql: serviceDb,
+        admin: supabaseClientAdmin(supabaseUrl(), secretKeyFromEnv()),
+        fetchDocument: (u) =>
+          fetchClientMetadata(u, {
+            fetch,
+            resolve: async (host) => [
+              ...await Deno.resolveDns(host, 'A').catch(() => []),
+              ...await Deno.resolveDns(host, 'AAAA').catch(() => []),
+            ],
+          }),
+      }),
+    lookupClient: (url) => lookupClient(url, serviceDb()),
+    allowTokenRequest: async (req) => {
+      const address = clientAddress(
+        req,
+        publicOriginFor(req, publicOriginsFromEnv()) !== undefined,
+      );
+      return await withinLimits(serviceDb(), [[
+        `token:${await sha256Hex(address)}`,
+        LIMITS.tokenPerAddress,
+      ]]);
+    },
+    forwardToken: (body, authorization) =>
+      fetch(`${supabaseUrl()}/auth/v1/oauth/token`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          accept: 'application/json',
+          ...(authorization ? { authorization } : {}),
+        },
+        body,
+      }),
+  },
   publicOrigins: publicOriginsFromEnv,
   authenticate,
   serve: (req, auth) =>

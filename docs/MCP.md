@@ -12,7 +12,9 @@ function `mcp` and speaks MCP over streamable HTTP.
 | Protected Resource Metadata | `<endpoint>/.well-known/oauth-protected-resource` |
 | Authorization server | Supabase Auth, `https://jdwqrallbpdbshrdhenk.supabase.co/auth/v1` |
 | Credentials | OAuth 2.1 access token, or a personal access token (`fgp_…`) |
-| Protocol versions | 2026-07-28 (`server/discover`) and 2025-11-25 down to 2024-11-05 (`initialize`) |
+| Protocol versions | 2026-07-28 (`server/discover`, stateless) and 2025-11-25 down to 2024-11-05 (`initialize`), chosen per request by `MCP-Protocol-Version` |
+| Authorization server, 2025-11-25 and older | Supabase Auth (dynamic client registration) |
+| Authorization server, 2026-07-28 | `<endpoint>/oauth`, Supabase Auth behind a front that adds Client ID Metadata Documents ([below](#protocol-2026-07-28-client-id-metadata-documents)); dynamic registration works there too |
 
 The app shows the endpoint under **Mehr → Zugänge → MCP-Server**, with a copy
 button: `https://mcp.snacklist.app` in builds for the production project, the
@@ -70,7 +72,30 @@ version in `supportedVersions`, name the server in
 `capabilities.tools`. Every request then carries the `_meta` envelope and the
 `mcp-method` header, as the SDK client does. In both revisions, `tools/list`
 must return tools that each have a name, a description and an `inputSchema`
-of type `object`, `add_items` among them. Any other version exits 2.
+of type `object`, `add_items` among them. In `2026-07-28`, `tools/list` must
+also carry `resultType: "complete"`, a whole `ttlMs` and a `cacheScope`, a
+mismatched `Mcp-Method` and a `tools/call` without `Mcp-Name` must get 400
+with `-32020`, and an unknown version `-32022` naming `2026-07-28`. Any other
+version exits 2.
+
+`MCP_SMOKE_CIMD=1` (2026-07-28 only) adds the authorization server front's
+checks: `client_id_metadata_document_supported`, the same authorization
+server when the well-known metadata is asked with the version header, and a
+400 `invalid_client` without a redirect for an http client_id URL.
+These only read. `MCP_SMOKE_CIMD_CLIENT=<document URL>` also sends that
+client through the front's authorize endpoint, which fetches the document and
+registers its client; use it against a local stack only, never production.
+
+Where it runs: the `site-agent` gate probes `https://mcp.snacklist.app` in
+both versions without credentials, so the 401 for `initialize` and for
+`server/discover` and the metadata are hard checks on every PR. Production
+runs main's last deploy, so the checks of what a branch changes run against
+the branch's own server in `e2e/tests/mcp-smoke.spec.ts` (both versions,
+with a throwaway household's token, `MCP_SMOKE_CIMD=1`). After every deploy
+`scripts/smoke-remote.sh` runs both versions against the hosted function,
+2026-07-28 with `MCP_SMOKE_CIMD=1`, read-only. A real document through the
+hosted front is not part of it: that would register a client in production
+(`NEEDS_PETER.md`, "Job 94").
 
 `node --test scripts/mcp-smoke.test.mjs` runs the script against a fake
 server (`scripts/mcp-smoke-fixture.mjs`) and shows that each check fails on
@@ -280,6 +305,9 @@ authorization flow or a custom `Authorization` header.
 
 ## How authentication works
 
+The diagram shows a 2025-era client. A 2026-07-28 client gets the same flow
+through the front at `<endpoint>/oauth` ([below](#protocol-2026-07-28-client-id-metadata-documents)).
+
 ```
 client                         mcp function                Supabase Auth            app (/oauth/consent)
   | POST /mcp (no token)           |                            |                           |
@@ -356,6 +384,61 @@ The function (`supabase/functions/mcp/handler.ts`):
    triggers and `classify_item` therefore behave exactly as they do for the
    app. Another household's rows are invisible. The function never writes
    with the service role.
+
+### Protocol 2026-07-28: Client ID Metadata Documents
+
+The 2026-07-28 revision deprecates dynamic client registration in favour of
+[Client ID Metadata Documents](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization/client-registration#client-id-metadata-documents)
+(CIMD): the client's `client_id` is an HTTPS URL of a JSON document with its
+name and redirect URIs (Claude's is
+`https://claude.ai/oauth/mcp-oauth-client-metadata`). Supabase Auth 2.197
+does not resolve such a `client_id` and does not advertise
+`client_id_metadata_document_supported` (supabase/auth issue 2850). The
+function puts a front in front of it (`mcp/oauth.ts`, `mcp/cimd.ts`,
+`mcp/cimd_clients.ts`):
+
+| Path below the endpoint | What it does |
+| --- | --- |
+| `/.well-known/oauth-protected-resource/cimd` | Protected Resource Metadata naming `<endpoint>/oauth` as authorization server; a 2026-era 401 points here |
+| `/.well-known/oauth-protected-resource` | The same for a request with `MCP-Protocol-Version: 2026-07-28` or later (a client rediscovering without the hint), else Supabase Auth as before (`Vary: mcp-protocol-version`) |
+| `/oauth/.well-known/oauth-authorization-server`, `/oauth/.well-known/openid-configuration`, `/.well-known/oauth-authorization-server/oauth`, `/.well-known/openid-configuration/oauth` | Supabase Auth's metadata with issuer `<endpoint>/oauth`, its own authorize and token endpoints and `client_id_metadata_document_supported: true`; `registration_endpoint` stays Supabase's |
+| `/oauth/authorize` | A `client_id` URL: fetch and check the document, map it to its Supabase client, check `redirect_uri` against the document, then 302 to Supabase's authorize. Any other `client_id`: 302 to Supabase's authorize unchanged |
+| `/oauth/token` | A `client_id` URL becomes its Supabase client id; everything else is forwarded unchanged to Supabase's token endpoint |
+
+Each document URL maps to one Supabase OAuth client for good
+(`public.oauth_cimd_clients`, service connection only), registered through
+Supabase Auth's admin API with the function's secret key. Refresh tokens
+belong to that client, so a changed document updates it (name, redirect URIs,
+`client_uri`) instead of registering another. A document is fetched again
+after its `Cache-Control` max-age, at least 5 minutes and at most a day.
+Consent, codes and tokens stay Supabase's: the consent page shows the
+document's `client_name` and, under it, the origin of the document URL (the
+one host the fetch proved; a document's own `client_uri` is ignored, so a
+document calling itself "Claude" from another host shows that host). Tokens
+are the same ES256 JWTs as before. An id_token (scope `openid`) still names
+Supabase Auth as issuer; MCP clients do not check it.
+
+The fetch only goes to hosts whose every address is public (no loopback,
+private, link-local, CGNAT, 6to4, Teredo or mapped addresses), follows no
+redirect, stops after 5 KB and 5 s (DNS 3 s), and answers every fetch failure
+with the same message. The document must name its own URL as `client_id`, a
+`client_name` and `redirect_uris` that are https, http on the loopback
+interface or a private-use scheme with a dot, carry no secret, and use
+`token_endpoint_auth_method` `none`; its authorization requests must use
+PKCE with S256. Hourly limits (`public.oauth_cimd_rate`): 30 document
+fetches per host and 600 in all, 5 new clients per host and 100 in all
+(authorize answers 503 beyond them), 120 token requests per client address
+(429), since Supabase sees every forwarded token request from the function's
+address. The address is `x-vercel-forwarded-for` through mcp.snacklist.app
+(there `X-Real-IP` is Vercel's) and `X-Real-IP` on the supabase.co URL.
+
+2025-era clients keep Supabase Auth as their authorization server: the 2026
+spec makes a client re-register when the authorization server changes, which
+would have meant a new consent for every connected Claude and ChatGPT.
+Supabase's authorization response carries no `iss` (checked on the local
+stack, Supabase Auth 2.197), so a client that checks `iss` against the
+front's issuer finds nothing to reject; the integration test fails if that
+changes.
 
 ### Disconnecting and revoking
 
@@ -502,8 +585,9 @@ stack or the hosted project, not only the docs:
   definition and answers `GET`/`DELETE` with `405` (stateless).
 - **Client registration.** The 2026-07-28 spec prefers Client ID Metadata
   Documents and keeps dynamic registration for backwards compatibility.
-  Supabase supports pre-registration and dynamic registration only, so
-  clients that need CIMD cannot connect yet.
+  Supabase supports pre-registration and dynamic registration only; since
+  job 94 the function's front adds CIMD for 2026-07-28 clients
+  ([above](#protocol-2026-07-28-client-id-metadata-documents)).
 
 ## Tests
 
@@ -513,6 +597,18 @@ stack or the hosted project, not only the docs:
 - `supabase/functions/_shared/auth_test.ts`, `mcp/handler_test.ts`,
   `_shared/list_test.ts` (Deno): signature, expiry, audience, issuer and role
   checks; PAT lookup; 401/403 challenges; Origin rules; name matching.
+- `mcp/protocol_test.ts` (Deno): both protocol eras through the handler and
+  the MCP server, the requests `scripts/mcp-smoke.sh` sends.
+- `mcp/cimd_test.ts`, `mcp/oauth_test.ts` (Deno): client_id URLs, documents
+  (Claude's, VS Code's and MCPJam's real ones included), the fetch's host and
+  size rules, which metadata each era is pointed at, and the front's
+  authorize and token mapping.
+- `mcp/cimd_integration_test.ts` (db gate): the official MCP client in
+  2026-07-28 signs in with a document URL against the local stack's
+  Supabase Auth, uses the tools, refreshes and gets its client updated; a
+  2026 client without a document registers dynamically through the front.
+- `supabase/tests/mcp_cimd_clients.test.sql` (pgTAP): no client role reads
+  or writes the document mapping.
 - `e2e/tests/mcp.spec.ts` (Playwright with the MCP SDK client against the
   local stack and the Flutter web build):
   - the full OAuth flow: 401 → metadata → discovery → dynamic registration →

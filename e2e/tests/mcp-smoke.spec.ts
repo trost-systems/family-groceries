@@ -21,9 +21,12 @@ async function throwawayToken(): Promise<string> {
 }
 
 function smoke(token: string, version: string): Promise<{ code: number; out: string }> {
+  // 2026-era clients get the authorization server front; its Client ID Metadata Document checks
+  // run here, against this branch's server (job 94).
+  const cimd = version === '2026-07-28' ? { MCP_SMOKE_CIMD: '1' } : {};
   return new Promise((done) => {
     execFile('bash', [script, mcpUrl.toString()], {
-      env: { ...process.env, MCP_SMOKE_TOKEN: token, MCP_PROTOCOL_VERSION: version },
+      env: { ...process.env, MCP_SMOKE_TOKEN: token, MCP_PROTOCOL_VERSION: version, ...cimd },
     }, (error, stdout, stderr) => done({ code: error ? Number(error.code) : 0, out: stdout + stderr }));
   });
 }
@@ -37,5 +40,19 @@ for (const [version, handshake] of [['2025-11-25', 'initialize'], ['2026-07-28',
     expect(out).toContain(`PASS ${handshake}: 200, protocol ${version}, server snacklist, tools capability`);
     expect(out).toMatch(/^PASS tools\/list: .*add_items/m);
     expect(out).not.toMatch(/^(FAIL|SKIP) /m);
+    if (version === '2026-07-28') {
+      for (const check of [
+        /^PASS no token: 401, resource_metadata on the same host \(.*\/oauth-protected-resource\/cimd\)$/m,
+        /^PASS client ID metadata documents: .*\/functions\/v1\/mcp\/oauth advertises client_id_metadata_document_supported$/m,
+        /^PASS rediscovery: /m,
+        /^PASS tools\/list: resultType complete, ttlMs 3600000, cacheScope private$/m,
+        /^PASS Mcp-Method: /m,
+        /^PASS Mcp-Name: /m,
+        /^PASS unknown version: /m,
+      ]) expect(out).toMatch(check);
+    } else {
+      expect(out).toContain('PASS notifications/initialized: 202');
+      expect(out).toMatch(/^PASS protected resource metadata: .*authorization server .*\/auth\/v1$/m);
+    }
   });
 }
