@@ -2,7 +2,7 @@
 # Job 69: types utterances into the skill's DEVELOPMENT stage with Amazon's simulator and prints,
 # per utterance, what Alexa did: the request she sent to the skill (LaunchRequest, an intent) and
 # what she said, or that it never reached the skill. Text only: the simulator skips speech
-# recognition, so a misheard "Hummlist" cannot show up here (docs/ALEXA.md).
+# recognition, so a misheard "Snacklist" cannot show up here (docs/ALEXA.md).
 #
 #   ALEXA_SKILL_ID=amzn1.ask.skill.… scripts/alexa-simulate.sh [locale …]   default: every locale
 #
@@ -11,8 +11,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 skill="${ALEXA_SKILL_ID:?set ALEXA_SKILL_ID (docs/ALEXA.md, Deploy)}"
 declare -A utterances=(
-  [de]='öffne humm list|sag humm list füge milch hinzu|sag humm list ich brauche milch|sag humm list setz milch drauf|frag humm list was auf der liste steht'
-  [en]="open humm list|ask humm list to add milk|tell humm list we need milk|ask humm list to put milk on the list|ask humm list what's on the list"
+  [de]='öffne snacklist|sag snacklist füge milch hinzu|sag snacklist ich brauche milch|sag snacklist setz milch drauf|frag snacklist was auf der liste steht'
+  [en]="open snacklist|ask snacklist to add milk|tell snacklist we need milk|ask snacklist to put milk on the list|ask snacklist what's on the list"
 )
 locales=("$@")
 ((${#locales[@]})) || mapfile -t locales < <(jq -r '.manifest.publishingInformation.locales | keys[]' alexa/skill-package/skill.json)

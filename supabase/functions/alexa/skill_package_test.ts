@@ -54,16 +54,22 @@ const strings = (value: unknown): string[] =>
     ? Object.values(value).flatMap(strings)
     : [];
 
-Deno.test('AC11: skill name "Hummlist", invocation name "humm list", never "Humm" alone', () => {
+Deno.test('AC11 (S4): skill name "Snacklist", invocation name "snacklist", no Hummlist left', () => {
   assertEquals(Object.keys(publishing.locales), Object.keys(models));
   for (const locale of Object.keys(models)) {
-    assertEquals(localeInfo(locale).name, 'Hummlist', locale);
-    assertEquals(language(locale).invocationName, 'humm list', locale);
+    assertEquals(localeInfo(locale).name, 'Snacklist', locale);
+    assertEquals(language(locale).invocationName, 'snacklist', locale);
   }
-  for (const text of [...strings(skill), ...strings(models), ...strings(linking)]) {
-    // "humm list" is the approved invocation (Q75); "Humm" alone anywhere else is forbidden.
-    const rest = text.replaceAll(/humm list/gi, '');
-    assertFalse(/\bhumm\b/i.test(rest), `"Humm" alone in: ${text}`);
+  // S4 rename: the package names Snacklist only. The one exception is the old app host
+  // app.hummlist.com in the account-linking domains, kept while Hummlist builds are alive (S5).
+  const { domains, ...request } = linking.accountLinkingRequest;
+  assertEquals(domains, [
+    'app.snacklist.app',
+    'app.hummlist.com',
+    'jdwqrallbpdbshrdhenk.supabase.co',
+  ]);
+  for (const text of [...strings(skill), ...strings(models), ...strings(request)]) {
+    assertFalse(/humm/i.test(text), `Hummlist left in: ${text}`);
   }
 });
 
@@ -87,11 +93,14 @@ Deno.test('Alexa is not Premium: the package and every reply never mention Premi
 Deno.test('the testing instructions cover every language and hold no credentials', () => {
   const text = publishing.testingInstructions;
   assert(text.length <= 4000, 'at most 4000 characters');
-  for (const phrase of ['Alexa, sag Hummlist', 'Alexa, ask Hummlist', 'test-account field']) {
+  for (const phrase of ['Alexa, sag Snacklist', 'Alexa, ask Snacklist', 'test-account field']) {
     assert(text.includes(phrase), phrase);
   }
   assertFalse(/passw(?:or)?t?\s*[:=]\s*[^\s<]/i.test(text), 'no password in the repo');
-  assertFalse(/@(?!hummlist\.com)[\w-]+\.\w+/.test(text), 'no test account address');
+  assertFalse(
+    /@(?!(?:hummlist\.com|snacklist\.app)\b)[\w-]+\.\w+/.test(text),
+    'no test account address',
+  );
 });
 
 Deno.test('manifestVersion sits inside manifest, where ask deploy keeps it', () => {
@@ -108,8 +117,8 @@ Deno.test('worldwide, with a privacy policy per locale and no terms until the pa
   for (const locale of Object.keys(models)) {
     assertEquals(privacy[locale], {
       privacyPolicyUrl: locale === 'de-DE'
-        ? 'https://hummlist.com/datenschutz'
-        : 'https://hummlist.com/en/privacy',
+        ? 'https://snacklist.app/datenschutz'
+        : 'https://snacklist.app/en/privacy',
     }, locale);
   }
   const compliance = skill.manifest.privacyAndCompliance;
@@ -160,10 +169,10 @@ function matchesSample(phrase: string, samples: readonly string[]): boolean {
   });
 }
 
-/** "Alexa, <verb> humm list, <rest>" (de) or "Alexa, <verb> humm list [to] <rest>" (en). */
+/** "Alexa, <verb> snacklist, <rest>" (de) or "Alexa, <verb> snacklist [to] <rest>" (en). */
 const examplePattern: Record<'de' | 'en', RegExp> = {
-  de: /^Alexa, (?:sag|frag|öffne|starte) humm list(?:, (.+))?$/,
-  en: /^Alexa, (?:ask|tell|open|launch|start) humm list(?: (?:to )?(.+))?$/,
+  de: /^Alexa, (?:sag|frag|öffne|starte) snacklist(?:, (.+))?$/,
+  en: /^Alexa, (?:ask|tell|open|launch|start) snacklist(?: (?:to )?(.+))?$/,
 };
 const lang = (locale: string) => (locale.startsWith('en') ? 'en' : 'de');
 

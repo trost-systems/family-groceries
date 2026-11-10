@@ -1,23 +1,24 @@
-# Alexa skill "Hummlist" (de-DE, en-*)
+# Alexa skill "Snacklist" (de-DE, en-*)
 
-A household member says "Alexa, sag humm list, füg Milch und Eier hinzu", and Milch and Eier land
-on the household's Hummlist within seconds, categorized and sorted like items typed in the app.
-"Alexa, frag humm list, was auf der Liste steht" reads the open items aloud. Spec #7, job 31.
-On an Echo set to English (en-US, en-GB, en-AU, en-CA, en-IN), "Alexa, ask humm list to add milk
+A household member says "Alexa, sag snacklist, füg Milch und Eier hinzu", and Milch and Eier land
+on the household's Snacklist within seconds, categorized and sorted like items typed in the app.
+"Alexa, frag snacklist, was auf der Liste steht" reads the open items aloud. Spec #7, job 31.
+On an Echo set to English (en-US, en-GB, en-AU, en-CA, en-IN), "Alexa, ask snacklist to add milk
 and eggs" does the same in English (job 69). Certification readiness:
 [ALEXA_CERTIFICATION.md](ALEXA_CERTIFICATION.md).
 
 | | |
 | --- | --- |
-| Skill name, invocation name | `Hummlist`, `humm list` (display name always in full; a test fails on "Humm" alone, except in the invocation name) |
+| Skill name, invocation name | `Snacklist`, `snacklist` in all six locales (S4 rename; `skill_package_test.ts` fails on any Hummlist left in the package except the old host `app.hummlist.com` in the account-linking domains) |
 | Skill ids | Hummlist `amzn1.ask.skill.fee316d1-e9c1-44a4-a06e-955fbda63a1b` (job 31b), Snacklist `amzn1.ask.skill.ad766331-e979-4a6e-95f1-30198b0a34cb` (job 174, development only). The hosted `ALEXA_SKILL_ID` lists both |
 | Endpoint (and skill events) | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa` (`sslCertificateType: Wildcard`) |
 | Function | [`supabase/functions/alexa/`](../supabase/functions/alexa/) |
+| Replies | The quoted replies below are the Snacklist wording of the speech PR #353. Until it is deployed, the function still says „Hummlist“ in their place |
 | Skill package | [`alexa/skill-package/`](../alexa/skill-package/) (`skill.json`, `interactionModels/custom/de-DE.json` and the five identical `en-*.json`, icons from `design/app-icon/build.mjs`), [`alexa/ask-resources.json`](../alexa/ask-resources.json) |
 | Account linking | [`alexa/account-linking.json`](../alexa/account-linking.json) (no secret), [`scripts/alexa-oauth-client.sh`](../scripts/alexa-oauth-client.sh) |
 | Local testing | [`scripts/alexa-test-ca.sh`](../scripts/alexa-test-ca.sh), [`scripts/alexa-say.sh`](../scripts/alexa-say.sh) (`--locale en-US`), [`e2e/tests/alexa.spec.ts`](../e2e/tests/alexa.spec.ts), [`alexa-en.spec.ts`](../e2e/tests/alexa-en.spec.ts) |
 | Amazon (ASK CLI signed in) | [`scripts/alexa-deploy-dev.sh`](../scripts/alexa-deploy-dev.sh), [`alexa-validate.sh`](../scripts/alexa-validate.sh), [`alexa-simulate.sh`](../scripts/alexa-simulate.sh) |
-| When it fails | [Troubleshooting](#troubleshooting): [`scripts/alexa/diagnose.sh`](../scripts/alexa/diagnose.sh) (what reached Hummlist), [`scripts/alexa/smoke.sh`](../scripts/alexa/smoke.sh) (Amazon calls the endpoint) |
+| When it fails | [Troubleshooting](#troubleshooting): [`scripts/alexa/diagnose.sh`](../scripts/alexa/diagnose.sh) (what reached Snacklist), [`scripts/alexa/smoke.sh`](../scripts/alexa/smoke.sh) (Amazon calls the endpoint) |
 | Decisions | [DECISIONS.md](DECISIONS.md), "Job 31" |
 | Manual steps | [NEEDS_PETER.md](NEEDS_PETER.md), "Job 31" |
 
@@ -36,7 +37,7 @@ Echo ──> Alexa (speech to text, intent "AddItemIntent", slot items = "milch 
          4. 30 items a minute per user (alexa_take_adds)
          5. voice/items.ts adds through public.add_item as the user, under RLS (classifier,
             store memory, duplicates) ─> Realtime ─> every member's app
-         6. read-back: "Ich habe Milch und Eier auf die Hummlist gesetzt."
+         6. read-back: "Ich habe Milch und Eier auf die Snacklist gesetzt."
 ```
 
 Nothing from the request body chooses a household: only the token's user and their membership at
@@ -45,19 +46,19 @@ the linked user, and the other members see it like any partner's add ("Neu").
 
 ## What Alexa understands and says
 
-Invocation: "Alexa, sag humm list, …", "Alexa, frag humm list, …", "Alexa, öffne humm list".
+Invocation: "Alexa, sag snacklist, …", "Alexa, frag snacklist, …", "Alexa, öffne snacklist".
 
 | Intent | Examples (de-DE.json has them all) | Answer |
 | --- | --- | --- |
-| `AddItemIntent` (slot `items`, `AMAZON.SearchQuery`) | füg {items} hinzu · setz {items} auf die Liste · schreib {items} auf · wir brauchen {items} · trag {items} ein | added: "Ich habe Milch und Eier auf die Hummlist gesetzt." · open already, with other spellings of new items (job 32b, added anyway; job 68): "Schon auf der Hummlist: Milch und Möhren." |
-| `ReadListIntent` | was auf der Liste steht · was steht auf der Liste · lies die Liste vor · was brauchen wir | "Auf der Hummlist stehen 3 Sachen: Äpfel, 2 Liter Milch und Eier." in the app's aisle order; at most 10, then "und 5 weitere."; empty: "Die Hummlist ist leer." |
-| LaunchRequest | "Alexa, öffne humm list" | "Was soll auf die Liste?" and waits for the answer (`Dialog.ElicitSlot`, so "Milch" alone works) |
+| `AddItemIntent` (slot `items`, `AMAZON.SearchQuery`) | füg {items} hinzu · setz {items} auf die Liste · schreib {items} auf · wir brauchen {items} · trag {items} ein | added: "Ich habe Milch und Eier auf die Snacklist gesetzt." · open already, with other spellings of new items (job 32b, added anyway; job 68): "Schon auf der Snacklist: Milch und Möhren." |
+| `ReadListIntent` | was auf der Liste steht · was steht auf der Liste · lies die Liste vor · was brauchen wir | "Auf der Snacklist stehen 3 Sachen: Äpfel, 2 Liter Milch und Eier." in the app's aisle order; at most 10, then "und 5 weitere."; empty: "Die Snacklist ist leer." |
+| LaunchRequest | "Alexa, öffne snacklist" | "Was soll auf die Liste?" and waits for the answer (`Dialog.ElicitSlot`, so "Milch" alone works) |
 | `AMAZON.HelpIntent` | "Hilfe" | what the skill does, with the two examples; the session stays open |
 | `AMAZON.StopIntent`, `CancelIntent`, `NavigateHomeIntent` | "Stopp", "Abbrechen" | "Bis bald." |
-| `AMAZON.FallbackIntent`, nothing understood | "äh", "bitte" | once: "Das habe ich nicht verstanden. Was soll auf die Liste?" (re-prompt); the second time: "Das habe ich leider nicht verstanden. Ich habe nichts auf die Hummlist gesetzt." Never a guess. |
+| `AMAZON.FallbackIntent`, nothing understood | "äh", "bitte" | once: "Das habe ich nicht verstanden. Was soll auf die Liste?" (re-prompt); the second time: "Das habe ich leider nicht verstanden. Ich habe nichts auf die Snacklist gesetzt." Never a guess. |
 
 Other answers, all German, all ending the session: not linked or link revoked ("Bitte verknüpfe
-zuerst dein Hummlist-Konto in der Alexa-App. …" with a LinkAccount card), no household ("Du bist
+zuerst dein Snacklist-Konto in der Alexa-App. …" with a LinkAccount card), no household ("Du bist
 noch in keinem Haushalt. …"), more than 1000 characters ("Das war zu lang. … Ich habe nichts
 hinzugefügt."), more than 30 items (the first 30 are added: "Mehr als dreißig auf einmal gehen
 nicht; sag den Rest bitte noch einmal."), the rate limit ("… Warte bitte eine Minute …"), and a
@@ -68,7 +69,7 @@ reported to error tracking). Quantities are said in words: "2 l" is "2 Liter", "
 
 `SessionEndedRequest`, `System.ExceptionEncountered` and skill events get an empty answer.
 
-**Integration lock: Alexa stays free (job 72).** The skill is not part of Hummlist Premium
+**Integration lock: Alexa stays free (job 72).** The skill is not part of Snacklist Premium
 (Peter Q39, Legal Review N-27). The alexa function never asks the integration lock, and
 `integration_gate` answers `alexa` open even with `integration_lock` on (for a function deployed
 before job 72). Its Zugänge tile never shows as paused. Siri and MCP: docs/PURCHASES.md,
@@ -105,7 +106,7 @@ Mehr → Zugänge as "Amazon Alexa".
 | Your Client ID / Secret | from `scripts/alexa-oauth-client.sh <vendor id>` (the secret is shown once) |
 | Your Authentication Scheme | HTTP Basic (Recommended) |
 | Scope | none |
-| Domain List | `app.hummlist.com`, `jdwqrallbpdbshrdhenk.supabase.co` |
+| Domain List | `app.snacklist.app`, `app.hummlist.com`, `jdwqrallbpdbshrdhenk.supabase.co` (keep the old host until S5: the consent page moves with the Supabase Site URL) |
 | PKCE | on, S256 |
 | Allow users to enable skill without account linking | off |
 
@@ -119,7 +120,7 @@ every request, not only the JWT's expiry). That happens when:
   sessions and refresh tokens);
 - the user **disables the skill** in the Alexa app: Alexa sends `AlexaSkillEvent.SkillDisabled`
   (subscribed in `skill.json`). It carries only Alexa's user id, so the function keeps a map of
-  which Hummlist session each Alexa account holds (`alexa_links`, the Alexa id SHA-256 hashed,
+  which Snacklist session each Alexa account holds (`alexa_links`, the Alexa id SHA-256 hashed,
   written on every request) and deletes those sessions (`alexa_revoke`);
 - the user **links again** (`AlexaSkillEvent.SkillAccountLinked`): the sessions that Alexa
   account held before are revoked, the new one stays;
@@ -197,7 +198,7 @@ keeps its hash. It is never in the repo, the function's environment or a log.
 
 The function writes exactly one line per request to its log (`requestLine` in
 `supabase/functions/alexa/handler.ts`), so a missing line means the request never reached
-Hummlist:
+Snacklist:
 
 ```
 alexa: <request type> <intent name|-> <locale|-> linked=<true|false> -> <reply kind> [reason] rid=<id end> slot=<words|-> confirm=<status|-> ended=<reason|-> error=<type|-> ms=<n>
@@ -221,7 +222,7 @@ Job 170 added the fields after the reply kind, for following a device test live
 - `ms`: how long the function took, verification included.
 
 - `linked` says whether Alexa sent an access token (for `SkillAccountLinked`, the one in the event
-  body). `linked=true -> link <reason>` means Hummlist rejected the token, and the reason says
+  body). `linked=true -> link <reason>` means Snacklist rejected the token, and the reason says
   why (job 170b): `invalid_token:<check>` with the check it failed (`InvalidTokenDetail` in
   `supabase/functions/_shared/auth.ts`). A `SkillAccountLinked` event whose new token is rejected
   logs the same reason after `empty`. The reasons and their next step are in
@@ -251,7 +252,7 @@ is missing.
 
 ## Troubleshooting
 
-Start with one question: did the request reach Hummlist? Every request the function receives
+Start with one question: did the request reach Snacklist? Every request the function receives
 writes one [request line](#request-log). So a request with no line was stopped at Amazon, and
 nothing in this repo can fix it.
 
@@ -277,24 +278,24 @@ back with the launch prompt. `--dry-run` prints the requests without calling Ama
 smoke test passes but the Echo still fails, the endpoint and its verification work, and the
 fault is in how Amazon routes that device's requests.
 
-| What Alexa says or shows | Reached Hummlist? (diagnose.sh) | Likely cause | Fix |
+| What Alexa says or shows | Reached Snacklist? (diagnose.sh) | Likely cause | Fix |
 | --- | --- | --- | --- |
-| Nothing, „Ich weiß nicht“, „Das weiß ich leider nicht“, or Alexa's own shopping list opens | No row at that time | Alexa did not route to the skill. Either she misheard „Hummlist“, or the Echo's account has no enabled skill (see the beta rules below) | Alexa app → Mehr → Aktivität → Sprachverlauf shows what she heard. Say „Alexa, öffne humm list“ with „Humm-list“ in two syllables. Then check the beta rules |
-| „Du hast 26 Artikel auf deiner Einkaufsliste“ (any „… Artikel auf deiner Einkaufsliste“) | No `ReadListIntent` row | Alexa's own shopping list answered, not Hummlist. The skill always says „Auf der Hummlist stehen N Sachen: …“ and counts only open items of the linked household (`_shared/read_open_only_integration_test.ts`). On 2026-11-08 Peter heard this at about 14:35 with 3 open items; the last request that reached the skill was an add at 14:33 (job 172) | Say „Alexa, frag humm list, was auf der Liste steht“ with „Humm-list“ in two syllables, or „Alexa, öffne humm list“ and then „Was steht auf der Liste?“. Alexa app → Mehr → Aktivität → Sprachverlauf shows what she heard; Alexa app → Listen → Einkaufsliste holds the items she counted |
+| Nothing, „Ich weiß nicht“, „Das weiß ich leider nicht“, or Alexa's own shopping list opens | No row at that time | Alexa did not route to the skill. Either she misheard „Snacklist“, or the Echo's account has no enabled skill (see the beta rules below) | Alexa app → Mehr → Aktivität → Sprachverlauf shows what she heard. Say „Alexa, öffne snacklist“, clearly in one word. Then check the beta rules |
+| „Du hast 26 Artikel auf deiner Einkaufsliste“ (any „… Artikel auf deiner Einkaufsliste“) | No `ReadListIntent` row | Alexa's own shopping list answered, not Snacklist. The skill always says „Auf der Snacklist stehen N Sachen: …“ and counts only open items of the linked household (`_shared/read_open_only_integration_test.ts`). On 2026-11-08 Peter heard this at about 14:35 with 3 open items; the last request that reached the skill was an add at 14:33 (job 172) | Say „Alexa, frag snacklist, was auf der Liste steht“, clearly in one word, or „Alexa, öffne snacklist“ and then „Was steht auf der Liste?“. Alexa app → Mehr → Aktivität → Sprachverlauf shows what she heard; Alexa app → Listen → Einkaufsliste holds the items she counted |
 | „Beim Verbinden mit dem angeforderten Skill ist ein Problem aufgetreten“ or „Bei der Antwort des angeforderten Skills ist ein Problem aufgetreten“ | No row | Amazon did not call the endpoint for this account or device. On 2026-11-02 and 2026-11-03 this was the case for every spoken request: linking worked, and no LaunchRequest ever arrived | Check the beta rules, then run smoke.sh. If smoke.sh passes, the endpoint is fine and the problem is on Amazon's side: the account, the device, Alexa+, or the marketplace |
 | the same | `-> refused <reason>` | The function refused the request. `wrong_skill` means the function's `ALEXA_SKILL_ID` secret is not this skill's id. `stale_timestamp` means a clock more than 150 s off. `cert_*` or `bad_signature` means the request was not signed by Amazon | `wrong_skill`: set the secret ([Deploy](#deploy), step 5). Otherwise check that the console's endpoint is the URL in the table at the top |
 | the same | `-> error`, a 5xx, or a row with no line | Our bug, or the function did not answer in time. Alexa gives up after about 8 s | The exception is in PostHog error tracking. The row's duration shows a timeout |
 | „Es ist ein unerwartetes Kommunikationsproblem aufgetreten“ | No row | Amazon's own failure before the skill was chosen. One possible cause is Alexa+ (Early Access) handling a beta skill; that is a guess, Amazon does not document it | Try once more, try the Alexa app on the phone, and check whether the Echo is on Alexa+. If it repeats with no row, it is Amazon's problem; note the time and the device |
 | the same | A row | Read its kind as above | |
-| „Bitte verknüpfe zuerst dein Hummlist-Konto …“ and a LinkAccount card in the Alexa app | `linked=false -> link` | Alexa sent no token. The Amazon account the Echo uses has the skill enabled but not linked. Often this is a different account from the one that linked | Link in the Alexa app of the Echo's account: Skills → Hummlist → Konto verknüpfen |
+| „Bitte verknüpfe zuerst dein Snacklist-Konto …“ and a LinkAccount card in the Alexa app | `linked=false -> link` | Alexa sent no token. The Amazon account the Echo uses has the skill enabled but not linked. Often this is a different account from the one that linked | Link in the Alexa app of the Echo's account: Skills → Snacklist → Konto verknüpfen |
 | the same | `linked=true -> link invalid_token:session_ended` | The link's session is gone: the link was removed under Zugänge, the account was signed out everywhere or deleted, or a reused refresh token revoked it | Link again. Still `session_ended` right after a fresh link: check the Access Token URI as for `issuer` |
 | the same | `linked=true -> link invalid_token:expired` | Alexa sent an access token past its expiry: its refresh failed. diagnose.sh shows a `token refresh_token` row with an error, often `refresh_token_already_used` (DECISIONS „Job 91“) | Link again |
-| the same | `linked=true -> link invalid_token:not_oauth` or `:unknown_key` | A valid Hummlist app session, API key or Siri credential, not an OAuth token from account linking | Console › Account Linking: the Client ID must be the „Amazon Alexa“ OAuth client (`scripts/voice/health.sh` prints its id), the URIs as in [Account linking](#account-linking). Then link again |
+| the same | `linked=true -> link invalid_token:not_oauth` or `:unknown_key` | A valid Snacklist app session, API key or Siri credential, not an OAuth token from account linking | Console › Account Linking: the Client ID must be the „Amazon Alexa“ OAuth client (`scripts/voice/health.sh` prints its id), the URIs as in [Account linking](#account-linking). Then link again |
 | the same | `linked=true -> link invalid_token:issuer`, `:audience`, `:signature`, `:claims` or `:malformed` | The token is not a user token from this project's auth server: the Access Token URI points at another host or project, or the signing keys were rotated (`signature`) | Check the Authorization and Access Token URIs against [Account linking](#account-linking), then link again |
-| the same | `linked=true -> link invalid_token:unverified` | Hummlist could not check the token: its key set did not load | Try again. If it repeats, look for an auth outage in the function logs. Linking again does not help |
-| the same | `-> empty invalid_token:<check>` on `SkillAccountLinked` | Linking finished in the Alexa app, but Hummlist rejects the new token. Requests after it log `-> link` with the same reason | The row for that reason above |
-| Skill not found: no Hummlist in the Alexa app's skill search, or „Ich konnte den Skill nicht finden“ | No row | The skill is not live. Only beta testers can see it, through their invitation link, on amazon.de | Open the invitation link while signed in to the invited Amazon account (beta rules) |
-| The Alexa app reports that linking failed | No new link in alexa_links | Check the Account linking section. A 403 `bad_jwt` on `authorization` means the Hummlist sign-in in the browser had expired, and the consent page asks to sign in again. A `token` row that is not 200 means a problem with the client secret or PKCE | Try linking again and sign in on the consent page. A token error: [Account linking](#account-linking) |
+| the same | `linked=true -> link invalid_token:unverified` | Snacklist could not check the token: its key set did not load | Try again. If it repeats, look for an auth outage in the function logs. Linking again does not help |
+| the same | `-> empty invalid_token:<check>` on `SkillAccountLinked` | Linking finished in the Alexa app, but Snacklist rejects the new token. Requests after it log `-> link` with the same reason | The row for that reason above |
+| Skill not found: no Snacklist in the Alexa app's skill search, or „Ich konnte den Skill nicht finden“ | No row | The skill is not live. Only beta testers can see it, through their invitation link, on amazon.de | Open the invitation link while signed in to the invited Amazon account (beta rules) |
+| The Alexa app reports that linking failed | No new link in alexa_links | Check the Account linking section. A 403 `bad_jwt` on `authorization` means the Snacklist sign-in in the browser had expired, and the consent page asks to sign in again. A `token` row that is not 200 means a problem with the client secret or PKCE | Try linking again and sign in on the consent page. A token error: [Account linking](#account-linking) |
 
 **Beta rules.** All four must hold for the Echo that is being tested:
 
@@ -306,7 +307,7 @@ fault is in how Amazon routes that device's requests.
 4. The account is on the **amazon.de** marketplace (Alexa app → Einstellungen → Info: host
    `alexa.amazon.de`). The skill's de-DE locale is only offered there.
 
-In the developer console, Test tab, stage „Entwicklung“, typing „öffne humm list“ in Deutsch
+In the developer console, Test tab, stage „Entwicklung“, typing „öffne snacklist“ in Deutsch
 (Deutschland) should log a LaunchRequest in diagnose.sh. The SMAPI simulator (`simulate-skill`,
 `scripts/alexa-simulate.sh`) has answered „did not resolve to any intent“ for every utterance
 since October, and nothing ever reached the function. Treat that as a SMAPI artefact, not as
@@ -319,22 +320,23 @@ trust.
 (and a request without a locale) is German (`speech.ts`, `voice/parse.ts`, German capitals for
 names heard in lowercase); every en-* locale is English (`speech_en.ts`, `voice/parse_en.ts`,
 names stored as heard, like Siri in English). The five English models are one model
-(`skill_package_test.ts` keeps them identical). English one-shots: "Alexa, ask humm list to add
-milk", "Alexa, tell humm list we need milk", "Alexa, ask humm list what's on the list"; "Alexa, add
-milk to Hummlist" goes to Alexa's own lists, as in German.
+(`skill_package_test.ts` keeps them identical). English one-shots: "Alexa, ask snacklist to add
+milk", "Alexa, tell snacklist we need milk", "Alexa, ask snacklist what's on the list"; "Alexa, add
+milk to Snacklist" goes to Alexa's own lists, as in German.
 
-The invocation name is `humm list` (Q75 IN1, Peter, 2026-11-05). German Alexa does not select a
-one-word invocation that is not a real German compound; Amazon's rule for foreign compounds is
-to split them, so the development-stage name is `humm list` in every locale. The skill's display
-name stays "Hummlist". "Humm" alone stays forbidden everywhere user-facing; the invocation name
-is the exception. On a German Echo Alexa sometimes hears the old one-word name as „Homelist“ or
-„Hamlist“, or only „Liste“, and then answers „Ich weiß nicht“ or opens her own shopping list.
-„Alexa, öffne humm list“ first, then the items, is the fallback.
+The invocation name is `snacklist` in every locale (S4 of the Hummlist → Snacklist rename,
+2026-11-10). Hummlist used the split form `humm list` (Q75 IN1, Peter, 2026-11-05), because German
+Alexa did not select the one-word „hummlist“; the one-word „snacklist“ already runs as the
+development invocation of the Snacklist skill (`ad766331…`) in all six locales. If a German Echo
+mishears it (or hears only „Liste“ and opens her own shopping list), „Alexa, öffne snacklist“
+first, then the items, is the fallback. Certification later needs brand proof for a one-word
+invocation (plan §6); the skill stays unpublished until then.
 
 Alexa's built-in lists take any sentence without the invocation pattern: „Alexa, setz Milch auf
-die Hummlist“ ends at „Ich konnte keine Liste finden unter Hummlist“. Only „Alexa, sag/frag
-humm list, …“ and „Alexa, öffne humm list“ reach the skill. The guide lists those phrasings, and
-`site/test/content.test.mjs` checks that each „Alexa, sag/frag Hummlist, …“ in the guides matches
+die Hummlist“ ended at „Ich konnte keine Liste finden unter Hummlist“ (heard before S4; the same
+holds for Snacklist). Only „Alexa, sag/frag
+snacklist, …“ and „Alexa, öffne snacklist“ reach the skill. The guide lists those phrasings, and
+`site/test/content.test.mjs` checks that each „Alexa, sag/frag <Name>, …“ in the guides matches
 a sample utterance of the de-DE model; `skill_package_test.ts` keeps the common one-shot forms
 („ich brauche Milch“, „füge Milch hinzu“, „setz Milch drauf“) in the model.
 
@@ -352,14 +354,15 @@ the invocation „snacklist“ in all six locales, the same endpoint and the sam
 beta test runs with Lea and Max. The hosted `ALEXA_SKILL_ID` is
 `amzn1.ask.skill.fee316d1-e9c1-44a4-a06e-955fbda63a1b,amzn1.ask.skill.ad766331-e979-4a6e-95f1-30198b0a34cb`,
 so the function takes requests from both skills. The scripts take one id in `ALEXA_SKILL_ID`; pass
-the skill you mean. `alexa/skill-package/` still holds Hummlist's name and invocation until S4, so
-deploying it to the Snacklist skill would rename that skill back.
+the skill you mean. Since S4, `alexa/skill-package/` holds Snacklist's name, invocation and
+snacklist.app privacy URLs: deploy it to the Snacklist skill only. Deploying it to the Hummlist
+skill would rename that one to Snacklist too.
 
 1. **ASK CLI.** `npm install -g ask-cli` (v2), then `ask configure` and sign in with the
    developer account (opens a browser; `ask configure --no-browser` on a server). The vendor
    id: `ask smapi list-vendors`.
 2. **Create the skill** from the package: `cd alexa && ask deploy --target skill-metadata`.
-   It creates the skill "Hummlist" (development stage), uploads `skill.json`, the de-DE model and
+   It creates the skill "Snacklist" (development stage), uploads `skill.json`, the de-DE model and
    the icons, and builds the model. The skill id lands in `alexa/.ask/ask-states.json`
    (gitignored). Check: `ask smapi get-skill-status -s <skill id>` shows the de-DE model
    `SUCCEEDED`.
@@ -383,14 +386,14 @@ deploying it to the Snacklist skill would rename that skill back.
    by `supabase-deploy.yml` with every merge; `scripts/smoke-remote.sh` checks that an unsigned
    request gets 400.
 6. **Try it** in the console's Test tab (Development) or on an Echo signed in as the developer
-   account, after linking in the Alexa app (Skills → Hummlist → Konto verknüpfen). The beta
+   account, after linking in the Alexa app (Skills → Snacklist → Konto verknüpfen). The beta
    checklist below is the full run.
 
 Changes to the model, manifest or icons later: commit them, then run
 `ALEXA_SKILL_ID=<skill id> scripts/alexa-deploy-dev.sh` where the ASK CLI is signed in (the box,
 job 69). It writes the state file below, runs `ask deploy --target skill-metadata` (development
 stage only), restores `alexa/`, waits for the de-DE model build and checks over SMAPI that the
-development stage serves the name „Hummlist“, the invocation name `humm list` and both icons. By
+development stage serves the name „Snacklist“, the invocation name `snacklist` and both icons. By
 hand: `ask deploy --target skill-metadata` from `alexa/`. In a checkout without `alexa/.ask/ask-states.json`, write it first, or ask deploy
 creates a second skill:
 
@@ -407,7 +410,7 @@ ask deploy rewrites `skill.json` and `ask-resources.json` in its own JSON style;
 wraps `ask smapi invoke-skill-end-point -s <skill id> --endpoint-region Default
 --skill-request-body file:<request.json>`, which makes Amazon sign a request and send it to the
 function: an unlinked LaunchRequest or AddItemIntent answers "Bitte verknüpfe
-zuerst dein Hummlist-Konto …" with a LinkAccount card, and the function logs
+zuerst dein Snacklist-Konto …" with a LinkAccount card, and the function logs
 `alexa: LaunchRequest - de-DE linked=false -> link` ([Request log](#request-log)). A refused one
 logs `alexa: - - - linked=false -> refused <reason>` and answers 400.
 
@@ -422,20 +425,20 @@ an invitation link. Peter, Lea, Max and Barbie first.
 
 **Beta checklist (on a real Echo or the Alexa app, each tester):**
 
-1. Alexa app → Skills → "Hummlist" (from the beta link) → aktivieren → Konto verknüpfen: the
-   Hummlist consent page shows "Amazon Alexa"; sign in, "Erlauben"; the Alexa app says the
-   account is linked. In Hummlist, Mehr → Zugänge lists "Amazon Alexa".
-2. "Alexa, sag humm list, füg Milch hinzu": Alexa says "Ich habe Milch auf die Hummlist gesetzt.";
+1. Alexa app → Skills → "Snacklist" (from the beta link) → aktivieren → Konto verknüpfen: the
+   Snacklist consent page shows "Amazon Alexa"; sign in, "Erlauben"; the Alexa app says the
+   account is linked. In Snacklist, Mehr → Zugänge lists "Amazon Alexa".
+2. "Alexa, sag snacklist, füg Milch hinzu": Alexa says "Ich habe Milch auf die Snacklist gesetzt.";
    Milch appears on another member's phone within 5 seconds, in Kühlregal (AC1, AC3).
-3. "Alexa, sag humm list, füg Milch und Eier hinzu": "Ich habe Eier … Schon auf der Hummlist:
-   Milch." Then with two new things ("Brot und Äpfel"): "Ich habe Brot und Äpfel auf die Hummlist
+3. "Alexa, sag snacklist, füg Milch und Eier hinzu": "Ich habe Eier … Schon auf der Snacklist:
+   Milch." Then with two new things ("Brot und Äpfel"): "Ich habe Brot und Äpfel auf die Snacklist
    gesetzt." (AC2).
-4. "Alexa, sag humm list, füg zwei Liter Hafermilch hinzu": the app shows "Hafermilch" with 2 l.
-5. "Alexa, öffne humm list", then mumble something: "Das habe ich nicht verstanden. Was soll auf
-   die Liste?"; mumble again: "… Ich habe nichts auf die Hummlist gesetzt."; nothing added (AC4).
-6. "Alexa, frag humm list, was auf der Liste steht": the open items, at most 10 (AC6 of the spec's
+4. "Alexa, sag snacklist, füg zwei Liter Hafermilch hinzu": the app shows "Hafermilch" with 2 l.
+5. "Alexa, öffne snacklist", then mumble something: "Das habe ich nicht verstanden. Was soll auf
+   die Liste?"; mumble again: "… Ich habe nichts auf die Snacklist gesetzt."; nothing added (AC4).
+6. "Alexa, frag snacklist, was auf der Liste steht": the open items, at most 10 (AC6 of the spec's
    read-back).
-7. Disable the skill in the Alexa app, enable it again without linking: "Alexa, sag humm list, füg
+7. Disable the skill in the Alexa app, enable it again without linking: "Alexa, sag snacklist, füg
    Brot hinzu" asks to link the account; nothing added; Zugänge no longer lists "Amazon Alexa"
    (AC8).
 8. Link again, then Mehr → Zugänge → "Amazon Alexa trennen": the next request asks to link (AC8).
@@ -445,8 +448,8 @@ Amazon's validation said and what is left (the test account, the submit). The pr
 are in `skill.json` (`/datenschutz`, `/en/privacy`); no terms URL until the terms pages are live.
 The testing instructions are in `skill.json` too, without credentials (the test account goes
 into the console field only).
-The spoken invocation is the two-word name `humm list` (Q75). The display name "Hummlist" stays
-the product's brand (the app's name in the stores).
+The spoken invocation is `snacklist` (S4). The display name "Snacklist" is the product's brand
+(the app's name in the stores).
 
 **Testing instructions**: `publishingInformation.testingInstructions` in `skill.json`, German and
 English, checked by `skill_package_test.ts` (no credentials).

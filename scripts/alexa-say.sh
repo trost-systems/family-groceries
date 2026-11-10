@@ -5,7 +5,7 @@
 #
 #   scripts/alexa-say.sh [options] "Milch und Eier"     AddItemIntent with that slot value
 #   scripts/alexa-say.sh [options] --read               ReadListIntent
-#   scripts/alexa-say.sh [options] --launch             "Alexa, öffne humm list"
+#   scripts/alexa-say.sh [options] --launch             "Alexa, öffne snacklist"
 #   scripts/alexa-say.sh [options] --disable            AlexaSkillEvent.SkillDisabled
 # Options: --token <OAuth access token from account linking> (none: an unlinked user),
 #          --user <Alexa user id> (default amzn1.ask.account.LOCAL), --retry (the second try after
