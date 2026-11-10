@@ -1,4 +1,4 @@
-// The hummlist.com waitlist: /functions/v1/waitlist (docs/WAITLIST.md). Not wrapped in
+// The snacklist.app waitlist: /functions/v1/waitlist (docs/WAITLIST.md). Not wrapped in
 // withTelemetry: nothing about a request leaves the function but the mail it sends.
 import { serviceDb } from '../_shared/db.ts';
 import { configFrom, createHandler } from './handler.ts';

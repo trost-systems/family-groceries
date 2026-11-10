@@ -439,7 +439,7 @@ Deno.test('AC10: one confirmation mail from Peter, with the confirm and delete l
   assertEquals(to, 'hello+ac10@hummlist.com');
   assertEquals(mail.from, '"Peter · Snacklist" <hello@snacklist.app>');
   assertEquals(mail.replyTo, 'hello@snacklist.app');
-  assertEquals(mail.subject, 'Bitte bestätige deine E-Mail für Hummlist');
+  assertEquals(mail.subject, 'Bitte bestätige deine E-Mail für Snacklist');
   assertEquals(mail.headers, {}, 'the confirmation has no List-Unsubscribe');
   const token = tokenOf(mail);
   assert(

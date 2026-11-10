@@ -80,7 +80,8 @@ upstream is `https://<ref>.supabase.co/functions/v1/waitlist`) with:
 - `x-waitlist-origin`: the site origin the request came to (`https://` + `host`), for the links in
   the mails. The edge function accepts only `https://hummlist.com`,
   `https://snacklist.app` (job 174), `https://hummlist-site-*-peter-trost.vercel.app` and
-  `http://127.0.0.1:<port>` and falls back to `https://hummlist.com`.
+  `http://127.0.0.1:<port>` and falls back to `https://snacklist.app`. `https://hummlist.com` stays on the
+  list while hummlist.com still serves `/api/*` (the one-click unsubscribe links in mails sent before the rename).
 - `x-region: eu-central-1`, `content-type: application/json`.
 
 It passes the upstream status and JSON body through unchanged; an unreachable upstream is
@@ -194,7 +195,7 @@ open and click tracking stay off in the domain settings.
 
 The confirmation mail is Legal's M-1/M-2 of 2026-11-04 word for word: it says an assistant may
 have entered the address and has no launch sentence. The footers are Legal's of 2026-11-02. The
-welcome and invite mails are drafts for Hummlist Launch. All of it waits for Peter's approval; the PR
+welcome and invite mails are drafts for Snacklist Launch. All of it waits for Peter's approval; the PR
 is not merged before.
 
 Links: confirm `<origin>/de/warteliste/bestaetigen#t=<token>` (`/en/waitlist/confirm`),

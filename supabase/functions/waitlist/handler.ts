@@ -1,4 +1,4 @@
-// The waitlist function (docs/WAITLIST.md): only the hummlist.com Vercel function calls it.
+// The waitlist function (docs/WAITLIST.md): only the snacklist.app Vercel function calls it.
 //   POST /waitlist/signup       {email, platform, locale, consent_version, website, elapsed_ms}:
 //                               202 {"status":"ok"} for every sign-up, new, known, dropped or
 //                               rate-limited; 400 {"error": ...}, 503 unavailable. A launch_news
