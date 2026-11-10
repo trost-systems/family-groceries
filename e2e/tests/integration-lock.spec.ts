@@ -115,7 +115,7 @@ test('locked household: Siri and MCP refuse in context and add nothing, Alexa ad
   const mcp = await connectWithToken(shortcut);
 
   expect(await siri(shortcut, 'Milch, zwei Gurken und Klopapier')).toEqual({ status: 200, speech: voicePremium });
-  expect(await alexaSay(alexa.access_token, 'Eier'), 'Alexa is never locked').toBe('Ich habe Eier auf die Hummlist gesetzt.');
+  expect(await alexaSay(alexa.access_token, 'Eier'), 'Alexa is never locked').toBe('Ich habe Eier auf die Snacklist gesetzt.');
   const tools = (await mcp.listTools()).tools.map((t) => t.name);
   expect(tools, 'tools/list stays reachable').toContain('add_items');
   expect(await toolText(mcp, 'add_items', { items: [{ name: 'Kaffee' }] })).toEqual({ isError: true, text: mcpPremium });
@@ -145,7 +145,7 @@ test('locked household: Siri and MCP refuse in context and add nothing, Alexa ad
   await expect(paused(peter), 'no connection paused any more').toHaveCount(0);
   await screenshot(peter, 'job50-web-access-unlocked-de-390');
   expect(await siri(shortcut, 'Milch')).toEqual({ status: 200, speech: 'Hinzugefügt: Milch.' });
-  expect(await alexaSay(alexa.access_token, 'Butter')).toBe('Ich habe Butter auf die Hummlist gesetzt.');
+  expect(await alexaSay(alexa.access_token, 'Butter')).toBe('Ich habe Butter auf die Snacklist gesetzt.');
   expect((await toolText(mcp, 'add_items', { items: [{ name: 'Kaffee' }] })).isError).toBe(false);
   expect(await openNames(peterEmail)).toEqual(['Eier', 'Milch', 'Butter', 'Kaffee']);
 
@@ -154,7 +154,7 @@ test('locked household: Siri and MCP refuse in context and add nothing, Alexa ad
     .toEqual({ status: 'updated' });
   await expect(card(lea), 'locked again, live').toBeVisible({ timeout: 10_000 });
   expect(await siri(shortcut, 'Brot')).toEqual({ status: 200, speech: voicePremium });
-  expect(await alexaSay(alexa.access_token, 'Käse'), 'lapsed: Alexa stays open').toBe('Ich habe Käse auf die Hummlist gesetzt.');
+  expect(await alexaSay(alexa.access_token, 'Käse'), 'lapsed: Alexa stays open').toBe('Ich habe Käse auf die Snacklist gesetzt.');
   expect((await toolText(mcp, 'list_items')).isError).toBe(true);
   expect(await openNames(peterEmail), 'the list stays').toEqual(['Eier', 'Milch', 'Butter', 'Kaffee', 'Käse']);
   const { data: tokens } = await (await apiAs(peterEmail)).from('personal_access_tokens').select('name, revoked_at');

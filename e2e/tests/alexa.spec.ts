@@ -31,7 +31,7 @@ import {
 
 const linkCard = { type: 'LinkAccount' };
 const linkSpeech =
-  'Bitte verknüpfe zuerst dein Hummlist-Konto in der Alexa-App. Ich habe dir dort eine Karte dazu geschickt.';
+  'Bitte verknüpfe zuerst dein Snacklist-Konto in der Alexa-App. Ich habe dir dort eine Karte dazu geschickt.';
 
 async function openNames(email: string): Promise<[string, string][]> {
   const api = await apiAs(email);
@@ -91,14 +91,14 @@ test('Alexa: link with a confidential client, then adds land live for another me
   expect(renewed.body.refresh_token).toBeTruthy();
   const token = renewed.body.access_token;
 
-  // AC1/AC3: "Alexa, sag Hummlist, füg Milch hinzu": read back, and on Lea's screen within 5 s.
+  // AC1/AC3: "Alexa, sag Snacklist, füg Milch hinzu": read back, and on Lea's screen within 5 s.
   // Alexa may hand the words over in lowercase; the list gets "Milch" as typed in German.
-  expect(await say(token, 'milch')).toBe('Ich habe Milch auf die Hummlist gesetzt.');
+  expect(await say(token, 'milch')).toBe('Ich habe Milch auf die Snacklist gesetzt.');
   await within(5_000, (timeout) => expect(itemRow(lea, 'Milch'), 'an Alexa add shows up for another member').toBeVisible({ timeout }));
 
   // Several items, quantities, umlauts and ß; a duplicate of an open item is not added twice.
   expect(await say(token, 'Milch, zwei Liter Hafermilch, Äpfel und Weißwurst'))
-    .toBe('Ich habe 2 Liter Hafermilch, Äpfel und Weißwurst auf die Hummlist gesetzt. Schon auf der Hummlist: Milch.');
+    .toBe('Ich habe 2 Liter Hafermilch, Äpfel und Weißwurst auf die Snacklist gesetzt. Schon auf der Snacklist: Milch.');
   await within(5_000, (timeout) => expect(itemRow(lea, 'Weißwurst')).toBeVisible({ timeout }));
   await expect(itemRow(lea, 'Hafermilch')).toHaveAccessibleName(/^Hafermilch 2 l( Neu)?$/);
   await expect(itemRow(lea, 'Milch')).toHaveCount(1);
@@ -113,9 +113,9 @@ test('Alexa: link with a confidential client, then adds land live for another me
   expect(byPeter!.added_by).toBe(await userId(peterEmail));
   await screenshot(lea, 'alexa-02-lea-sees-alexa-adds');
 
-  // ReadListIntent: "Alexa, frag Hummlist, was auf der Liste steht".
+  // ReadListIntent: "Alexa, frag Snacklist, was auf der Liste steht".
   const read = await postToAlexa(alexaRequest(readIntent, { token }));
-  expect(read.reply.response.outputSpeech?.text).toMatch(/^Auf der Hummlist stehen 4 Sachen: /);
+  expect(read.reply.response.outputSpeech?.text).toMatch(/^Auf der Snacklist stehen 4 Sachen: /);
   for (const name of ['Milch', '2 Liter Hafermilch', 'Äpfel', 'Weißwurst']) {
     expect(read.reply.response.outputSpeech?.text).toContain(name);
   }
@@ -126,7 +126,7 @@ test('Alexa: link with a confidential client, then adds land live for another me
   expect(first.reply.response.shouldEndSession).toBe(false);
   const second = await postToAlexa(alexaRequest(addIntent('ähm bitte'), { token, attributes: first.reply.sessionAttributes }));
   expect(second.reply.response.outputSpeech?.text)
-    .toBe('Das habe ich leider nicht verstanden. Ich habe nichts auf die Hummlist gesetzt.');
+    .toBe('Das habe ich leider nicht verstanden. Ich habe nichts auf die Snacklist gesetzt.');
   expect(await openNames(leaEmail)).toHaveLength(4);
 
   // AC8: Peter disconnects Alexa in Zugänge: the next request is treated as unlinked.
@@ -168,7 +168,7 @@ test('Alexa: two households stay apart, a household switch moves the adds, disab
   const alexaUser = 'amzn1.ask.account.MAX';
 
   // AC2: two items, categorized as typed in the app.
-  expect(await say(token, 'Milch und Eier', { alexaUser })).toBe('Ich habe Milch und Eier auf die Hummlist gesetzt.');
+  expect(await say(token, 'Milch und Eier', { alexaUser })).toBe('Ich habe Milch und Eier auf die Snacklist gesetzt.');
   expect(await openNames(maxEmail)).toEqual(typed);
   await within(5_000, (timeout) => expect(itemRow(max, 'Eier')).toBeVisible({ timeout }));
 
@@ -197,7 +197,7 @@ test('Alexa: two households stay apart, a household switch moves the adds, disab
   // Max moves to Nina's household: his next Alexa add goes there, live in Nina's app.
   const code = await createInviteCode(nina);
   expect((await (await apiAs(maxEmail)).rpc('join_household', { p_code: code })).error).toBeNull();
-  expect(await say(token, 'Brot', { alexaUser })).toBe('Ich habe Brot auf die Hummlist gesetzt.');
+  expect(await say(token, 'Brot', { alexaUser })).toBe('Ich habe Brot auf die Snacklist gesetzt.');
   await within(5_000, (timeout) => expect(itemRow(nina, 'Brot')).toBeVisible({ timeout }));
   expect((await openNames(ninaEmail)).map(([n]) => n)).toEqual(['Milch', 'Eier', 'Brot']);
   await screenshot(nina, 'alexa-04-after-household-switch');

@@ -1,4 +1,4 @@
-// What Alexa says, in German. The app is always "Hummlist" in full.
+// What Alexa says, in German. The app is always "Snacklist" in full.
 import { copy } from '../voice/copy.ts';
 import type { Added } from '../voice/handler.ts';
 
@@ -39,17 +39,17 @@ export const speech = {
   launch: askForItems,
   launchReprompt: `${askForItems} ${example}`,
   help:
-    'Mit Hummlist setzt du Sachen auf eure Einkaufsliste. Sag zum Beispiel: füg Milch und Eier hinzu. ' +
+    'Mit Snacklist setzt du Sachen auf eure Einkaufsliste. Sag zum Beispiel: füg Milch und Eier hinzu. ' +
     'Oder frag: was steht auf der Liste? Was möchtest du?',
   helpReprompt: `${askForItems} Oder frag: was steht auf der Liste?`,
   notUnderstoodOnce: `Das habe ich nicht verstanden. ${askForItems}`,
   notUnderstoodReprompt: `${askForItems} ${example}`,
-  notUnderstood: 'Das habe ich leider nicht verstanden. Ich habe nichts auf die Hummlist gesetzt.',
+  notUnderstood: 'Das habe ich leider nicht verstanden. Ich habe nichts auf die Snacklist gesetzt.',
   goodbye: 'Bis bald.',
   linkAccount:
-    'Bitte verknüpfe zuerst dein Hummlist-Konto in der Alexa-App. Ich habe dir dort eine Karte dazu geschickt.',
+    'Bitte verknüpfe zuerst dein Snacklist-Konto in der Alexa-App. Ich habe dir dort eine Karte dazu geschickt.',
   noHousehold:
-    'Du bist noch in keinem Haushalt. Leg in der Hummlist-App einen an oder tritt einem bei, dann klappt es auch mit Alexa.',
+    'Du bist noch in keinem Haushalt. Leg in der Snacklist-App einen an oder tritt einem bei, dann klappt es auch mit Alexa.',
   tooLong: 'Das war zu lang. Sag höchstens dreißig Sachen auf einmal. Ich habe nichts hinzugefügt.',
   tooMany: 'Mehr als dreißig auf einmal gehen nicht; sag den Rest bitte noch einmal.',
   rateLimited:
@@ -57,15 +57,15 @@ export const speech = {
   failed:
     'Entschuldigung, das hat gerade nicht geklappt. Ich habe nichts hinzugefügt. Versuch es bitte gleich noch einmal.',
   listFailed:
-    'Entschuldigung, ich komme gerade nicht an die Hummlist. Versuch es bitte gleich noch einmal.',
-  emptyList: 'Die Hummlist ist leer.',
-  cardTitle: 'Hummlist',
+    'Entschuldigung, ich komme gerade nicht an die Snacklist. Versuch es bitte gleich noch einmal.',
+  emptyList: 'Die Snacklist ist leer.',
+  cardTitle: 'Snacklist',
 } as const;
 
 /**
  * The read-back after an add, one sentence per outcome. Added: "Ich habe Milch und Eier auf die
- * Hummlist gesetzt." Open already, the exact items and then the other spellings or synonyms of
- * new ones (job 32b, added anyway), each name once: "Schon auf der Hummlist: Milch und Möhren."
+ * Snacklist gesetzt." Open already, the exact items and then the other spellings or synonyms of
+ * new ones (job 32b, added anyway), each name once: "Schon auf der Snacklist: Milch und Möhren."
  */
 export function confirmation(results: readonly Added[]): string {
   const added = results.filter((r) => !r.alreadyOnList);
@@ -76,14 +76,14 @@ export function confirmation(results: readonly Added[]): string {
     ]),
   ];
   const parts: string[] = [];
-  if (added.length) parts.push(`Ich habe ${enumerate(added.map(said))} auf die Hummlist gesetzt.`);
-  if (open.length) parts.push(`Schon auf der Hummlist: ${enumerate(open)}.`);
+  if (added.length) parts.push(`Ich habe ${enumerate(added.map(said))} auf die Snacklist gesetzt.`);
+  if (open.length) parts.push(`Schon auf der Snacklist: ${enumerate(open)}.`);
   return parts.join(' ');
 }
 
 /**
  * Q79 (copy pending Peter): when held items ("Butter" with "Butter Weihenstephan" open) are in
- * the results, what was done and then "Butter Weihenstephan steht schon auf der Hummlist. Soll
+ * the results, what was done and then "Butter Weihenstephan steht schon auf der Snacklist. Soll
  * ich Butter trotzdem dazuschreiben?", with the held items' text for the slot on a yes.
  */
 export function question(
@@ -96,7 +96,7 @@ export function question(
   return {
     question: [
       confirmation(results.filter((r) => !r.held)),
-      `${open} ${held.length === 1 ? 'steht' : 'stehen'} schon auf der Hummlist. ` +
+      `${open} ${held.length === 1 ? 'steht' : 'stehen'} schon auf der Snacklist. ` +
       `Soll ich ${wanted} trotzdem dazuschreiben?`,
     ].filter(Boolean).join(' '),
     again: held.map((r) => copy.de.spoken(r.held!)).join(', '),
@@ -106,15 +106,15 @@ export function question(
 /** At most this many items are read aloud (one more if that is all); the rest is a count. */
 export const readLimit = 10;
 
-/** "Auf der Hummlist stehen 3 Sachen: Milch, Eier und Brot." */
+/** "Auf der Snacklist stehen 3 Sachen: Milch, Eier und Brot." */
 export function listing(items: readonly Spoken[]): string {
   if (items.length === 0) return speech.emptyList;
   // One more than the limit is read: "und eine weitere" is no shorter than the item.
   const read = items.slice(0, items.length > readLimit + 1 ? readLimit : undefined).map(said);
   const rest = items.length - read.length;
   const head = items.length === 1
-    ? 'Auf der Hummlist steht eine Sache'
-    : `Auf der Hummlist stehen ${items.length} Sachen`;
+    ? 'Auf der Snacklist steht eine Sache'
+    : `Auf der Snacklist stehen ${items.length} Sachen`;
   if (rest === 0) return `${head}: ${enumerate(read)}.`;
   return `${head}: ${read.join(', ')} und ${rest} weitere.`;
 }

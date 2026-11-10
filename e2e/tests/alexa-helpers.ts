@@ -90,7 +90,7 @@ export async function postToAlexa(
   return { status: res.status, reply: text ? JSON.parse(text) : {} };
 }
 
-/** "Alexa, sag Hummlist, <phrase>": the speech Alexa would say. */
+/** "Alexa, sag Snacklist, <phrase>": the speech Alexa would say. */
 export async function say(token: string | undefined, items: string, ask: Ask = {}): Promise<string | undefined> {
   const { status, reply } = await postToAlexa(alexaRequest(addIntent(items), { ...ask, token }));
   expect(status).toBe(200);

@@ -313,12 +313,12 @@ Deno.test('AC1/AC3: "füg Milch hinzu" adds Milch to the linked household and sa
     envelope(intent('AddItemIntent', 'Milch'), { token: 'tok-peter' }),
   );
   assertEquals(status, 200);
-  assertEquals(said(reply), 'Ich habe Milch auf die Hummlist gesetzt.');
+  assertEquals(said(reply), 'Ich habe Milch auf die Snacklist gesetzt.');
   assertEquals(reply.response.shouldEndSession, true);
   assertEquals(reply.response.card, {
     type: 'Simple',
-    title: 'Hummlist',
-    content: 'Ich habe Milch auf die Hummlist gesetzt.',
+    title: 'Snacklist',
+    content: 'Ich habe Milch auf die Snacklist gesetzt.',
   });
   assertEquals(world.rows, [{ household: HH_A, name: 'Milch', quantity: null, addedBy: 'peter' }]);
 });
@@ -329,7 +329,7 @@ Deno.test('AC2/AC3: "Milch und Eier" adds two items and reads both back', async 
     world.deps(),
     envelope(intent('AddItemIntent', 'Milch und Eier'), { token: 'tok-peter' }),
   );
-  assertEquals(said(reply), 'Ich habe Milch und Eier auf die Hummlist gesetzt.');
+  assertEquals(said(reply), 'Ich habe Milch und Eier auf die Snacklist gesetzt.');
   assertEquals(world.rows.map((r) => r.name), ['Milch', 'Eier']);
 });
 
@@ -344,7 +344,7 @@ Deno.test('German input: quantities, number words, umlauts, ß, commas', async (
   );
   assertEquals(
     said(reply),
-    'Ich habe 2 Liter Milch, 1 Kilo Äpfel, 3 Weißwurst und Brot auf die Hummlist gesetzt.',
+    'Ich habe 2 Liter Milch, 1 Kilo Äpfel, 3 Weißwurst und Brot auf die Snacklist gesetzt.',
   );
   assertEquals(
     world.rows.map((r) => [r.name, r.quantity]),
@@ -361,14 +361,14 @@ Deno.test('an item already open is not added twice; the read-back says so', asyn
   );
   assertEquals(
     said(reply),
-    'Ich habe Eier auf die Hummlist gesetzt. Schon auf der Hummlist: Milch.',
+    'Ich habe Eier auf die Snacklist gesetzt. Schon auf der Snacklist: Milch.',
   );
   assertEquals(world.rows.map((r) => r.name), ['Milch', 'Eier']);
   const again = await send(
     world.deps(),
     envelope(intent('AddItemIntent', 'Milch und Eier'), { token: 'tok-peter' }),
   );
-  assertEquals(said(again.reply), 'Schon auf der Hummlist: Milch und Eier.');
+  assertEquals(said(again.reply), 'Schon auf der Snacklist: Milch und Eier.');
 });
 
 Deno.test('AC4: nothing understood gets one re-prompt, then "nicht verstanden", nothing added', async () => {
@@ -416,7 +416,7 @@ Deno.test('after the re-prompt, a clear answer is added', async () => {
     world.deps(),
     envelope(intent('AddItemIntent', 'Eier'), { token: 'tok-peter', attributes: { retry: 1 } }),
   );
-  assertEquals(said(reply), 'Ich habe Eier auf die Hummlist gesetzt.');
+  assertEquals(said(reply), 'Ich habe Eier auf die Snacklist gesetzt.');
   assertEquals(world.rows.map((r) => r.name), ['Eier']);
 });
 
@@ -471,7 +471,7 @@ Deno.test('AC8: disabling the skill revokes the sessions that Alexa account held
     world.deps(),
     envelope(intent('AddItemIntent', 'Brot'), { token: 'tok-lea', user: 'amzn1.ask.account.LEA' }),
   );
-  assertEquals(said(lea.reply), 'Ich habe Brot auf die Hummlist gesetzt.');
+  assertEquals(said(lea.reply), 'Ich habe Brot auf die Snacklist gesetzt.');
 });
 
 Deno.test('linking again revokes the session the Alexa account held before', async () => {
@@ -559,7 +559,7 @@ Deno.test('a failed link bookkeeping or analytics write does not cost the add', 
     }),
     envelope(intent('AddItemIntent', 'Milch'), { token: 'tok-peter' }),
   );
-  assertEquals(said(reply), 'Ich habe Milch auf die Hummlist gesetzt.');
+  assertEquals(said(reply), 'Ich habe Milch auf die Snacklist gesetzt.');
   assertEquals(world.reports.length, 2);
 });
 
@@ -570,7 +570,7 @@ Deno.test('rate limit: 30 items a minute per user, then a German answer and noth
     world.deps(),
     envelope(intent('AddItemIntent', thirty), { token: 'tok-peter' }),
   );
-  assertStringIncludes(said(first.reply)!, 'auf die Hummlist gesetzt.');
+  assertStringIncludes(said(first.reply)!, 'auf die Snacklist gesetzt.');
   assertEquals(world.rows.length, 30);
   const more = await send(
     world.deps(),
@@ -583,7 +583,7 @@ Deno.test('rate limit: 30 items a minute per user, then a German answer and noth
     world.deps(),
     envelope(intent('AddItemIntent', 'Milch'), { token: 'tok-lea' }),
   );
-  assertEquals(said(lea.reply), 'Ich habe Milch auf die Hummlist gesetzt.');
+  assertEquals(said(lea.reply), 'Ich habe Milch auf die Snacklist gesetzt.');
 });
 
 Deno.test('a very long utterance: more than 30 items adds 30 and says so; over 1000 chars adds none', async () => {
@@ -608,27 +608,27 @@ Deno.test('ReadListIntent: open items of the linked household, at most 10, then 
   const world = linkedWorld();
   const read = async (token: string) =>
     said((await send(world.deps(), envelope(intent('ReadListIntent'), { token }))).reply);
-  assertEquals(await read('tok-peter'), 'Die Hummlist ist leer.');
+  assertEquals(await read('tok-peter'), 'Die Snacklist ist leer.');
   await send(
     world.deps(),
     envelope(intent('AddItemIntent', 'zwei Liter Milch'), { token: 'tok-peter' }),
   );
-  assertEquals(await read('tok-peter'), 'Auf der Hummlist steht eine Sache: 2 Liter Milch.');
+  assertEquals(await read('tok-peter'), 'Auf der Snacklist steht eine Sache: 2 Liter Milch.');
   await send(
     world.deps(),
     envelope(intent('AddItemIntent', 'Äpfel und Weißwurst'), { token: 'tok-lea' }),
   );
   assertEquals(
     await read('tok-peter'),
-    'Auf der Hummlist stehen 3 Sachen: 2 Liter Milch, Äpfel und Weißwurst.',
+    'Auf der Snacklist stehen 3 Sachen: 2 Liter Milch, Äpfel und Weißwurst.',
   );
-  assertEquals(await read('tok-max'), 'Die Hummlist ist leer.', 'Max sees only his household');
+  assertEquals(await read('tok-max'), 'Die Snacklist ist leer.', 'Max sees only his household');
   const twelve = Array.from({ length: 9 }, (_, i) => `Teil${i}`).join(', ');
   await send(world.deps(), envelope(intent('AddItemIntent', twelve), { token: 'tok-lea' }));
   const long = await read('tok-peter');
   assertEquals(
     long,
-    'Auf der Hummlist stehen 12 Sachen: 2 Liter Milch, Äpfel, Weißwurst, ' +
+    'Auf der Snacklist stehen 12 Sachen: 2 Liter Milch, Äpfel, Weißwurst, ' +
       'Teil0, Teil1, Teil2, Teil3, Teil4, Teil5, Teil6 und 2 weitere.',
   );
   assertEquals(readLimit, 10);
@@ -651,7 +651,7 @@ Deno.test('Launch asks what to add and keeps the session open for the answer', a
 Deno.test('Help, Stop, Cancel, NavigateHome, SessionEnded and unknown requests', async () => {
   const world = linkedWorld();
   const help = await send(world.deps(), envelope(intent('AMAZON.HelpIntent')));
-  assertStringIncludes(said(help.reply)!, 'Hummlist');
+  assertStringIncludes(said(help.reply)!, 'Snacklist');
   assertEquals(help.reply.response.shouldEndSession, false);
   for (const name of ['AMAZON.StopIntent', 'AMAZON.CancelIntent', 'AMAZON.NavigateHomeIntent']) {
     const { reply } = await send(world.deps(), envelope(intent(name)));
@@ -677,11 +677,12 @@ Deno.test('Help, Stop, Cancel, NavigateHome, SessionEnded and unknown requests',
   assertEquals(get.status, 405);
 });
 
-Deno.test('the skill name is Hummlist in full in every reply, never Humm alone', () => {
-  for (const text of Object.values(speech)) {
-    assertFalse(/\bHumm\b/.test(text), text);
+Deno.test('the skill name is Snacklist in full in every reply, no Hummlist left (S4)', async () => {
+  const { speechEnglish } = await import('./speech_en.ts');
+  for (const text of [...Object.values(speech), ...Object.values(speechEnglish)]) {
+    assertFalse(/humm/i.test(text), text);
   }
-  assertEquals(speech.cardTitle, 'Hummlist');
+  assertEquals(speech.cardTitle, 'Snacklist');
 });
 
 // AC9/AC10 -----------------------------------------------------------------------------------
@@ -797,7 +798,7 @@ Deno.test('a lowercase utterance (as Alexa may hear it) is stored with German ca
   );
   assertEquals(
     said(reply),
-    'Ich habe Milch, 2 Liter Hafermilch, Äpfel und Milch ohne Laktose auf die Hummlist gesetzt.',
+    'Ich habe Milch, 2 Liter Hafermilch, Äpfel und Milch ohne Laktose auf die Snacklist gesetzt.',
   );
   // Heard with capitals: left as heard (the Siri splitter capitalizes the first letter only).
   const asHeard = linkedWorld();
@@ -814,7 +815,7 @@ Deno.test('job 32b: a new item with another spelling open is added, and Alexa na
   const karotten = { ...added('Karotten'), similarOnList: ['Möhren'] };
   assertEquals(
     confirmation([karotten]),
-    'Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren.',
+    'Ich habe Karotten auf die Snacklist gesetzt. Schon auf der Snacklist: Möhren.',
   );
   assertEquals(
     confirmation([
@@ -822,22 +823,22 @@ Deno.test('job 32b: a new item with another spelling open is added, and Alexa na
       { ...added('Mohrrüben'), similarOnList: ['Möhren'] },
       added('Milch', true),
     ]),
-    'Ich habe Karotten und Mohrrüben auf die Hummlist gesetzt. Schon auf der Hummlist: Milch und Möhren.',
+    'Ich habe Karotten und Mohrrüben auf die Snacklist gesetzt. Schon auf der Snacklist: Milch und Möhren.',
   );
   assertEquals(
     confirmation([{ ...added('Karotten'), similarOnList: ['Möhren', 'Gelbe Rüben'] }]),
-    'Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren und Gelbe Rüben.',
+    'Ich habe Karotten auf die Snacklist gesetzt. Schon auf der Snacklist: Möhren und Gelbe Rüben.',
   );
 });
 
 Deno.test('job 68: an open variant that is also an exact duplicate is named once', () => {
   assertEquals(
     confirmation([added('Möhren', true), { ...added('Karotten'), similarOnList: ['Möhren'] }]),
-    'Ich habe Karotten auf die Hummlist gesetzt. Schon auf der Hummlist: Möhren.',
+    'Ich habe Karotten auf die Snacklist gesetzt. Schon auf der Snacklist: Möhren.',
   );
   assertEquals(
     confirmation([added('Milch', true), added('Möhren', true)]),
-    'Schon auf der Hummlist: Milch und Möhren.',
+    'Schon auf der Snacklist: Milch und Möhren.',
   );
 });
 
@@ -873,13 +874,13 @@ Deno.test('English (en-*): an add is split by the English parser and read back i
     world.deps(),
     english(intent('AddItemIntent', 'two liters of milk'), { token: 'tok-peter' }),
   );
-  assertEquals(said(one.reply), 'I put 2 liters of milk on Hummlist.');
-  assertEquals(one.reply.response.card?.content, 'I put 2 liters of milk on Hummlist.');
+  assertEquals(said(one.reply), 'I put 2 liters of milk on Snacklist.');
+  assertEquals(one.reply.response.card?.content, 'I put 2 liters of milk on Snacklist.');
   const two = await send(
     world.deps(),
     english(intent('AddItemIntent', 'milk and a dozen eggs'), { token: 'tok-peter' }),
   );
-  assertEquals(said(two.reply), 'I put 1 dozen eggs on Hummlist. Already on Hummlist: milk.');
+  assertEquals(said(two.reply), 'I put 1 dozen eggs on Snacklist. Already on Snacklist: milk.');
   assertEquals(
     world.rows.map((r) => [r.name, r.quantity]),
     [['milk', '2 l'], ['eggs', '1 dozen']],
@@ -903,11 +904,11 @@ Deno.test('English: launch, help, stop, read, re-prompt and unlinked answer in E
 
   assertStringIncludes(said(await reply(intent('AMAZON.HelpIntent')))!, 'add milk and eggs');
   assertEquals(said(await reply(intent('AMAZON.StopIntent'))), 'Bye for now.');
-  assertEquals(said(await reply(intent('ReadListIntent'))), 'Your Hummlist is empty.');
+  assertEquals(said(await reply(intent('ReadListIntent'))), 'Your Snacklist is empty.');
   await reply(intent('AddItemIntent', 'milk and bread'));
   assertEquals(
     said(await reply(intent('ReadListIntent'))),
-    'There are 2 things on your Hummlist: milk and bread.',
+    'There are 2 things on your Snacklist: milk and bread.',
   );
   assertEquals(
     said(await reply(intent('AMAZON.FallbackIntent'))),
@@ -920,12 +921,12 @@ Deno.test('English: launch, help, stop, read, re-prompt and unlinked answer in E
         attributes: { retry: 1 },
       }),
     ),
-    "Sorry, I didn't understand that. I didn't add anything to Hummlist.",
+    "Sorry, I didn't understand that. I didn't add anything to Snacklist.",
   );
   const unlinked = await reply({ type: 'LaunchRequest' }, {});
   assertEquals(
     said(unlinked),
-    'Please link your Hummlist account in the Alexa app first. I sent you a card there.',
+    'Please link your Snacklist account in the Alexa app first. I sent you a card there.',
   );
   assertEquals(unlinked.response.card?.type, 'LinkAccount');
 });
@@ -941,16 +942,16 @@ Deno.test('ReadListIntent: one item past the limit is read, not counted, in Germ
     said((await send(world.deps(), request)).reply);
   assertEquals(
     await read(envelope(intent('ReadListIntent'), { token: 'tok-peter' })),
-    `Auf der Hummlist stehen 11 Sachen: ${eleven.slice(0, -1).join(', ')} und Teil10.`,
+    `Auf der Snacklist stehen 11 Sachen: ${eleven.slice(0, -1).join(', ')} und Teil10.`,
   );
   assertEquals(
     await read(english(intent('ReadListIntent'), { token: 'tok-peter' })),
-    `There are 11 things on your Hummlist: ${eleven.slice(0, -1).join(', ')} and Teil10.`,
+    `There are 11 things on your Snacklist: ${eleven.slice(0, -1).join(', ')} and Teil10.`,
   );
   await send(world.deps(), envelope(intent('AddItemIntent', 'Teil11'), { token: 'tok-peter' }));
   assertEquals(
     await read(english(intent('ReadListIntent'), { token: 'tok-peter' })),
-    `There are 12 things on your Hummlist: ${eleven.slice(0, -1).join(', ')} and 2 more.`,
+    `There are 12 things on your Snacklist: ${eleven.slice(0, -1).join(', ')} and 2 more.`,
   );
 });
 
@@ -1316,7 +1317,7 @@ Deno.test('Q79: a plain name with its branded item open asks one yes/no question
     envelope(intent('AddItemIntent', 'Milch und Butter'), { token: 'tok-peter' }),
   );
   const question =
-    'Ich habe Milch auf die Hummlist gesetzt. Butter Weihenstephan steht schon auf der Hummlist. ' +
+    'Ich habe Milch auf die Snacklist gesetzt. Butter Weihenstephan steht schon auf der Snacklist. ' +
     'Soll ich Butter trotzdem dazuschreiben?';
   assertEquals(said(reply), question);
   assertEquals(reply.response.reprompt?.outputSpeech.text, question);
@@ -1342,14 +1343,14 @@ Deno.test('Q79: yes adds a second Butter, no adds nothing and says it is there',
     world.deps(),
     envelope(confirmed('DENIED', 'Butter'), { token: 'tok-peter', attributes: {} }),
   );
-  assertEquals(said(no.reply), 'Schon auf der Hummlist: Butter Weihenstephan.');
+  assertEquals(said(no.reply), 'Schon auf der Snacklist: Butter Weihenstephan.');
   assertEquals(no.reply.response.shouldEndSession, true);
   assertEquals(world.rows.length, 1, 'no: nothing added, nothing changed');
   const yes = await send(
     world.deps(),
     envelope(confirmed('CONFIRMED', 'Butter'), { token: 'tok-peter', attributes: {} }),
   );
-  assertEquals(said(yes.reply), 'Ich habe Butter auf die Hummlist gesetzt.');
+  assertEquals(said(yes.reply), 'Ich habe Butter auf die Snacklist gesetzt.');
   assertEquals(world.addOptions.map((o) => o.addVariants ?? false), [false, true]);
   assertEquals(world.rows.map((r) => [r.name, r.brand ?? null]), [
     ['Butter', 'Weihenstephan'],
@@ -1378,13 +1379,13 @@ Deno.test('Q79: English asks the same question in English', async () => {
   );
   assertEquals(
     said(reply),
-    'Butter Weihenstephan is already on Hummlist. Should I add butter anyway?',
+    'Butter Weihenstephan is already on Snacklist. Should I add butter anyway?',
   );
   const no = await send(
     world.deps(),
     english(confirmed('DENIED', 'butter'), { token: 'tok-peter', attributes: {} }),
   );
-  assertEquals(said(no.reply), 'Already on Hummlist: Butter Weihenstephan.');
+  assertEquals(said(no.reply), 'Already on Snacklist: Butter Weihenstephan.');
 });
 
 Deno.test('job 170: the line has the request id end, slot word count, dialog state and timing', async () => {
