@@ -92,7 +92,7 @@ extension OpenListIntent {
 }
 
 /// One of the household's known items, the value of "Add <item> to Snacklist". The app hands the
-/// names over (`hummlist/siri` `suggestions`); its id is the name itself. Its synonyms are the
+/// names over (`snacklist/siri` `suggestions`); its id is the name itself. Its synonyms are the
 /// household's other names for the same item (the same `canonical_key`), so "Füge Möhren zu
 /// Snacklist hinzu" matches the "Karotten" the household usually buys.
 struct ItemSuggestion: AppEntity {

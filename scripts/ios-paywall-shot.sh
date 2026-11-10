@@ -13,7 +13,7 @@ die() { echo "ios-paywall-shot: $*" >&2; exit 1; }
 out="${1:-$REPO_ROOT/build/paywall-ios-de.png}"
 mkdir -p "$(dirname "$out")"
 out="$(cd "$(dirname "$out")" && pwd)/$(basename "$out")"
-marks=/tmp/hummlist-paywall-shot
+marks=/tmp/snacklist-paywall-shot
 rm -rf "$marks"
 mkdir -p "$marks"
 cd "$REPO_ROOT/app"

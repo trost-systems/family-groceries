@@ -236,7 +236,10 @@ export interface RequestFacts {
   via: Via | 'none' | '-';
   mode: Body['mode'] | '-';
   lang: Lang | '-';
-  /** The `x-hummlist-client` header: which app build and intent sent it ("ios-1210.AddItems"). */
+  /**
+   * The `x-snacklist-client` header (`x-hummlist-client` from installed Hummlist builds, kept until
+   * R1): which app build and intent sent it ("ios-1210.AddItems").
+   */
   client: string | null;
   outcome: ReplyOutcome | '-';
   status: number;
@@ -267,7 +270,7 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
       via: '-',
       mode: '-',
       lang: '-',
-      client: req.headers.get('x-hummlist-client'),
+      client: req.headers.get('x-snacklist-client') ?? req.headers.get('x-hummlist-client'),
       outcome: '-',
       status: 0,
       count: 0,

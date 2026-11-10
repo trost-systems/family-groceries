@@ -1,5 +1,5 @@
 /**
- * Films the real Hummlist Linux app for the demo videos.
+ * Films the real Snacklist Linux app for the demo videos.
  *
  * Each client is the profile build on its own Xvfb display at 3x (GDK_SCALE=3), signed in
  * through the real login screen. Input is real X input (xdotool): pointer presses and key

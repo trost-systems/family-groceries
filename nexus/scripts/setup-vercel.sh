@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
-# One-time, idempotent setup of the Vercel project hummlist-nexus: creates it if missing (no git
-# connection: the publisher deploys prebuilt output), adds nexus.hummlist.com, protects all
+# One-time, idempotent setup of the Vercel project hummlist-nexus (the project keeps its old name):
+# creates it if missing (no git connection: the publisher deploys prebuilt output), adds
+# nexus.snacklist.app, keeps the old nexus.hummlist.com as a 308 redirect to it, protects all
 # deployments with Vercel Authentication (ssoProtection deploymentType "all", free on every plan
 # since 2026-09-09), then checks logged out that the domain answers 401 or a redirect to the login.
 # Before the first deploy it says so and exits 0: run cron.sh or publish.sh --deploy, then this again.
 # Needs VERCEL_TOKEN; VERCEL_ORG_ID (the team id) when the project lives in a team. Prints the project id for
-# VERCEL_PROJECT_ID. DNS needs no record: hummlist.com is on Vercel's nameservers with a wildcard.
+# VERCEL_PROJECT_ID. DNS needs no record: snacklist.app and hummlist.com are on Vercel's nameservers
+# with a wildcard.
 set -euo pipefail
 : "${VERCEL_TOKEN:?VERCEL_TOKEN is required}"
 PROJECT=hummlist-nexus
-DOMAIN=nexus.hummlist.com
+DOMAIN=nexus.snacklist.app
+# The pre-Snacklist host: old bookmarks land on DOMAIN.
+OLD_DOMAIN=nexus.hummlist.com
 API=https://api.vercel.com
 auth=(-H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Type: application/json')
 
@@ -50,6 +54,15 @@ case $status in
     ;;
   *) echo "add domain failed ($status): $body" >&2; exit 1 ;;
 esac
+
+redirect="{\"redirect\":\"$DOMAIN\",\"redirectStatusCode\":308}"
+call PATCH "/v9/projects/$PROJECT/domains/$OLD_DOMAIN" "$redirect"
+if [[ $status == 404 ]]; then
+  call POST "/v10/projects/$PROJECT/domains" "{\"name\":\"$OLD_DOMAIN\",${redirect:1}"
+fi
+[[ $status == 200 && "$(jq -r '"\(.redirect) \(.redirectStatusCode)"' <<<"$body")" == "$DOMAIN 308" ]] \
+  || { echo "redirect $OLD_DOMAIN -> $DOMAIN failed ($status): $body" >&2; exit 1; }
+echo "$OLD_DOMAIN redirects (308) to $DOMAIN"
 
 call PATCH "/v9/projects/$PROJECT" '{"ssoProtection":{"deploymentType":"all"}}'
 [[ $status == 200 && "$(jq -r .ssoProtection.deploymentType <<<"$body")" == all ]] \

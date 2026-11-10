@@ -36,7 +36,7 @@ Die Namen der Menüpunkte in Claude stehen hier auf Deutsch, in Klammern auf Eng
 4. Gib als Name `Snacklist` ein und als URL:
 
    ```text
-   https://mcp.hummlist.com
+   https://mcp.snacklist.app
    ```
 
    Lass die erweiterten Einstellungen (OAuth Client ID und Secret) leer.
@@ -94,14 +94,14 @@ Du hast zwei Möglichkeiten. Jede beendet die Verbindung sofort:
 **Claude Code** verbindet sich mit einem Befehl. Danach in Claude Code `/mcp` aufrufen und **Authenticate** wählen. Es öffnet sich dieselbe Seite „Zugriff erlauben?“.
 
 ```bash
-claude mcp add --transport http snacklist https://mcp.hummlist.com
+claude mcp add --transport http snacklist https://mcp.snacklist.app
 ```
 
 **Codex** (CLI und IDE-Erweiterung teilen sich `~/.codex/config.toml`) funktioniert genauso, ist aber kein offiziell unterstützter Weg:
 
 ```toml
 [mcp_servers.snacklist]
-url = "https://mcp.hummlist.com"
+url = "https://mcp.snacklist.app"
 ```
 
 ```bash

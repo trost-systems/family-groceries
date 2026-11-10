@@ -1,6 +1,6 @@
 // Public copy never names the AI brands ChatGPT, OpenAI, Claude or Anthropic, except where Legal
 // allowed it (Legal review N-80..N-86, job 96): site/content, the text files in site/public and
-// mcp-proxy/public (the page at mcp.hummlist.com) and the values of app/l10n/*.arb (the @-metadata
+// mcp-proxy/public (the page at mcp.snacklist.app) and the values of app/l10n/*.arb (the @-metadata
 // is not shown to users). Every exception is an entry with its reason in
 // scripts/brand-names.allow.json, for a key, a line (contains) or a file, optionally only for the
 // brands it lists; an entry that covers nothing any more is stale.

@@ -17,7 +17,7 @@ ticks them off, so the loop starts and ends on the same list. One take per langu
   0.7 s after listening starts, then one per 0.34 s); `DeviceDictation`, the button, the splitter
   and the list are the app's real code. The caption's words use the same timings.
 - English: the app listens in German in every language, so the English cut hears the German
-  sentence and says "Hummlist listens in German." under it. The rows land in German among the
+  sentence and says "Snacklist listens in German." under it. The rows land in German among the
   English items, as they would for an English-speaking user.
 - Layout: wide, phone 256 u at x 296 (gutter 24) from mid-list to under the tab pill, its head
   dissolving; caption and speech caption in the left column. Compact: caption and speech caption

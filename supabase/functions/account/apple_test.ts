@@ -6,7 +6,7 @@ const { publicKey, privateKey } = await generateKeyPair('ES256', { extractable: 
 const pem = await exportPKCS8(privateKey);
 
 const config: AppleConfig = {
-  clientIds: ['com.hummlist.app', 'com.petertrost.familygroceries'],
+  clientIds: ['com.snacklist.app', 'com.hummlist.app'],
   teamId: 'TEAM123456',
   keyId: 'KEY1234567',
   privateKey: pem,
@@ -50,13 +50,13 @@ Deno.test('exchanges the code, then revokes the refresh token', async () => {
   assertExists(token);
   assertExists(revoke);
   assertEquals({ ...token.form, client_secret: '-' }, {
-    client_id: 'com.hummlist.app',
+    client_id: 'com.snacklist.app',
     client_secret: '-',
     grant_type: 'authorization_code',
     code: 'c0de',
   });
   assertEquals({ ...revoke.form, client_secret: '-' }, {
-    client_id: 'com.hummlist.app',
+    client_id: 'com.snacklist.app',
     client_secret: '-',
     token: 'rt-secret',
     token_type_hint: 'refresh_token',
@@ -68,7 +68,7 @@ Deno.test('exchanges the code, then revokes the refresh token', async () => {
     const { payload, protectedHeader } = await jwtVerify(form.client_secret, publicKey, {
       issuer: 'TEAM123456',
       audience: 'https://appleid.apple.com',
-      subject: 'com.hummlist.app',
+      subject: 'com.snacklist.app',
       algorithms: ['ES256'],
     });
     assertEquals(protectedHeader.kid, 'KEY1234567');
@@ -82,21 +82,21 @@ Deno.test('a code from a build before the rename is exchanged and revoked as tha
   for (const refusal of ['invalid_grant', 'invalid_client']) {
     const { fetchFn, seen } = fakeApple({
       '/auth/token': async () =>
-        seen.at(-1)?.form.client_id === 'com.hummlist.app'
+        seen.at(-1)?.form.client_id === 'com.snacklist.app'
           ? Response.json({ error: refusal }, { status: 400 })
           : Response.json({ refresh_token: 'rt-secret', id_token: await idToken('apple-sub') }),
     });
     const fate = await revokeAppleGrant({ code: 'c0de', subject: 'apple-sub' }, config, fetchFn);
     assertEquals(fate, 'revoked', refusal);
     assertEquals(seen.map((s) => [new URL(s.url).pathname, s.form.client_id]), [
+      ['/auth/token', 'com.snacklist.app'],
       ['/auth/token', 'com.hummlist.app'],
-      ['/auth/token', 'com.petertrost.familygroceries'],
-      ['/auth/revoke', 'com.petertrost.familygroceries'],
+      ['/auth/revoke', 'com.hummlist.app'],
     ]);
     const revoke = seen[2];
     assertExists(revoke?.form.client_secret);
     const { payload } = await jwtVerify(revoke.form.client_secret, publicKey);
-    assertEquals(payload.sub, 'com.petertrost.familygroceries');
+    assertEquals(payload.sub, 'com.hummlist.app');
   }
 });
 
@@ -165,7 +165,7 @@ Deno.test('every Apple failure falls back to manual removal, without logging sec
   }
 });
 
-Deno.test('the configuration comes from the environment, with every bundle id, Hummlist first', () => {
+Deno.test('the configuration comes from the environment, with every bundle id, Snacklist first', () => {
   // Split so secret scanners don't take the placeholder for a key.
   const [begin, end] = ['BEGIN', 'END'].map((word) => `-----${word} PRIVATE KEY-----`);
   const env: Record<string, string> = {
@@ -174,8 +174,8 @@ Deno.test('the configuration comes from the environment, with every bundle id, H
     APPLE_PRIVATE_KEY: `${begin}\\nabc\\n${end}`,
   };
   assertEquals(appleBundleIds, [
-    'com.hummlist.app',
     'com.snacklist.app',
+    'com.hummlist.app',
     'com.petertrost.familygroceries',
   ]);
   assertEquals(appleConfig((name) => env[name]), {

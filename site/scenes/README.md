@@ -59,11 +59,11 @@ posters, so nothing here loops.
 
 Members keep one colour everywhere: Mia tomato, Noah honey, Ida cobalt (navy letters on tomato
 and honey, white on cobalt). Item emoji are the ones `app/lib/list/list_view/item_icon.dart`
-picks; store names are text in Hummlist colours only.
+picks; store names are text in Snacklist colours only.
 
 ### mcp-chat (wide 576 x 324, compact 358 x 448)
 - Where: the "any AI assistant with MCP" video slot, as its poster.
-- Focal object: the Hummlist result card in a Hummlist-styled chat thread.
+- Focal object: the Snacklist result card in a Snacklist-styled chat thread.
 - Action: the request "Setz Milch, Eier und Äpfel auf unsere Einkaufsliste".
 - Payoff: the card listing the three added items with their categories and mint ticks.
 - Left out: any vendor name, logo, avatar, model picker, sparkle; the composer.
@@ -103,7 +103,7 @@ Review: phone corners tangent → Noah's phone moved up 16 px so the corners par
 Not checked: real sync latency (a still has none).
 
 ### mcp-chat
-Plan: a Hummlist-styled thread; the cobalt request bubble, then the Hummlist result card with the three items, their categories and mint ticks; no vendor name, logo, avatar, model picker or composer.
+Plan: a Snacklist-styled thread; the cobalt request bubble, then the Snacklist result card with the three items, their categories and mint ticks; no vendor name, logo, avatar, model picker or composer.
 Layout: the thread on the scene ground, gutter 32; the card runs the full width under the right-aligned request. Compact 358: the card rows get a second line for the category, an assistant reply of bars bleeds off the bottom.
 Beats: poster only.
 Captured: 576 and 358, light and dark, de and en.

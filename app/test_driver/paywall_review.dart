@@ -43,7 +43,7 @@ import '../test/settings/fake_account.dart';
 /// app writes `ready-<plan>` once the page shows that plan picked, the
 /// script `taken-<plan>` once it has the screenshot. The simulator shares
 /// the host's file system.
-const _marks = '/tmp/hummlist-paywall-shot';
+const _marks = '/tmp/snacklist-paywall-shot';
 
 /// Debug entrypoint for the App Store's in-app purchase review screenshot
 /// (job 86): the real shell, More tab and Premium page (PW-P4, job 87) as

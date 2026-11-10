@@ -112,7 +112,7 @@ select public.merge_items(gen_random_uuid(),
   (select id from public.items where household_id = (select id from fx where key = 'home') and name = 'Karotten'));
 reset role;
 
--- Job 25 (job 43: through RevenueCat): Peter bought Hummlist Lifetime (sandbox) for the household;
+-- Job 25 (job 43: through RevenueCat): Peter bought Lifetime (sandbox, under the old app's product id) for the household;
 -- the purchases function writes through the service connection only. His claim came first; a
 -- second claim waits for its webhook (purchase_claims). Carl's household has a RevenueCat promotional grant (a tester's); one webhook event id is
 -- remembered; one purged purchase left its tombstone; one deleted household waits for RevenueCat.
@@ -155,7 +155,7 @@ select id, '00000000-0000-4000-8000-0000000b0080', 'Chrome · macOS' from auth.u
 -- Job 82: a confirmed waitlist sign-up, a proof record and a rate counter (test addresses only).
 insert into public.waitlist (email, email_hmac, platform, locale, launch_news, consent_text_version,
   confirmed_at, last_mail_at)
-values ('hello+backup@hummlist.com', repeat('a', 64), 'ios', 'de', true, 'waitlist-de-v1', now(), now());
+values ('test+backup@snacklist.app', repeat('a', 64), 'ios', 'de', true, 'waitlist-de-v1', now(), now());
 insert into public.waitlist_consent_proof (email_hmac, consent_text_version, locale, launch_news,
   created_at, confirmed_at, last_mail_at, ended_at, end_reason)
 values (repeat('b', 64), 'waitlist-en-v1', 'en', false, now() - interval '2 days',

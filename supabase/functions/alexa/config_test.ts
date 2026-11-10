@@ -14,7 +14,7 @@ Deno.test('the test CA counts in the local stack only', async () => {
   };
   const local = trustFrom({ get: (k) => ({ ...vars, SUPABASE_URL: localStackUrl })[k] });
   assertEquals(local.test, true);
-  assertEquals(local.anchors.map((a) => a.subject), ['CN=Hummlist Test Root']);
+  assertEquals(local.anchors.map((a) => a.subject), ['CN=Snacklist Test Root']);
   assertEquals(await local.fetchChain(new URL(testCertUrl)), ca.chainPem);
   assertEquals(local.skillIds, ['amzn1.ask.skill.a', 'amzn1.ask.skill.b']);
 

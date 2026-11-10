@@ -2,7 +2,7 @@
 # Builds the Snacklist Widgetbook (app/widgetbook/, the catalogue of the app's real components)
 # for the web. Analyzes and tests it first, so a red catalogue never gets built. CI builds it in
 # .github/workflows/widgetbook.yml and uploads the result as the artifact `widgetbook`; it is
-# never published on hummlist.com.
+# never published on snacklist.app.
 #
 #   scripts/widgetbook.sh [--out <dir>] [--base-href </path/>]
 #

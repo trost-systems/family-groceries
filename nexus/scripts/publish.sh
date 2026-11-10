@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the nexus snapshot and static site into nexus/.vercel/output (Build Output API v3).
-# Only with --deploy does it go on to deploy to production (nexus.hummlist.com): cron.sh passes it
+# Only with --deploy does it go on to deploy to production (nexus.snacklist.app): cron.sh passes it
 # for main, and a by-hand deploy does. Without the flag it never reads the Vercel secrets.
 # Usage: publish.sh [--deploy]. Env: NEXUS_OPS_DIR (default ~/groceries-ops).
 set -euo pipefail

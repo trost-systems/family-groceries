@@ -32,5 +32,5 @@ jobs:
           path: |
             ${{ runner.temp }}/paywall-ios-de.png
             ${{ runner.temp }}/paywall-ios-de-lifetime.png
-            /tmp/hummlist-paywall-shot/ready-*
+            /tmp/snacklist-paywall-shot/ready-*
           if-no-files-found: ignore

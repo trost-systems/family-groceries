@@ -26,7 +26,7 @@ failing() {
 # What this run delivered, from each job's own result, so it holds for any mix of failures.
 outcome() {
   if [[ ${UPLOAD:-} == false ]]; then
-    echo "This was a dry run: nothing was uploaded and app.hummlist.com did not move."
+    echo "This was a dry run: nothing was uploaded and app.snacklist.app did not move."
     return
   fi
   local stores=() web
@@ -43,15 +43,15 @@ outcome() {
     esac
   fi
   if [[ ${UPLOADED:-} != success ]]; then
-    web="The web app (app.hummlist.com) stays on the last store release."
+    web="The web app (app.snacklist.app) stays on the last store release."
   elif [[ ${WEB:-} == success ]]; then
-    web="The web app (app.hummlist.com) moves to this commit."
+    web="The web app (app.snacklist.app) moves to this commit."
   elif [[ ${WEB:-} == cancelled ]]; then
     # A cancel can land after the push, so this run cannot tell.
-    web="The web app (app.hummlist.com) may not have moved to this commit"
+    web="The web app (app.snacklist.app) may not have moved to this commit"
     web+=" (check the release branch, docs/DEPLOY.md, section Web app)."
   else
-    web="The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app)."
+    web="The web app (app.snacklist.app) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app)."
   fi
   if [[ ${#stores[@]} -eq 0 ]]; then
     echo "Nothing new reached TestFlight or the Play internal track from this run. $web"

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  const channel = MethodChannel('hummlist/siri');
+  const channel = MethodChannel('snacklist/siri');
   late List<MethodCall> calls;
   Object? readAnswer;
 

@@ -1,6 +1,6 @@
 # Review: mcp-chat
 
-A generic AI chat in Hummlist's own style asks Hummlist's MCP server to add two items, then, by
+A generic AI chat in Snacklist's own style asks Snacklist's MCP server to add two items, then, by
 voice, to tick them off. The chat shows the real tool results of the take at the times they came
 back; Sam's real app ("Sams Wohnung", fixture solo-long-list) shows the rows arrive and leave.
 11.3 to 12.0 s (job 146).
@@ -8,7 +8,7 @@ back; Sam's real app ("Sams Wohnung", fixture solo-long-list) shows the rows arr
 ## Hand-over notes (snacklist-ui-craft)
 
 - Plan: focal object the chat (the cause), satellite Sam's phone (the effect); action a typed
-  request, then a spoken one; payoff the Hummlist result card next to the new rows in the app;
+  request, then a spoken one; payoff the Snacklist result card next to the new rows in the app;
   left out: any vendor look, model names, avatars, sparkles, purple; no assistant is named.
 - Layout: wide, chat card 300 u on the left (gutter 24), phone running off top, right and bottom;
   compact, chat card on top over the phone's head, phone running off the bottom. A mint marker at

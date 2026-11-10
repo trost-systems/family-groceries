@@ -1,5 +1,5 @@
 {
-  "_": "Every word the demo videos put on screen besides the app’s own (marketing/videos/lib.mjs t()). Drafts for Hummlist Launch, listed in site/COPY_NEEDED.md by site/scripts/copy-needed.mjs. Item names come from the takes (capture/shots.ts). A \"\\n\" is a line break in the wide format and a space in the compact format and the captions file.",
+  "_": "Every word the demo videos put on screen besides the app’s own (marketing/videos/lib.mjs t()). Drafts for Snacklist Launch, listed in site/COPY_NEEDED.md by site/scripts/copy-needed.mjs. Item names come from the takes (capture/shots.ts). A \"\\n\" is a line break in the wide format and a space in the compact format and the captions file.",
   "add-tick.add": {
     "de": "Eintippen, Enter,\nsteht drauf.",
     "en": "Type it, press enter,\nit’s on.",
@@ -67,10 +67,10 @@
     "source": "New: the spoken request in the generic chat (shown as text after the voice input)."
   },
   "mcp-chat.working": {
-    "de": "Hummlist wird gefragt …",
-    "en": "Asking Hummlist …",
+    "de": "Snacklist wird gefragt …",
+    "en": "Asking Snacklist …",
     "status": "draft",
-    "source": "New: the chat’s line while the Hummlist MCP tool runs."
+    "source": "New: the chat’s line while the Snacklist MCP tool runs."
   },
   "mcp-chat.composer": {
     "de": "Nachricht schreiben",
@@ -109,8 +109,8 @@
     "source": "New: quotation marks around the spoken sentence (the take's own words, capture/shots.ts) in the voice-add video's speech caption."
   },
   "voice-add.german": {
-    "de": "Hummlist hört auf Deutsch zu.",
-    "en": "Hummlist listens in German.",
+    "de": "Snacklist hört auf Deutsch zu.",
+    "en": "Snacklist listens in German.",
     "status": "draft",
     "source": "New: English voice-add video only, under the German sentence: in-app dictation listens in German in every app language (FEATURES-FOR-WRITERS, Dictation). German kept for symmetry, not shown."
   },

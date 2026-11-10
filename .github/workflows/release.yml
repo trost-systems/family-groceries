@@ -2,7 +2,7 @@
 # only), Android to the Play internal track. It starts when CI succeeds on a push to main and
 # ships the newest green main commit; docs/RELEASE.md describes the run, the lanes are in
 # app/fastlane/Fastfile, the decisions in scripts/release/. When a run actually uploads to a
-# store, its Web production job also moves app.hummlist.com (the `release` branch). There is no
+# store, its Web production job also moves app.snacklist.app (the `release` branch). There is no
 # public store release here (no production track, no App Store review). A platform whose secrets
 # are missing is skipped with a notice; a failed automatic run opens or comments on the
 # "Internal release failed" issue.
@@ -385,13 +385,13 @@ jobs:
         run: |
           echo "Build $BUILD_NUMBER of $SHA: TestFlight $IOS, Play internal $ANDROID." | tee -a "$GITHUB_STEP_SUMMARY"
 
-  # The web app ships with every real store upload: app.hummlist.com is public and is Vercel's
+  # The web app ships with every real store upload: app.snacklist.app is public and is Vercel's
   # production, whose branch is `release` (docs/DEPLOY.md, section "Web app"). When `Uploaded`
   # succeeds (automatic per-merge, schedule, or dispatch), this job moves `release` to this run's
-  # commit so Vercel builds it and assigns app.hummlist.com. That keeps the public web app on the
+  # commit so Vercel builds it and assigns app.snacklist.app. That keeps the public web app on the
   # same commit the internal testers just got, never ahead of TestFlight/Play. A rerun of an older
   # run is a no-op, and the plain push only fast-forwards, so production never moves back from
-  # here. Pushes to `main` still build previews only (preview.app.hummlist.com, behind Vercel
+  # here. Pushes to `main` still build previews only (preview.app.snacklist.app, behind Vercel
   # Authentication). No branch protection or ruleset may block github-actions from pushing `release`.
   web:
     name: Web production
@@ -417,7 +417,7 @@ jobs:
             exit 0
           fi
           git push origin "$SHA:refs/heads/release"
-          echo "release: ${before:0:7} -> ${SHA:0:7}. Vercel builds it for app.hummlist.com." \
+          echo "release: ${before:0:7} -> ${SHA:0:7}. Vercel builds it for app.snacklist.app." \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
   # Not after a red or foreign CI run (plan skipped by its `if`): there is nothing to report.

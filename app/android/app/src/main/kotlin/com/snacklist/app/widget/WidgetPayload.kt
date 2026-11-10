@@ -6,7 +6,7 @@ import org.json.JSONObject
 /** One open item as the app wrote it; [store] is the store's full name. */
 data class WidgetItem(val name: String, val quantity: String?, val store: String?)
 
-/** What the widget shows: the app's `hummlist_widget` string, version 1 (docs/HOME_WIDGETS.md). */
+/** What the widget shows: the app's `snacklist_widget` string, version 1 (docs/HOME_WIDGETS.md). */
 sealed interface WidgetPayload {
     /** No payload yet, an unreadable one or another version: ask the user to open Snacklist. */
     data object NoData : WidgetPayload
@@ -20,7 +20,10 @@ sealed interface WidgetPayload {
 
     companion object {
         /** The key the app writes into home_widget's HomeWidgetPreferences. */
-        const val KEY = "hummlist_widget"
+        const val KEY = "snacklist_widget"
+
+        /** The key before the rename, read until the app writes [KEY] (builds installed before it). */
+        const val LEGACY_KEY = "hummlist_widget"
 
         fun parse(raw: String?): WidgetPayload {
             if (raw == null) return NoData

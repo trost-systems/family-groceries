@@ -1,7 +1,7 @@
 {
-  "name": "hummlist-demo-videos",
+  "name": "snacklist-demo-videos",
   "private": true,
-  "description": "The hummlist.com demo loops: capture (capture/), HyperFrames compositions (build.mjs) and web encodes.",
+  "description": "The snacklist.app demo loops: capture (capture/), HyperFrames compositions (build.mjs) and web encodes.",
   "type": "module",
   "scripts": {
     "build": "node build.mjs"

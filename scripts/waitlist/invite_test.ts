@@ -6,13 +6,13 @@ const BATCH = '2026-W47';
 const ROWS: [InviteRow, InviteRow, InviteRow] = [
   {
     id: '00000000-0000-4000-8000-000000000001',
-    email: 'hello+ios@hummlist.com',
+    email: 'test+ios@snacklist.app',
     platform: 'ios',
     locale: 'de',
   },
   {
     id: '00000000-0000-4000-8000-000000000002',
-    email: 'hello+android@hummlist.com',
+    email: 'test+android@snacklist.app',
     platform: 'android',
     locale: 'en',
   },
@@ -98,7 +98,7 @@ Deno.test('arguments: --confirm repeats the batch id, --export-dir only with it'
       ['--batch', BATCH, '--confirm', '2026-W48'],
       ['--batch', BATCH, '--export-dir', '/tmp/x'],
       ['--batch', BATCH, '--send'],
-      ['--batch', BATCH, 'hello+x@hummlist.com'],
+      ['--batch', BATCH, 'test+x@snacklist.app'],
     ]
   ) assertEquals(typeof parseArgs(bad), 'string', bad.join(' '));
 });
@@ -159,8 +159,8 @@ Deno.test('--confirm mails each allowed row once, records it and exports the lis
   );
   assertEquals(code, 0);
   assertEquals(sent.map((s) => [s.to, s.key]), [
-    ['hello+ios@hummlist.com', `invite/${BATCH}/${ROWS[0].id}`],
-    ['hello+android@hummlist.com', `invite/${BATCH}/${ROWS[1].id}`],
+    ['test+ios@snacklist.app', `invite/${BATCH}/${ROWS[0].id}`],
+    ['test+android@snacklist.app', `invite/${BATCH}/${ROWS[1].id}`],
   ]);
   const [ios, android] = sent;
   assertExists(ios);
@@ -183,8 +183,8 @@ Deno.test('--confirm mails each allowed row once, records it and exports the lis
     [ROWS[0].id, ROWS[1].id],
     'the address outside the allow-list is not invited',
   );
-  assertEquals(files.get('/out/ios.csv'), ',,hello+ios@hummlist.com\n');
-  assertEquals(files.get('/out/android.csv'), 'hello+android@hummlist.com\n');
+  assertEquals(files.get('/out/ios.csv'), ',,test+ios@snacklist.app\n');
+  assertEquals(files.get('/out/android.csv'), 'test+android@snacklist.app\n');
   assertEquals(out.slice(-2), [
     'sent 2, skipped 1 (not allowed by WAITLIST_MAIL_ALLOW), failed 0',
     'wrote ios.csv (1) and android.csv (1) to /out',
@@ -193,7 +193,7 @@ Deno.test('--confirm mails each allowed row once, records it and exports the lis
 });
 
 Deno.test('a failed send is counted, not recorded, and never printed with its address', async () => {
-  const { deps, out, marked } = setup({}, 'hello+android@hummlist.com');
+  const { deps, out, marked } = setup({}, 'test+android@snacklist.app');
   assertEquals(
     await run(args(['--batch', BATCH, '--confirm', BATCH, '--allow-placeholders']), deps),
     1,
@@ -205,7 +205,7 @@ Deno.test('a failed send is counted, not recorded, and never printed with its ad
 
 Deno.test('a database error prints its code, not its detail', async () => {
   const error = Object.assign(
-    new Error('Key (lower(email))=(hello+x@hummlist.com) already exists'),
+    new Error('Key (lower(email))=(test+x@snacklist.app) already exists'),
     {
       code: '23505',
     },

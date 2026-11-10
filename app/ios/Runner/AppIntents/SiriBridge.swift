@@ -2,11 +2,11 @@ import Flutter
 import Foundation
 import Intents
 
-/// The `hummlist/siri` channel: lib/siri keeps the Keychain credential and the item suggestions
+/// The `snacklist/siri` channel: lib/siri keeps the Keychain credential and the item suggestions
 /// in step with the session. `read` never returns the token.
 final class SiriBridge: NSObject, FlutterPlugin {
   static func register(with registrar: FlutterPluginRegistrar) {
-    let channel = FlutterMethodChannel(name: "hummlist/siri", binaryMessenger: registrar.messenger())
+    let channel = FlutterMethodChannel(name: "snacklist/siri", binaryMessenger: registrar.messenger())
     registrar.addMethodCallDelegate(SiriBridge(), channel: channel)
   }
 

@@ -43,13 +43,13 @@ function world(overrides: Partial<Deps> = {}) {
   return { handle, lines };
 }
 
-const post = (body: unknown, token = 'fgp_siri', client?: string) =>
+const post = (body: unknown, token = 'fgp_siri', client?: string, header = 'x-snacklist-client') =>
   new Request('http://local/voice', {
     method: 'POST',
     headers: {
       authorization: `Bearer ${token}`,
       'content-type': 'application/json',
-      ...(client && { 'x-hummlist-client': client }),
+      ...(client && { [header]: client }),
     },
     body: JSON.stringify(body),
   });
@@ -76,6 +76,17 @@ Deno.test('each request logs one line: who, what, the outcome and how long', asy
     'voice: siri add de client=- -> nothing_understood status=422 count=0',
   ]);
   for (const line of lines) assertMatch(line, shape);
+});
+
+Deno.test('installed Hummlist builds still name themselves in x-hummlist-client (until R1)', async () => {
+  const { handle, lines } = world();
+  await handle(
+    post({ mode: 'read', lang: 'de' }, 'fgp_siri', 'ios-1210.ReadList', 'x-hummlist-client'),
+  );
+  assertMatch(
+    lines[0],
+    /^voice: siri read de client=ios-1210\.ReadList -> read status=200 count=1 /,
+  );
 });
 
 Deno.test('a failure after sign-in still logs, with status 500', async () => {

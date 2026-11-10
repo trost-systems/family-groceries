@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# hummlist.com for AI agents (job 93, docs/AGENT_FIRST.md), the checks that need the network or a
+# snacklist.app for AI agents (job 93, docs/AGENT_FIRST.md), the checks that need the network or a
 # browser. The build's own agent checks (llms.txt, .md twins, robots, sitemap, hreflang, JSON-LD,
 # links) run in the site gate. Here: the MCP probe's fixture tests, the probe against the public
 # MCP URL without credentials, and the built site served like Vercel serves it: what an agent
@@ -10,8 +10,8 @@ cd "$REPO_ROOT"
 
 log "MCP probe: fixture tests"
 node --test scripts/mcp-smoke.test.mjs
-log "MCP probe: https://mcp.hummlist.com, discovery only"
-scripts/mcp-smoke.sh https://mcp.hummlist.com
+log "MCP probe: https://mcp.snacklist.app, discovery only"
+scripts/mcp-smoke.sh https://mcp.snacklist.app
 
 log "site build"
 cd site

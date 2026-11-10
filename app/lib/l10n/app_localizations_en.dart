@@ -1590,7 +1590,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get refundHelpBody =>
-      'Snacklist Lifetime always belongs to the household it was bought in. Only Apple refunds App Store purchases. For Google Play, ask Google within 48 hours of buying; after that, email us at support@hummlist.com and we\'ll look at your request. Your statutory rights are not affected.';
+      'Snacklist Lifetime always belongs to the household it was bought in. Only Apple refunds App Store purchases. For Google Play, ask Google within 48 hours of buying; after that, email us at support@snacklist.app and we\'ll look at your request. Your statutory rights are not affected.';
 
   @override
   String get refundHelpApple =>

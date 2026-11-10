@@ -45,22 +45,23 @@ void main() {
   group('a pasted text', () {
     for (final (text, code) in [
       ('https://app.snacklist.app/join/ABCD2345', 'ABCD2345'),
+      // An invite sent from a Hummlist build, kept until R1.
       ('https://app.hummlist.com/join/ABCD2345', 'ABCD2345'),
-      ('https://app.hummlist.com/join/abcd-2345?x=1', 'ABCD2345'),
-      ('https://app.hummlist.com/?invite=WXYZ6789', 'WXYZ6789'),
+      ('https://app.snacklist.app/join/abcd-2345?x=1', 'ABCD2345'),
+      ('https://app.snacklist.app/?invite=WXYZ6789', 'WXYZ6789'),
       ('http://localhost:8080/#/join/WXYZ6789', 'WXYZ6789'),
       ('  ABCD2345\n', 'ABCD2345'),
       ('abcd-2345', 'ABCD2345'),
       ('ABCD 2345', 'ABCD2345'),
       (
         'Komm in unseren Snacklist-Haushalt: '
-            'https://app.hummlist.com/join/ABCD2345 · Code: ABCD2345',
+            'https://app.snacklist.app/join/ABCD2345 · Code: ABCD2345',
         'ABCD2345',
       ),
       ('Komm dazu! Code: ABCD2345', null),
       ('ABCD23456', null),
       ('IIII0000', null),
-      ('https://app.hummlist.com/join/ABC', null),
+      ('https://app.snacklist.app/join/ABC', null),
       ('', null),
       ('Milch, Brot, Eier', null),
     ]) {

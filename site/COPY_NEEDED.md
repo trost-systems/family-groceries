@@ -108,7 +108,7 @@ Peter's approval in his own words; Legal's consent texts are in `site/content/le
 | `waitlist.unsubscribe.done-title` | Waitlist: sign-up form, confirm and unsubscribe pages | Dein Eintrag ist gelöscht | Your sign-up is deleted | New draft. | draft |
 | `waitlist.unsubscribe.done-body` | Waitlist: sign-up form, confirm and unsubscribe pages | Du bekommst keine E-Mails mehr von uns. Willst du doch dabei sein, trag dich einfach noch mal ein. | You won't get any more emails from us. If you change your mind, just sign up again. | New draft. | draft |
 | `waitlist.unsubscribe.invalid-title` | Waitlist: sign-up form, confirm and unsubscribe pages | Dieser Link passt zu keinem Eintrag | This link doesn't match a sign-up | New draft. | draft |
-| `waitlist.unsubscribe.invalid-body` | Waitlist: sign-up form, confirm and unsubscribe pages | Vielleicht ist dein Eintrag schon gelöscht. Bekommst du trotzdem noch Mails, schreib an [support@hummlist.com](mailto:support@hummlist.com). | Your sign-up may be deleted already. If you still get emails, write to [support@hummlist.com](mailto:support@hummlist.com). | New draft. | draft |
+| `waitlist.unsubscribe.invalid-body` | Waitlist: sign-up form, confirm and unsubscribe pages | Vielleicht ist dein Eintrag schon gelöscht. Bekommst du trotzdem noch Mails, schreib an [support@snacklist.app](mailto:support@snacklist.app). | Your sign-up may be deleted already. If you still get emails, write to [support@snacklist.app](mailto:support@snacklist.app). | New draft. | draft |
 
 ## Reused
 
@@ -144,14 +144,14 @@ re-render with `node marketing/videos/build.mjs` (marketing/videos/README.md).
 | `mcp-chat.caption` | Demo video mcp-chat | Jeder KI-Assistent mit MCP. | Any AI assistant with MCP. | New: caption of the mcp-chat video; generic on purpose (no assistant named, snacklist-ui-craft "Generic AI chat"). | draft |
 | `mcp-chat.add.request` | Demo video mcp-chat | Noch Honig und Marmelade | Add honey and jam | New: the typed request in the generic chat. | draft |
 | `mcp-chat.tick.request` | Demo video mcp-chat | Hab beides gekauft, hak es ab | Bought both, tick them off | New: the spoken request in the generic chat (shown as text after the voice input). | draft |
-| `mcp-chat.working` | Demo video mcp-chat | Hummlist wird gefragt … | Asking Hummlist … | New: the chat’s line while the Hummlist MCP tool runs. | draft |
+| `mcp-chat.working` | Demo video mcp-chat | Snacklist wird gefragt … | Asking Snacklist … | New: the chat’s line while the Snacklist MCP tool runs. | draft |
 | `mcp-chat.composer` | Demo video mcp-chat | Nachricht schreiben | Write a message | New: placeholder of the chat’s input field. | draft |
 | `mcp-chat.added` | Demo video mcp-chat | Auf eurer Liste | On your list | New: title of the result card after add_items. | draft |
 | `mcp-chat.ticked` | Demo video mcp-chat | Abgehakt | Ticked off | New: title of the result card after tick_items. | draft |
 | `mcp-chat.listening` | Demo video mcp-chat | Hört zu … | Listening … | New: the chat’s voice-input state. | draft |
 | `voice-add.say` | Demo video voice-add | Sag einfach, was fehlt. | Just say what you need. | New: caption of the voice-add video while Mia taps the microphone and speaks (job 150). | draft |
 | `voice-add.quote` | Demo video voice-add | „%s“ | “%s” | New: quotation marks around the spoken sentence (the take's own words, capture/shots.ts) in the voice-add video's speech caption. | draft |
-| `voice-add.german` | Demo video voice-add | Hummlist hört auf Deutsch zu. | Hummlist listens in German. | New: English voice-add video only, under the German sentence: in-app dictation listens in German in every app language (FEATURES-FOR-WRITERS, Dictation). German kept for symmetry, not shown. | draft |
+| `voice-add.german` | Demo video voice-add | Snacklist hört auf Deutsch zu. | Snacklist listens in German. | New: English voice-add video only, under the German sentence: in-app dictation listens in German in every app language (FEATURES-FOR-WRITERS, Dictation). German kept for symmetry, not shown. | draft |
 | `voice-add.tick` | Demo video voice-add | Im Laden: antippen, abgehakt. | In the store: one tap, ticked off. | add-tick.tick: the voice-add video ends ticking the three items off, so the loop starts on the same list (job 150). | reused |
 
 ## Release timeline (/history, /en/history)

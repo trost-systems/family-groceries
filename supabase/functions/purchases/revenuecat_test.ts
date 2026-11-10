@@ -1,4 +1,4 @@
-// What each RevenueCat event means for a Hummlist Premium purchase: the table in
+// What each RevenueCat event means for a Snacklist Premium purchase: the table in
 // docs/PURCHASES.md ("Subscription lifecycle", "cancel_reason"), row by row.
 import { assertEquals } from '@std/assert';
 import { type Action, parseWebhook } from './revenuecat.ts';

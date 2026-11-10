@@ -168,17 +168,17 @@ void main() {
   });
 
   // The URIs the platforms hand go_router: a universal link / App Link
-  // (the path of https://app.hummlist.com/join/<code>) and the auth
+  // (the path of https://app.snacklist.app/join/<code>) and the auth
   // callback, whose path is empty.
   test('a universal link names its invite', () {
     expect(
-      inviteIn(Uri.parse('https://app.hummlist.com/join/ABCD2345')),
+      inviteIn(Uri.parse('https://app.snacklist.app/join/ABCD2345')),
       'ABCD2345',
     );
     expect(
       authRedirect(
         const SignedOut(),
-        Uri.parse('https://app.hummlist.com/join/ABCD2345'),
+        Uri.parse('https://app.snacklist.app/join/ABCD2345'),
       ),
       '/login?invite=ABCD2345',
     );
@@ -284,14 +284,14 @@ void main() {
     // A More page that isn't one: no `next` to nowhere.
     (SignedOut(), '/more/nothing-here', '/start'),
     (household, '/login?next=%2Fmore%2Fnothing-here', '/'),
-    (household, 'https://app.hummlist.com/add', '/'),
+    (household, 'https://app.snacklist.app/add', '/'),
     // Signed out, sign-in continues there.
     (SignedOut(), '/more/invites', '/login?next=%2Fmore%2Finvites'),
     (SignedOut(), '/more/settings', '/login?next=%2Fmore%2Fsettings'),
     (SignedOut(), '/add', '/login?next=%2Fadd'),
     (SignedOut(), '/stores/s1', '/login?next=%2Fstores%2Fs1'),
     (SignedOut(), '/list', '/login?next=%2Flist'),
-    (SignedOut(), 'https://app.hummlist.com/add', '/login?next=%2Fadd'),
+    (SignedOut(), 'https://app.snacklist.app/add', '/login?next=%2Fadd'),
     (
       SignedOut(),
       '/more/lifetime?from=x',

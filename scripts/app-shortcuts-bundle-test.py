@@ -144,7 +144,7 @@ class AppShortcutsBundle(unittest.TestCase):
         self.write_info(names={**NAMES, "de": ["Snack List", "Snackliste", "Snecklist"]})
         self.assertFails('de.lproj: alternative app name "Snackliste" ends in Liste')
 
-    def test_the_spoken_name_must_be_hummlist(self):
+    def test_the_spoken_name_must_be_snacklist(self):
         self.write_info(spoken="Snack List")
         self.assertFails('CFBundleSpokenName is "Snack List", not "Snacklist"')
 

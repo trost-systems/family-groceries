@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Writes the item icon table (job 147) from tool/item_icons/<domain>.tsv: the app's bundled copy and
-// the remote copy hummlist.com serves, then runs tool/item_icons/samples/*.tsv through the same
+// the remote copy snacklist.app serves, then runs tool/item_icons/samples/*.tsv through the same
 // matcher the app runs (ItemIcons in app/lib/list/list_view/item_icon.dart), and records the icon of
 // every name in supabase/classifier/*.tsv in classifier-sweep.tsv, so a table change shows what it
 // does to real names in the diff ("Lorbeer" once got 🍺 from "beer"). Node only, no packages.

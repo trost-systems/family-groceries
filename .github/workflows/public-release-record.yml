@@ -1,9 +1,9 @@
 # Records a public store release in releases/releases.json (releases/README.md) and pushes that one
 # change to main. Run it, or call it from the public release step, once the stores have accepted
 # the build. The reviewed changelog draft releases/changelog/<version>.json goes into the entry and
-# the draft file is deleted in the same commit (job 39, docs/CHANGELOG.md). The record is the site's source for the live version, so hummlist.com shows a release
+# the draft file is deleted in the same commit (job 39, docs/CHANGELOG.md). The record is the site's source for the live version, so snacklist.app shows a release
 # only after this run. Dry run by default: it prints the entry and changes nothing. The entry's stats
-# (commits, contributors, lines of code; hummlist.com/history shows them) come from git over the
+# (commits, contributors, lines of code; snacklist.app/history shows them) come from git over the
 # previous release..this one, so the checkout needs the full history (fetch-depth: 0).
 name: Public release record
 
@@ -93,8 +93,8 @@ jobs:
           else
             echo "$(tail -1 record.out) at $SHA (build $BUILD)." >>"$GITHUB_STEP_SUMMARY"
           fi
-      # Vercel builds every push to main for the hummlist-site project, and the site reads its live
-      # version from this record, so this push redeploys hummlist.com. It starts no store upload:
+      # Vercel builds every push to main for the site's project, and the site reads its live
+      # version from this record, so this push redeploys snacklist.app. It starts no store upload:
       # pushes made with GITHUB_TOKEN start no workflows, and plan.sh counts releases/ as no app
       # change anyway. The bot is author and committer because Vercel builds main commits by it.
       - name: Push the record to main

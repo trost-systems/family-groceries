@@ -1,5 +1,5 @@
-/* The page a browser gets at mcp.hummlist.com. Colours, type, space and motion are copied from
-   site/public/tokens.css (generated from design/tokens; copy new values from there, never by eye).
+/* The page a browser gets at mcp.snacklist.app (and mcp.hummlist.com). Colours, type, space and
+   motion are copied from site/public/tokens.css (generated from design/tokens; copy new values from there, never by eye).
    The hex controls follow site/public/styles.css. */
 
 @font-face {

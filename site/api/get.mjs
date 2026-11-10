@@ -1,4 +1,4 @@
-// hummlist.com/get, the launch stage's smart link (job 82 ADDENDUM 8; vercel.json rewrites /get
+// snacklist.app/get, the launch stage's smart link (job 82 ADDENDUM 8; vercel.json rewrites /get
 // here): a phone goes to its store, everything else, and every phone while its store URL is still
 // a TODO, to the landing page in the browser's language, which shows both badges.
 import { STORE_URLS, storeUrlSet } from '../config/stores.mjs';

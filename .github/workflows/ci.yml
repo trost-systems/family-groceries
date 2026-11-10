@@ -157,7 +157,7 @@ jobs:
           cache-dependency-path: site/package-lock.json
       - run: scripts/gates/site.sh
 
-  # Job 93: hummlist.com for AI agents, the checks that need the network or a browser (the MCP
+  # Job 93: snacklist.app for AI agents, the checks that need the network or a browser (the MCP
   # probe, the served site, the waitlist form). Always runs, like site.
   site-agent:
     runs-on: ubuntu-latest

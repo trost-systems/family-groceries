@@ -21,7 +21,7 @@ Preconditions:
 
 - Baseline household „Familie Brandt“ on the web build (verify-snacklist `launch.sh`), signed in.
 
-- **Journey.** `helpers/drive.sh rate-hummlist` (fresh baseline, German) runs the web bullets below and logs the device counters.
+- **Journey.** `helpers/drive.sh rate-snacklist` (fresh baseline, German) runs the web bullets below and logs the device counters.
 - **A return from the background starts a session, on the web.** Right after sign-in, set `document.visibilityState` to `hidden` and dispatch `visibilitychange`, then `visible` again. Observable: `session_start` moves to now and `previous_session_start` is the launch's.
 - **Same trip after an undo, on the web.** After the whole list is ticked, open „Zuletzt verwendet“, tap a row's put-back button (name ends in „{readd}“), tick the item again. Observable: `completed_trips` stays the same.
 - **Offline grace, on the web.** `page.context().setOffline(true)`, tick one row, see the sync indicator (a button named „Offline: …“), back online after 10 s. Observable: no `last_error_at`. Then offline again, add „Kaffee“ (the add sheet stays open: Escape before reading the ARIA tree), wait 70 s. Observable: `last_error_at` set about 60 s after the list went offline. Playwright's offline mode keeps the open realtime socket, so the list notices only when an op fails: always make a change while offline.

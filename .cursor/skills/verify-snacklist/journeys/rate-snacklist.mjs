@@ -1,4 +1,4 @@
-// Feature rate-hummlist (job 155), entry points More and a completed trip on the List tab. The web
+// Feature rate-snacklist (job 155), entry points More and a completed trip on the List tab. The web
 // build has no store listing: proves More has no „Snacklist bewerten“ between „Feedback senden“ and
 // „Hilfe & Kontakt“, and that ticking every item counts one completed trip in this device's
 // counters (`review.state`: counts and dates only) without a page error or a prompt, and that
@@ -6,13 +6,13 @@
 // tick 10 s offline is no sync failure; an add 70 s offline is one (`last_error_at`). The first
 // return from the background after the launch starts a new session.
 //
-//   node journeys/rate-hummlist.mjs <evidence dir> [--lang de|en]
+//   node journeys/rate-snacklist.mjs <evidence dir> [--lang de|en]
 import process from 'node:process';
 import { addField, capture, instance, logger, member, openApp, openTab, reveal, signIn, typeInto } from '../helpers/lib.mjs';
 
 const [dir, ...rest] = process.argv.slice(2);
 const lang = rest.includes('--lang') ? rest[rest.indexOf('--lang') + 1] : 'de';
-if (!dir) throw new Error('usage: rate-hummlist.mjs <evidence dir> [--lang de|en]');
+if (!dir) throw new Error('usage: rate-snacklist.mjs <evidence dir> [--lang de|en]');
 
 const log = logger(dir);
 const inst = instance();
@@ -132,4 +132,4 @@ if (failed) {
   log(`FAIL: ${failed.message}`);
   process.exit(1);
 }
-log(`PASS rate-hummlist (evidence: ${dir})`);
+log(`PASS rate-snacklist (evidence: ${dir})`);

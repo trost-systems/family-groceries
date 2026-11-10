@@ -88,7 +88,7 @@ final class VoiceClientTests: XCTestCase {
     var sender = client()
     sender.caller = "AddItems"
     _ = await sender.send(text: "milk", mode: .add, lang: .en)
-    let header = try XCTUnwrap(StubProtocol.requests.last?.request.value(forHTTPHeaderField: "x-hummlist-client"))
+    let header = try XCTUnwrap(StubProtocol.requests.last?.request.value(forHTTPHeaderField: "x-snacklist-client"))
     XCTAssertTrue(header.hasPrefix("ios-"), header)
     XCTAssertTrue(header.hasSuffix(".AddItems"), header)
     XCTAssertEqual(VoiceClient.clientHeader(caller: "Lists.add", info: ["CFBundleVersion": "1210"]), "ios-1210.Lists.add")

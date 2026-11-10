@@ -57,7 +57,7 @@ struct VoiceClient {
   let session: URLSession
   let credential: () -> SiriCredential?
   /// Which intent sends ("AddItems", "Lists.add"): the server logs it with the build number
-  /// (`x-hummlist-client`, voice's request line), so a test session sees which path Siri took.
+  /// (`x-snacklist-client`, voice's request line), so a test session sees which path Siri took.
   var caller = "unknown"
 
   /// The Siri log in Console.app (subsystem com.snacklist.app, category siri). Never the text.
@@ -97,7 +97,7 @@ struct VoiceClient {
     request.httpMethod = "POST"
     request.setValue("Bearer \(credential.token)", forHTTPHeaderField: "Authorization")
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.setValue(Self.clientHeader(caller: caller), forHTTPHeaderField: "x-hummlist-client")
+    request.setValue(Self.clientHeader(caller: caller), forHTTPHeaderField: "x-snacklist-client")
     var body: [String: Any] = ["mode": mode.rawValue, "lang": lang.rawValue]
     if let text { body["text"] = text }
     if ask { body["ask"] = true }

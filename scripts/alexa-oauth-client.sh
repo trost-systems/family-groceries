@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Job 31: registers the Alexa skill's OAuth client with Supabase Auth's OAuth 2.1 server, for
-# account linking (docs/ALEXA.md, "Deploy"). Run once by Hummlist Ops after the Amazon Developer
+# account linking (docs/ALEXA.md, "Deploy"). Run once by Snacklist Ops after the Amazon Developer
 # account exists, with the vendor id the Alexa console shows under Account Linking ("Alexa Redirect
 # URLs" end in /api/skill/link/<vendor id>).
 #

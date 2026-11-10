@@ -2,7 +2,7 @@
 # the web and uploads it as the artifact `widgetbook`: download it from the run, unzip, serve the
 # folder (python3 -m http.server -d widgetbook) and open it. Its analyze, format and tests run in
 # ci.yml's flutter gate; this workflow only spends the web build's minutes, on main and by hand.
-# Never published on hummlist.com.
+# Never published on snacklist.app.
 name: Widgetbook
 
 on:

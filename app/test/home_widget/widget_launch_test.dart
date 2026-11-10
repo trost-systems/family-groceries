@@ -45,7 +45,7 @@ void main() {
       ('snacklist-widget://add', WidgetLaunch.add),
       ('snacklist-widget://tick/?homeWidget', null),
       ('com.snacklist.app://login-callback?code=x', null),
-      ('https://app.hummlist.com/join/ABC123', null),
+      ('https://app.snacklist.app/join/ABC123', null),
     ]) {
       test('$link is $launch', () {
         expect(widgetLaunchOf(Uri.parse(link)), launch);
@@ -66,7 +66,7 @@ void main() {
       ..add(Uri.parse('snacklist-widget://open/?homeWidget'))
       ..add(null)
       ..addError(StateError('plugin'))
-      ..add(Uri.parse('https://app.hummlist.com/join/ABC123'));
+      ..add(Uri.parse('https://app.snacklist.app/join/ABC123'));
     await pumpEventQueue();
     expect(seen, [WidgetLaunch.add, WidgetLaunch.list]);
     await sub.cancel();

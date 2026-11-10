@@ -22,7 +22,7 @@ Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: DE369514299
 
 ## Kontakt
 
-E-Mail: [support@hummlist.com](mailto:support@hummlist.com)
+E-Mail: [support@snacklist.app](mailto:support@snacklist.app)
 
 ## Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
 

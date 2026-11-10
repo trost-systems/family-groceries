@@ -16,8 +16,8 @@ import 'package:family_groceries/tips/hint_views.dart';
 import 'package:family_groceries/tips/hints.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:hummlist_widgetbook/src/fixtures.dart' as fixtures;
-import 'package:hummlist_widgetbook/src/story.dart';
+import 'package:snacklist_widgetbook/src/fixtures.dart' as fixtures;
+import 'package:snacklist_widgetbook/src/story.dart';
 
 const _path = 'Snacklist';
 

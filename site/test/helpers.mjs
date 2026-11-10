@@ -22,7 +22,7 @@ const temps = [];
 after(() => temps.forEach((d) => rmSync(d, { recursive: true, force: true })));
 
 export function tempDir() {
-  const dir = mkdtempSync(join(tmpdir(), 'hummlist-site-'));
+  const dir = mkdtempSync(join(tmpdir(), 'snacklist-site-'));
   temps.push(dir);
   return dir;
 }

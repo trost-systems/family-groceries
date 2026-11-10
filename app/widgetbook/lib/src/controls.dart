@@ -1,7 +1,7 @@
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:flutter/material.dart';
-import 'package:hummlist_widgetbook/src/interaction.dart';
-import 'package:hummlist_widgetbook/src/story.dart';
+import 'package:snacklist_widgetbook/src/interaction.dart';
+import 'package:snacklist_widgetbook/src/story.dart';
 import 'package:widgetbook/widgetbook.dart';
 
 /// A state a control is shown in: how a person would put it there, and

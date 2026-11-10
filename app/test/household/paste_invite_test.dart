@@ -39,7 +39,7 @@ void main() {
     final reads = _clipboard(
       tester,
       'Komm in unseren Snacklist-Haushalt: '
-      'https://app.hummlist.com/join/ABCD2345 · Code: ABCD2345',
+      'https://app.snacklist.app/join/ABCD2345 · Code: ABCD2345',
     );
     final o = await pumpOnboarding(tester, location: '/welcome');
     expect(reads, isEmpty, reason: 'only a tap reads the clipboard');
@@ -91,7 +91,7 @@ void main() {
   });
 
   testWidgets('signed out: the invite waits for sign-in', (tester) async {
-    _clipboard(tester, 'https://app.hummlist.com/?invite=WXYZ6789');
+    _clipboard(tester, 'https://app.snacklist.app/?invite=WXYZ6789');
     final o = await pumpOnboarding(
       tester,
       location: '/login',

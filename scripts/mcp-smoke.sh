@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Smoke test of an MCP endpoint the way a client connects to it: the 401 challenge, the Protected
 # Resource Metadata it points at, the authorization server's metadata, then the handshake and
-# tools/list. Works on the function URL and on the mcp.hummlist.com proxy (docs/MCP.md).
+# tools/list. Works on the function URL and on the mcp.snacklist.app proxy (docs/MCP.md).
 # Discovery needs no credentials. MCP_SMOKE_TOKEN (a personal access token or OAuth access token)
 # enables the handshake and tools/list checks; without it they report SKIP. The token is never
 # printed. MCP_PROTOCOL_VERSION picks the protocol revision (default 2025-11-25). MCP_SMOKE_PAGE=1
-# also checks the page a browser gets in German and English, which only mcp.hummlist.com serves
+# also checks the page a browser gets in German and English, which only mcp.snacklist.app serves
 # (mcp-proxy/public); opt-in, so the probe of production stays true before that page deploys.
 # Usage: [MCP_SMOKE_TOKEN=…] [MCP_PROTOCOL_VERSION=…] [MCP_SMOKE_PAGE=1] scripts/mcp-smoke.sh <URL>
-#   e.g. https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp or https://mcp.hummlist.com
+#   e.g. https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/mcp or https://mcp.snacklist.app
 # Prints PASS/FAIL/SKIP per check; exits 1 on any FAIL, 2 on a usage error.
 set -uo pipefail
 

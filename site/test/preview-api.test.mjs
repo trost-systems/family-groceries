@@ -44,7 +44,7 @@ const send = (path, { method = 'POST', body, headers = {} } = {}) =>
     req.on('error', reject).end(body);
   });
 
-const signup = JSON.stringify({ email: 'hello+preview@hummlist.com', platform: 'android', locale: 'en', launch_news: true, consent_version: 'waitlist-en-v1', website: '', elapsed_ms: 4000 });
+const signup = JSON.stringify({ email: 'test+preview@snacklist.app', platform: 'android', locale: 'en', launch_news: true, consent_version: 'waitlist-en-v1', website: '', elapsed_ms: 4000 });
 
 test('the preview serves /api/waitlist through the function to the upstream', async () => {
   process.env.WAITLIST_UPSTREAM_URL = `http://127.0.0.1:${upstream.address().port}/`;

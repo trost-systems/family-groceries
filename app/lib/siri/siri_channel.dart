@@ -23,7 +23,7 @@ class const SiriKeychainEntry({
   int get hashCode => Object.hash(id, userId, sessionId);
 }
 
-/// The app's door to native Siri (`hummlist/siri` in AppDelegate.swift):
+/// The app's door to native Siri (`snacklist/siri` in AppDelegate.swift):
 /// the credential the intents send to `voice`, and the item names Siri
 /// offers for "Add `<item>` to Snacklist". Only iOS has it; elsewhere a call
 /// throws [MissingPluginException].
@@ -79,7 +79,7 @@ SiriChannel? siriChannelFor({
 }) => !web && platform == TargetPlatform.iOS ? const MethodSiriChannel() : null;
 
 class const MethodSiriChannel() implements SiriChannel {
-  static const _channel = MethodChannel('hummlist/siri');
+  static const _channel = MethodChannel('snacklist/siri');
 
   @override
   Future<SiriKeychainEntry?> read() async =>

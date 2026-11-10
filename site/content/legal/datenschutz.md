@@ -19,7 +19,7 @@ Peter Trost
 Yalovastr. 5
 72108 Rottenburg am Neckar
 Deutschland
-E-Mail: [support@hummlist.com](mailto:support@hummlist.com)
+E-Mail: [support@snacklist.app](mailto:support@snacklist.app)
 
 Ein Datenschutzbeauftragter ist nicht benannt.
 
@@ -42,7 +42,7 @@ Wir laden in wöchentlichen Gruppen ein: alle, die in derselben Kalenderwoche be
 
 Dienstleister: Das Formular nimmt unser Hoster Vercel entgegen; die Server-Funktion läuft in Frankfurt am Main, Vercel sieht dabei wie bei jedem Aufruf deine IP-Adresse (Abschnitt 2). Die Eintragungen speichern wir bei Supabase in der Datenbank in Frankfurt am Main. Die E-Mails verschickt Resend aus Irland; Resend speichert die E-Mails und Versandprotokolle in den USA und löscht sie nach 30 Tagen (Abschnitte 12 und 13). Unsere E-Mails enthalten keine Zählpixel, und Links werden nicht zur Klickmessung umgeleitet.
 
-Abmelden und Widerspruch: Jede E-Mail hat einen Link zum Abmelden; ein Klick genügt, ohne Anmeldung. Du kannst auch an support@hummlist.com schreiben. Damit widerrufst du deine Einwilligung für die Zukunft und widersprichst der Nutzung für diese E-Mails (Art. 21 Abs. 2 DSGVO); wir löschen deine Eintragung sofort.
+Abmelden und Widerspruch: Jede E-Mail hat einen Link zum Abmelden; ein Klick genügt, ohne Anmeldung. Du kannst auch an support@snacklist.app schreiben. Damit widerrufst du deine Einwilligung für die Zukunft und widersprichst der Nutzung für diese E-Mails (Art. 21 Abs. 2 DSGVO); wir löschen deine Eintragung sofort.
 
 Speicherdauer: Ohne Start-E-Mail löschen wir deine Eintragung 3 Monate nach dem Versand der Beta-Einladung, mit Start-E-Mail 30 Tage nach dem Versand dieser E-Mail, spätestens am 31. Dezember 2027.
 
@@ -86,7 +86,7 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ## 7. Siri, Alexa und KI-Assistenten
 
-Du kannst Snacklist mit KI-Assistenten (zum Beispiel über das Model Context Protocol unter mcp.hummlist.com) oder über einen selbst erstellten Kurzbefehl mit Siri verbinden. Das geschieht nur, wenn du selbst einen Zugriffstoken erstellst oder eine Verbindung erlaubst. Für Siri direkt in der iPhone-App gilt der Abschnitt „Siri auf dem iPhone“. Der verbundene Dienst kann dann die Einträge deiner Liste lesen und ändern; sein Anbieter verarbeitet diese Inhalte nach seinen eigenen Datenschutzbestimmungen. Wir speichern zu jedem Token einen Namen, einen Hash, seine letzten vier Zeichen und den Zeitpunkt der letzten Nutzung. Endet ein Token, etwa weil du ihn widerrufst oder den Haushalt verlässt, löschen wir diese Angaben 30 Tage danach beim nächsten täglichen Aufräumen. Du kannst Tokens und Verbindungen jederzeit in der App widerrufen.
+Du kannst Snacklist mit KI-Assistenten (zum Beispiel über das Model Context Protocol unter mcp.snacklist.app) oder über einen selbst erstellten Kurzbefehl mit Siri verbinden. Das geschieht nur, wenn du selbst einen Zugriffstoken erstellst oder eine Verbindung erlaubst. Für Siri direkt in der iPhone-App gilt der Abschnitt „Siri auf dem iPhone“. Der verbundene Dienst kann dann die Einträge deiner Liste lesen und ändern; sein Anbieter verarbeitet diese Inhalte nach seinen eigenen Datenschutzbestimmungen. Wir speichern zu jedem Token einen Namen, einen Hash, seine letzten vier Zeichen und den Zeitpunkt der letzten Nutzung. Endet ein Token, etwa weil du ihn widerrufst oder den Haushalt verlässt, löschen wir diese Angaben 30 Tage danach beim nächsten täglichen Aufräumen. Du kannst Tokens und Verbindungen jederzeit in der App widerrufen.
 Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ### Siri auf dem iPhone
@@ -102,7 +102,7 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ### Amazon Alexa
 
-Du kannst den Alexa-Skill „Hummlist" in der Alexa-App aktivieren und mit deinem Snacklist-Konto verknüpfen. Dazu meldest du dich bei Snacklist an und erlaubst „Amazon Alexa" den Zugriff auf deine Liste. Amazon erhält dafür ein Zugangs-Token und ein Erneuerungs-Token und bewahrt sie auf.
+Du kannst den Alexa-Skill „Snacklist" in der Alexa-App aktivieren und mit deinem Snacklist-Konto verknüpfen. Dazu meldest du dich bei Snacklist an und erlaubst „Amazon Alexa" den Zugriff auf deine Liste. Amazon erhält dafür ein Zugangs-Token und ein Erneuerungs-Token und bewahrt sie auf.
 
 Wenn du Alexa bittest, etwas auf deine Liste zu setzen oder sie vorzulesen, nimmt Amazon deine Sprache auf und wandelt sie in Text um. Wir erhalten von Amazon keine Sprachaufnahme, sondern nur den erkannten Text (zum Beispiel „Milch und Eier"), die Art der Anfrage, das Zugangs-Token, eine Kennung deines Alexa-Kontos und technische Angaben zu Gerät und Sprache. Die Gerätekennung werten wir nicht aus. Wir tragen die Artikel in die Liste deines aktuellen Haushalts ein wie bei einer Eingabe in der App; die anderen Mitglieder sehen sie. In unserer Antwort senden wir Amazon die Artikelnamen, die Alexa dir vorliest und in der Alexa-App als Karte anzeigt: die gerade eingetragenen Artikel oder bis zu 10 offene Einträge deiner Liste.
 
@@ -126,7 +126,7 @@ Unabhängig davon melden unsere Server Fehler in Server-Funktionen an PostHog. E
 
 ## 10. Kontakt und Support
 
-Wenn du an support@hummlist.com, hello@hummlist.com oder feedback@hummlist.com schreibst, verarbeiten wir deine E-Mail-Adresse und den Inhalt deiner Nachricht, um dir zu antworten. Die Postfächer betreibt Google (Google Workspace, siehe Abschnitte 12 und 13). Jede Antwort schreibt und sendet Peter Trost selbst.
+Wenn du an support@snacklist.app, hello@snacklist.app oder feedback@snacklist.app schreibst, verarbeiten wir deine E-Mail-Adresse und den Inhalt deiner Nachricht, um dir zu antworten. Die Postfächer betreibt Google (Google Workspace, siehe Abschnitte 12 und 13). Jede Antwort schreibt und sendet Peter Trost selbst.
 Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO, soweit es um dein Konto geht, sonst Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse, Anfragen zu beantworten). Wir löschen Support-E-Mails 6 Monate nach Abschluss der Anfrage.
 
 Schickst du uns in der App eine Rückmeldung, speichern wir deine Nachricht (bis zu 2.000 Zeichen), die Kategorie, falls du eine wählst, ob wir dich dazu kontaktieren dürfen, App-Version und Build, Plattform, Betriebssystem-Version (im Browser: Browser und Betriebssystem), Sprache und den Bildschirm, von dem aus du schreibst, zusammen mit deiner Nutzer- und Haushaltskennung bei Supabase (Server in der EU). Andere Mitglieder deines Haushalts sehen deine Rückmeldung nicht; lesen kann sie nur Peter Trost. Wir nutzen sie, um Fehler zu beheben und Snacklist zu verbessern. Wenn du es erlaubst, antworten wir dir an die E-Mail-Adresse deines Kontos. Nach 12 Monaten löschen wir die Rückmeldung automatisch, beim Löschen deines Kontos sofort. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (unser berechtigtes Interesse an einer fehlerfreien und besseren App).
@@ -143,7 +143,7 @@ Wir setzen folgende Dienstleister ein, die Daten in unserem Auftrag und nach uns
 - Supabase Pte. Ltd., Singapur (Datenbank, Anmeldung, Versand der Anmelde-E-Mails, Server-Funktionen; die Datenbank liegt im Rechenzentrum Frankfurt am Main, die Server-Funktionen laufen am Standort, der dem Aufruf am nächsten liegt, auch außerhalb der EU; die Server-Funktion für Käufe läuft immer in Frankfurt am Main)
 - Plus Five Five, Inc. („Resend“), San Francisco, USA (Versand unserer E-Mails, auch für die Warteliste; versendet aus Irland, speichert E-Mails und Versandprotokolle in den USA und löscht sie nach 30 Tagen)
 - RevenueCat, Inc., Brandon (Florida), USA (kostenlose Freischaltung von Snacklist Premium für Tester und für die App-Prüfung (Abschnitt 5) und, sobald Snacklist Premium verkauft wird, Käufe in der App: Prüfung und Verwaltung der Freischaltung; Server bei Amazon Web Services in den USA)
-- Vercel Inc. (Hosting von snacklist.app, app.snacklist.app, mcp.hummlist.com; Domain und DNS)
+- Vercel Inc. (Hosting von snacklist.app, app.snacklist.app, mcp.snacklist.app; Domain und DNS)
 - PostHog Inc. (Nutzungsdaten und Fehlerberichte, Server in der EU; nur wie in Abschnitt 9 beschrieben)
 - GitHub Inc. (verschlüsselte Sicherungskopien)
 - Google Cloud EMEA Limited, Dublin, Irland (Google Workspace, E-Mail)
@@ -160,7 +160,7 @@ Einige Dienstleister haben ihren Sitz in den USA oder gehören zu US-Unternehmen
 - RevenueCat, Inc. (USA) ist nicht nach dem EU-US Data Privacy Framework zertifiziert. Hier gelten die Standardvertragsklauseln der EU-Kommission (Art. 46 Abs. 2 lit. c DSGVO), die Teil des Auftragsverarbeitungsvertrags von RevenueCat sind. RevenueCat speichert die Daten bei Amazon Web Services in den USA und setzt weitere Unterauftragsverarbeiter in den USA ein, die an gleichwertige Pflichten gebunden sind. Zur Prüfung eines Kaufs übermittelt RevenueCat den Kaufbeleg und die Kennung deines Haushalts (bei Google einen daraus gebildeten Hashwert) an Apple bzw. Google. Für die kostenlose Freischaltung (Abschnitt 5) erhält RevenueCat nur die Kennung deines Haushalts und die Angaben zur Freischaltung.
 - Amazon (Alexa) erhält unsere Antworten als eigenständig Verantwortlicher (Abschnitt 7). Soweit Amazon sie an Amazon-Gesellschaften in den USA weitergibt, ist Amazon.com, Inc. (einschließlich Amazon.com Services LLC) nach dem EU-US Data Privacy Framework zertifiziert (Art. 45 DSGVO); wo kein Angemessenheitsbeschluss greift, gelten nach Amazons Entwicklervereinbarung Standardvertragsklauseln zwischen Verantwortlichen.
 
-Eine Kopie der Garantien erhältst du auf Anfrage an support@hummlist.com.
+Eine Kopie der Garantien erhältst du auf Anfrage an support@snacklist.app.
 
 ## 14. Speicherdauer
 
@@ -168,7 +168,7 @@ Wir speichern deine Daten, solange du dein Konto hast. Löschst du dein Konto, l
 
 ## 15. Deine Rechte {#rechte}
 
-Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und auf Widerruf erteilter Einwilligungen mit Wirkung für die Zukunft (Art. 7 Abs. 3). Schreib dafür an [support@hummlist.com](mailto:support@hummlist.com).
+Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und auf Widerruf erteilter Einwilligungen mit Wirkung für die Zukunft (Art. 7 Abs. 3). Schreib dafür an [support@snacklist.app](mailto:support@snacklist.app).
 
 **Widerspruchsrecht (Art. 21 DSGVO):** Soweit wir Daten auf Grundlage berechtigter Interessen (Art. 6 Abs. 1 lit. f DSGVO) verarbeiten, kannst du aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit widersprechen.
 

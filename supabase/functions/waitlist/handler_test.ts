@@ -1,5 +1,10 @@
 import { assert, assertEquals, assertExists, assertMatch, assertNotEquals } from '@std/assert';
-import { CONFIRM_VERSIONS, CONSENT_VERSIONS } from './consent.ts';
+import {
+  CONFIRM_VERSIONS,
+  CONSENT_VERSIONS,
+  PREVIOUS_CONFIRM_VERSIONS,
+  PREVIOUS_CONSENT_VERSIONS,
+} from './consent.ts';
 import {
   configFrom,
   type ConfirmPress,
@@ -238,7 +243,7 @@ Deno.test('off without both secrets, and 404 to anyone without the proxy secret'
     new Request(`http://localhost/waitlist/${path}`, {
       method,
       headers,
-      body: method === 'POST' ? JSON.stringify(form('hello+off@hummlist.com')) : null,
+      body: method === 'POST' ? JSON.stringify(form('test+off@snacklist.app')) : null,
     });
   for (const env of [{}, { WAITLIST_PROXY_SECRET: PROXY }, { WAITLIST_HMAC_SECRET: HMAC }]) {
     const store = new FakeStore();
@@ -258,7 +263,7 @@ Deno.test('off without both secrets, and 404 to anyone without the proxy secret'
   }
   const { call, store } = setup();
   for (const secret of ['', 'proxy-secret-for-test', `${PROXY}x`]) {
-    const res = await call('signup', form('hello+off@hummlist.com'), {
+    const res = await call('signup', form('test+off@snacklist.app'), {
       'x-waitlist-proxy-secret': secret,
     });
     assertEquals(res.status, 404);
@@ -288,10 +293,10 @@ Deno.test('AC5: an invalid address is refused and stores nothing', async () => {
       '',
       'nope',
       'a@b',
-      'a b@hummlist.com',
-      'hello+x@hummlist.c',
-      'hello+\u0007@hummlist.com',
-      `hello+${'x'.repeat(240)}@hummlist.com`,
+      'a b@snacklist.app',
+      'test+x@snacklist.a',
+      'test+\u0007@snacklist.app',
+      `test+${'x'.repeat(240)}@snacklist.app`,
       42,
     ]
   ) {
@@ -307,14 +312,14 @@ Deno.test('AC5: an invalid address is refused and stores nothing', async () => {
     [{ consent_version: 'waitlist-de-v1' }, 'invalid_request'],
   ];
   for (const [extra, error] of cases) {
-    const res = await call('signup', form('hello+ac5@hummlist.com', extra));
+    const res = await call('signup', form('test+ac5@snacklist.app', extra));
     assertEquals([res.status, await res.json()], [400, { error }], JSON.stringify(extra));
   }
   for (
     const body of [
       'not json',
       '[1]',
-      JSON.stringify(form('hello+ac5@hummlist.com', { pad: 'x'.repeat(2048) })),
+      JSON.stringify(form('test+ac5@snacklist.app', { pad: 'x'.repeat(2048) })),
     ]
   ) {
     const res = await call('signup', body);
@@ -326,12 +331,12 @@ Deno.test('AC5: an invalid address is refused and stores nothing', async () => {
 
 Deno.test('AC6: new, known, confirmed, bot, non-test and rate-limited sign-ups get the same answer before any database work', async () => {
   const { call, store, sent, deferred, flush } = setup();
-  await call('signup', form('hello+known@hummlist.com'));
-  await call('signup', form('hello+confirmed@hummlist.com'), { 'x-waitlist-client': 'client-b' });
+  await call('signup', form('test+known@snacklist.app'));
+  await call('signup', form('test+confirmed@snacklist.app'), { 'x-waitlist-client': 'client-b' });
   await flush();
   await call('confirm', press(tokenOf(nth(sent, 1).mail)));
   for (let i = 0; i < LIMITS.perKey; i++) {
-    await call('signup', form(`hello+fill${i}@hummlist.com`, { website: 'x' }), {
+    await call('signup', form(`test+fill${i}@snacklist.app`, { website: 'x' }), {
       'x-waitlist-client': 'client-limited',
     });
   }
@@ -339,14 +344,14 @@ Deno.test('AC6: new, known, confirmed, bot, non-test and rate-limited sign-ups g
   sent.length = 0;
 
   const requests: [string, Record<string, unknown>][] = [
-    ['new', form('hello+new@hummlist.com')],
-    ['known in other letters', form('HELLO+Known@hummlist.com', { platform: 'android' })],
-    ['confirmed', form('hello+confirmed@hummlist.com')],
-    ['honeypot', form('hello+bot@hummlist.com', { website: 'https://spam.example' })],
-    ['too fast', form('hello+fast@hummlist.com', { elapsed_ms: 1499 })],
-    ['no timing', form('hello+notime@hummlist.com', { elapsed_ms: undefined })],
+    ['new', form('test+new@snacklist.app')],
+    ['known in other letters', form('TEST+Known@snacklist.app', { platform: 'android' })],
+    ['confirmed', form('test+confirmed@snacklist.app')],
+    ['honeypot', form('test+bot@snacklist.app', { website: 'https://spam.example' })],
+    ['too fast', form('test+fast@snacklist.app', { elapsed_ms: 1499 })],
+    ['no timing', form('test+notime@snacklist.app', { elapsed_ms: undefined })],
     ['not a test address', form('someone@example.com')],
-    ['rate-limited', form('hello+limited@hummlist.com')],
+    ['rate-limited', form('test+limited@snacklist.app')],
   ];
   const answers = [];
   for (const [i, [name, body]] of requests.entries()) {
@@ -378,10 +383,10 @@ Deno.test('AC6: new, known, confirmed, bot, non-test and rate-limited sign-ups g
   assertEquals(sent.length, 0, 'no mail before the answer');
 
   await flush();
-  assertEquals(sent.map((s) => s.to), ['hello+new@hummlist.com'], 'only the new address is mailed');
+  assertEquals(sent.map((s) => s.to), ['test+new@snacklist.app'], 'only the new address is mailed');
   assertEquals(store.rows.size, 3, 'no second row for the known address, none for the dropped');
   assertEquals(
-    rowOf(store, 'hello+known@hummlist.com').platform,
+    rowOf(store, 'test+known@snacklist.app').platform,
     'ios',
     'nothing changed in 24 h',
   );
@@ -392,28 +397,28 @@ Deno.test('AC9: one sign-up over the per-client limit in an hour gets the same 2
   const ok = (res: Response) => res.text().then((body) => [res.status, body]);
   for (let i = 0; i < LIMITS.perKey; i++) {
     assertEquals(
-      await ok(await call('signup', form(`hello+rate${i}@hummlist.com`))),
+      await ok(await call('signup', form(`test+rate${i}@snacklist.app`))),
       [202, '{"status":"ok"}'],
     );
   }
   await flush();
   const mailed = sent.length;
-  const refused = await call('signup', form('hello+rate-over@hummlist.com'));
+  const refused = await call('signup', form('test+rate-over@snacklist.app'));
   assertEquals(await ok(refused), [202, '{"status":"ok"}'], 'the answer every sign-up gets');
   assertEquals(deferred.length, 0, 'nothing runs after the answer');
   await flush();
-  assertEquals(store.rows.has('hello+rate-over@hummlist.com'), false, 'nothing stored');
+  assertEquals(store.rows.has('test+rate-over@snacklist.app'), false, 'nothing stored');
   assertEquals(sent.length, mailed, 'nothing sent');
   assertEquals(
-    (await call('signup', form('hello+rate-over@hummlist.com'), { 'x-waitlist-client': 'other' }))
+    (await call('signup', form('test+rate-over@snacklist.app'), { 'x-waitlist-client': 'other' }))
       .status,
     202,
   );
   clock.now = new Date(T0.getTime() + HOUR);
-  assertEquals((await call('signup', form('hello+rate6@hummlist.com'))).status, 202);
+  assertEquals((await call('signup', form('test+rate6@snacklist.app'))).status, 202);
   await flush();
-  assertEquals(store.rows.has('hello+rate-over@hummlist.com'), true, 'another client stores it');
-  const missing = await call('signup', form('hello+rate7@hummlist.com'), {
+  assertEquals(store.rows.has('test+rate-over@snacklist.app'), true, 'another client stores it');
+  const missing = await call('signup', form('test+rate7@snacklist.app'), {
     'x-waitlist-client': '',
   });
   assertEquals([missing.status, await missing.json()], [400, { error: 'invalid_request' }]);
@@ -421,7 +426,7 @@ Deno.test('AC9: one sign-up over the per-client limit in an hour gets the same 2
 
 Deno.test('AC9: a filled honeypot stores nothing', async () => {
   const { call, flush, store, sent } = setup();
-  await call('signup', form('hello+pot@hummlist.com', { website: 'x' }));
+  await call('signup', form('test+pot@snacklist.app', { website: 'x' }));
   await flush();
   assertEquals(store.rows.size, 0);
   assertEquals(sent.length, 0);
@@ -429,14 +434,14 @@ Deno.test('AC9: a filled honeypot stores nothing', async () => {
 
 Deno.test('AC10: one confirmation mail from Peter, with the confirm and delete links of the page the sign-up came from', async () => {
   const { call, flush, sent, store } = setup();
-  await call('signup', form('hello+ac10@hummlist.com', { launch_news: true }), {
+  await call('signup', form('test+ac10@snacklist.app', { launch_news: true }), {
     'x-waitlist-origin': 'https://hummlist-site-git-job-82-peter-trost.vercel.app',
   });
   await flush();
   assertEquals(sent.length, 1);
   const { to, mail, key } = nth(sent, 0);
-  const row = rowOf(store, 'hello+ac10@hummlist.com');
-  assertEquals(to, 'hello+ac10@hummlist.com');
+  const row = rowOf(store, 'test+ac10@snacklist.app');
+  assertEquals(to, 'test+ac10@snacklist.app');
   assertEquals(mail.from, '"Peter · Snacklist" <hello@snacklist.app>');
   assertEquals(mail.replyTo, 'hello@snacklist.app');
   assertEquals(mail.subject, 'Bitte bestätige deine E-Mail für Snacklist');
@@ -466,7 +471,7 @@ Deno.test('links in mails go only to known sites', async () => {
     const { call, flush, sent } = setup();
     await call(
       'signup',
-      form('hello+origin@hummlist.com', { locale: 'en', consent_version: CONSENT_VERSIONS.en }),
+      form('test+origin@snacklist.app', { locale: 'en', consent_version: CONSENT_VERSIONS.en }),
       {
         'x-waitlist-origin': origin,
       },
@@ -483,14 +488,14 @@ Deno.test('links in mails go only to known sites', async () => {
 
 Deno.test('the 24 h rule: a known unconfirmed address is mailed again only after a day, with a new token', async () => {
   const { call, flush, sent, clock } = setup();
-  await call('signup', form('hello+again@hummlist.com'));
+  await call('signup', form('test+again@snacklist.app'));
   await flush();
   clock.now = new Date(T0.getTime() + 24 * HOUR - 1000);
-  await call('signup', form('hello+again@hummlist.com', { platform: 'android' }));
+  await call('signup', form('test+again@snacklist.app', { platform: 'android' }));
   await flush();
   assertEquals(sent.length, 1);
   clock.now = new Date(T0.getTime() + 24 * HOUR);
-  await call('signup', form('hello+again@hummlist.com', { platform: 'android' }));
+  await call('signup', form('test+again@snacklist.app', { platform: 'android' }));
   await flush();
   assertEquals(sent.length, 2);
   const [first, second] = sent.map((s) => tokenOf(s.mail));
@@ -501,8 +506,8 @@ Deno.test('the 24 h rule: a known unconfirmed address is mailed again only after
 
 Deno.test('AC11: the token confirms once within 48 h, then the welcome mail goes out with one-click unsubscribe', async () => {
   const { call, flush, sent, clock, store } = setup();
-  await call('signup', form('hello+ac11@hummlist.com'));
-  await call('signup', form('hello+late@hummlist.com'), { 'x-waitlist-client': 'b' });
+  await call('signup', form('test+ac11@snacklist.app'));
+  await call('signup', form('test+late@snacklist.app'), { 'x-waitlist-client': 'b' });
   await flush();
   const [token, late] = sent.map((s) => tokenOf(s.mail));
 
@@ -517,8 +522,8 @@ Deno.test('AC11: the token confirms once within 48 h, then the welcome mail goes
   await flush();
   assertEquals(sent.length, 3);
   const welcome = nth(sent, 2);
-  assertEquals(welcome.to, 'hello+ac11@hummlist.com');
-  assertEquals(welcome.key, `welcome/${rowOf(store, 'hello+ac11@hummlist.com').id}`);
+  assertEquals(welcome.to, 'test+ac11@snacklist.app');
+  assertEquals(welcome.key, `welcome/${rowOf(store, 'test+ac11@snacklist.app').id}`);
   assertEquals(welcome.mail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
   assertMatch(
     welcome.mail.headers['List-Unsubscribe'] ?? '',
@@ -534,12 +539,12 @@ Deno.test('AC11: the token confirms once within 48 h, then the welcome mail goes
     { status: 'invalid' },
     'expired',
   );
-  assertEquals(rowOf(store, 'hello+late@hummlist.com').confirmedAt, null);
+  assertEquals(rowOf(store, 'test+late@snacklist.app').confirmedAt, null);
 });
 
 Deno.test('AC12: the one-click link deletes the row, again and again; a forged one does nothing', async () => {
   const { call, flush, sent, store } = setup();
-  await call('signup', form('hello+ac12@hummlist.com'));
+  await call('signup', form('test+ac12@snacklist.app'));
   await flush();
   await call('confirm', press(tokenOf(nth(sent, 0).mail)));
   await flush();
@@ -592,7 +597,7 @@ Deno.test('the recipient allow-list: unset keeps to hello+…@hummlist.com and t
 Deno.test('the approved texts go out with the placeholder guard on (WAITLIST_ALLOW_PLACEHOLDERS unset)', async () => {
   const { call, flush, sent, store } = setup();
   const logs = await logsOf(async () => {
-    await call('signup', form('hello+approved@hummlist.com'));
+    await call('signup', form('test+approved@snacklist.app'));
     await flush();
     await call('confirm', press(tokenOf(nth(sent, 0).mail)));
     await flush();
@@ -611,30 +616,30 @@ Deno.test('the approved texts go out with the placeholder guard on (WAITLIST_ALL
 Deno.test('N-74: launch_news sent at sign-up is ignored, on the first sign-up and on the re-send', async () => {
   const { call, flush, sent, store, clock } = setup();
   for (const [i, value] of [true, 'yes', 1, null, { a: 1 }].entries()) {
-    const email = `hello+news${i}@hummlist.com`;
+    const email = `test+news${i}@snacklist.app`;
     const res = await call('signup', form(email, { launch_news: value }));
     assertEquals([res.status, await res.text()], [202, '{"status":"ok"}'], JSON.stringify(value));
     await flush();
     assertEquals(rowOf(store, email).launchNews, false, JSON.stringify(value));
   }
   clock.now = new Date(T0.getTime() + 24 * HOUR);
-  await call('signup', form('hello+news0@hummlist.com', { launch_news: true }));
+  await call('signup', form('test+news0@snacklist.app', { launch_news: true }));
   await flush();
   assertEquals(sent.length, 6, 'the re-send went out');
-  assertEquals(rowOf(store, 'hello+news0@hummlist.com').launchNews, false, 'still false');
+  assertEquals(rowOf(store, 'test+news0@snacklist.app').launchNews, false, 'still false');
   for (const { mail } of sent) assert(!mail.text.includes('offiziell startet'));
 });
 
 Deno.test('N-73: the confirm press names the current confirmation text, else 400 and nothing changes', async () => {
   const { call, flush, sent, store } = setup();
-  await call('signup', form('hello+press@hummlist.com'));
+  await call('signup', form('test+press@snacklist.app'));
   await flush();
   const token = tokenOf(nth(sent, 0).mail);
   for (
     const extra of [
       { confirm_version: undefined },
       { confirm_version: '' },
-      { confirm_version: 'waitlist-confirm-de-v2' },
+      { confirm_version: 'waitlist-confirm-de-v3' },
       { confirm_version: CONSENT_VERSIONS.de },
       { confirm_version: ['waitlist-confirm-de-v1'] },
       { launch_news: 'true' },
@@ -649,7 +654,7 @@ Deno.test('N-73: the confirm press names the current confirmation text, else 400
       JSON.stringify(extra),
     );
   }
-  const unconfirmed = rowOf(store, 'hello+press@hummlist.com');
+  const unconfirmed = rowOf(store, 'test+press@snacklist.app');
   assertEquals([unconfirmed.confirmedAt, unconfirmed.confirmVersion], [null, null]);
   assertEquals(
     await (await call('confirm', press('short', { confirm_version: 'x' }))).json(),
@@ -658,20 +663,47 @@ Deno.test('N-73: the confirm press names the current confirmation text, else 400
   );
   const res = await call('confirm', press(token, { launch_news: undefined }));
   assertEquals([res.status, await res.json()], [200, { status: 'confirmed' }]);
-  const row = rowOf(store, 'hello+press@hummlist.com');
+  const row = rowOf(store, 'test+press@snacklist.app');
   assertEquals(
     [row.confirmVersion, row.launchNews],
-    ['waitlist-confirm-de-v1', false],
+    [CONFIRM_VERSIONS.de, false],
     'no launch_news is the unticked box',
+  );
+});
+
+Deno.test('job 174: a page opened before the Snacklist texts still signs up and confirms under its Hummlist-named version', async () => {
+  const { call, flush, sent, store } = setup();
+  const signup = await call(
+    'signup',
+    form('test+previous@snacklist.app', { consent_version: PREVIOUS_CONSENT_VERSIONS.de }),
+  );
+  assertEquals(signup.status, 202);
+  await flush();
+  const pressed = press(tokenOf(nth(sent, 0).mail), {
+    confirm_version: PREVIOUS_CONFIRM_VERSIONS.de,
+  });
+  assertEquals((await call('confirm', pressed)).status, 200);
+  const row = rowOf(store, 'test+previous@snacklist.app');
+  assertEquals(
+    [row.consentVersion, row.confirmVersion],
+    ['waitlist-de-v2', 'waitlist-confirm-de-v1'],
+    'the proof names the text the page showed',
+  );
+  assertEquals(
+    [CONSENT_VERSIONS, CONFIRM_VERSIONS],
+    [
+      { de: 'waitlist-de-v3', en: 'waitlist-en-v3' },
+      { de: 'waitlist-confirm-de-v2', en: 'waitlist-confirm-en-v2' },
+    ],
   );
 });
 
 Deno.test('N-73/N-74: the press stores its text version and the launch-news box, and the welcome mail follows it', async () => {
   const { call, flush, sent, store } = setup();
   const cases = [
-    { email: 'hello+tick-de@hummlist.com', locale: 'de', version: CONFIRM_VERSIONS.de, news: true },
+    { email: 'test+tick-de@snacklist.app', locale: 'de', version: CONFIRM_VERSIONS.de, news: true },
     {
-      email: 'hello+tick-en@hummlist.com',
+      email: 'test+tick-en@snacklist.app',
       locale: 'en',
       version: CONFIRM_VERSIONS.en,
       news: false,
@@ -705,12 +737,12 @@ Deno.test('logs are outcome codes only: no address, token or database message', 
   const { call, flush, sent, store } = setup();
   const pgError = Object.assign(
     new Error('duplicate key value violates unique constraint "waitlist_email_key"'),
-    { code: '23505', detail: 'Key (lower(email))=(hello+log@hummlist.com) already exists.' },
+    { code: '23505', detail: 'Key (lower(email))=(test+log@snacklist.app) already exists.' },
   );
   const logs = await logsOf(async () => {
-    await call('signup', form('hello+log@hummlist.com', { launch_news: true }));
-    await call('signup', form('HELLO+log@hummlist.com'));
-    await call('signup', form('hello+logbot@hummlist.com', { website: 'x' }));
+    await call('signup', form('test+log@snacklist.app', { launch_news: true }));
+    await call('signup', form('TEST+log@snacklist.app'));
+    await call('signup', form('test+logbot@snacklist.app', { website: 'x' }));
     await call('signup', form('someone@example.com'));
     await flush();
     const token = tokenOf(nth(sent, 0).mail);
@@ -722,13 +754,13 @@ Deno.test('logs are outcome codes only: no address, token or database message', 
     await call('unsubscribe', { id, sig });
     await call('unsubscribe', { id, sig: '0'.repeat(64) });
     for (let i = 0; i <= LIMITS.perKey; i++) {
-      await call('signup', form(`hello+lograte${i}@hummlist.com`, { website: 'x' }), {
+      await call('signup', form(`test+lograte${i}@snacklist.app`, { website: 'x' }), {
         'x-waitlist-client': 'client-log-limited',
       });
     }
     await flush();
     store.failWith = pgError;
-    const res = await call('signup', form('hello+log2@hummlist.com'));
+    const res = await call('signup', form('test+log2@snacklist.app'));
     assertEquals([res.status, await res.json()], [503, { error: 'unavailable' }]);
   });
   assertEquals(logs, [
@@ -752,8 +784,8 @@ Deno.test('logs are outcome codes only: no address, token or database message', 
 
 Deno.test('a database failure after the answer is logged by its code only', async () => {
   const { call, flush, store } = setup();
-  await call('signup', form('hello+late-fail@hummlist.com'));
-  store.failWith = Object.assign(new Error('Key (lower(email))=(hello+late-fail@hummlist.com)'), {
+  await call('signup', form('test+late-fail@snacklist.app'));
+  store.failWith = Object.assign(new Error('Key (lower(email))=(test+late-fail@snacklist.app)'), {
     code: '23505',
   });
   const logs = await logsOf(flush);

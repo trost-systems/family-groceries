@@ -8,7 +8,7 @@ const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebK
 const IPAD = 'Mozilla/5.0 (iPad; CPU OS 17_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Mobile/15E148 Safari/604.1';
 const ANDROID = 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36';
 const DESKTOP = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-const LISTED = { appStore: 'https://apps.apple.com/app/id0000000000', googlePlay: 'https://play.google.com/store/apps/details?id=com.hummlist.app' };
+const LISTED = { appStore: 'https://apps.apple.com/app/id0000000000', googlePlay: 'https://play.google.com/store/apps/details?id=com.snacklist.app' };
 
 const go = (ua, lang, urls) => getApp(new Request('https://snacklist.app/get', { headers: { 'user-agent': ua, ...(lang ? { 'accept-language': lang } : {}) } }), urls);
 

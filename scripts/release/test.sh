@@ -341,49 +341,49 @@ expect_match "body: names the failed jobs" "$(body ANDROID=failure)" 'failed: an
 expect_match "body: names the commit the run shipped" "$(body ANDROID=failure)" ' on aaaaaaa failed: '
 expect_eq "automatic run, iOS uploaded, Android failed" \
   "$(outcome_of ANDROID=failure ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
-  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.hummlist.com) stays on the last store release.'
+  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.snacklist.app) stays on the last store release.'
 expect_eq "automatic run, iOS failed, Android built but did not upload" \
   "$(outcome_of IOS=failure ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
-  'The iOS job stopped, so TestFlight may not have this build; no Play upload (the Android job says why). The web app (app.hummlist.com) stays on the last store release.'
+  'The iOS job stopped, so TestFlight may not have this build; no Play upload (the Android job says why). The web app (app.snacklist.app) stays on the last store release.'
 expect_eq "automatic run, plan failed: nothing shipped" \
   "$(outcome_of UPLOAD='' PLAN=failure IOS=skipped ANDROID=skipped ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
-  'Nothing new reached TestFlight or the Play internal track from this run. The web app (app.hummlist.com) stays on the last store release.'
+  'Nothing new reached TestFlight or the Play internal track from this run. The web app (app.snacklist.app) stays on the last store release.'
 expect_eq "automatic run, cancelled Android after the iOS upload" \
   "$(outcome_of ANDROID=cancelled ANDROID_UPLOADED='' WEB=skipped)" \
-  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
+  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.snacklist.app) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
 expect_eq "automatic Android-only run, Android job stopped" \
   "$(outcome_of IOS=skipped ANDROID=failure ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
-  'The Android job stopped, so Play internal may not have this build. The web app (app.hummlist.com) stays on the last store release.'
+  'The Android job stopped, so Play internal may not have this build. The web app (app.snacklist.app) stays on the last store release.'
 expect_eq "automatic Android-only run without a Play upload, plan cancelled" \
   "$(outcome_of IOS=skipped ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped PLAN=cancelled)" \
-  'No Play upload (the Android job says why). The web app (app.hummlist.com) stays on the last store release.'
+  'No Play upload (the Android job says why). The web app (app.snacklist.app) stays on the last store release.'
 expect_eq "dispatch, web-only failure: both stores got it, the web app did not move" \
   "$(outcome_of EVENT=workflow_dispatch SIMULATE=true WEB=failure)" \
-  'TestFlight got this build; Play internal got this build. The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
+  'TestFlight got this build; Play internal got this build. The web app (app.snacklist.app) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
 expect_eq "dispatch, cancelled iOS + failed web: only Play got it" \
   "$(outcome_of EVENT=workflow_dispatch SIMULATE=true IOS=cancelled WEB=failure)" \
-  'The iOS job stopped, so TestFlight may not have this build; Play internal got this build. The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
+  'The iOS job stopped, so TestFlight may not have this build; Play internal got this build. The web app (app.snacklist.app) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
 expect_eq "dispatch, iOS uploaded, Android failed (no Uploaded, no web job)" \
   "$(outcome_of EVENT=workflow_dispatch SIMULATE=true ANDROID=failure ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
-  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.hummlist.com) stays on the last store release.'
+  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.snacklist.app) stays on the last store release.'
 expect_eq "dispatch on red main: nothing shipped" \
   "$(outcome_of EVENT=workflow_dispatch SIMULATE=true BLOCKED=true REASON='CI concluded failure' IOS=skipped ANDROID=skipped ANDROID_UPLOADED='' UPLOADED=skipped WEB=skipped)" \
-  'Nothing new reached TestFlight or the Play internal track from this run. The web app (app.hummlist.com) stays on the last store release.'
+  'Nothing new reached TestFlight or the Play internal track from this run. The web app (app.snacklist.app) stays on the last store release.'
 expect_eq "dispatch, cancelled Android after the iOS upload, web moved" \
   "$(outcome_of EVENT=workflow_dispatch SIMULATE=true ANDROID=cancelled ANDROID_UPLOADED='')" \
-  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.hummlist.com) moves to this commit.'
+  'TestFlight got this build; the Android job stopped, so Play internal may not have this build. The web app (app.snacklist.app) moves to this commit.'
 expect_eq "dispatch, Android-only run uploaded, web failed" \
   "$(outcome_of EVENT=workflow_dispatch SIMULATE=true IOS=skipped WEB=failure)" \
-  'Play internal got this build. The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
+  'Play internal got this build. The web app (app.snacklist.app) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
 expect_eq "dispatch, TestFlight uploaded, no Play upload, web failed" \
   "$(outcome_of EVENT=workflow_dispatch SIMULATE=true ANDROID_UPLOADED='' WEB=failure)" \
-  'TestFlight got this build; no Play upload (the Android job says why). The web app (app.hummlist.com) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
+  'TestFlight got this build; no Play upload (the Android job says why). The web app (app.snacklist.app) was not moved to this commit (release branch, docs/DEPLOY.md, section Web app).'
 expect_eq "dispatch, web job cancelled: it may have pushed already" \
   "$(outcome_of EVENT=workflow_dispatch SIMULATE=true WEB=cancelled)" \
-  'TestFlight got this build; Play internal got this build. The web app (app.hummlist.com) may not have moved to this commit (check the release branch, docs/DEPLOY.md, section Web app).'
+  'TestFlight got this build; Play internal got this build. The web app (app.snacklist.app) may not have moved to this commit (check the release branch, docs/DEPLOY.md, section Web app).'
 expect_eq "simulated failure on a dry run" \
   "$(outcome_of EVENT=workflow_dispatch SIMULATE=true UPLOAD=false PLAN=failure IOS=skipped ANDROID=skipped UPLOADED=skipped WEB=skipped)" \
-  'This was a dry run: nothing was uploaded and app.hummlist.com did not move.'
+  'This was a dry run: nothing was uploaded and app.snacklist.app did not move.'
 
 # --- check-aab.sh ---------------------------------------------------------------------------
 if command -v keytool >/dev/null && command -v jarsigner >/dev/null && command -v jar >/dev/null; then

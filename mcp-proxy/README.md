@@ -1,12 +1,13 @@
 # mcp-proxy
 
 The Vercel project `hummlist-mcp` serves this directory at
-`https://mcp.hummlist.com` and `https://mcp.snacklist.app`, the public URLs
-of the Snacklist MCP server. It has no build and no secrets. `vercel.json`
+`https://mcp.snacklist.app`, the public URL of the Snacklist MCP server, and
+at `https://mcp.hummlist.com`, the old address that connected assistants
+keep using until R1. It has no build and no secrets. `vercel.json`
 rewrites every request to the `mcp` edge function, except a person opening
 the URL in a browser, who gets a static page from `public/`:
 
-| Request on mcp.hummlist.com or mcp.snacklist.app | Goes to (on `https://jdwqrallbpdbshrdhenk.supabase.co` unless a file) |
+| Request on mcp.snacklist.app or mcp.hummlist.com | Goes to (on `https://jdwqrallbpdbshrdhenk.supabase.co` unless a file) |
 | --- | --- |
 | `/de`, `/en`, `/static/...` | the files in `public/` (`de.html`, `en.html`, CSS, JS, logo, fonts) |
 | `/.well-known/oauth-protected-resource` | `/functions/v1/mcp/.well-known/oauth-protected-resource` |
@@ -27,7 +28,7 @@ A browser request is one whose `Accept` names `text/html` and that has no
 client requests through these rules.
 
 The page says what the address is for, shows it with a copy button, and
-links to hummlist.com and its guides. It names no AI product
+links to snacklist.app and its guides. It names no AI product
 (`scripts/brand-names.ts` scans `public/`), loads nothing from another
 origin, sets no cookie, has no analytics and is `noindex` (meta tag, and an
 `X-Robots-Tag` header on every response of the host). The two HTML files
@@ -36,7 +37,7 @@ share their markup and differ only in the strings: change both.
 `/index` paths, which no MCP client uses.
 
 Each destination carries a query marker for the host it came from:
-`via=mcp-hummlist` or `via=mcp-snacklist`. That tells the function to
+`via=mcp-snacklist`, or `via=mcp-hummlist` for the old host (kept until R1). That tells the function to
 advertise that host as the resource and
 `https://<host>/.well-known/oauth-protected-resource` as its metadata
 (`supabase/functions/mcp/handler.ts`). Requests straight to supabase.co keep
@@ -53,10 +54,10 @@ server stays Supabase Auth on supabase.co.
 ## Check it
 
 ```bash
-scripts/mcp-smoke.sh https://mcp.hummlist.com
 scripts/mcp-smoke.sh https://mcp.snacklist.app
-MCP_SMOKE_TOKEN=fgp_… scripts/mcp-smoke.sh https://mcp.hummlist.com   # also initialize + tools/list
-MCP_SMOKE_PAGE=1 scripts/mcp-smoke.sh https://mcp.hummlist.com         # also the page, DE and EN
+scripts/mcp-smoke.sh https://mcp.hummlist.com
+MCP_SMOKE_TOKEN=fgp_… scripts/mcp-smoke.sh https://mcp.snacklist.app   # also initialize + tools/list
+MCP_SMOKE_PAGE=1 scripts/mcp-smoke.sh https://mcp.snacklist.app         # also the page, DE and EN
 ```
 
 `npx vercel build` in a copy of this directory, with a hand-written
@@ -87,8 +88,8 @@ compiled routes are in `.vercel/output/config.json`.
   reads the upstream `Host` either.
 - **`/.well-known`.** The rewrites page says the path "is reserved and
   cannot be redirected or rewritten". The external rewrite of
-  `/.well-known/oauth-protected-resource` works on mcp.hummlist.com and
-  mcp.snacklist.app all the same (checked 2026-10-28 on mcp.hummlist.com
+  `/.well-known/oauth-protected-resource` works on mcp.snacklist.app and
+  mcp.hummlist.com all the same (checked 2026-10-28 on mcp.hummlist.com
   with `scripts/mcp-smoke.sh`, `docs/DECISIONS.md` Job 26, item 13).
 - **Cost.** Hobby is free: 1,000,000 CDN requests and 100 GB Fast Data
   Transfer a month ([usage](https://vercel.com/docs/manage-cdn-usage)).

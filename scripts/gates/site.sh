@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# The guides site on hummlist.com (site/, job 24a): build checks and tests, a build, and no real
+# The guides site on snacklist.app (site/, job 24a): build checks and tests, a build, and no real
 # access token anywhere in the repo. The build only warns on a `[PETER:` placeholder; Vercel's
-# production build fails on one, so a page with open facts never reaches hummlist.com (job 33a).
+# production build fails on one, so a page with open facts never reaches snacklist.app (job 33a).
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT"

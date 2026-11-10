@@ -1,4 +1,4 @@
-// mcp-proxy/vercel.json decides per request whether mcp.hummlist.com shows the page for people
+// mcp-proxy/vercel.json decides per request whether mcp.snacklist.app shows the page for people
 // (mcp-proxy/public) or forwards to the mcp function. This replays real browser and MCP client
 // requests through its rewrites the way Vercel's router reads them: the filesystem first, then
 // the first rewrite whose source, `has` and `missing` match. Vercel does not document whether a
@@ -63,8 +63,9 @@ function staticFile(path: string): string | undefined {
   }
 }
 
-const DEFAULT_HOST = 'mcp.hummlist.com';
-const SNACK_HOST = 'mcp.snacklist.app';
+const DEFAULT_HOST = 'mcp.snacklist.app';
+// Kept until R1: clients set up before the rename still connect through the old host.
+const OLD_HOST = 'mcp.hummlist.com';
 
 function forwardedDestination(destination: string, path: string): string {
   return destination.replace(':path*', path.slice(1));
@@ -176,7 +177,7 @@ function rewriteDestination(
 
 Deno.test('each host forwards to the function with its own via marker', () => {
   for (
-    const [host, marker] of [[DEFAULT_HOST, 'mcp-hummlist'], [SNACK_HOST, 'mcp-snacklist']] as const
+    const [host, marker] of [[DEFAULT_HOST, 'mcp-snacklist'], [OLD_HOST, 'mcp-hummlist']] as const
   ) {
     for (
       const [path, headers] of [
@@ -192,7 +193,7 @@ Deno.test('each host forwards to the function with its own via marker', () => {
 });
 
 Deno.test('a browser still gets the page on either host', () => {
-  for (const host of [DEFAULT_HOST, SNACK_HOST]) {
+  for (const host of [DEFAULT_HOST, OLD_HOST]) {
     assertEquals(
       route('/', { accept: chrome, 'accept-language': 'de' }, 'whole value', host),
       'public/de.html',

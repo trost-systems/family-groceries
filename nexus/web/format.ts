@@ -26,10 +26,10 @@ export function ago(iso: string, now: Date): string {
 
 export type Freshness = 'fresh' | 'stale' | 'outdated';
 
-/** Stale after 30 min (three missed 10-min publishes), outdated after 2 h. */
+/** The page is published once a night (~03:00): stale after 25 h (one missed night), outdated after 49 h. */
 export function freshness(generatedAt: string, now: Date): { level: Freshness; label: string } {
   const age = now.getTime() - Date.parse(generatedAt);
-  const level: Freshness = age > 2 * hour ? 'outdated' : age > 30 * minute ? 'stale' : 'fresh';
+  const level: Freshness = age > 49 * hour ? 'outdated' : age > 25 * hour ? 'stale' : 'fresh';
   return { level, label: `updated ${ago(generatedAt, now)}` };
 }
 

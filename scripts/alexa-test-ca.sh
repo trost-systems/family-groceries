@@ -19,7 +19,7 @@ mkdir -p "$dir"
 if ! { [[ -s $dir/leaf.key && -s $dir/chain.pem ]] && openssl x509 -in "$dir/chain.pem" -noout -checkend 86400 >/dev/null 2>&1; }; then
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' EXIT
-  openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj '/CN=Hummlist Test Root' \
+  openssl req -x509 -newkey rsa:2048 -nodes -days 30 -subj '/CN=Snacklist Test Root' \
     -keyout "$tmp/root.key" -out "$dir/root.pem" \
     -addext 'basicConstraints=critical,CA:TRUE' -addext 'keyUsage=critical,keyCertSign,cRLSign' 2>/dev/null
   openssl req -newkey rsa:2048 -nodes -subj '/CN=echo-api.amazon.com' \

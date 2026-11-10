@@ -1,4 +1,4 @@
--- Job 25, as of job 43: Hummlist Lifetime recorded from RevenueCat's webhook (purchase_record,
+-- Job 25, as of job 43: Snacklist Lifetime recorded from RevenueCat's webhook (purchase_record,
 -- purchase_revoke, purchase_reinstate; migration 20261031123504_household_bound_lifetime.sql). Two
 -- households: Peter and Lea share one, Max has his own. The unlock is the household's, clients only
 -- read it, a transaction counts once and belongs to one household, refunds take it away once.

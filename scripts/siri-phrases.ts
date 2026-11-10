@@ -233,7 +233,7 @@ for (const lang of ["en", "de"]) {
       );
     }
     for (const value of set) {
-      if (value.includes("${applicationName}") || /snacklist|hummlist/i.test(value)) {
+      if (value.includes("${applicationName}") || /snacklist/i.test(value)) {
         problems.push(
           `${catalogPath} ${lang} negative "${value}" names the app and would block it`,
         );

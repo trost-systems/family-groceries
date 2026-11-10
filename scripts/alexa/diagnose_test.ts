@@ -35,7 +35,7 @@ async function sensitiveValues(): Promise<string[]> {
     /"authorization_id": ?"(\w+)"/g,
   ];
   const found = shapes.flatMap((s) => [...text.matchAll(s)].map((m) => m[1] ?? m[0]));
-  return [...new Set([...found, 'Lea Trostmann', 'Max Mustermann', 'app.hummlist.com'])];
+  return [...new Set([...found, 'Lea Trostmann', 'Max Mustermann', 'app.snacklist.app'])];
 }
 
 Deno.test('a morning with only skill events: per-request lines, verdict, linking, links', async () => {

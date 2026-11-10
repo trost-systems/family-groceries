@@ -1,4 +1,4 @@
--- Job 43: Hummlist Lifetime is household-bound (migration 20261031123504_household_bound_lifetime.sql).
+-- Job 43: Snacklist Lifetime is household-bound (migration 20261031123504_household_bound_lifetime.sql).
 -- Anna and Ben share a household, Cleo has her own, Dana (a tester) has hers. A purchase stays
 -- with its household for good, so does a RevenueCat promotional grant (testers since
 -- 20261101150000_testers_via_revenuecat.sql), the join preview says what a household has and what

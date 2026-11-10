@@ -17,7 +17,7 @@ Deno.test('usage pace is 0.95 of the elapsed week', () => {
 Deno.test('open NEEDS_LEAD sections: a Status line that is not done', () => {
   const md = [
     '# Needs',
-    '## mcp.hummlist.com',
+    '## mcp.snacklist.app',
     'Status: done. Live.',
     "## Job 124: report upstream? (after Erika's OK, Nov 1)",
     "Status: open, the Lead's call.",
