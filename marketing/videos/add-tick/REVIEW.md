@@ -3,7 +3,7 @@
 Mia types two items into the real add sheet, closes it, the rows sit in their category, and she
 ticks both off again. One take per language, one phone, 11.0 to 11.8 s.
 
-## Hand-over notes (hummlist-ui-craft)
+## Hand-over notes (snacklist-ui-craft)
 
 - Plan: focal object the add sheet and then the pantry rows; action typing and Enter, then a tap
   per row; payoff the two new rows in "Vorrat & Konserven" / "Pantry"; left out: tabs, store

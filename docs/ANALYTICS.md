@@ -1,6 +1,6 @@
 # Analytics, error tracking and feature flags (jobs 19 and 44)
 
-Hummlist measures its DACH kill gates and lifetime value in PostHog, reports app and
+Snacklist measures its DACH kill gates and lifetime value in PostHog, reports app and
 edge-function errors there, and takes its runtime toggles from PostHog feature flags. PostHog is
 the only vendor for all three (Peter, 2026-10-31). Spec #1 "Kill-gate and LTV analytics";
 decisions in [DECISIONS.md](DECISIONS.md), "Job 19" and "Job 44"; open steps in
@@ -10,12 +10,12 @@ decisions in [DECISIONS.md](DECISIONS.md), "Job 19" and "Job 44"; open steps in
 | --- | --- | --- |
 | Day-35 unlock share | Which share of an install-week cohort bought the lifetime unlock within 35 days of `first_open`? | [`analytics/queries/unlock_d35.sql`](../analytics/queries/unlock_d35.sql) |
 | WAH | How many households added or ticked at least once in a week (Mon-Sun, Europe/Berlin)? | [`wah.sql`](../analytics/queries/wah.sql) |
-| Paying share of WAH (kill gate, jobs 43 and 49) | Which share of a week's active households has Hummlist Premium (Yearly or Lifetime) that week? | [`paying_share_wah.sql`](../analytics/queries/paying_share_wah.sql) |
-| Paying households by day 35 (jobs 43 and 49) | Which share of a household-start-week cohort bought Hummlist Premium (Yearly or Lifetime) within 35 days of its first event? | [`paying_households_d35.sql`](../analytics/queries/paying_households_d35.sql) |
+| Paying share of WAH (kill gate, jobs 43 and 49) | Which share of a week's active households has Snacklist Premium (Yearly or Lifetime) that week? | [`paying_share_wah.sql`](../analytics/queries/paying_share_wah.sql) |
+| Paying households by day 35 (jobs 43 and 49) | Which share of a household-start-week cohort bought Snacklist Premium (Yearly or Lifetime) within 35 days of its first event? | [`paying_households_d35.sql`](../analytics/queries/paying_households_d35.sql) |
 | Net unlock revenue | Revenue per month after VAT and store fee, refunds subtracted, restores zero | [`revenue_monthly.sql`](../analytics/queries/revenue_monthly.sql) |
 | Household retention | Share of an install-week cohort still adding or ticking in week 1-12 and month 1-11 | [`retention_weekly.sql`](../analytics/queries/retention_weekly.sql), [`retention_monthly.sql`](../analytics/queries/retention_monthly.sql) |
 | Manual reorders | Category (route order, store layout) and store reorders per household | [`reorders.sql`](../analytics/queries/reorders.sql) |
-| Locked integrations (job 50) | How many households did Siri, MCP or the API (job 73) refuse per week (Alexa until job 72) (each integration too), and how many of them bought Hummlist Premium within 14 days? | [`integration_blocked_weekly.sql`](../analytics/queries/integration_blocked_weekly.sql) |
+| Locked integrations (job 50) | How many households did Siri, MCP or the API (job 73) refuse per week (Alexa until job 72) (each integration too), and how many of them bought Snacklist Premium within 14 days? | [`integration_blocked_weekly.sql`](../analytics/queries/integration_blocked_weekly.sql) |
 | Internal filter | Installs and households excluded from every query above | [`internal.sql`](../analytics/queries/internal.sql) |
 | Privacy scan (AC4) | No item names, list text, e-mails, IPs or GeoIP in the project | [`privacy_scan.sql`](../analytics/queries/privacy_scan.sql) |
 
@@ -102,12 +102,13 @@ Our guarantees sit on top of it (DECISIONS Job 44):
   an id stored with a yes keeps working.
 - **A build without a key** (CI, fg, local debug) never shows the screen: nothing could be sent.
 - Peter approved the wording (DE and EN, the legal review's version) on 2026-10-30; job 33b
-  removed the "ENTWURF" mark from the screen and from More. The current text, version
-  2026-11-01, is Legal's 12:55 text with the buttons „Erlauben“ / „Nicht erlauben“ ("Allow" /
-  "Don't allow"), equal weight, none pre-selected (approved by Peter 2026-11-01).
+  removed the "ENTWURF" mark from the screen and from More. Version 2026-11-01 is Legal's
+  12:55 text with the buttons „Erlauben“ / „Nicht erlauben“ ("Allow" / "Don't allow"), equal
+  weight, none pre-selected (approved by Peter 2026-11-01). The current text, version
+  2026-11-10, is the same text with Snacklist for Hummlist (job 174).
 - **Consent text version** (Legal Review 2026-11-01, addendum 12:35; EDPB Guidelines 05/2020
   Rn. 108, 110): every decision is stored with the version of the text it was given under,
-  `consentTextVersion` in `app/lib/analytics/consent_version.dart` (now `2026-11-01`). On the
+  `consentTextVersion` in `app/lib/analytics/consent_version.dart` (now `2026-11-10`). On the
   device it is `analytics.consent_text_version` next to `analytics.consent`; on the server
   `analytics_consents.consent_text_version` (`record_analytics_consent(p_install, p_consent,
   p_internal, p_answered, p_text_version)`). Each version's exact DE and EN text is kept in
@@ -119,7 +120,9 @@ Our guarantees sit on top of it (DECISIONS Job 44):
   nothing (no events, no errors, no `/flags`) and shows the consent screen again; only a new yes
   starts the SDK, with a new install id. A no stays a no whatever its version. The server does
   the same for its events (`analyticsSubject` in `supabase/functions/alexa/store.ts`): only a
-  newest answer that is a yes to the current version counts, so a yes an older build recorded
+  newest answer that is a yes to a current version counts (`CURRENT_CONSENT_TEXT_VERSIONS` in
+  `supabase/functions/_shared/consent_version.ts`: 2026-11-10, and 2026-11-01, which Hummlist
+  builds show until Snacklist replaces them), so a yes an older build recorded
   (the four-argument `record_analytics_consent`, kept for those builds, stores no version) sends
   nothing. Changing the text means a new version: a new file in `docs/consent/`, the new date in
   both constants, and everyone is asked again.
@@ -160,13 +163,13 @@ property and `$lib: hummlist-app`; no query reads them.
 | `feedback_submitted` | the server stored a feedback note (job 21, docs/FEEDBACK.md); once per note, also after a Retry whose first answer was lost | `category` (`bug`, `idea`, `other`, `none`), `entry_point` (`settings`; More is the only entry), `screen` (a name from `screenNames` in `router.dart`, e.g. `list`; `stores` for the List tab's Anpassen pages, never a store's id, job 78), `contact_ok` (true, false). Never the note's text |
 | `item_categorized` | the server confirmed an add from the app (job 32a); once per added item, also after a retry whose first answer was lost; not for a restored deletion | `via`: how the server chose the category (`items.categorized_via`): `household` (a correction of this household, also for the item's spelling variants and synonyms), `exact` (the dictionary, also after folding spelling: Karrotten), `synonym` (Paradeiser), `fuzzy` (a typo: Schokolde), `fallback` (Sonstiges), `picked` (the add brought another category than the guess). Never the name or the canonical key |
 | `dedupe_hint_shown`, `dedupe_hint_merged`, `dedupe_hint_ignored` | job 32b's duplicate hint ("Möhren steht schon auf der Liste"): `shown` when the snackbar shows, then once either `merged` (Zusammenführen) or `ignored` (any other close); the merge's undo sends nothing. Listed by 32a, sent by `ListCubit` since 32b | `actor_role`, `household_size`. Never the item names |
-| `purchase_completed`, `purchase_refunded` | server only, after store verification (see Purchases) | `product_id` (`com.hummlist.app.yearly`, `com.hummlist.app.lifetime`), `premium_source` (`yearly`, `lifetime`; job 49, absent on earlier events, which are all Lifetime), `price`, `currency`, `app_store` (`apple`, `google`), `country`, `net_amount` when known, `transaction_ref` |
+| `purchase_completed`, `purchase_refunded` | server only, after store verification (see Purchases) | `product_id` (`com.snacklist.app.yearly`, `com.snacklist.app.lifetime`; from Hummlist builds `com.hummlist.app.yearly`, `com.hummlist.app.lifetime`), `premium_source` (`yearly`, `lifetime`; job 49, absent on earlier events, which are all Lifetime), `price`, `currency`, `app_store` (`apple`, `google`), `country`, `net_amount` when known, `transaction_ref` |
 | `purchase_restored` | server only | `product_id`, `app_store` |
 | `siri_add` | server only (job 51): a Siri add reached the `voice` function, signed in with the app's Siri credential or a Shortcut's PAT; once per request, after authentication, for a user whose newest consent answer is yes (the Alexa lookup) | `result` (`success`, `fail`), `reason` (`added`, `nothing_added`, `no_text`, `too_long`, `nothing_understood`, `server`, `premium_required` (job 50: the household is locked); `no_household` is allowed but not sent yet), `language` (`en`, `de`), `source` (`native`: the Siri credential, `shortcut`: a PAT), `count` (items understood, 0 to 30). Never a name or the text |
-| `siri_read` | server only (job 51): "What's on my Hummlist?" (`mode: read`) through the `voice` function, same rules as `siri_add` | `result`, `reason` (`read`, `server`, `premium_required` (job 50); `no_household` allowed, not sent yet), `language`, `source`, `count` (open items). Never a name |
-| `integration_blocked` | server only (job 50): a household without Hummlist Premium used Siri, MCP or the API (job 73) while the server's `integration_lock` switch is on and was refused; at most once an hour per household and integration (`integration_blocks`), for a caller whose newest consent answer is yes (the Alexa lookup). Off while the switch is off | `integration` (`siri`, `mcp`, `api`; Alexa stays free since job 72, so `alexa` is refused) and the household id. Never what was said, a tool name or its arguments |
+| `siri_read` | server only (job 51): "What's on my Snacklist?" (`mode: read`) through the `voice` function, same rules as `siri_add` | `result`, `reason` (`read`, `server`, `premium_required` (job 50); `no_household` allowed, not sent yet), `language`, `source`, `count` (open items). Never a name |
+| `integration_blocked` | server only (job 50): a household without Snacklist Premium used Siri, MCP or the API (job 73) while the server's `integration_lock` switch is on and was refused; at most once an hour per household and integration (`integration_blocks`), for a caller whose newest consent answer is yes (the Alexa lookup). Off while the switch is off | `integration` (`siri`, `mcp`, `api`; Alexa stays free since job 72, so `alexa` is refused) and the household id. Never what was said, a tool name or its arguments |
 | `paywall_viewed` | job 50: the Premium page showed a plan with its store price to a household that can buy it; once per visit. Never with the switch `premium_offer` or `REVENUECAT_PURCHASES` off (the page offers nothing then) | `entry_point` (`more`: More's row, `integrations`: the integration settings' Buy) |
-| `review_prompt_requested` | job 155: the app asked the store for its rating prompt (`ReviewPrompt.requestIfDue`) after a completed trip in a public store build, every gate passed (`app/lib/review/review_gates.dart`) and the store had a prompt; at most twice per version, three times a year. The store decides whether it shows and never says, so this counts requests, not prompts shown. iPhone release builds count as store builds, so TestFlight installs send it too, although Apple shows nothing there (their counters also start the 120-day cooldown, which carries over when a tester installs the App Store build); filter internal installs before reading it. More's "Hummlist bewerten" opens the store listing and sends nothing | none |
+| `review_prompt_requested` | job 155: the app asked the store for its rating prompt (`ReviewPrompt.requestIfDue`) after a completed trip in a public store build, every gate passed (`app/lib/review/review_gates.dart`) and the store had a prompt; at most twice per version, three times a year. The store decides whether it shows and never says, so this counts requests, not prompts shown. iPhone release builds count as store builds, so TestFlight installs send it too, although Apple shows nothing there (their counters also start the 120-day cooldown, which carries over when a tester installs the App Store build); filter internal installs before reading it. More's "Snacklist bewerten" opens the store listing and sends nothing | none |
 | `hint_shown` | job 168b: a List tab hint showed, once per session that shows it (at most one per session; a hint shows at most three sessions) | `hint_id`: the catalogue id (`HintId` in `app/lib/tips/hints.dart`: `edit-long-press`, `quick-add-amounts`, `dictation`, `siri`, `store-order`, `add-store`, `invite-partner`, `second-household`, `own-household`, `ai-assistant`, `home-widget`). Never its text |
 | `hint_dismissed` | job 168b: the X on a hint (it never shows again) | `hint_id` |
 | `hint_acted` | job 168b: a hint's button (Einladen, Zugriffe verwalten, Haushalt erstellen) on the List tab; not on More → Tipps | `hint_id` |
@@ -348,7 +351,7 @@ Runtime toggles are PostHog feature flags, read in one place: `Analytics.flags.i
   ships without a flag.
 - **Forcing a flag locally.** `--dart-define=FLAGS_ON=public-api` (comma-separated keys,
   `Environment.flagsOn`) turns flags on whatever PostHog serves, only in a build whose
-  `POSTHOG_HOST` is not PostHog EU (local, fg, e2e and verify-hummlist builds); store and
+  `POSTHOG_HOST` is not PostHog EU (local, fg, e2e and verify-snacklist builds); store and
   Vercel builds ignore it (`startAnalytics`, `Flags.forced`).
 - **Reading a flag sends nothing** (`sendFeatureFlagEvent` off, no `$feature_flag_called`).
   Flags are read with `getAllFeatureFlags()` after the SDK starts and whenever it reports new
@@ -403,7 +406,7 @@ Definitions:
   the free plan keeps a year of data (Peter's override, 2026-10-25); month 12 and beyond need the
   paid retention Peter plans to buy before year end.
 - **Paying household** (jobs 43 and 49): a household with a `purchase_completed` of either
-  Premium product (`com.hummlist.app.yearly`, `com.hummlist.app.lifetime`, one entitlement) the
+  Premium product (`com.snacklist.app.yearly`, `com.snacklist.app.lifetime`, and Hummlist's `com.hummlist.app.yearly`, `com.hummlist.app.lifetime`; one entitlement) the
   store has not refunded since (same `transaction_ref`; a refund at any time takes it back, also
   for the weeks before it). A refund takes back only its own purchase: the household's other
   purchases still count. Premium unlocks the whole household (model A), so several purchases in
@@ -432,8 +435,8 @@ Definitions:
 
 ## Purchases (AC8)
 
-Hummlist Lifetime is sold since job 25 (sandbox until Peter's store setup, docs/PURCHASES.md);
-since job 43 RevenueCat verifies it and calls our `purchases` function. Since job 49 Hummlist
+Snacklist Lifetime is sold since job 25 (sandbox until Peter's store setup, docs/PURCHASES.md);
+since job 43 RevenueCat verifies it and calls our `purchases` function. Since job 49 Snacklist
 Premium Yearly is sold next to it under the same entitlement; `premium_source` on the purchase
 events says which product granted it. Revenue reaches PostHog only from
 that function, after RevenueCat confirmed the purchase:

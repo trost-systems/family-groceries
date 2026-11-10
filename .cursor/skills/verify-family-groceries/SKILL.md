@@ -5,7 +5,7 @@ description: "Drive the real Family Groceries Flutter app (debug build with the 
 
 # Verify Family Groceries
 
-The current feature map is `.cursor/skills/verify-hummlist/features/`.
+The current feature map is `.cursor/skills/verify-snacklist/features/`.
 
 Prove behavior on the real app, not on a proxy. `fg` is this skill's CLI. It starts an isolated instance (Supabase stack, app clients, Marionette), drives the app like a user, and saves evidence. Every command prints one JSON object. A failure carries `error.code`, `error.message` and `error.hint`, and the hint names the command to run instead.
 
@@ -36,7 +36,7 @@ scripts/fg up --clients peter,lea           # stack + seed + build + both apps +
 scripts/fg login peter && scripts/fg login lea
 ```
 
-`fg up` exits 0 only when the instance is usable: Supabase answers, the migrations are applied, `peter@fg.test` and `lea@fg.test` (password `test-password-123`) can sign in and share the household "Familie Test", and Marionette answers in every client. From an empty machine it runs `supabase start` from a generated workdir (`~/.cache/fg/<prefix>/stack`, ports `<prefix>xx`, project `family-groceries-<prefix>`). The tracked `supabase/config.toml` stays untouched. It seeds through the app's own RPCs and builds the debug app (about 30 s warm). Its JSON names the URLs, users, VM service URIs and the evidence directory. Reruns reuse what runs and is current. A changed `app/` rebuilds and relaunches. `--fresh` resets the database; it doesn't restart the stack. The functions' local secrets come from `supabase/functions/.env`, which `fg up` doesn't write: run `scripts/iap-local-env.sh` (Hummlist Premium's local RevenueCat stand-in secrets, `features/purchases.md`) and `scripts/alexa-test-ca.sh` (`features/alexa.md`) first, and after a change to that file run `fg down`, then `fg up`, so the stack loads it.
+`fg up` exits 0 only when the instance is usable: Supabase answers, the migrations are applied, `peter@fg.test` and `lea@fg.test` (password `test-password-123`) can sign in and share the household "Familie Test", and Marionette answers in every client. From an empty machine it runs `supabase start` from a generated workdir (`~/.cache/fg/<prefix>/stack`, ports `<prefix>xx`, project `family-groceries-<prefix>`). The tracked `supabase/config.toml` stays untouched. It seeds through the app's own RPCs and builds the debug app (about 30 s warm). Its JSON names the URLs, users, VM service URIs and the evidence directory. Reruns reuse what runs and is current. A changed `app/` rebuilds and relaunches. `--fresh` resets the database; it doesn't restart the stack. The functions' local secrets come from `supabase/functions/.env`, which `fg up` doesn't write: run `scripts/iap-local-env.sh` (Snacklist Premium's local RevenueCat stand-in secrets, `features/purchases.md`) and `scripts/alexa-test-ca.sh` (`features/alexa.md`) first, and after a change to that file run `fg down`, then `fg up`, so the stack loads it.
 
 ### Hosts without the Linux toolchain
 
@@ -53,7 +53,7 @@ scripts/fg up --clients peter,lea
 
 Old images pile up: `docker images fg-linux-build` lists them (about 1.5 GB each, most of it layers the tags share). A tag other than the current Dockerfile hash (such as the early `fg-linux-build:1`) is unused, so `docker image rm fg-linux-build:<old tag>` frees its own layers. Leave the current tag: other checkouts on the host build with it.
 
-To drive a checkout's own running stack (its job port block in `supabase/config.toml`, as `verify-hummlist` and the e2e gate use) instead of a generated one, set what `fg_on_repo_stack` in `scripts/lib.sh` sets: `FG_PORT_PREFIX=<block> FG_PROJECT_ID=<its project_id> FG_STACK_WORKDIR=<the checkout's root> FG_STATE_DIR=<a directory of your own>`. `fg up` then reseeds that stack with `supabase db reset` when peter@fg.test and lea@fg.test aren't already in one household there (always with `--fresh`), so a seeded verify-hummlist run on it is gone: tear that down first.
+To drive a checkout's own running stack (its job port block in `supabase/config.toml`, as `verify-snacklist` and the e2e gate use) instead of a generated one, set what `fg_on_repo_stack` in `scripts/lib.sh` sets: `FG_PORT_PREFIX=<block> FG_PROJECT_ID=<its project_id> FG_STACK_WORKDIR=<the checkout's root> FG_STATE_DIR=<a directory of your own>`. `fg up` then reseeds that stack with `supabase db reset` when peter@fg.test and lea@fg.test aren't already in one household there (always with `--fresh`), so a seeded verify-snacklist run on it is gone: tear that down first.
 
 Clients start signed out (`fg up` clears their session storage). `fg restart` quits and reopens an app and keeps its stored data. Use it for launch behavior such as autofocus. The session survives it on every surface.
 

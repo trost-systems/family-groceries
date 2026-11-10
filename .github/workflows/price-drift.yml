@@ -1,5 +1,5 @@
 # Checks daily that the App Store and Google Play still charge what scripts/iap/product.ts
-# expectedPrices says for Hummlist Premium yearly and Lifetime (job 49): read-only API calls by
+# expectedPrices says for Snacklist Premium yearly and Lifetime (job 49): read-only API calls by
 # scripts/iap/price_drift.ts. A drift (or a store API error) fails the run and opens or updates an
 # issue. It needs the repository secrets ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8 (the .p8's text)
 # and GOOGLE_PLAY_SERVICE_ACCOUNT_JSON (NEEDS_LEAD "Job 49"); until they are set the run says

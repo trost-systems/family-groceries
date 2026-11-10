@@ -10896,3 +10896,52 @@ Two product gaps from vmaint-20261109.
    they can't join more. Tests: `supabase/tests/households_join_cap.test.sql` (10 refused, 9
    joins, on each path), `session_cubit_test.dart` and `join_approval_test.dart` (the existing
    message, DE and EN).
+
+## Job 174: the code rename Hummlist → Snacklist (S1), 2026-11-10
+
+Peter approved the clean-slate rename: name Snacklist, bundle ID and Android package
+`com.snacklist.app` (B2), new store records (S0). This is S1, the repo, in three PRs: (a)
+identifiers (#345), (b) copy (#346), (c) docs and skills. Branch `hummlist-maint` (8db0195f,
+main before the rename) keeps a Hummlist hotfix build possible.
+
+1. **Add, don't replace, while Hummlist runs.** Every list the live Hummlist app depends on keeps
+   its value and gains Snacklist's: AASA `appIDs` and an assetlinks statement per app (same two
+   fingerprints, Play signing reuses the key), associated domains and App Links hosts
+   (`app.snacklist.app` added, `app.hummlist.com` kept), the purchases function's product map
+   (both id sets, each recorded under its own id), analytics' yearly ids, the Apple bundle ids for
+   token revocation (Hummlist's first until Snacklist builds exist) and in
+   `configure-social-auth.mjs`, the voice parser's spoken names. Removing the Hummlist values is
+   the S5 cleanup.
+2. **The app and site links move to snacklist.app once it serves; MCP and mail stay.** At 00:25
+   CET no snacklist.app host had DNS records. At 00:35 `snacklist.app` (Vercel project
+   `hummlist-site`) and `app.snacklist.app` (project `family-groceries`) went live with SSL, so
+   (b) points `APP_URL`, the guides, legal, help and icons base and the site's `siteUrl` at them.
+   hummlist.com and app.hummlist.com keep serving the same projects, and the associated domains,
+   App Links, AASA and assetlinks keep both hosts, so Hummlist builds and old links keep working.
+   `mcp.snacklist.app` doesn't exist, so the MCP URL stays `https://mcp.hummlist.com`. The mail
+   addresses stay @hummlist.com until the S3 mail switch, and the hosted Site URL stays
+   `https://app.hummlist.com`.
+3. **The consent text gets a version for the name.** The analytics consent text names the app;
+   swapping the name (G1: name only) is still a new text, so `2026-11-10` holds it word for word.
+   The server counts a yes under either text (`CURRENT_CONSENT_TEXT_VERSIONS`) while Hummlist
+   builds show 2026-11-01; the Snacklist app asks again (new installs; web users once a release
+   moves app.hummlist.com). The waitlist consent texts stay: their versions are what people
+   agreed to, and the waitlist function checks them; they change with the S3 mail switch.
+4. **Siri's alternative names skip the app name.** The brief listed „Snacklist“ among the three
+   alternatives; the Siri checks refuse an alternative equal to the spoken name (it uses a slot
+   and matches nothing new). Taken: de „Snack List“, „Snäcklist“, „Snecklist“; en „Snack List“,
+   „Snack-list“, „Snack Lists“. Peter checks them on the first TestFlight build (NEEDS_PETER).
+5. **What stays Hummlist on purpose.** The Alexa skill's name, invocation, speech, guides and the
+   support FAQ's Alexa answer (S4); the `hummlist-widget` scheme is not handled, since only the
+   Hummlist build's own widget sends it, and registering it in Snacklist too would let either app
+   take the other's taps; wire names the server or stored state rely on (`x-hummlist-client`, the
+   `hummlist/siri` channel, `hummlist_widget`, `hummlist_report`, telemetry `$lib:
+   hummlist-edge`); Vercel project names; the Dart package `family_groceries`; applied
+   migrations; history (`docs/done/`, older DECISIONS, NEEDS_PETER/NEEDS_LEAD job sections,
+   research and screenshots).
+6. **Server copy moves now.** The voice and MCP functions speak Snacklist and the MCP server is
+   named `snacklist` from (b) on, because they deploy from main and serve both apps; a Hummlist
+   tester's Siri then says the new name, which costs nothing.
+7. **Skills renamed, no alias.** `verify-hummlist` → `verify-snacklist`, `hummlist-ui-craft` →
+   `snacklist-ui-craft`, `hummlist-howto-clips` → `snacklist-howto-clips`, every reference in the
+   repo updated. Nothing outside the repo (ops prompts, briefs) named them except old evidence.

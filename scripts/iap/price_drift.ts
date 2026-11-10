@@ -1,5 +1,5 @@
 // Checks that the App Store and Google Play still charge what product.ts expectedPrices says, for
-// Hummlist Premium yearly and Lifetime in every listed storefront (job 49). Read-only: it only
+// Snacklist Premium yearly and Lifetime in every listed storefront (job 49). Read-only: it only
 // GETs. Fails (exit 1) on a price that drifted, a storefront that stopped selling a plan, or
 // Lifetime on sale where it must not be; prints the yearly prices of storefronts whose amount is
 // not recorded yet, and the storefronts sold in but not listed.

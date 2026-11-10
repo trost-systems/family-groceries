@@ -8,7 +8,7 @@ The four silent, captioned loops on the landing pages `/de` and `/en`: `add-tick
 Every picture of the app is the real Hummlist app: the Linux build, driven with real input
 against a local Supabase stack seeded with fictional test households. Nothing in the app is drawn.
 What is drawn (captions, name tags, touch dots, the phone body and the generic AI chat) follows
-the hummlist-ui-craft skill (`.claude/skills/hummlist-ui-craft/`).
+the snacklist-ui-craft skill (`.claude/skills/snacklist-ui-craft/`).
 
 ## Make them again
 

@@ -26,7 +26,7 @@ const PORT = 57610;
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, '..');
 const repo = resolve(site, '..');
-const film = join(repo, '.claude/skills/hummlist-ui-craft/film.mjs');
+const film = join(repo, '.claude/skills/snacklist-ui-craft/film.mjs');
 const media = join(site, 'public/media');
 const shots = '/tmp/s53/scenes';
 

@@ -123,9 +123,9 @@ ambiguous names) come back as tool errors (`isError: true`) with a German
 message that lists the valid options.
 
 **Integration lock (job 50, off).** With the server switch `integration_lock` on, a household
-without Hummlist Premium can still discover the server, run OAuth, `initialize` and `tools/list`,
+without Snacklist Premium can still discover the server, run OAuth, `initialize` and `tools/list`,
 but every `tools/call` answers HTTP 200 with a tool result `{isError: true}` and "Dieser Haushalt
-braucht Hummlist Premium für den Zugang über KI-Assistenten. Schalte es in der Hummlist-App frei.
+braucht Snacklist Premium für den Zugang über KI-Assistenten. Schalte es in der Snacklist-App frei.
 Es wurde nichts gelesen oder geändert." (English for a client whose `Accept-Language` prefers it;
 placeholder copy, `tools.ts` `premiumRequired`). Never 401 or 403: the client keeps its token or
 PAT, and once the household has Premium the same connection works without signing in again. The
@@ -229,9 +229,9 @@ Zugriffstoken → Token erstellen**, route `/more/access`):
 
 ```toml
 # ~/.codex/config.toml
-[mcp_servers.hummlist]
+[mcp_servers.snacklist]
 url = "https://mcp.hummlist.com"
-bearer_token_env_var = "HUMMLIST_TOKEN"   # export HUMMLIST_TOKEN=fgp_…
+bearer_token_env_var = "SNACKLIST_TOKEN"   # export SNACKLIST_TOKEN=fgp_…
 ```
 
 The token stays in the environment, not in the file. Revoke it under
@@ -240,12 +240,12 @@ The token stays in the environment, not in the file. Revoke it under
 With OAuth instead, leave out `bearer_token_env_var` and sign in once:
 
 ```toml
-[mcp_servers.hummlist]
+[mcp_servers.snacklist]
 url = "https://mcp.hummlist.com"
 ```
 
 ```bash
-codex mcp login hummlist   # registers itself, opens the consent page; tap Erlauben
+codex mcp login snacklist   # registers itself, opens the consent page; tap Erlauben
 codex mcp list             # Auth: "OAuth" (or "Bearer token" with the token)
 ```
 
@@ -299,7 +299,7 @@ client                         mcp function                Supabase Auth        
 ```
 
 The tools' list operations live in `supabase/functions/_shared/list.ts`, which the
-Hummlist API (`docs/API.md`) runs too, so both answer alike.
+Snacklist API (`docs/API.md`) runs too, so both answer alike.
 
 The function (`supabase/functions/mcp/handler.ts`):
 

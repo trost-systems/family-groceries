@@ -1,4 +1,4 @@
-// A household's free Hummlist Premium from RevenueCat promotional grants (docs/PURCHASES.md,
+// A household's free Snacklist Premium from RevenueCat promotional grants (docs/PURCHASES.md,
 // "Free premium: RevenueCat promotional grants", and "Testers"). The grant lives in RevenueCat (its
 // dashboard, Customer → Entitlements → Grant, or `grant` below); the purchases function stores it on
 // RevenueCat's webhook. `status` reads RevenueCat's state; `reconcile --apply` asks the function to

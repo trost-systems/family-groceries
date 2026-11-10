@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Job 25: Hummlist Lifetime against StoreKit's local test store (app/ios/RunnerTests/RunnerTests.swift,
+# Job 25: Snacklist Lifetime against StoreKit's local test store (app/ios/RunnerTests/RunnerTests.swift,
 # LifetimeStoreKitTests, with app/ios/Snacklist.storekit): product, purchase, restore, refund, Ask to
 # Buy. Needs a Mac with Xcode and an iPhone simulator of the given iOS version (default 26.2, the
 # one the ios gate uses): from iOS 26.4 on, storekitd refuses the local test store to an ad-hoc

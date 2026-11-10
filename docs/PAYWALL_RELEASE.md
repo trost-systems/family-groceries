@@ -1,6 +1,6 @@
 # Paywall release: the go-live checklist
 
-This is the ordered list of switches that put Hummlist Premium on sale and,
+This is the ordered list of switches that put Snacklist Premium on sale and,
 after that, lock Siri and AI assistants behind it. The Alexa skill stays free
 (Peter Q39, Legal Review N-27, job 72): the lock never covers it. Every step names its
 owner. A step marked **Peter's yes** waits for Peter to say yes in his own
@@ -67,12 +67,17 @@ code.
 
 ## 2. Store products (Ops, Peter's yes)
 
-The products exist (Ops, 2026-10-31). This job created no product and
-changed no price. Check each item and fix only what Peter approves.
+Hummlist's products exist (Ops, 2026-10-31). Since job 174 the app sells
+Snacklist's: the App Store products below exist on the Snacklist app
+(`6832756448`); the Play products go on the Snacklist Play app
+(`com.snacklist.app`). Hummlist's (`com.hummlist.app.yearly`,
+`com.hummlist.app.lifetime`) stay until Hummlist retires. This job created no
+product and changed no price. Check each item and fix only what Peter
+approves.
 
-2.1 **Ops**: App Store Connect, subscription group "Hummlist Premium"
-(`22532621`). `com.hummlist.app.yearly` (Apple ID `6829293557`, 1 year) and
-the non-consumable `com.hummlist.app.lifetime` (`6829223747`) each have a
+2.1 **Ops**: App Store Connect, subscription group "Snacklist Premium"
+(`22562774`). `com.snacklist.app.yearly` (Apple ID `6832759834`, 1 year) and
+the non-consumable `com.snacklist.app.lifetime` (`6832759640`) each have a
 German and an English display name and description, a review screenshot and
 review notes, and the status "Ready to Submit". Family Sharing is off for
 both, and Apple never lets it be turned off again once on.
@@ -84,10 +89,10 @@ the German storefront's prices; StoreKit's own answer on the runner
 (the sandbox's US storefront) is in the artifact's `ready-yearly` (DECISIONS,
 job 86).
 
-2.2 **Ops**: Play Console. The subscription `com.hummlist.app.yearly` with
+2.2 **Ops**: Play Console. The subscription `com.snacklist.app.yearly` with
 base plan `yearly` (auto-renewing, 1 year, grace period 14 days, account
 hold 46 days, **no free trial or introductory offer**). The one-time product
-`com.hummlist.app.lifetime` is active. Since job 67 the app buys the base
+`com.snacklist.app.lifetime` is active. Since job 67 the app buys the base
 plan itself. An offer added later would not be charged without an app
 change, which keeps the shown price the charged price (Legal Review A2-5).
 
@@ -105,12 +110,15 @@ once on the box, fill in the printed BR, MX and IN yearly amounts in
 
 ## 3. RevenueCat and the server (Ops, Lead)
 
-3.1 **Ops**: RevenueCat project "Hummlist", in the dashboard:
+3.1 **Ops**: RevenueCat project `9cb4a72e`, in the dashboard. Snacklist has
+its own apps there (iOS `app762918886a`, Android `appcec7ffa3d1`); Hummlist's
+(`app508ff9066c`, `app44e3fb2d11`) stay until Hummlist retires.
 
-- Entitlement `premium` (`entl654efcfce4`) with all four products: App Store
-  yearly and Lifetime, Play `com.hummlist.app.yearly:yearly` and
-  `com.hummlist.app.lifetime`. The Play Lifetime product is marked
-  **non-consumable**.
+- Entitlement `premium` (`entl654efcfce4`) holds Hummlist's four products.
+  Attach Snacklist's four next to them: App Store yearly and Lifetime, Play
+  `com.snacklist.app.yearly:yearly` and `com.snacklist.app.lifetime`. Nobody
+  has confirmed them in RevenueCat yet (job 174). The Play Lifetime products
+  are marked **non-consumable**.
 - Offering `default` with `$rc_annual` and `$rc_lifetime`. The app loads
   products by id, so the offering is only for the dashboard.
 - Restore behavior **Keep with original App User ID**, production and
@@ -160,7 +168,7 @@ Legal before 4.1.
 4.1 **Legal, Peter's yes**: PR #153 (rebased onto main by job 67). It puts
 section 5a (yearly plan and Lifetime) into the privacy policy, deletes the
 draft purchase pages, adds the FAQ entry "Wie kündige ich das Jahresabo?"
-and the terms page as `draft: true`. It goes live on hummlist.com when it
+and the terms page as `draft: true`. It goes live on snacklist.app when it
 merges, so it merges together with step 5.4, not earlier. Before merging,
 set the publication date (handoff R.1 (4)) and confirm the English §12 line
 job 67 composed while rebasing. The Lead merges it with
@@ -178,7 +186,7 @@ terms page can replace it there too (Legal decides).
 
 4.3 **Legal**: privacy section 9 names `paywall_viewed` and
 `integration_blocked` (and the Siri events), and section 7 says that Siri
-and AI assistants need Hummlist Premium (not Alexa, which stays free). This is needed before 6.4,
+and AI assistants need Snacklist Premium (not Alexa, which stays free). This is needed before 6.4,
 not before the sale.
 
 4.4 **Ops, after Legal**: the App Store privacy label and the Play Data
@@ -191,7 +199,7 @@ id).
 secrets `REVENUECAT_APPLE_API_KEY` (`appl_…`) and `REVENUECAT_GOOGLE_API_KEY`
 (`goog_…`), both from `~/groceries-ops/env`, and the variable
 `REVENUECAT_PURCHASES=true`. Nothing is sold yet: while `premium_offer` is
-off every build says "Hummlist Premium ist bald verfügbar.". Check: the
+off every build says "Snacklist Premium ist bald verfügbar.". Check: the
 next Release run's `fastlane ios beta` and `fastlane android build` log
 lines show `--dart-define=REVENUECAT_PURCHASES=true`. The key values are
 masked.
@@ -207,20 +215,20 @@ on Android.
 sandbox Apple ID, Play internal with a license tester). Peter and Lea's
 household, or a fresh test household without a promotional grant:
 
-- Mehr → Hummlist Premium shows both cards, yearly first, with the store's
+- Mehr → Snacklist Premium shows both cards, yearly first, with the store's
   price and "inkl. MwSt.".
-- Buy yearly. The page says "Wird freigeschaltet …", then „Hummlist Premium
+- Buy yearly. The page says "Wird freigeschaltet …", then „Snacklist Premium
   aktiv (jährlich, verlängert sich am …)“. The partner's phone shows the same
   within seconds without a reload.
 - Restore on the partner's phone: nothing to buy, nothing to restore.
 - Buy Lifetime while yearly runs. The warning appears first, then
-  „Hummlist Premium Lifetime“ with the note that the plan keeps billing.
+  „Snacklist Premium Lifetime“ with the note that the plan keeps billing.
 - „Abo verwalten oder kündigen“ opens Apple's or Google's subscription page.
   Cancel there. The status says „läuft am … aus“. The sandbox year lasts one
   hour on Apple and 30 minutes for Play license testers. After the end the
   household is back to both cards (a household without Lifetime).
 - A household with a promotional grant (`scripts/iap/promotional.ts grant`)
-  shows „Hummlist Premium geschenkt“ and no Buy.
+  shows „Snacklist Premium geschenkt“ and no Buy.
 - The webhook rows: `select event_type, count(*) from public.revenuecat_events group by 1;`
   in the SQL editor.
 
@@ -246,16 +254,16 @@ Apple.
 5.6 **Lead**: the changelog. A PR sets `"released": true` for
 `premium-launch` in `releases/flags.json`, as part of the release whose
 store build first sells. The next `changelog.mjs draft` then takes the held
-Premium items: job 49's ("Hummlist Premium gibt es jetzt jährlich oder als
+Premium items: job 49's ("Snacklist Premium gibt es jetzt jährlich oder als
 Lifetime …") and job 67's. Whoever owns the release checks the "What's new"
 texts against the 500-character limit (`node scripts/release/changelog.mjs drafts`).
 
 5.7 **Launch, Peter's yes**: the placeholder copy. Every `premium*` key
 marked PLACEHOLDER in `app/l10n/app_de.arb` and `app_en.arb`, and the rename
-„Hummlist Lifetime“ → „Hummlist Premium“ in the older strings (S-11, about
-45 lines; for example `joinTargetUnlocked` "Dieser Haushalt hat Hummlist
+„Snacklist Lifetime“ → „Snacklist Premium“ in the older strings (S-11, about
+45 lines; for example `joinTargetUnlocked` "Dieser Haushalt hat Snacklist
 Lifetime" also shows for yearly and granted households). The guides on
-hummlist.com that call the integrations free. Launch can do this before 5.4.
+snacklist.app that call the integrations free. Launch can do this before 5.4.
 A sale with the placeholder copy is possible but not recommended.
 
 ## 6. The integration lock (after the sale is live)
@@ -285,7 +293,7 @@ update public.app_switches set enabled = true, changed_at = now() where key = 'i
 ```
 
 From this moment Siri (Shortcut and native), Alexa (add, read, launch),
-MCP tool calls and the Hummlist API (job 73, `docs/API.md`) refuse
+MCP tool calls and the Snacklist API (job 73, `docs/API.md`) refuse
 households without Premium: Siri, Alexa and MCP with the Premium sentence,
 the API with `402 premium_required`. Nothing is deleted or disconnected.
 The API's keys keep working once the household unlocks; the API section
@@ -297,7 +305,7 @@ takes Alexa out of the lock; whatever it leaves in, the API stays in.
 and preview). The next store builds and the next web deploy then show the
 Premium card under Mehr › Zugänge. A PR sets `"released": true` for
 `integration-lock` in `releases/flags.json`. The held item "Sprachbefehle
-über Siri und der Zugang für KI-Assistenten gehören jetzt zu Hummlist
+über Siri und der Zugang für KI-Assistenten gehören jetzt zu Snacklist
 Premium." then reaches the next release.
 
 ## 7. After each step: what to watch
@@ -318,9 +326,9 @@ Premium." then reaches the next release.
 | A price drifted | The same statement, then fix the price (Ops, Peter's yes) | As above |
 | The integration lock refuses the wrong households | `update public.app_switches set enabled = false, changed_at = now() where key = 'integration_lock';` | At once: every integration open for every household, and the app hides the card in every build (it reads the switch) |
 | A build should not sell at all | Unset `REVENUECAT_PURCHASES` (and `INTEGRATION_LOCK`), and let the next Release run ship | The next builds show "bald verfügbar". Installed builds follow the server switch |
-| The privacy text must come back | Revert the #153 commit on main in a PR | hummlist.com redeploys from main |
+| The privacy text must come back | Revert the #153 commit on main in a PR | snacklist.app redeploys from main |
 | A webhook secret leaked | Rotate `REVENUECAT_WEBHOOK_AUTH` in RevenueCat and the function secrets together. Never rotate `REVENUECAT_TOMBSTONE_HMAC_KEY` | Deliveries between the two changes fail and are retried |
-| A single purchase is wrong | Refunds go through Apple or Google (the refund help, `PURCHASES.md` "Refunds when something is off"). RevenueCat's refund event locks that purchase | Hummlist never refunds itself |
+| A single purchase is wrong | Refunds go through Apple or Google (the refund help, `PURCHASES.md` "Refunds when something is off"). RevenueCat's refund event locks that purchase | Snacklist never refunds itself |
 
 Purchases cannot be taken back by a switch. Once something is sold, the
 buyer's household keeps it (model A), whatever is turned off later.

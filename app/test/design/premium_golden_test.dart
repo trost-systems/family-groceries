@@ -14,7 +14,7 @@ import 'fonts.dart';
 /// Tall enough for the whole offer, down to the refund link.
 const _phone = Size(390, 1100);
 
-/// The 358 px compact design (hummlist-ui-craft).
+/// The 358 px compact design (snacklist-ui-craft).
 const _compact = Size(358, 1100);
 
 void main() {

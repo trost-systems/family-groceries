@@ -89,7 +89,7 @@ function encode(video, lang, fmt, dir, p) {
 }
 
 /**
- * The review set (research §2.5, hummlist-ui-craft review.md): HyperFrames' review sheets, eight
+ * The review set (research §2.5, snacklist-ui-craft review.md): HyperFrames' review sheets, eight
  * frames across ±0.5 s of every beat, a contact sheet and the seam from the RENDERED file, and
  * ffprobe of every web file. Writes out/<name>/review/.
  */

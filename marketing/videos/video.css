@@ -216,7 +216,7 @@ body {
   font-size: calc(10 * var(--u));
 }
 
-/* The generic AI chat (hummlist-ui-craft "Generic AI chat"): Hummlist's own raised card, navy
+/* The generic AI chat (snacklist-ui-craft "Generic AI chat"): Hummlist's own raised card, navy
    contour and Inter; the user's side in cobalt, the tool result as a Hummlist card. No vendor
    layout, avatar, logo, name, model picker, sparkle or purple. */
 .chat {

@@ -52,7 +52,7 @@
     "de": "Jeder KI-Assistent mit MCP.",
     "en": "Any AI assistant with MCP.",
     "status": "draft",
-    "source": "New: caption of the mcp-chat video; generic on purpose (no assistant named, hummlist-ui-craft \"Generic AI chat\")."
+    "source": "New: caption of the mcp-chat video; generic on purpose (no assistant named, snacklist-ui-craft \"Generic AI chat\")."
   },
   "mcp-chat.add.request": {
     "de": "Noch Honig und Marmelade",

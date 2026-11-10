@@ -1,6 +1,6 @@
 # Home Screen widgets
 
-The iOS and Android apps put the household's list on the Home Screen: the open count, the next items with their quantity, and (medium size) the store's name in a hex pill and an Add button. A tap on the widget opens the list; Add opens the list with the add sheet ready for typing. Signed out or without a household the widget asks the user to open Hummlist. The widget reads only what the app last wrote (docs/HOME_WIDGETS.md): nothing native talks to the server, and nothing is ticked from the widget.
+The iOS and Android apps put the household's list on the Home Screen: the open count, the next items with their quantity, and (medium size) the store's name in a hex pill and an Add button. A tap on the widget opens the list; Add opens the list with the add sheet ready for typing. Signed out or without a household the widget asks the user to open Snacklist. The widget reads only what the app last wrote (docs/HOME_WIDGETS.md): nothing native talks to the server, and nothing is ticked from the widget.
 
 ## Sub-features
 
@@ -9,12 +9,12 @@ The iOS and Android apps put the household's list on the Home Screen: the open c
 - `widget-small` iOS systemSmall / Android 2x2: count, up to three rows without store pills (fewer when the height is short), „+N weitere“/"+N more"; the whole widget opens the list.
 - `widget-medium` iOS systemMedium / Android 4x2 (from 250 dp wide): count, up to five rows, a store pill on the first row of each store run (`ListRow.rows`, `widgetRows`), „Hinzufügen“/"Add", „+N weitere“/"+N more".
 - `widget-empty` an empty list: „Alles erledigt“ / "All done"; medium keeps the Add button.
-- `widget-prompts` „Melde dich in Hummlist an“ / "Sign in to Hummlist", „Richte deinen Haushalt in Hummlist ein“ / "Set up your household in Hummlist", and before the app ever wrote: „Öffne Hummlist, um deine Liste zu sehen“ / "Open Hummlist to see your list".
-- `widget-launch` `hummlist-widget://open/?homeWidget` opens the list, `hummlist-widget://add/?homeWidget` the list with the add sheet open (`widget_launch.dart`, App's `_onWidgetLaunch`, the List tab's `AddSheetRequest`). Signed out, the router sends both to sign-in; an Add request stays pending until the List tab is built.
+- `widget-prompts` „Melde dich in Snacklist an“ / "Sign in to Snacklist", „Richte deinen Haushalt in Snacklist ein“ / "Set up your household in Snacklist", and before the app ever wrote: „Öffne Snacklist, um deine Liste zu sehen“ / "Open Snacklist to see your list".
+- `widget-launch` `snacklist-widget://open/?homeWidget` opens the list, `snacklist-widget://add/?homeWidget` the list with the add sheet open (`widget_launch.dart`, App's `_onWidgetLaunch`, the List tab's `AddSheetRequest`). Signed out, the router sends both to sign-in; an Add request stays pending until the List tab is built.
 
 ## How to get to it (user POV)
 
-- iPhone: hold the Home Screen, Bearbeiten → Widget hinzufügen → Hummlist, small or medium. Android: hold the Home Screen → Widgets → Hummlist, drag it out; four columns wide shows the medium layout.
+- iPhone: hold the Home Screen, Bearbeiten → Widget hinzufügen → Snacklist, small or medium. Android: hold the Home Screen → Widgets → Snacklist, drag it out; four columns wide shows the medium layout.
 - Guide (draft until the `home-widgets` hold ends): `/de/anleitungen/widget`, `/en/guides/widget`.
 
 ## Driving it with fg
@@ -30,6 +30,6 @@ Preconditions:
 
 ## Gotchas
 
-- iOS release signing needs the App ID `com.hummlist.app.HomeWidget`, the App Group on both App IDs and a renewed match profile first (docs/NEEDS_PETER.md, job 63; docs/RELEASE.md).
+- iOS release signing needs the App ID `com.snacklist.app.HomeWidget`, the App Group on both App IDs and a renewed match profile first (docs/NEEDS_PETER.md, job 63; docs/RELEASE.md).
 - The widget follows the phone's light or dark setting, not the app's own theme choice.
 - A partner's change reaches the widget only after the app on this phone saw it (open, or still running with realtime). There is no background refresh in v1.

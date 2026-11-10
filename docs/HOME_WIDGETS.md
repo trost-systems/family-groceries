@@ -1,6 +1,6 @@
 # Home Screen widgets (job 63)
 
-Hummlist shows the shared list on the iPhone and Android Home Screen: how many
+Snacklist shows the shared list on the iPhone and Android Home Screen: how many
 items are open and the next few, with their store's name in a hex pill, and an
 Add button that opens the app's add sheet. The widgets only read what the app
 last wrote; they never reach the network and never change the list.
@@ -10,13 +10,13 @@ last wrote; they never reach the network and never change the list.
 | Piece | Where |
 | --- | --- |
 | Payload, sync, launch links | `app/lib/home_widget/` |
-| iOS WidgetKit extension `HomeWidget` (`com.hummlist.app.HomeWidget`) | `app/ios/HomeWidget/` |
-| Android Jetpack Glance widget | `app/android/app/src/main/kotlin/com/hummlist/app/widget/` |
+| iOS WidgetKit extension `HomeWidget` (`com.snacklist.app.HomeWidget`) | `app/ios/HomeWidget/` |
+| Android Jetpack Glance widget | `app/android/app/src/main/kotlin/com/snacklist/app/widget/` |
 | Colours (light and dark), generated from the tokens | `app/ios/HomeWidget/SnacklistColors.swift`, `app/android/app/src/main/res/values{,-night}/snacklist_tokens.xml` (`node design/tokens/build.mjs`) |
 
 The package is [`home_widget`](https://pub.dev/packages/home_widget) (Anton
 Borri). On iOS the app and the extension share the App Group
-`group.com.hummlist.app`; on Android the app and the widget share the plugin's
+`group.com.snacklist.app`; on Android the app and the widget share the plugin's
 `HomeWidgetPreferences`.
 
 ## The payload
@@ -46,14 +46,14 @@ The app writes one string under the key `hummlist_widget`: JSON, version 1.
   The widget shows a store's pill on the first of its rows.
 - `updatedAt`: when the app wrote it (UTC).
 - No key yet, an unreadable string or another `version`: the widget asks the
-  user to open Hummlist.
+  user to open Snacklist.
 
 ## Taps
 
 | Link | Opens |
 | --- | --- |
-| `hummlist-widget://open/?homeWidget` | the list (the whole widget; every prompt) |
-| `hummlist-widget://add/?homeWidget` | the list with the add sheet open (Add) |
+| `snacklist-widget://open/?homeWidget` | the list (the whole widget; every prompt) |
+| `snacklist-widget://add/?homeWidget` | the list with the add sheet open (Add) |
 
 iOS needs the `homeWidget` query item, or the plugin passes the URL on;
 Android sends the plugin's launch action with the URI as data.

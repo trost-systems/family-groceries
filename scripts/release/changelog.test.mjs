@@ -720,8 +720,8 @@ describe('internal commits stay out of the notes and the draft', () => {
 
   test('What to Test lists what users run, in their language, newest first', () => {
     const from = shas['Job 21: feedback button on the list (#60)'];
-    assert.equal(notes('de', from), ['Neu in diesem Build von Hummlist:', '- Baumarkt-Wörter landen richtig.', '- Häkchen sind grün.', '- Zitiert.', '- onboarding mail from  no longer shows', '- Ein Link zu einem Laden öffnet ihn wieder.'].join('\n'));
-    assert.equal(notes('en', from), ['New in this Hummlist build:', '- DIY words land right.', '- Ticks are green.', '- Quoted.', '- onboarding mail from  no longer shows', '- A store link opens that store again.'].join('\n'));
+    assert.equal(notes('de', from), ['Neu in diesem Build von Snacklist:', '- Baumarkt-Wörter landen richtig.', '- Häkchen sind grün.', '- Zitiert.', '- onboarding mail from  no longer shows', '- Ein Link zu einem Laden öffnet ihn wieder.'].join('\n'));
+    assert.equal(notes('en', from), ['New in this Snacklist build:', '- DIY words land right.', '- Ticks are green.', '- Quoted.', '- onboarding mail from  no longer shows', '- A store link opens that store again.'].join('\n'));
   });
 
   test('a range of internal commits only gives the nothing-new line', () => {

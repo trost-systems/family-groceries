@@ -24,16 +24,16 @@ before it deploys anything.
 
 The Vercel project `peter-trost/family-groceries` builds the Flutter web app
 (`vercel.json`, `scripts/vercel.sh`) from every push. Since job
-web-release-align (2026-10-29), `app.hummlist.com` moves only with a store
+web-release-align (2026-10-29), production moves only with a store
 upload, so the web app never runs ahead of TestFlight and Play. Since job 30
 (2026-10-30) every green merge goes to the internal testers by itself, and
 when that Release run's `Uploaded` job succeeds it also moves
-`app.hummlist.com` (public; [`RELEASE.md`](RELEASE.md)):
+production (public; [`RELEASE.md`](RELEASE.md)):
 
 | URL | Serves | Who can open it |
 | --- | --- | --- |
 | `https://preview.app.hummlist.com` | the newest build of `main` (a branch domain on `main`) | Vercel Authentication: members of the Vercel team only, or a share link |
-| `https://app.hummlist.com` (alias `family-groceries-pied.vercel.app`) | the newest build of the `release` branch, Vercel's production branch | everyone |
+| `https://app.snacklist.app` and `https://app.hummlist.com` (alias `family-groceries-pied.vercel.app`) | the newest build of the `release` branch, Vercel's production branch | everyone |
 | `https://family-groceries-git-<branch>-peter-trost.vercel.app` | each branch's newest build | Vercel Authentication |
 
 How production moves:
@@ -53,14 +53,14 @@ How production moves:
    `gh api repos/trost-systems/family-groceries/branches/release --jq .protected`
    (classic protection, must print `false`).
 3. Vercel builds `release` as a production deployment and assigns
-   `app.hummlist.com` to it (a few minutes). No Vercel token is stored in
+   both production domains to it (a few minutes). No Vercel token is stored in
    GitHub. The production branch is a project setting (Settings,
    Environments, Production, Branch Tracking; API
    `PATCH /v9/projects/{id}/branch`, read back as `link.productionBranch`),
    and auto-assignment of production domains must stay on.
 
 A dry run (`upload=false`) or a skipped run leaves `release`, and so
-`app.hummlist.com`, where it is. A failed `Web production` job fails the
+production, where it is. A failed `Web production` job fails the
 Release run (the automatic failure issue covers it; a dispatch's starter
 watches it).
 
@@ -72,7 +72,7 @@ git push origin <sha>:refs/heads/release
 
 Roll the web app back: Vercel dashboard, project
 `peter-trost/family-groceries`, Deployments, the earlier production
-deployment, **Instant Rollback**. Vercel then stops assigning new production builds to `app.hummlist.com` until
+deployment, **Instant Rollback**. Vercel then stops assigning new production builds to the production domains until
 someone selects **Undo Rollback** (or promotes a deployment), so do that once
 the fix has shipped. Pushing an older commit to `release` needs `--force`
 and rebuilds; Instant Rollback is faster.
@@ -80,15 +80,18 @@ and rebuilds; Instant Rollback is faster.
 Sign-in on the preview: Google and Apple go through the Supabase redirect
 flow ([`AUTH.md`](AUTH.md)), so the only setting is the hosted redirect
 allow list, which has `https://preview.app.hummlist.com/**`. The phone apps'
-invite links still point at `https://app.hummlist.com` (`APP_URL`).
+invite links point at `https://app.snacklist.app` (`APP_URL`, since job 174);
+Hummlist builds keep `https://app.hummlist.com`.
 
-## Guides site: hummlist.com from every push to main
+## Guides site: snacklist.app from every push to main
 
 The Vercel project `hummlist-site` (Root Directory `site`, `site/vercel.json`)
 builds the site from every push: the landing pages `/de` and `/en` (where `/`
 redirects by `Accept-Language`), the guides, the changelog and the legal pages. A push to `main` is its production
-deployment and goes live on `https://hummlist.com` without a manual step
-(`www.hummlist.com` and `hummlist-site.vercel.app` redirect there). Every other
+deployment and goes live on `https://snacklist.app` and `https://hummlist.com`
+without a manual step (`www.snacklist.app` redirects to the first,
+`www.hummlist.com` and `hummlist-site.vercel.app` to the second). Since job 174
+the pages name snacklist.app as canonical (`siteUrl` in `site/config.json`). Every other
 branch gets a preview deployment behind Vercel Authentication; the PR shows it
 as the commit status "Vercel – hummlist-site".
 

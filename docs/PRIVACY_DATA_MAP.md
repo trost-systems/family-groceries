@@ -118,7 +118,7 @@ uninstall removes it. Hint and checklist events go to PostHog only after the ana
 | Data | Where | Purpose | Basis | Kept | Processor / region | Deletion | Source |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Nightly `pg_dump` of `public` plus `auth.users`, `auth.identities`, age-encrypted | GitHub Actions artifacts | Restore after an error | (f) security (Art. 32) | 90 days (`retention-days: 90`); deleted rows stay in older backups up to 90 more days | GitHub Inc., USA (ciphertext only) | Expires automatically | `.github/workflows/backup.yml`, `docs/BACKUP.md` |
-| Web hosting request logs (IP, time, path, user agent) for app.hummlist.com and hummlist.com | Vercel | Serving the site, security | (f) | Max. 30 days (policy §2) | Vercel Inc., USA | Automatic | `vercel.json`, `site/vercel.json` |
+| Web hosting request logs (IP, time, path, user agent) for app.snacklist.app, snacklist.app, app.hummlist.com and hummlist.com | Vercel | Serving the site, security | (f) | Max. 30 days (policy §2) | Vercel Inc., USA | Automatic | `vercel.json`, `site/vercel.json` |
 | Database and API logs | Supabase | Operation | (f) | Max. 1 day on the free plan (policy §14) | Supabase EU | Automatic | `docs/DEPLOY.md` |
 
 ## In-app purchases (job 25)
@@ -150,7 +150,7 @@ merchant of record); Hummlist gets no payment data and no store account name or 
 | Recipient | Role | Region | Transfer basis (verified in job 33d, DECISIONS "Job 33d") |
 | --- | --- | --- | --- |
 | Supabase Pte. Ltd., Singapore (database, auth, functions) | Processor | eu-central-1 Frankfurt (`docs/SPEC.md`, `docs/BACKUP.md`); edge functions may run elsewhere | SCCs (2021, module 2) in the Supabase DPA; not DPF-listed |
-| Vercel Inc. (app.hummlist.com, hummlist.com, mcp.hummlist.com) | Processor | USA | EU-US Data Privacy Framework; SCCs in the DPA (Pro) |
+| Vercel Inc. (app.snacklist.app, snacklist.app, app.hummlist.com, hummlist.com, mcp.hummlist.com) | Processor | USA | EU-US Data Privacy Framework; SCCs in the DPA (Pro) |
 | PostHog Inc. (analytics, error tracking) | Processor | EU cloud, Frankfurt; US sub-processors possible (DPA 10.2) | DPF and SCCs (DPA 10.3, 10.4) |
 | GitHub (encrypted backups) | Processor | USA | DPF |
 | Google Cloud EMEA Limited, Dublin (Workspace, support mail) | Processor | EU/US | DPF; SCCs if Google stops relying on it |
@@ -171,7 +171,7 @@ merchant of record); Hummlist gets no payment data and no store account name or 
 ## Not collected
 
 No advertising, no sale of data, no location (PostHog GeoIP off), no contacts, no tracking or
-analytics without consent, no cookies or trackers on hummlist.com (`site/test/preview.test.mjs`).
+analytics without consent, no cookies or trackers on snacklist.app (`site/test/preview.test.mjs`).
 The web app's posthog-js sets no cookie and no localStorage key (job 44, memory persistence).
 
 ## Differences to the privacy policy (`site/content/legal/datenschutz.md`)

@@ -1,6 +1,6 @@
 # Family Groceries verification map
 
-The current feature map is `.cursor/skills/verify-hummlist/features/`.
+The current feature map is `.cursor/skills/verify-snacklist/features/`.
 
 This directory is the maintained source for verifying the user-facing behavior of Family Groceries. Read this index before driving the app, then use the matching feature file as the recipe. Each recipe drives the real app through `fg` (run it as `scripts/fg` from the repo root).
 
@@ -69,9 +69,9 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Home Screen widgets](./home-widgets.md) covers the iOS and Android widgets: what the app writes for them and when, the small and medium layouts, the prompts, and the taps that open the list or the add sheet (tests and CI builds only; no device here).
 - [Voice](./voice.md) covers the Siri endpoint (JSON and the spoken text format, duplicates, German errors, 30-item limit, personal access tokens) and the app's on-device microphone.
 - [Alexa skill](./alexa.md) covers adding and reading the list by voice through the Alexa skill "Hummlist": read-back, duplicates, the one re-prompt, account linking through the consent page, revocation under Zugänge or by disabling the skill, and refused unsigned or stale requests (locally through `scripts/alexa-say.sh`).
-- [Hummlist Premium](./purchases.md) covers Mehr → Hummlist Premium (not on sale yet): the yearly plan and Lifetime, gifted (promotional) Premium, the store price, buying and restoring through the app's fake store and the real verification, the household's unlock live on both clients, pending, cancel, error, not-available and offline states, a killed app, refunds, and the web's no-sale page.
+- [Snacklist Premium](./purchases.md) covers Mehr → Snacklist Premium (not on sale yet): the yearly plan and Lifetime, gifted (promotional) Premium, the store price, buying and restoring through the app's fake store and the real verification, the household's unlock live on both clients, pending, cancel, error, not-available and offline states, a killed app, refunds, and the web's no-sale page.
 - [Account](./account.md) covers Mehr → Konto: exporting your data as JSON and deleting your account, with the household kept for the other members or deleted with the last one.
 - [Hosted backend](./hosted-backend.md) covers the hosted project: the health check that reads Postgres, the smoke test after every deploy, the daily keepalive, nightly encrypted backups with their restore drill, and rolling edge functions back.
-- [Help page and legal links](./legal.md) covers the help and contact page on hummlist.com (published since 2026-10-30), the More entry that opens it, and the site's draft mechanism.
-- [Guides on hummlist.com](./guides.md) covers the public guides site: the German and English indexes, the Siri, Alexa and Claude guides (the widget guide is a draft), the language redirect on `/` and the links between translations.
+- [Help page and legal links](./legal.md) covers the help and contact page on snacklist.app (published since 2026-10-30), the More entry that opens it, and the site's draft mechanism.
+- [Guides on snacklist.app](./guides.md) covers the public guides site: the German and English indexes, the Siri, Alexa and Claude guides (the widget guide is a draft), the language redirect on `/` and the links between translations.
 - [Hosted web app](./web-hosting.md) covers the production web app on Vercel: deep links, cache headers, the Google and Apple sign-in pages, and the build Vercel runs.

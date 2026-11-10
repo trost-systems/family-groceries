@@ -1,8 +1,10 @@
-# Purchases: Hummlist Premium
+# Purchases: Snacklist Premium
 
-Hummlist sells **Hummlist Premium** for the whole household, in two ways (Peter, Spec #4,
-2026-10-31): **yearly**, an auto-renewing subscription `com.hummlist.app.yearly` (EUR 9.99 a
-year in Germany), and **Lifetime**, a one-time purchase `com.hummlist.app.lifetime` (EUR 29.99).
+Snacklist sells **Snacklist Premium** for the whole household, in two ways (Peter, Spec #4,
+2026-10-31): **yearly**, an auto-renewing subscription `com.snacklist.app.yearly` (EUR 9.99 a
+year in Germany), and **Lifetime**, a one-time purchase `com.snacklist.app.lifetime` (EUR 29.99).
+Hummlist builds sell the same two as `com.hummlist.app.yearly` and `com.hummlist.app.lifetime`
+until Hummlist retires (job 174); the server records both.
 Both grant one entitlement, `premium`, which unlocks the integrations (Siri, MCP/AI
 assistants; the Alexa skill stays free, job 72) once the integration lock is on ("Integration lock" below, job 50; off). Nothing is
 gated by it yet, and nothing is sold: the
@@ -33,7 +35,7 @@ id, never anonymous.
 
 ## How it works
 
-1. A member opens Mehr → Hummlist Premium (`/more/lifetime`). Opening, rebuilding, leaving and
+1. A member opens Mehr → Snacklist Premium (`/more/lifetime`). Opening, rebuilding, leaving and
    returning to the page make no RevenueCat call and no network contact to RevenueCat, and
    neither does app start (Legal Review H-67, § 25 Abs. 2 Nr. 2 TDDDG). Opening reads the server
    switch `premium_offer()` and, only when it is on and this build sells, the two prices **from
@@ -44,11 +46,11 @@ id, never anonymous.
 2. **What is offered** (`Entitlements.canOffer(Entitlement.premium, plan)`, the one decision
    point): with no premium both cards, **yearly first**; with an active yearly plan only Lifetime
    (the upgrade; never a second yearly plan, H-84); with Lifetime or a promotional grant nothing; while
-   the rows load or the phone is offline nothing ("Wir prüfen, ob euer Haushalt Hummlist Premium
+   the rows load or the phone is offline nothing ("Wir prüfen, ob euer Haushalt Snacklist Premium
    schon hat …"). A plan the store doesn't return (Lifetime in BR, MX, IN) is not offered there,
-   silently. No price read at all (offline, store unavailable, timeout): no Buy, "Hummlist Premium
+   silently. No price read at all (offline, store unavailable, timeout): no Buy, "Snacklist Premium
    ist gerade nicht verfügbar." The same, with no price query, when the switch can't be read
-   (offline; job 67). Switch off or `REVENUECAT_PURCHASES` off: "Hummlist Premium ist
+   (offline; job 67). Switch off or `REVENUECAT_PURCHASES` off: "Snacklist Premium ist
    bald verfügbar.", no Buy, no Restore, no price query.
 3. The yearly card shows the price per year and the disclosures (1 year, renews automatically
    unless cancelled at least 24 hours before the period ends, charged at confirmation and
@@ -58,7 +60,7 @@ id, never anonymous.
 4. **The tap starts the SDK.** Buy configures `purchases_flutter` with the household id as App
    User ID (`logIn(householdId)` instead when this app run configured it for another household),
    loads that plan's product by id (`getProducts`, `ProductCategory.subscription` for yearly,
-   `nonSubscription` for Lifetime; Play names the subscription `com.hummlist.app.yearly:yearly`)
+   `nonSubscription` for Lifetime; Play names the subscription `com.snacklist.app.yearly:yearly`)
    and opens the store's sheet. Restore configures (or logs in) the same way, then calls
    `restorePurchases()`. After a tap the SDK stays configured for the rest of that app run; the
    next app start configures nothing until the next tap. RevenueCat verifies the purchase with the
@@ -73,7 +75,7 @@ id, never anonymous.
    weiter abgerechnet, bis es gekündigt wird; …“ (the subscriber's variant: „Du kannst es unter
    [Abo verwalten] kündigen.“), with „Trotzdem kaufen“ · „Abbrechen“. The SDK starts only on
    „Trotzdem kaufen“. After the purchase the page keeps that text with the store link while the
-   plan renews. Hummlist never cancels or refunds the plan.
+   plan renews. Snacklist never cancels or refunds the plan.
 6. RevenueCat calls our webhook (`POST /functions/v1/purchases/revenuecat/webhook`, the
    `purchases` function): INITIAL_PURCHASE / NON_RENEWING_PURCHASE record the purchase for the
    household `app_user_id` names (`purchase_record`), the yearly plan with its end; RENEWAL and
@@ -81,9 +83,9 @@ id, never anonymous.
 7. Every member's app reads the household's `entitlements` rows (RLS: members only; who paid or
    granted is not readable, H-55) and hears inserts, updates and deletes over Realtime. Premium is
    active **at read time**: a Lifetime row (no end), a promotional row without end, else
-   a yearly or promotional row whose end lies ahead. The page's status line: „Hummlist Premium
-   aktiv (jährlich, verlängert sich am …)“, „… läuft am … aus“ (auto-renew off), „Hummlist Premium
-   Lifetime“, „Hummlist Premium geschenkt (bis …)“
+   a yearly or promotional row whose end lies ahead. The page's status line: „Snacklist Premium
+   aktiv (jährlich, verlängert sich am …)“, „… läuft am … aus“ (auto-renew off), „Snacklist Premium
+   Lifetime“, „Snacklist Premium geschenkt (bis …)“
    (promotional; placeholder copy for K.13). The server's check for the integrations is `household_has_premium()`
    (same rule).
 8. While the household has an active yearly plan the page shows „Abo verwalten oder kündigen“
@@ -92,7 +94,7 @@ id, never anonymous.
    nicht abbuchen. Premium läuft noch bis {date}. …“ (`my_yearly_plan()`, H-87).
 9. Before deleting the account, joining another household (leave, delete or archive the current
    one) or re-enabling an archived one, the subscriber of a renewing plan reads „Dein Jahresabo
-   für Hummlist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis
+   für Snacklist Premium läuft weiter und wird über dein Apple- bzw. Google-Konto abgerechnet, bis
    du es kündigst. Löschen oder Verlassen kündigt es nicht.“ with „Abo verwalten“ · „Trotzdem
    fortfahren“ (account deletion also for a plan they pay for another household); other members
    of a billed household the placeholder line „Ein Jahresabo für diesen Haushalt läuft weiter,
@@ -115,14 +117,14 @@ id, never anonymous.
 | Restore on a new phone or the partner's phone | Household already unlocked: shown at once, no Buy, no Restore (nothing to restore) |
 | The same purchase in another household (restore, re-buy, a RevenueCat `TRANSFER`) | Refused by RevenueCat (Keep with original App User ID) and by `purchase_record` (`used_elsewhere`): one household per purchase, for good. "Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort." and the refund help link |
 | Restore after its household was deleted | Refused (`used_elsewhere` with `household_gone`; after the 30-day purge `tombstoned`). Nothing unlocks anywhere else (H-56) |
-| A second purchase in an unlocked household (two phones, Ask to Buy, a race) | Its own row; refunding one keeps the other's unlock. Every member's page then shows "Euer Haushalt hat Hummlist Lifetime mehr als einmal gekauft. Einen der Käufe kannst du dir erstatten lassen." with the refund help |
+| A second purchase in an unlocked household (two phones, Ask to Buy, a race) | Its own row; refunding one keeps the other's unlock. Every member's page then shows "Euer Haushalt hat Snacklist Lifetime mehr als einmal gekauft. Einen der Käufe kannst du dir erstatten lassen." with the refund help |
 | Buyer switches households between buying and claiming | The claim names the household the purchase was made for (job 47), not the one the buyer is in now. `purchase_claim` records the buyer if they were a member of it at the purchase time: a member now who joined before it, or one who left it in the last hour (`household_departures`, kept one hour) after joining before it. Otherwise (left more than an hour ago, joined after the purchase, never a member, or the household is gone) it answers 403 `no_household` and the buyer stays unknown (no `purchase_completed`); the unlock stands where it was bought |
 | Ask to Buy, Play pending payment | "Wartet auf Bestätigung"; RevenueCat's webhook records it when the store completes it, and the note goes once the unlock arrives |
 | A purchase or restore ends after the member switched households | The claim names the household bought for; the new household's page shows nothing of it (job 67) |
 | The plan ends while the app is open, also offline | The end-of-plan timer, and every return to the foreground, compute premium again from the last rows: the page offers the plans again, Siri and the others lock at the server (job 67) |
-| Products not loadable, offline, store down | Before the tap (no price read): no Buy, "Hummlist Premium ist gerade nicht verfügbar.". After the tap: the same line or the offline note; Buy stays and tries again; no crash |
+| Products not loadable, offline, store down | Before the tap (no price read): no Buy, "Snacklist Premium ist gerade nicht verfügbar.". After the tap: the same line or the offline note; Buy stays and tries again; no crash |
 | Yearly-only storefront (BR, MX, IN) | The store returns no Lifetime: no Lifetime card and no Lifetime entry (warning, upgrade); the yearly card as usual. Lifetime holders and granted households there keep Premium |
-| The same Apple ID already pays the yearly plan for household A, and the person tries to buy or restore it in household B (iOS) | Apple allows one subscription per Apple ID per group, and RevenueCat (Keep with original App User ID) keeps the receipt with A: the store or RevenueCat refuses (`receiptAlreadyInUse`), the app says "Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort." and "Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Hummlist Premium abschließen." The restore setting stays |
+| The same Apple ID already pays the yearly plan for household A, and the person tries to buy or restore it in household B (iOS) | Apple allows one subscription per Apple ID per group, and RevenueCat (Keep with original App User ID) keeps the receipt with A: the store or RevenueCat refuses (`receiptAlreadyInUse`), the app says "Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort." and "Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Snacklist Premium abschließen." The restore setting stays |
 | Two yearly plans in one household (two members' store accounts, a race) | Both rows kept, never merged; premium runs to the later end; the page says so with the manage link; the function logs `second_yearly` |
 | Yearly plan cancelled (auto-renew off) | Premium stays until the period's end, the status says "läuft am … aus"; EXPIRATION ends it |
 | Yearly plan lapsed | Premium off at read time; the paywall offers both plans again. Nothing is deleted: household, list, Alexa links, tokens, MCP grants stay (integrations are paused by job 50's gate). The row stays with its past end |
@@ -130,15 +132,15 @@ id, never anonymous.
 | Lifetime bought while yearly renews | Both rows; Lifetime wins; the yearly plan keeps renewing until its subscriber cancels it; when it expires premium stays |
 | Archived household with a yearly plan | Archiving works as for Lifetime; the plan is still billed; at its end premium stops, the archive stays |
 | Payer leaves the household, hands it over or deletes the account | The unlock stays with the household. Account deletion removes the buyer link; the purchase keeps its household (`bound_household`) |
-| Last member leaves an unlocked household (joins another) | Joining asks first. With `HOUSEHOLD_ARCHIVE` on: "Archivieren und beitreten" keeps the household archived (list and unlock kept, re-enabled under Mehr → Archivierte Haushalte, deleted 24 months after archiving otherwise); "Löschen und beitreten" asks once more ("… Hummlist Lifetime endet mit ihm, denn ein Kauf gehört zu seinem Haushalt …", refund help). With it off (releases, until the legal texts say so): that warning and "Trotzdem beitreten". Never blocked. The server archives only while its switch `household_archive` is on (job 47, H-70); off, an archiving call is refused with `archive_disabled` and changes nothing, and the app says "Archivieren ist gerade nicht möglich. Dein Haushalt bleibt, wie er ist." |
-| Joiner into an unlocked household | The join screen says "Dieser Haushalt hat Hummlist Lifetime. Du musst nichts kaufen." With their own purchase from the last 30 days that stands: a link to the refund help |
+| Last member leaves an unlocked household (joins another) | Joining asks first. With `HOUSEHOLD_ARCHIVE` on: "Archivieren und beitreten" keeps the household archived (list and unlock kept, re-enabled under Mehr → Archivierte Haushalte, deleted 24 months after archiving otherwise); "Löschen und beitreten" asks once more ("… Snacklist Lifetime endet mit ihm, denn ein Kauf gehört zu seinem Haushalt …", refund help). With it off (releases, until the legal texts say so): that warning and "Trotzdem beitreten". Never blocked. The server archives only while its switch `household_archive` is on (job 47, H-70); off, an archiving call is refused with `archive_disabled` and changes nothing, and the app says "Archivieren ist gerade nicht möglich. Dein Haushalt bleibt, wie er ist." |
+| Joiner into an unlocked household | The join screen says "Dieser Haushalt hat Snacklist Lifetime. Du musst nichts kaufen." With their own purchase from the last 30 days that stands: a link to the refund help |
 | Promotional grant (RevenueCat dashboard) | Premium for the whole household until the grant's end (none: for good); nothing to buy, no Buy shown. Revoked or ended at RevenueCat: the row is deleted, premium ends at once. No `purchases` row, no analytics event |
 | Tester | Their household gets a RevenueCat promotional grant until 2100 (`scripts/iap/promotional.ts grant`, "Testers"); it stays with that household like a purchase. Internal for analytics |
 | Archived household | No members, not readable by anyone, its invites lead nowhere; the archiving user alone sees and re-enables it (`archived_households`, `unarchive_household`), with "Wird am <Datum> gelöscht" per household. Deleted 24 months after archiving unless re-enabled (job 47, H-50), and at once with that user's account. Its purchases restore nowhere else, and in it again after re-enabling; re-enabling and archiving again start a new 24 months. Re-enabling works with the server switch off, unless it would archive the household the user leaves |
 | Family Sharing | Off at Apple; a webhook event with `is_family_share` is ignored |
 | An App User ID that is no household (anonymous, unknown) | Ignored: nothing recorded, nothing unlocked |
-| Web | No buy button and no external purchase link; "Hummlist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet." and the status; with a yearly plan a line with the App Store and Google Play subscription pages |
-| `REVENUECAT_PURCHASES` off (every build until Peter's OK) or no SDK key, or `premium_offer` off | "Hummlist Premium ist bald verfügbar.", no Buy, no Restore, no store price query; unlocks (testers) still show |
+| Web | No buy button and no external purchase link; "Snacklist Premium kaufst du in der iPhone- oder Android-App. Danach ist es auch hier für deinen ganzen Haushalt freigeschaltet." and the status; with a yearly plan a line with the App Store and Google Play subscription pages |
+| `REVENUECAT_PURCHASES` off (every build until Peter's OK) or no SDK key, or `premium_offer` off | "Snacklist Premium ist bald verfügbar.", no Buy, no Restore, no store price query; unlocks (testers) still show |
 | Signed out, no household | The page is under More, which `authRedirect` only lets households reach; the claim route answers 401/403 |
 
 ## The webhook
@@ -157,9 +159,10 @@ id, never anonymous.
 | `POST /purchases/test/event` | local stack only (404 elsewhere) | Builds a RevenueCat event and processes it like the webhook, without the secret: the debug fake store, fg and e2e use it |
 
 Products (`productOf` in `supabase/functions/purchases/types.ts`, pinned to
-`scripts/iap/product.ts`): `com.hummlist.app.yearly` and Play's `com.hummlist.app.yearly:yearly`
-(stored as the bare id) are the yearly plan, `com.hummlist.app.lifetime` is Lifetime, all of kind
-`premium`; any other product id (another base plan included) is acknowledged and ignored. For
+`scripts/iap/product.ts`): `com.snacklist.app.yearly` and Play's `com.snacklist.app.yearly:yearly`
+(stored as the bare id) are the yearly plan, `com.snacklist.app.lifetime` is Lifetime, all of kind
+`premium`. Hummlist's `com.hummlist.app.yearly`, `com.hummlist.app.yearly:yearly` and
+`com.hummlist.app.lifetime` count the same way, each stored under its own id (`hummlistProductIds`); any other product id (another base plan included) is acknowledged and ignored. For
 store purchases the event's `entitlement_ids` is not read: `premium` and the old `lifetime` both
 work. Stores: `APP_STORE` is `apple`, `PLAY_STORE` `google`, `PROMOTIONAL` the promotional grants
 ("Free premium"); others are ignored. The purchase's key is
@@ -226,14 +229,14 @@ restore produces no event for us, and no production code sends it (the job 25 he
 
 ### Free premium: RevenueCat promotional grants
 
-Free Hummlist Premium for a household (App and Play Review, a partner, a support case) is a
+Free Snacklist Premium for a household (App and Play Review, a partner, a support case) is a
 RevenueCat **promotional grant** of the entitlement `premium`, made by the Lead in RevenueCat; no
 code, no SQL, no fake purchase. RevenueCat documents it at
 https://www.revenuecat.com/docs/dashboard-and-metrics/customer-profile#granting-promotional-entitlements
 (read 2026-11-01).
 
 1. Find the household id (Supabase, `households.id`). It is the RevenueCat App User ID.
-2. RevenueCat → Hummlist → Customers → search the household id. No customer yet (nobody in it
+2. RevenueCat → Snacklist → Customers → search the household id. No customer yet (nobody in it
    opened Buy or Restore): create it there; the grant then makes it a customer (API v2:
    `POST /v2/projects/{project_id}/customers/{household_id}/actions/grant_entitlement`).
 3. Entitlements → **Grant**: entitlement `premium`, a duration or an end date (an end in 2100 for
@@ -248,7 +251,7 @@ https://www.revenuecat.com/docs/dashboard-and-metrics/customer-profile#granting-
    `source` and `premium_source` `promotional`, `expires_at` the latest end (null: no end). No
    grant left: the row is deleted. RevenueCat unreachable: 502, the event id is not kept and
    RevenueCat retries.
-5. Check: Mehr → Hummlist Premium shows „Hummlist Premium geschenkt …“, and
+5. Check: Mehr → Snacklist Premium shows „Snacklist Premium geschenkt …“, and
    `select public.household_has_premium('<household id>');` (service role) is true. A grant made
    before this existed, or a webhook that never arrived:
    `deno run --allow-env --allow-net --allow-read scripts/iap/promotional.ts reconcile --household <id> [--apply]`
@@ -399,7 +402,7 @@ RevenueCat retries, the app retries the claim.
 | `purchase_tombstones` | service connection | `purge_purchases` | HMAC-SHA256 of purged store transaction ids under `REVENUECAT_TOMBSTONE_HMAC_KEY`, nothing else |
 | `revenuecat_deletions` | service connection | trigger on household deletion (every one: a tap on Buy or Restore creates the customer, also without a purchase), `revenuecat_deletions_take`/`_done` (the deletion route) | deleted households' ids (RevenueCat App User IDs), due 30 days later |
 | `households.archived_at`, `archived_by` | nobody but `archived_households()` for the archiving user (with `deletes_at`, 24 months later) | `leave_current_household(true)`, `accept_invite(code, true)`, `unarchive_household` (archiving only while `household_archive` is on) | when and by whom the last member archived it |
-| `app_switches` | service connection (`app_switch(key)` for the functions); members only through `premium_offer()` | the Lead, with the service role | server switches; `household_archive` (seeded off) allows archiving; `premium_offer` (seeded off, job 49) lets the app offer Hummlist Premium |
+| `app_switches` | service connection (`app_switch(key)` for the functions); members only through `premium_offer()` | the Lead, with the service role | server switches; `household_archive` (seeded off) allows archiving; `premium_offer` (seeded off, job 49) lets the app offer Snacklist Premium |
 | `household_departures` | service connection (`was_member_at`) | trigger on leaving a household | household, user, joined and left at; one hour, for the buyer's claim |
 | `purchase_rate` | service connection | `purchase_take_call` | per-user window for claims |
 
@@ -429,7 +432,7 @@ Migrations `20261030190000_purchases.sql`, `20261031123504_household_bound_lifet
   `DELETE` then a `GET` that must answer 404, retried at most hourly until it does; logs counts
   only; does nothing while `REVENUECAT_SECRET_KEY` or `REVENUECAT_PROJECT_ID` is unset. A failure opens the issue "RevenueCat customer deletion
   failed"; rerun the workflow once RevenueCat answers.
-- **Tombstones** are kept while Hummlist Lifetime is sold or its unlocks are honoured, reviewed
+- **Tombstones** are kept while Snacklist Lifetime is sold or its unlocks are honoured, reviewed
   yearly (NEEDS_LEAD Job 43). One HMAC key for all of them (`REVENUECAT_TOMBSTONE_HMAC_KEY`):
   changing it would make the old tombstones useless.
 - **Buyer deletes their account:** the buyer link is nulled (`purchases.user_id`,
@@ -447,7 +450,7 @@ Migrations `20261030190000_purchases.sql`, `20261031123504_household_bound_lifet
   `purge_purchases` deletes the household like any deletion, so its purchases start their 30 days
   and its RevenueCat customer is queued. `archived_households()` returns `deletes_at`; the app
   shows "Wird am <Datum> gelöscht". Re-enabling clears `archived_at`; archiving again starts a new
-  24 months. There is no reminder e-mail: Hummlist sends no notification e-mails of its own
+  24 months. There is no reminder e-mail: Snacklist sends no notification e-mails of its own
   (DECISIONS 47.3). One whose archiver vanished another way is deleted by the daily purge.
 - RevenueCat's own retention after deletion follows its DPA ("subject to standard data backup and
   archival practices").
@@ -461,7 +464,7 @@ Migrations `20261030190000_purchases.sql`, `20261031123504_household_bound_lifet
 
 ### Testers
 
-Testers get Hummlist Premium the same way as App and Play Review: a RevenueCat promotional grant
+Testers get Snacklist Premium the same way as App and Play Review: a RevenueCat promotional grant
 of the premium entitlement to their **household's** customer (App User ID = household id),
 until 2100-01-01 ("Free premium: RevenueCat promotional grants" above; Peter, Nov 1: "use
 revenuecat to handle tester's premium grants instead of the custom code"). The household then has
@@ -518,7 +521,7 @@ premium:
 
 ## Integration lock
 
-Job 50 (Spec #4; DECISIONS "Job 50"). Siri, Alexa and MCP / AI assistants are part of Hummlist
+Job 50 (Spec #4; DECISIONS "Job 50"). Siri, Alexa and MCP / AI assistants are part of Snacklist
 Premium; the list, sync, categories, the app and the web app stay free. Two switches, both off
 until Peter says go:
 
@@ -529,12 +532,12 @@ until Peter says go:
   `household_has_premium` (yearly not ended, Lifetime or a running promotional grant, testers'
   included; read at request time).
 - **App:** the build define `INTEGRATION_LOCK` (off). On, the integration settings (More ›
-  Zugänge) show a household without premium, while the server switch is on, what Hummlist
+  Zugänge) show a household without premium, while the server switch is on, what Snacklist
   Premium includes, its connections as paused, and a button to the Premium page where this build
   sells (else "Bald verfügbar", on the web job 49's "buy it in the app" note). On in e2e
   (`app/config/e2e.json`).
 
-What a locked household gets: Siri says "Sprachbefehle sind Teil von Hummlist Premium. Du kannst es
+What a locked household gets: Siri says "Sprachbefehle sind Teil von Snacklist Premium. Du kannst es
 in der App freischalten. Ich habe nichts hinzugefügt." (HTTP 200, `premium_required`); an MCP tool call a
 tool result with `isError: true` and HTTP 200 (German, or English for a client that prefers it).
 Nothing is added, queued or kept. OAuth discovery, initialize and tools/list stay free. Alexa is
@@ -580,10 +583,14 @@ RevenueCat (set up by the Lead and Ops): the webhook delivers promotional grants
 2026-11-01: the Play Review household's grant at 13:23:31 CET reached the function as
 `NON_RENEWING_PURCHASE` two seconds later; the API key can't read the webhook settings
 themselves). Entitlement `premium` (`entl654efcfce4`) with the four products (App Store and Play, yearly and Lifetime; the old `lifetime` entitlement stays until every
-app is a job 49 build), offering `default` with `$rc_annual` and `$rc_lifetime`. The app loads
-products by id, not the offering (DECISIONS 49.27). Store facts (Ops, 2026-10-31): App Store
-subscription group "Hummlist Premium" `22532621`, yearly Apple ID `6829293557`, Lifetime
-`6829223747`; Play base plan `yearly`, grace period 14 days, account hold 46 days. Function secrets (set by the Lead on the hosted project; NEEDS_LEAD "Job 43 – RevenueCat
+app is a job 49 build), Hummlist's and Snacklist's alike; one RevenueCat project, with Snacklist's
+apps (iOS `app762918886a`, Android `appcec7ffa3d1`) next to Hummlist's (`app508ff9066c`,
+`app44e3fb2d11`) until Hummlist retires, offering `default` with `$rc_annual` and `$rc_lifetime`. The app loads
+products by id, not the offering (DECISIONS 49.27). Store facts: Snacklist's App Store
+subscription group "Snacklist Premium" `22562774`, yearly Apple ID `6832759834`, Lifetime
+`6832759640` (job 174); Hummlist's (Ops, 2026-10-31) group "Hummlist Premium" `22532621`, yearly
+`6829293557`, Lifetime `6829223747`; Play base plan `yearly`, grace period 14 days, account hold
+46 days. Function secrets (set by the Lead on the hosted project; NEEDS_LEAD "Job 43 – RevenueCat
 setup"). Without
 `REVENUECAT_WEBHOOK_AUTH` and `REVENUECAT_TOMBSTONE_HMAC_KEY` the webhook answers 503
 `not_configured`; the claim route works regardless.
@@ -594,7 +601,7 @@ setup"). Without
 | `REVENUECAT_WEBHOOK_HMAC_SECRET` | Optional: RevenueCat's webhook signing secret; when set, the signature is required |
 | `REVENUECAT_TOMBSTONE_HMAC_KEY` | The one key for the tombstone HMACs; never rotate it while tombstones count |
 | `REVENUECAT_SECRET_KEY` | A v2 secret key (`customer_information:customers:read_write`, which includes reading subscriptions) for deleting customers and reading promotional grants; never in the app. Unset: promotional events answer 503 (RevenueCat retries) and the reconcile route 503 |
-| `REVENUECAT_PROJECT_ID` | The RevenueCat project (Hummlist) |
+| `REVENUECAT_PROJECT_ID` | The RevenueCat project (`9cb4a72e`, one for Hummlist and Snacklist) |
 | `REVENUECAT_DELETIONS_SECRET` | What the daily deletion workflow and `scripts/iap/promotional.ts reconcile --apply` send as `x-deletions-secret`; also a repository secret of the same name (NEEDS_LEAD "Job 47"). Unset: the deletion and reconcile routes refuse every call |
 
 Expected prices (the drift check's constants, `expectedPrices` in `scripts/iap/product.ts`; never
@@ -633,7 +640,7 @@ Gone with job 43 (the Lead deletes them from the hosted secrets and the reposito
 - `e2e/tests/premium-yearly.spec.ts`: the yearly plan live for both partners, cancelled and
   expired (list and tokens stay), Lifetime while yearly renews, a TRANSFER, and the
   billing-continues warnings before account deletion and leaving.
-- `POST /purchases/test/event` takes `productId` (`com.hummlist.app.yearly`), `type` (every
+- `POST /purchases/test/event` takes `productId` (`com.snacklist.app.yearly`), `type` (every
   lifecycle type), `expiresInDays`, `graceDays`, `cancelReason`, `eventAgoMs`, `transferTo`.
 - `e2e/tests/household-bound.spec.ts`: joining an unlocked household (nothing to buy, the refund
   help, the delete warning), restore after the household is gone, archive and bring back (with
@@ -644,7 +651,7 @@ Gone with job 43 (the Lead deletes them from the hosted secrets and the reposito
   page make no SDK call and one store price read per opening; Buy (yearly or Lifetime) makes
   `setupPurchases`, `getProductInfo`, `purchaseProduct`, Restore `setupPurchases`,
   `restorePurchases`, in that order (H-67).
-- `app/ios/Hummlist.storekit`: both products (the yearly plan in its subscription group) for
+- `app/ios/Snacklist.storekit`: both products (the yearly plan in its subscription group) for
   Xcode's StoreKit testing (RevenueCat supports StoreKit configuration files for local UI work on
   a Mac).
 - Tests: `supabase/functions/purchases/*_test.ts`, `store_integration_test.ts` (db gate), pgTAP,
@@ -678,7 +685,7 @@ delete confirmation. Its texts are Legal Review's R-8 strings word for word (H-7
 ADDENDUM 1 and 2): App Store purchases only Apple refunds; Google Play in the first 48 hours
 through Google, after that by e-mail to support@hummlist.com with the order number (`GPA.…`) or
 the Google account's e-mail address, looked at case by case; statutory rights unaffected. Links:
-Apple's Report a Problem, Google Play's refund page, and the FAQ on hummlist.com (`/support`,
+Apple's Report a Problem, Google Play's refund page, and the FAQ on snacklist.app (`/support`,
 `/en/support`; its refund question has no anchor of its own, and the legal pages are not this
 code's to change). Below them a placeholder note for the yearly plan: cancelling only stops the
 renewal; the current year is not refunded automatically (NEEDS_LEAD "Job 49").

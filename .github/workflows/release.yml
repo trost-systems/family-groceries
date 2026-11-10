@@ -252,7 +252,7 @@ jobs:
           POSTHOG_PROJECT_API_KEY: ${{ secrets.POSTHOG_PROJECT_API_KEY }}
           POSTHOG_HOST: ${{ vars.POSTHOG_HOST }}
           ANALYTICS_INTERNAL_HOUSEHOLDS: ${{ vars.ANALYTICS_INTERNAL_HOUSEHOLDS }}
-          # Hummlist Premium (job 67, docs/PAYWALL_RELEASE.md): empty until the go-live, which
+          # Snacklist Premium (job 67, docs/PAYWALL_RELEASE.md): empty until the go-live, which
           # keeps the purchase screen and the integration lock off.
           REVENUECAT_PURCHASES: ${{ vars.REVENUECAT_PURCHASES }}
           REVENUECAT_APPLE_API_KEY: ${{ secrets.REVENUECAT_APPLE_API_KEY }}

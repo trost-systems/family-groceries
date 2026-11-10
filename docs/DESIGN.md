@@ -22,7 +22,7 @@ node design/tokens/build.mjs --check   # writes nothing, exits 1 when an output 
 
 | Output | What it holds | Used by |
 | --- | --- | --- |
-| `app/lib/design/tokens.g.dart` | `HummlistColors` (a `ThemeExtension`, light and dark), `HlFont`, `HlType`, `HlSpace`, `HlRadius`, `HlBorder`, `HlDepth`, `HlFocus`, `HlSize`, `HlHex`, `HlDuration`, `HlEasing` | `app/lib/app/theme.dart`, `app/lib/design/` |
+| `app/lib/design/tokens.g.dart` | `SnacklistColors` (a `ThemeExtension`, light and dark), `HlFont`, `HlType`, `HlSpace`, `HlRadius`, `HlBorder`, `HlDepth`, `HlFocus`, `HlSize`, `HlHex`, `HlDuration`, `HlEasing` | `app/lib/app/theme.dart`, `app/lib/design/` |
 | `site/public/tokens.css` | The same as `--hl-*` custom properties; dark colours under `prefers-color-scheme: dark` | The homepage (job 53) |
 
 The generator is plain Node with no packages. The `lint` gate runs the
@@ -49,7 +49,7 @@ depth, motion and the hex shape.
 ## Contrast
 
 WCAG 2 relative luminance. `app/test/design/contrast_test.dart` reads the
-pairs from the token file (`$extensions.com.hummlist.contrastPairs` and
+pairs from the token file (`$extensions.com.snacklist.contrastPairs` and
 `contourRequired`) and fails when one drops under its minimum, or when a
 "contour required" pair stops needing its contour (then the rule is stale).
 The same test pins the lemon pairs below to two decimals.
@@ -129,9 +129,9 @@ keys and strings; the theme gives them the 6b look.
 | `inverseSurface`, `inversePrimary` | `inverse` (light) or `text` (dark); `honey` (light) or `cobalt` (dark) |
 | `error` | `error` (container mixed from it) |
 
-The theme also carries `HummlistColors` as a `ThemeExtension` for widgets
+The theme also carries `SnacklistColors` as a `ThemeExtension` for widgets
 that need a token without a Material role
-(`Theme.of(context).extension<HummlistColors>()`).
+(`Theme.of(context).extension<SnacklistColors>()`).
 
 ### Type
 
@@ -386,7 +386,7 @@ path dependency on the app, showing the app's real widgets in `appTheme`.
   input. The "Spielwiese" stories have knobs for label, enabled and loading,
   and a press really sinks and bounces.
 - Surfaces: snackbar with undo, dialog, bottom sheet, card.
-- Hummlist/Auswahl: `HexSwitch` in every state, a switch that flips by
+- Snacklist/Auswahl: `HexSwitch` in every state, a switch that flips by
   itself every 1.2 s so the travel shows (still, on, with reduced motion), a
   playground, the Darstellung rows (`HexSwitchTile`) and `HexRadio` with the
   language list.
@@ -403,7 +403,7 @@ light and dark, the colour pages match the token file, and a press sinks the
 label 4 px, overshoots on release and settles (one frame with reduced
 motion).
 
-**Open it.** It is not on hummlist.com. GitHub Actions → "Widgetbook" (runs on
+**Open it.** It is not on snacklist.app. GitHub Actions → "Widgetbook" (runs on
 every push to `main` that touches `app/`, or "Run workflow" on any branch) →
 the run's artifact `widgetbook`. Unzip it, run
 `python3 -m http.server -d widgetbook 8080` and open http://127.0.0.1:8080.

@@ -5,7 +5,7 @@ Mia adds an item; it arrives on Noah's and Ida's phones at the measured latency,
 "1 neu von Mia Brandt" note and highlighted row; Noah ticks it off and it leaves all three lists.
 11.9 to 12.5 s (job 146).
 
-## Hand-over notes (hummlist-ui-craft)
+## Hand-over notes (snacklist-ui-craft)
 
 - Plan: focal object Mia's phone (the cause), satellites Noah's and Ida's (the effect); action
   Mia types and Enter, Noah taps; payoff the mint row on both satellites; left out: stores, tabs,
@@ -45,7 +45,7 @@ Mia adds an item; it arrives on Noah's and Ida's phones at the measured latency,
   stacked bands, both with "1 neu von Mia Brandt" and the mint row; poster and contact sheet
   re-checked · fixed.
 - Nice to have · wide · the left half feels cramped; a 3-up row at equal scale → kept: three equal
-  phones break the one-lead rule (hummlist-ui-craft), and at 576 px three equal phones would put
+  phones break the one-lead rule (snacklist-ui-craft), and at 576 px three equal phones would put
   the app text under 10 px.
 
 ## Re-take (job 146, 2026-11-06)

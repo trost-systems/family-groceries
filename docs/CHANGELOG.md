@@ -1,9 +1,9 @@
 # Changelog
 
-What each Hummlist version brings users. The same notes feed two places: the
+What each Snacklist version brings users. The same notes feed two places: the
 stores' "What's new" text and the pages
-[hummlist.com/de/changelog](https://hummlist.com/de/changelog) and
-[hummlist.com/en/changelog](https://hummlist.com/en/changelog). Each PR
+[snacklist.app/de/changelog](https://snacklist.app/de/changelog) and
+[snacklist.app/en/changelog](https://snacklist.app/en/changelog). Each PR
 writes its own note, so nobody has to reconstruct a release afterwards.
 Decisions and reasons are in [`DECISIONS.md`](DECISIONS.md), "Job 39" and
 "Job 40".
@@ -192,16 +192,16 @@ with `--force` costs nothing (DECISIONS, "Job 40").
 ## Override (job 40)
 
 For a release whose "What's new" should not be the list of items (the 1.0
-launch, written for people who don't know Hummlist yet), write
+launch, written for people who don't know Snacklist yet), write
 `releases/changelog/<version>.override.md`:
 
 ```markdown
 status: draft — pending Peter's review
 
-# Hummlist 1.0.0
+# Snacklist 1.0.0
 
 ## de
-title: Willkommen bei Hummlist
+title: Willkommen bei Snacklist
 
 ### play
 Kurzer Text für Google Play.
@@ -210,13 +210,13 @@ Kurzer Text für Google Play.
 Längerer Text für den App Store.
 
 ## en
-title: Welcome to Hummlist
+title: Welcome to Snacklist
 
 One text for both stores.
 ```
 
 - `## de` and `## en` are both required. Each starts with a `title:` line,
-  the headline on hummlist.com and in the draft.
+  the headline on snacklist.app and in the draft.
 - Then comes one text for both stores, or a `### play` and an
   `### app_store` block (both, not just one). One text must fit Play's 500.
 - The text is the whole "What's new", as written. The title is not added to
@@ -227,7 +227,7 @@ One text for both stores.
   before `## de` marks the text as not approved.
 
 `draft` and `store` take the title and both store texts from the override.
-The items stay as collected, and hummlist.com lists them under the title.
+The items stay as collected, and snacklist.app lists them under the title.
 To leave an item off the page, delete it from the draft during the review.
 The changelog gate and `record.mjs` refuse a draft whose title or store texts
 differ from its override; run `store` after editing the override.
@@ -313,8 +313,8 @@ improvements."
 
 When a text is too long, whole items go from the end: fixed first, then
 improved, then new. A last line then points to the full list: "Alle
-Änderungen: hummlist.com/de/changelog#v1-0-0" / "All changes:
-hummlist.com/en/changelog#v1-0-0". A sentence is never cut. Emoji and `<` are
+Änderungen: snacklist.app/de/changelog#v1-0-0" / "All changes:
+snacklist.app/en/changelog#v1-0-0". A sentence is never cut. Emoji and `<` are
 removed from both stores' texts, as fastlane's `sanitize_changelog` does,
 because Apple rejects them. Emoji means what shows as emoji: emoji
 presentation, or a symbol with the emoji selector. Text symbols such as ©, ™,
@@ -331,7 +331,7 @@ The order of steps is in [`RELEASE.md`](RELEASE.md), "Public releases":
 2. Peter reviews it and approves the release.
 3. After the stores accept the build, the Public release record workflow moves
    the draft into `releases/releases.json` and deletes the draft file.
-4. That push redeploys hummlist.com, which shows the version from then on.
+4. That push redeploys snacklist.app, which shows the version from then on.
 
 Preview builds of the site also show drafts whose version is not in the
 record yet, with a banner. Production shows only recorded releases ([`site/README.md`](../site/README.md),

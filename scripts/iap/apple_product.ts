@@ -1,4 +1,4 @@
-// Creates Hummlist Lifetime in App Store Connect through the App Store Connect API, without
+// Creates Snacklist Lifetime in App Store Connect through the App Store Connect API, without
 // submitting it for review (docs/PURCHASES.md, "Store setup"). Dry run by default: it reads what
 // exists and prints each write it would make. --apply makes them. Idempotent: it skips whatever
 // exists (the product, a localization, a price schedule, availability).

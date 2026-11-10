@@ -1,6 +1,6 @@
-# hummlist.com for AI agents
+# snacklist.app for AI agents
 
-An agent acting for a person should be able to sign that person up, connect Hummlist over MCP,
+An agent acting for a person should be able to sign that person up, connect Snacklist over MCP,
 use the API once it is public, read the guides and find answers, without a browser session or
 a human reading the page for it. Job 93 makes that a set of deterministic checks that run on
 every PR. A check beats a rule: a broken `llms.txt` fails CI, a rule in a doc does not.
@@ -20,14 +20,14 @@ The site build (`site/build.mjs`, the generators in `site/agent.mjs`) writes, ne
 | `/openapi.yaml` | `docs/api/openapi.yaml`, only while `releases/flags.json` has `public-api` on (it is off). |
 
 `site/content/llms.md` is the only hand-written part: a one-line summary and how an agent gets
-its person to Hummlist and connects the MCP server. Change it when that changes.
+its person to Snacklist and connects the MCP server. Change it when that changes.
 
 ## The checks
 
 | Check | Where | Fails when |
 | --- | --- | --- |
 | `md-twin` | build | a public HTML page has no `.md` twin, the twin's first line is not `# <h1>`, or the page doesn't link it |
-| `llms-txt` | build | `llms.txt` breaks the llmstxt.org structure, a link doesn't resolve to a built file or anchor, a link leaves hummlist.com (only `https://mcp.hummlist.com` may), or a public page is missing |
+| `llms-txt` | build | `llms.txt` breaks the llmstxt.org structure, a link doesn't resolve to a built file or anchor, a link leaves the site's `siteUrl` (only `https://mcp.hummlist.com` may), or a public page is missing |
 | `llms-full` | build | `llms-full.txt` is missing a twin listed in `llms.txt` |
 | `robots` | build | `robots.txt` disallows a page that carries `noindex` (crawlers could never see the `noindex`), or has no `Sitemap` line. The site-wide `X-Robots-Tag: noindex` header in `site/vercel.json` makes every page noindex until launch, so any `Disallow` of a page fails today |
 | `launch` | build | `site/config/stage.ts` says `'launch'` and any `noindex` is left (the `X-Robots-Tag` header in `site/vercel.json` or a meta tag on a public page) |
@@ -79,7 +79,7 @@ Review these by hand when a page or the MCP server changes:
   paragraph.
 - [ ] Facts an agent needs (MCP address, how to sign up, what is free) are in text, never only
   in an image, video or animation.
-- [ ] `site/content/llms.md` still says how a person gets Hummlist today (waitlist, beta or the
+- [ ] `site/content/llms.md` still says how a person gets Snacklist today (waitlist, beta or the
   stores) and how to connect the MCP server.
 - [ ] A new FAQ question is phrased the way a person would ask it, and answered in its first
   sentence.

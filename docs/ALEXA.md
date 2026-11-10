@@ -10,6 +10,7 @@ and eggs" does the same in English (job 69). Certification readiness:
 | | |
 | --- | --- |
 | Skill name, invocation name | `Hummlist`, `humm list` (display name always in full; a test fails on "Humm" alone, except in the invocation name) |
+| Skill ids | Hummlist `amzn1.ask.skill.fee316d1-e9c1-44a4-a06e-955fbda63a1b` (job 31b), Snacklist `amzn1.ask.skill.ad766331-e979-4a6e-95f1-30198b0a34cb` (job 174, development only). The hosted `ALEXA_SKILL_ID` lists both |
 | Endpoint (and skill events) | `https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/alexa` (`sslCertificateType: Wildcard`) |
 | Function | [`supabase/functions/alexa/`](../supabase/functions/alexa/) |
 | Skill package | [`alexa/skill-package/`](../alexa/skill-package/) (`skill.json`, `interactionModels/custom/de-DE.json` and the five identical `en-*.json`, icons from `design/app-icon/build.mjs`), [`alexa/ask-resources.json`](../alexa/ask-resources.json) |
@@ -344,6 +345,15 @@ Deployed by job 31b (2026-10-30) to Peter's Amazon Developer account: skill
 with the Supabase client "Amazon Alexa", development testing on, a beta test created and running
 with no testers. Status and smoke results: [done/31b-alexa-deploy.md](done/31b-alexa-deploy.md).
 The steps below are how it was done and how to redo it.
+
+Job 174 (2026-11-10) added a second skill, "Snacklist", with the id
+`amzn1.ask.skill.ad766331-e979-4a6e-95f1-30198b0a34cb`. It is in the development stage only, with
+the invocation „snacklist“ in all six locales, the same endpoint and the same account linking. Its
+beta test runs with Lea and Max. The hosted `ALEXA_SKILL_ID` is
+`amzn1.ask.skill.fee316d1-e9c1-44a4-a06e-955fbda63a1b,amzn1.ask.skill.ad766331-e979-4a6e-95f1-30198b0a34cb`,
+so the function takes requests from both skills. The scripts take one id in `ALEXA_SKILL_ID`; pass
+the skill you mean. `alexa/skill-package/` still holds Hummlist's name and invocation until S4, so
+deploying it to the Snacklist skill would rename that skill back.
 
 1. **ASK CLI.** `npm install -g ask-cli` (v2), then `ask configure` and sign in with the
    developer account (opens a browser; `ask configure --no-browser` on a server). The vendor
