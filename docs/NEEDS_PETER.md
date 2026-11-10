@@ -1551,3 +1551,21 @@ Built and merged (#327, #332, #333). What only Peter can do:
    primary App ID or Services ID the user signed in with; Snacklist's App ID is grouped under
    Hummlist's, so users may see „Hummlist“ there. Worth a look in the Apple Developer portal at
    S3 (the Services ID description is already „Snacklist“).
+
+## Job 94: MCP 2026-07-28 and Client ID Metadata Documents (2026-11-04)
+
+PR #231. Nothing blocks the merge; two optional checks after the deploy, both on production:
+
+1. **One hosted sign-in through the CIMD front (optional).** The front's fetch, DNS and the
+   admin API's secret key on the hosted project are proven locally only. To prove them on
+   production, open this URL in a browser while signed in to Snacklist and stop at the consent
+   page (do not press Erlauben):
+   `https://mcp.snacklist.app/oauth/authorize?response_type=code&client_id=https%3A%2F%2Fclaude.ai%2Foauth%2Fmcp-oauth-client-metadata&redirect_uri=https%3A%2F%2Fclaude.ai%2Fapi%2Fmcp%2Fauth_callback&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256&state=check`.
+   It shows „Zugriff erlauben?“ with „Claude“ and https://claude.ai. This registers one Supabase
+   OAuth client named „Claude“ for Claude's document, the one a real Claude on 2026-07-28 would
+   use anyway. The smoke does not do this on its own (DECISIONS, job 94).
+2. **The client address behind the proxy.** After the first token request through
+   mcp.snacklist.app/oauth/token, the hosted edge logs of `mcp` should show requests with the
+   header `x-vercel-forwarded-for`. If it is missing, the per-address token limit is one
+   bucket for everyone on the proxy; tell the lead.
+

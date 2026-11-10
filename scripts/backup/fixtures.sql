@@ -194,4 +194,11 @@ reset role;
 insert into public.household_removals (household_id, user_id)
 select (select id from fx where key = 'home'), id from auth.users where email = 'carl@backup.test';
 
+-- Job 94: an MCP client known by its Client ID Metadata Document URL.
+insert into public.oauth_cimd_clients (client_id, auth_client_id, client_name, redirect_uris, fresh_until)
+values ('https://client.backup.test/mcp.json', '00000000-0000-4000-8000-0000000b0094', 'Backup Client',
+  array['http://127.0.0.1:8976/callback'], now() + interval '1 hour');
+insert into public.oauth_cimd_rate (key, window_start, hits)
+values ('fetch:client.backup.test', date_trunc('hour', now()), 1);
+
 commit;

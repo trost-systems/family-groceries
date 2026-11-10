@@ -10945,3 +10945,115 @@ main before the rename) keeps a Hummlist hotfix build possible.
 7. **Skills renamed, no alias.** `verify-hummlist` → `verify-snacklist`, `hummlist-ui-craft` →
    `snacklist-ui-craft`, `hummlist-howto-clips` → `snacklist-howto-clips`, every reference in the
    repo updated. Nothing outside the repo (ops prompts, briefs) named them except old evidence.
+
+## Job 94: MCP protocol 2026-07-28 next to 2025-11-25, Client ID Metadata Documents (2026-11-04)
+
+- **The server already spoke 2026-07-28; the job locks it in.** `@modelcontextprotocol/server`
+  2.3.1's `createMcpHandler` (DECISIONS 3.3) answers `server/discover`, serves 2026 requests
+  without `initialize` or sessions, rejects a missing or mismatched `Mcp-Method`/`Mcp-Name` with
+  400 `-32020`, an unknown version with `-32022`, and fills `ttlMs`/`cacheScope`. 2025-era
+  requests keep the stateless serving they had (`initialize`, no `Mcp-Session-Id`,
+  `GET`/`DELETE` 405), so "sessions as today" means none, as today. `mcp/protocol_test.ts`
+  pins every one of these through `handle()`, so an SDK update that changes them fails CI.
+- **`supportedVersions` lists only 2026-07-28.** The SDK's choice, kept: the spec says a client
+  picks one of these for its next requests, and a 2026 client cannot send a per-request 2025
+  version. 2025 clients negotiate through `initialize` as before.
+- **Cache hints: an hour, private.** `tools/list` and `server/discover` say `ttlMs: 3600000`,
+  `cacheScope: private`. The tool list changes only with a deploy; the answers go to an
+  authenticated caller, so no shared cache may keep them. The SDK default (0) would make clients
+  poll. 2025-era answers are unchanged (the SDK never adds the fields there).
+- **CIMD through a front, not in Supabase.** Supabase Auth 2.197 (hosted and local) neither
+  resolves a URL `client_id` nor advertises `client_id_metadata_document_supported`
+  (supabase/auth issue 2850 is open). A client reads that flag from its authorization server's
+  own metadata, so the only way is another authorization server: `<endpoint>/oauth`, Supabase's
+  metadata with its own issuer, authorize and token endpoints and the flag. It maps each document
+  URL to one Supabase OAuth client (admin API, `public.oauth_cimd_clients`) and passes every
+  other client id through, so dynamic registration (deprecated, not removed) keeps working
+  behind it. Supabase still does consent, codes and tokens; the token format, scopes
+  (`openid email`) and tools are unchanged. Rejected: writing `auth.oauth_clients` directly
+  (Supabase's internal schema); a full OAuth proxy with its own callback (only needed if
+  Supabase added `iss` to its redirects, which it does not; the integration test checks).
+- **Only 2026-era clients are pointed at the front.** The 2026 spec makes a client re-register
+  when the authorization server changes. Pointing everyone there would have sent every
+  connected Claude and ChatGPT through a new consent. A request whose `MCP-Protocol-Version` is
+  2026-07-28 or later gets a 401 naming `…/oauth-protected-resource/cimd`, and the well-known
+  metadata answers by the same header (`Vary`), for 2026 clients that rediscover without the
+  hint. The SDK sends that header on discovery, 2025-11-25 by default, so 2025 clients never see
+  the front. Found by the integration test: a 2026 client finishing on a fresh transport
+  rediscovered without the hint and landed on Supabase's token endpoint.
+- **One Supabase client per document URL, for good.** Refresh tokens belong to the Supabase
+  client; a second registration after a document change would orphan them. A changed name,
+  redirect URIs or `client_uri` updates the same client; a deleted one is registered again.
+  Concurrent first requests serialize on an advisory lock. Documents are fetched again after
+  their `Cache-Control` max-age, at least 5 min, at most a day (the spec says to respect cache
+  headers; the floor keeps a `no-store` document from being fetched on every authorize).
+- **SSRF limits on the document fetch.** Every resolved address must be public (6to4 and Teredo
+  count as private), no redirects, 5 KB, 5 s, DNS 3 s, one message for every fetch failure, so
+  the answer is no oracle. DNS rebinding between the check and the fetch remains possible; the
+  fetch carries no credentials and its answer only feeds the validator.
+- **Hourly limits per host and in all** (`public.oauth_cimd_rate`, after the review): anyone can
+  send any client_id URL to authorize, so fetches (30 per host, 600 in all) and new clients (5 per
+  host, 100 in all) are bounded before they happen, and one host cannot use up the total. Token
+  requests: 120 per client address, because Supabase sees them all from the function's address
+  and one caller must not spend its limit for everyone. Clients registered by abuse within those
+  limits stay in Supabase; nothing deletes them (deleting in Supabase's auth schema from SQL is
+  the coupling the admin API avoids). The totals are shared: someone using up `fetch:all` or
+  `new:all` blocks first sign-ins of new document clients for the rest of the hour; clients
+  already mapped keep working.
+- **The client address behind the proxy** (review 0). Through mcp.snacklist.app (or mcp.hummlist.com) Supabase's
+  gateway sees Vercel, so `X-Real-IP` would put every proxied client in one bucket. Vercel
+  overwrites client-supplied forwarding headers and sets `x-vercel-forwarded-for` to the client
+  (Vercel docs, request headers), so a proxied request (a `via=mcp-snacklist` or `via=mcp-hummlist` marker) is keyed on
+  that, a direct one on `X-Real-IP` (DECISIONS, job 73, 8). A direct caller adding the marker and
+  the header picks its own key; that only gets around this limit, as many addresses would, and
+  Supabase's own limit still applies. Unverified on hosted until a 2026 client uses the proxy:
+  if Vercel's rewrite did not pass the header on, `clientAddress` falls back to `X-Real-IP`, the
+  shared bucket; the hosted edge logs show which (`NEEDS_PETER.md`, "Job 94").
+- **Which secret key the admin API uses.** `SUPABASE_SECRET_KEYS` (`default`) when the project
+  injects it, else the legacy `SUPABASE_SERVICE_ROLE_KEY`; the local stack has only the legacy
+  one, so the hosted path is unproven until the first 2026 sign-in through the front.
+- **The consent page shows the proven host.** A document's `client_uri` is replaced by the origin
+  of its URL, which the consent page prints under the name. Today's DCR lets any client call
+  itself "Claude" too; with CIMD the host is verified, so it is shown (draft section 6.4).
+- **S256 and safe redirect URIs for document clients.** The front advertises S256 only and refuses
+  a document client's request without it; redirect URIs must be https, loopback http or a
+  private-use scheme with a dot (RFC 8252). Passed-through DCR clients keep Supabase's rules.
+- **The front's id_token issuer is Supabase's.** With scope `openid` Supabase issues an id_token
+  naming `…/auth/v1`, not the front. MCP clients use the access token only; dropping `openid`
+  would change the scopes the brief keeps, and dropping the OIDC metadata alias would break
+  discovery on the supabase.co URL (the SDK reaches the front there only through
+  `<issuer>/.well-known/openid-configuration`).
+- **Public clients only.** A document must use `token_endpoint_auth_method: none` (PKCE);
+  `private_key_jwt` would need the front to verify client assertions and is refused with the
+  reason. Redirect URIs match exactly, as Supabase does. Claude's, VS Code's and MCPJam's real
+  documents fit (fixtures in `mcp/testdata/`).
+- **Where the probe runs which checks.** CI's production probe (`site-agent`) now runs both
+  versions without credentials: the 401 for `initialize` and `server/discover`, the metadata and
+  its authorization server are hard checks. It cannot check what a branch adds, because
+  production runs main's last deploy; a hard check there would fail every PR that changes the
+  server until after its merge. So the branch's server is probed in e2e (`mcp-smoke.spec.ts`,
+  both versions with a throwaway household's token, `MCP_SMOKE_CIMD=1`), and production after
+  each deploy (`smoke-remote.sh`, both versions, a real document). No expected-fail or warn
+  state anywhere; the CIMD checks are opt-in because only the front has them.
+- **The post-deploy smoke only reads** (review 0). It checks the front's CIMD flag,
+  rediscovery and the refusal of an http client_id, none of which fetches or registers anything.
+  A real document through the hosted front would register a client in production, a data write
+  the brief did not allow, and a document fresh on main's CDN could fail the first deploy's
+  smoke. The real-document path is proven on the local stack (integration test, journey with
+  Claude's document); the one hosted proof waits for Peter (`NEEDS_PETER.md`, "Job 94").
+- **Deno tests use 2025-11-25**, the smoke script's default, instead of 2025-06-18.
+
+## Job 175: landing job 94 (#231) on the renamed main (2026-11-10)
+
+- **Rebased, behaviour unchanged.** Job 94 was written before the Snacklist rename and the strict
+  TypeScript pack. The rebase keeps main's names: mcp.snacklist.app in the probes, docs and tests,
+  the `verify-snacklist` skill for the journey and feature files, and server name `snacklist`. The
+  CIMD front now uses main's proxy hosts (`publicOrigins`, `?via=` markers): each host advertises
+  its own `/oauth` front, and the token limit counts per client behind either host.
+- **Migration renamed to `20261110190000_mcp_cimd_clients.sql`.** Its 2026-11-04 timestamp sorted
+  before main's newest migration, which the schema check refuses. It ran on no shared database.
+- **Strict-pack fixes in the job's files.** Quoted snake_case wire keys, narrowing in place of `!`,
+  and defaults for split and index reads. One real case among them: `withinLimits` refuses when the
+  rate function returns no row. Before, it would have thrown.
+- **Writers' copy stays brand-free.** The never-claim line in FEATURES-FOR-WRITERS says "the
+  well-known assistants", not two product names, because main's copy names no assistant.

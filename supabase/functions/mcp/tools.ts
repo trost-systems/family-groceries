@@ -28,6 +28,16 @@ Ein Haushalt kann mehrere Listen haben (list_lists, z. B. "Wocheneinkauf" und "B
 Werkzeuge nehmen dann "list" (id oder genauer Name), ohne Angabe gilt die erste Liste.`;
 
 /**
+ * `ttlMs`/`cacheScope` on 2026-era list results (SEP-2549). The tool list and the server's
+ * description change only with a deploy; an hour keeps clients from polling. Private: the answers
+ * are to an authenticated caller, so no shared cache may keep them.
+ */
+const CACHE_HINTS = {
+  'tools/list': { ttlMs: 3_600_000, cacheScope: 'private' },
+  'server/discover': { ttlMs: 3_600_000, cacheScope: 'private' },
+} as const;
+
+/**
  * Job 50: what a tool call of a household without Snacklist Premium gets while the lock is on. A
  * tool result, not a 401/403: the client keeps its token and needs no new sign-in once the
  * household unlocks. PLACEHOLDER copy (Spec #4); the final text comes from Snacklist Launch.
@@ -166,7 +176,7 @@ export async function listLists(tx: Tx, household: string): Promise<ListEntry[]>
 export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServer {
   const server = new McpServer(
     { name: 'snacklist', title: 'Snacklist', version: '1.0.0' },
-    { instructions: INSTRUCTIONS },
+    { instructions: INSTRUCTIONS, cacheHints: CACHE_HINTS },
   );
   const asked = new Map<string, Promise<Access>>();
   const once: Gate = (household) => {
