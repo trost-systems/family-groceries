@@ -97,7 +97,7 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   and app screens. Its `film.mjs` films HTML/CSS scenes with Playwright.
 - Run `scripts/verify.sh` before pushing. It runs the same
   `scripts/gates/<gate>.sh` scripts the CI jobs run (gitleaks, lint, changelog, site,
-  db, functions, fg-cli, flutter, web-prod, fastlane, e2e); `--only <gate>` runs
+  site-agent, emails, db, functions, nexus, fg-cli, flutter, web-prod, fastlane, e2e); `--only <gate>` runs
   some, `--only e2e -- <spec>` one spec. A check goes into a gate script,
   never into `ci.yml` or `verify.sh` (`scripts/check-gates.sh` fails
   otherwise). The e2e gate holds the box-wide lock `/tmp/fg-e2e.lock`, so a

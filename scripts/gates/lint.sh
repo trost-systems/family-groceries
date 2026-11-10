@@ -12,6 +12,8 @@ cd "$REPO_ROOT"
 actionlint
 shellcheck scripts/*.sh scripts/gates/*.sh scripts/backup/*.sh scripts/ci/*.sh scripts/release/*.sh scripts/checks/*.sh nexus/scripts/*.sh scripts/fg .githooks/*
 (cd e2e && { [[ -d node_modules ]] || npm ci; } && npx tsc --noEmit -p .)
+# emails/ is a tsc project of the TypeScript pack below; its tsc needs the package installed.
+(cd emails && { [[ -d node_modules ]] || npm ci --no-audit --no-fund; })
 # The TypeScript pack (tool/lint/ts/pack.ts, job 101): its own fmt and lint, then every `error` rule.
 (cd tool/lint/ts && deno fmt --check && deno lint)
 deno run --allow-all tool/lint/ts/strict.ts

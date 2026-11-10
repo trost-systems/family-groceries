@@ -42,6 +42,11 @@ export async function desired(
   return out;
 }
 
+/** The keys whose template still holds a line nobody approved (emails/, `data-hl-draft`). */
+export function drafts(keys: Record<string, string>): string[] {
+  return Object.keys(keys).filter((k) => keys[k]?.includes('data-hl-draft'));
+}
+
 if (import.meta.main) {
   const dryRun = Deno.args.includes('--dry-run');
   const token = Deno.env.get('SUPABASE_ACCESS_TOKEN');
@@ -62,6 +67,15 @@ if (import.meta.main) {
   for (const k of changed) console.log(`${k}: changes`);
   if (!changed.length) console.log('auth mail templates already up to date');
   if (dryRun || !changed.length) Deno.exit(0);
+  const unapproved = drafts(next);
+  if (unapproved.length) {
+    console.error(
+      `not applied: draft lines in ${
+        unapproved.join(', ')
+      } (emails/COPY_NEEDED.md; confirm them in emails/src/emails/auth.tsx)`,
+    );
+    Deno.exit(1);
+  }
   const body = Object.fromEntries(changed.map((k) => [k, next[k]]));
   const patch = await fetch(api, { method: 'PATCH', headers, body: JSON.stringify(body) });
   // The status only: an error body may quote template text.

@@ -673,3 +673,7 @@ Peter's picks O2 and H2 (PR #331). Signed out, the app opens on a welcome screen
 ## Job 94: MCP protocol 2026-07-28 next to 2025-11-25, Client ID Metadata Documents
 
 The MCP server serves both protocol versions. Tests pin the parts of 2026-07-28 the SDK already did (`server/discover`, stateless serving, `Mcp-Method`/`Mcp-Name`, cache fields, now an hour). 2025-11-25 clients work exactly as before. Supabase Auth can't do Client ID Metadata Documents, so a front at `<endpoint>/oauth` adds them for 2026-era clients only, and dynamic registration still works. The probe hard-checks `server/discover` and both versions in CI, after deploy and in e2e. Verified with Claude's real document on the local stack. PR #231 (landed by job 175). Review 0 fixes: the token limit counts per client behind the mcp.snacklist.app proxy (`x-vercel-forwarded-for`), and the post-deploy smoke no longer registers anything in production. Details: [docs/done/94-mcp-spec-2026-07-28.md](docs/done/94-mcp-spec-2026-07-28.md).
+
+## Job 177: Snacklist mail design around AL4 (2026-11-10)
+
+Approved by Peter on 2026-11-10 and landed by job 179: [docs/done/177-mail-design-snacklist.md](docs/done/177-mail-design-snacklist.md), PR #362. The hosted project still sends AL4's plain mails until the steps in docs/NEEDS_PETER.md (job 177) are done.

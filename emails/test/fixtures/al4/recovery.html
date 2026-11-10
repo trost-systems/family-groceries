@@ -1,0 +1,19 @@
+{{- /* German when the account saved mail_locale "de" (the app sets user_metadata.mail_locale), else English. See docs/AUTH.md. */ -}}
+{{- $de := false }}{{ with .Data }}{{ $de = eq (printf "%v" .mail_locale) "de" }}{{ end -}}
+{{ if $de -}}
+<h2>Passwort zurücksetzen</h2>
+
+<p>Jemand möchte das Passwort für dein Snacklist-Konto zurücksetzen. Öffne den Link unten, um ein neues zu wählen.</p>
+<p><a href="{{ .ConfirmationURL }}">Passwort zurücksetzen</a></p>
+
+<p>Wenn du das nicht warst, kannst du diese E-Mail einfach ignorieren. Dein Passwort bleibt dann unverändert.</p>
+<p style="color:#6b6b6b;font-size:13px">Snacklist · <a href="https://snacklist.app">snacklist.app</a></p>
+{{- else -}}
+<h2>Reset your password</h2>
+
+<p>We received a request to reset the password for your Snacklist account. Follow the link below to choose a new one.</p>
+<p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
+
+<p>If you didn't request this, you can safely ignore this email. Your password stays the same.</p>
+<p style="color:#6b6b6b;font-size:13px">Snacklist · <a href="https://snacklist.app">snacklist.app</a></p>
+{{- end }}

@@ -202,14 +202,18 @@ reauthentication mails from `"Peter · Snacklist" <hello@snacklist.app>`
   and accounts made outside the app). Subjects are Go templates with the
   same data as the body, so they branch too. The `with .Data` guard keeps an
   account without metadata on English instead of a template error.
+  Both are built from `emails/` (`cd emails && npm run build`, docs/EMAIL.md):
+  each language's mail in the Snacklist design, joined under this pick. Edit
+  the words in `emails/src/emails/auth.tsx`, not in the built files.
 - The local stack reads them from `config.toml`. Production gets them from
   `supabase/deploy/auth_mail.ts` (Management API, converges, `--dry-run`
   lists the keys that would change), with `SUPABASE_ACCESS_TOKEN` and
   `SUPABASE_PROJECT_REF` set:
   `deno run --allow-read --allow-env --allow-net --config supabase/deploy/deno.json supabase/deploy/auth_mail.ts`.
   Run it after a merge that changes a template; the deploy workflow doesn't.
-- Notification mails (password changed etc.) are off in production and keep
-  Supabase's English defaults.
+  It refuses a template that still holds a draft line (`data-hl-draft`).
+- Notification mails (password changed etc.) are off in production. Their
+  built templates keep Supabase's English and add a German draft.
 
 ### Platform setup in the repo
 

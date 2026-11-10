@@ -43,6 +43,7 @@ jobs:
       heavy: ${{ steps.filter.outputs.heavy }}
       native: ${{ steps.filter.outputs.native }}
       fastlane: ${{ steps.filter.outputs.fastlane }}
+      emails: ${{ steps.filter.outputs.emails }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -80,7 +81,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: e2e/package-lock.json
+          cache-dependency-path: |
+            e2e/package-lock.json
+            emails/package-lock.json
       - uses: ./.github/actions/deno
         with:
           # tool/lint/ts/pack.ts lists every lint rule of exactly this Deno; bump both together.
@@ -172,6 +175,21 @@ jobs:
             site/package-lock.json
             site/checks/package-lock.json
       - run: scripts/gates/site-agent.sh
+
+  # Job 55: the Snacklist mails (emails/) and the Supabase templates built from them.
+  emails:
+    needs: changes
+    if: needs.changes.outputs.emails == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: emails/package-lock.json
+      - run: scripts/gates/emails.sh
 
   fg-cli:
     needs: changes
@@ -325,7 +343,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
   ci-ok:
-    needs: [changes, gitleaks, lint, changelog, db, functions, nexus, site, site-agent, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
+    needs: [changes, gitleaks, lint, changelog, db, functions, nexus, site, site-agent, emails, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

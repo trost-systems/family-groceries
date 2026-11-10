@@ -1,0 +1,8 @@
+{
+  "confirmation": "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Bestätige deine E-Mail-Adresse für Snacklist{{ else }}Confirm your email address for Snacklist{{ end }}",
+  "magic_link": "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Dein Anmeldelink für Snacklist{{ else }}Your Snacklist sign-in link{{ end }}",
+  "recovery": "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Setze dein Snacklist-Passwort zurück{{ else }}Reset your Snacklist password{{ end }}",
+  "email_change": "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Bestätige deine neue E-Mail-Adresse für Snacklist{{ else }}Confirm your new email address for Snacklist{{ end }}",
+  "invite": "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}Du wurdest zu Snacklist eingeladen{{ else }}You've been invited to Snacklist{{ end }}",
+  "reauthentication": "{{ $de := false }}{{ with .Data }}{{ $de = eq (printf \"%v\" .mail_locale) \"de\" }}{{ end }}{{ if $de }}{{ .Token }} ist dein Snacklist-Bestätigungscode{{ else }}{{ .Token }} is your Snacklist verification code{{ end }}"
+}

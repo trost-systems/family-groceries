@@ -256,6 +256,9 @@ function outputs() {
   add(`${WEB}/icons/Icon-maskable-192.png`, icon('light', 192, { place: fitAdaptive(192) }));
   add(`${WEB}/icons/Icon-maskable-512.png`, icon('light', 512, { place: fitAdaptive(512) }));
   add(`${WEB}/icons/apple-touch-icon.png`, icon('light', 180));
+  // Job 55: the email header's logo, 48 px shown at 2x, square so it never has transparent
+  // corners for a client's dark mode to invert behind; the mail rounds it with CSS.
+  add('site/public/email/snacklist-icon-96.png', icon('light', 96));
   for (const mode of MODES) add(`${WEB}/splash/mark-${mode}.svg`, markSvg(mode));
   // Amazon's skill store sizes; full bleed like the App Store icon, which Amazon may round.
   add(`${ALEXA}/de-DE_smallIconUri.png`, icon('light', 108));

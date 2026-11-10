@@ -1,0 +1,17 @@
+{{- /* German when the account saved mail_locale "de" (the app sets user_metadata.mail_locale), else English. See docs/AUTH.md. */ -}}
+{{- $de := false }}{{ with .Data }}{{ $de = eq (printf "%v" .mail_locale) "de" }}{{ end -}}
+{{ if $de -}}
+<h2>Dein Bestätigungscode</h2>
+
+<p>Gib diesen Code in Snacklist ein, um zu bestätigen, dass du es bist. Er ist nur kurz gültig.</p>
+
+<p><strong>{{ .Token }}</strong></p>
+<p style="color:#6b6b6b;font-size:13px">Snacklist · <a href="https://snacklist.app">snacklist.app</a></p>
+{{- else -}}
+<h2>Your verification code</h2>
+
+<p>Enter this code in Snacklist to confirm it's you. It expires shortly.</p>
+
+<p><strong>{{ .Token }}</strong></p>
+<p style="color:#6b6b6b;font-size:13px">Snacklist · <a href="https://snacklist.app">snacklist.app</a></p>
+{{- end }}

@@ -20,6 +20,7 @@ the same things.
 | `site-agent` | snacklist.app for AI agents ([`AGENT_FIRST.md`](AGENT_FIRST.md)): the MCP probe's fixture tests and `scripts/mcp-smoke.sh https://mcp.snacklist.app` without credentials, the built site served like Vercel serves it (llms.txt, twins, sitemap, OpenAPI when `public-api` is on) and the waitlist form in Chromium | yes |
 | `db` | Migrations on a fresh database, pgTAP, the classifier sweep, `db lint` | yes |
 | `functions` | Deno fmt, lint and tests for the functions, the classifier and the deploy tooling | yes |
+| `emails` | The mails in `emails/` ([`EMAIL.md`](EMAIL.md)): type checks, `supabase/templates/` and config.toml's template block exactly as `emails/` builds them, the wording, footer and template tests | yes |
 | `nexus` | The ops dashboard in `nexus/` ([`nexus/README.md`](../nexus/README.md)): Deno fmt, lint, type check, tests of the snapshot pipeline (fixture ops dir, privacy, hill-climb docs on main) and the page, one browser bundle | yes |
 | `fg-cli` | Deno fmt, lint and tests for the verify skill's CLI | yes |
 | `flutter` | Generated l10n, format, `flutter analyze --fatal-infos`, tests; the same for the Widgetbook (`app/widgetbook/`) | yes |
@@ -85,6 +86,8 @@ The `changes` job (`scripts/ci-changes.sh`) reads the PR's changed files:
   generated from pubspec. A Dart change in `app/lib/` is compiled by the
   flutter, web-prod and e2e gates already.
 - `fastlane` runs when `app/fastlane/` or `app/Gemfile*` changed.
+- `emails` runs when `emails/`, `supabase/templates/`, `supabase/config.toml`,
+  `design/tokens/` or `site/public/email/` changed.
 - A change to `ci.yml`, `.github/actions/`, `scripts/ci-changes.sh`,
   `scripts/lib.sh`, `scripts/gates/` or `scripts/e2e-summary.sh` runs
   everything, and so does a push to `main` or a manual run.

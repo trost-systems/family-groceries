@@ -245,4 +245,5 @@ export const projects: readonly Project[] = [
   { dir: 'site/config', checker: 'deno' },
   { dir: 'nexus', checker: 'deno' },
   { dir: 'e2e', checker: 'tsc' },
+  { dir: 'emails', checker: 'tsc' },
 ];
