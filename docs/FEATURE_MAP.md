@@ -1,5 +1,9 @@
 # Feature map
 
+This file points at the code-backed inventory: what Snacklist does today. The product candidate map
+(built, planned, considering, dropped, and the product decisions behind them) is
+[`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md).
+
 `.cursor/skills/verify-snacklist/features/` describes what Snacklist does today, one file per
 user-facing feature (index: its `README.md`). `FEATURES-FOR-WRITERS.md` in the same folder is
 the plain-language version with the exact German and English labels, a "never claim" list per

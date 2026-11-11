@@ -18,8 +18,9 @@ the merge. On a phone the drawer fills the screen. Press Escape to close it, and
 
 The site is static. A cron job on hz builds a snapshot and deploys it once a night, in the 03:00 hour
 (Europe/Berlin). The page fetches `/data/snapshot.json` every 60 s while the tab is visible. The header says
-how old the snapshot is. After 25 hours (a missed night) the page shows a `stale` label and dims. After 49
-hours the label says `outdated`.
+how old the snapshot is and links the product feature map (`docs/PRODUCT_FEATURE_MAP.md` on GitHub, "Feature
+map") and its living Page ("Living view"). After 25 hours (a missed night) the page shows a `stale` label and
+dims. After 49 hours the label says `outdated`.
 
 ## Layout
 

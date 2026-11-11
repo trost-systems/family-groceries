@@ -22,6 +22,23 @@ Owners:
 - **Legal** (Legal Review): legal texts and their publication.
 - **Launch** (Snacklist Launch): user-facing copy that is still a placeholder.
 
+## Product prerequisites (Peter, 11 Nov 2026)
+
+Product work that bears on the sale, not switches. The decisions and their
+status are in [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md).
+
+- **Prices and trip total** must ship before Premium goes on sale (step 5).
+- **Shelf-label scanning** must not delay the sale. It stays planned and
+  ships later, when it works well. This replaces Peter's earlier hold that
+  also waited for it (`sales-prerequisite` in the map).
+- **Household limit**: a user belongs to at most 20 households, on Free
+  and on Premium. Approved, not implemented yet: the database still stops
+  a user at 10 (job 173).
+- **Also approved and not yet in this checklist**: per-user Premium,
+  Lifetime at EUR 39.99 and Siri free under the lock. The map lists them
+  under "Now and what blocks sales"; the steps below still describe the
+  household model and EUR 29.99.
+
 ## The switches
 
 | Switch | Where | Off today | Turned on in step |
