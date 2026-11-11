@@ -38,6 +38,7 @@ docs/FEATURE_MAP.md  # 7: infra name: box directories /workspace/hummlist/featur
 docs/MCP.md  # 8: mcp.hummlist.com and via=mcp-hummlist stay served for clients set up before the rename; dated 2026-10-31 measurements; infra name: Vercel project hummlist-mcp
 docs/PAYWALL_RELEASE.md  # 6: Hummlist's store products and RevenueCat apps until R1
 docs/PRIVACY_DATA_MAP.md  # 1, 8: Vercel still serves (and logs) hummlist.com, app.hummlist.com, mcp.hummlist.com
+docs/legal/reviews/2026-11-11-snacklist-n127-cloud-ocr.md  # 7, 10: historical legal review; cites prior review filename 2026-10-30-hummlist.md and box path /workspace/hummlist/research/legal-review/
 docs/PURCHASES.md  # 6: com.hummlist.app.* product ids, hummlistProductIds, Hummlist RevenueCat apps and subscription group until R1
 docs/RELEASE.md  # 6, 7: Hummlist store apps, upload key CN=Hummlist, assetlinks fingerprints, hummlist-maint branch; past release notes; preview.app.hummlist.com
 docs/SIRI_SHORTCUT.md  # 7, 8: x-hummlist-client from installed Hummlist builds; job 97/92 spoken-name history
