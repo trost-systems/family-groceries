@@ -11171,3 +11171,8 @@ main before the rename) keeps a Hummlist hotfix build possible.
   and a network step we cannot test here.
 - **Other projects unchanged.** `hummlist-site` decides by branch name only, `hummlist-mcp`'s
   `git diff … || exit 1` turns any git error into a build, and `hummlist-nexus` has no git link.
+- **`release` fast-forwarded by hand after the merge.** The Release run uploads, and so moves
+  `release`, only when `app/` or `release.yml` changed since the last upload, and #364 changed
+  neither. Waiting for the next app change would have kept production on the 04:00 UTC build. The
+  fix's commit `c08a48b9` has the same `app/` and web build scripts as `0286a194`, the last store
+  upload, so the hand push (docs/DEPLOY.md) keeps the web app level with the stores.

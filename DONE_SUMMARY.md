@@ -677,3 +677,7 @@ The MCP server serves both protocol versions. Tests pin the parts of 2026-07-28 
 ## Job 177: Snacklist mail design around AL4 (2026-11-10)
 
 Approved by Peter on 2026-11-10 and landed by job 179: [docs/done/177-mail-design-snacklist.md](docs/done/177-mail-design-snacklist.md), PR #362. The hosted project still sends AL4's plain mails until the steps in docs/NEEDS_PETER.md (job 177) are done.
+
+## Job 180: web production deploys unbroken (2026-11-11)
+
+The Ignored Build Step diffed against a commit outside Vercel's 10-commit clone, so three release deploys ended in ERROR. It now lives in `vercel.json` (`scripts/vercel-ignore.sh`), which builds when the commit is missing. PR #364 (`c08a48b9`), production `dpl_8wp1uaRHLk3UYisrN5X7iVYvKQ3Z` READY. Details: [docs/done/180-fix-vercel-ignore.md](docs/done/180-fix-vercel-ignore.md).
