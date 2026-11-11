@@ -11176,3 +11176,24 @@ main before the rename) keeps a Hummlist hotfix build possible.
   neither. Waiting for the next app change would have kept production on the 04:00 UTC build. The
   fix's commit `c08a48b9` has the same `app/` and web build scripts as `0286a194`, the last store
   upload, so the hand push (docs/DEPLOY.md) keeps the web app level with the stores.
+
+## Job 181: the product feature map in the repo, 2026-11-11
+
+- **Two maps, two files.** `docs/FEATURE_MAP.md` stays the pointer to the code-backed inventory
+  (what Snacklist does today, `.cursor/skills/verify-snacklist/features/`). The product candidate
+  map (built, planned, considering, dropped, and the decisions behind them) is the new
+  [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md). The living Page is its navigation view; Nexus
+  links both from its header.
+- **Peter's product decisions of 11 Nov 2026 live in that map**, with their status:
+  `household-limit` (at most 20 households per user, Free and Premium; approved, not implemented;
+  the database has stopped a user at 10 since job 173), `sales-prerequisite` (prices and trip total
+  before the sale; shelf-label scanning must not delay it), `shared-views` (a lean, not approved)
+  and `receipt-scanning` (open). This job implements none of them.
+- **Topic slugs, not codes.** Features and decisions are named by stable kebab-case slugs
+  (`shelf-label-scanning`, `prices-and-trip-total`) and shown by their names. The old letter and
+  number IDs (F27, UA1, ...) appear only in the map's legacy table. Code symbols and the
+  verify-snacklist inventory's feature ids keep their names.
+- **From the lead's draft.** The map is the lead's draft of 11 Nov 2026 with one fact corrected:
+  the draft said the code has no membership cap, but job 173's trigger has stopped a user at 10
+  households since 9 Nov. The decision (20) is unchanged. The code check moved to `3119516d`; the
+  three commits since the draft's `0286a194` change no feature it lists.

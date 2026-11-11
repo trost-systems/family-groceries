@@ -137,6 +137,12 @@ h3 {
   gap: var(--hl-space-3);
 }
 
+.top-links {
+  display: flex;
+  gap: var(--hl-space-3);
+  font-weight: 600;
+}
+
 .freshness {
   margin: 0;
   color: var(--muted);
@@ -866,7 +872,8 @@ html[data-freshness="outdated"] #app {
     font-size: 15px;
   }
 
-  .top {
+  .top,
+  .top-tools {
     flex-wrap: wrap;
   }
 
