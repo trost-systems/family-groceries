@@ -681,3 +681,7 @@ Approved by Peter on 2026-11-10 and landed by job 179: [docs/done/177-mail-desig
 ## Job 180: web production deploys unbroken (2026-11-11)
 
 The Ignored Build Step diffed against a commit outside Vercel's 10-commit clone, so three release deploys ended in ERROR. It now lives in `vercel.json` (`scripts/vercel-ignore.sh`), which builds when the commit is missing. PR #364 (`c08a48b9`), production `dpl_8wp1uaRHLk3UYisrN5X7iVYvKQ3Z` READY. Details: [docs/done/180-fix-vercel-ignore.md](docs/done/180-fix-vercel-ignore.md).
+
+## Job 181: the product feature map in the repo, linked from Nexus (2026-11-11)
+
+`docs/PRODUCT_FEATURE_MAP.md` (built, planned, considering, dropped, decisions, topic slugs), pointers from `FEATURE_MAP.md` and `PAYWALL_RELEASE.md`, and Nexus header links (live after the 12 Nov 03:07 publish). PR #367 (`c5d2d211`). Details: [docs/done/181-product-feature-map.md](docs/done/181-product-feature-map.md).
