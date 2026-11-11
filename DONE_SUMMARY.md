@@ -685,3 +685,7 @@ The Ignored Build Step diffed against a commit outside Vercel's 10-commit clone,
 ## Job 181: the product feature map in the repo, linked from Nexus (2026-11-11)
 
 `docs/PRODUCT_FEATURE_MAP.md` (built, planned, considering, dropped, decisions, topic slugs), pointers from `FEATURE_MAP.md` and `PAYWALL_RELEASE.md`, and Nexus header links (live after the 12 Nov 03:07 publish). PR #367 (`c5d2d211`). Details: [docs/done/181-product-feature-map.md](docs/done/181-product-feature-map.md).
+
+## Job 183: reliability beta readiness, free core (2026-11-11)
+
+No check found a blocker for the 15 Nov beta. On main 3119516d, the e2e, widget and pgTAP tests for all seven areas were green, and the hosted auth config, mails and links checked out live. Docs only: Apple S2 and the Android release-key clients are done. Native Apple and Google sign-in in the store builds, and an invite link opening the installed app, need a phone and are listed as blocked. PR #368. Details: [docs/done/183-beta-readiness.md](docs/done/183-beta-readiness.md).

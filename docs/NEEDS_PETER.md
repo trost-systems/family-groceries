@@ -23,9 +23,11 @@ Done from the box (details in the sections below):
 
 Still yours:
 
-- Section 4, step 7: an Android OAuth client for the release keystore's
-  SHA-1 (today only the build box's debug key has one, so Google sign-in
-  works in debug APKs only).
+- Section 4, step 7: done for Snacklist. `com.snacklist.app` has Android
+  OAuth clients for the Play app signing key, the upload key and the box's
+  debug key (`AUTH.md`, "Configuration", 2026-11-10). Still yours: try
+  "Mit Google anmelden" in the Play internal build on a phone; no test on
+  this side reaches the Play-signed app (job 183, 2026-11-11).
 - Section 4, step 13: renew the Apple client secret before it expires
   (set up on 2026-10-23 per the board, valid 180 days, so renew by
   2027-04-21 at the latest).
