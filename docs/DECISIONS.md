@@ -11230,3 +11230,17 @@ main before the rename) keeps a Hummlist hotfix build possible.
   prerequisite. Tier is left "Not decided", impact qualitative, cost not estimated.
 - **No legacy ID.** The map forbids new letter-and-number codes, so the row has only its slug and
   the legacy table is unchanged.
+
+## N-127: cloud receipt scanning decision (U2B, Vertex europe-west3), 2026-11-11
+
+- **Path recorded, nothing built.** On 11 Nov 2026 at 21:39 and 21:51 Europe/Berlin, Peter chose
+  U2B (cloud receipt scanning) with Legal option R1: Vertex AI `gemini-3.5-flash` in
+  `europe-west3`, under Google Cloud EMEA Ltd's CDPA. The decision is recorded on the
+  `receipt-scanning` row in [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md) and in
+  [`legal/reviews/2026-11-11-snacklist-n127-cloud-ocr.md`](legal/reviews/2026-11-11-snacklist-n127-cloud-ocr.md)
+  (Addendum A). Status: approved for docs only; no build yet; no real receipts until
+  N-135 to N-144 are met; privacy-policy and in-app text still need Peter's approval
+  before they go live. This change does not edit the live policy or any in-app text.
+- **Sources.** Fetch record and hashes are in
+  [`legal/sources/2026-11-11-n127/`](legal/sources/2026-11-11-n127/). Raw HTML, PDF and
+  text copies stay on the box and are not in this repository.

@@ -1,0 +1,65 @@
+N-127 cloud receipt scanning — source verification
+Fetched 11 November 2026, ~21:19–21:40 CET (Europe/Berlin), by Legal Review from the box with curl (HTTP 200 for every file listed). Raw HTML/PDF kept here; *.txt are tag-stripped copies; SHA256SUMS covers raw files.
+
+LAW (primary, official)
+- GDPR (DE), EUR-Lex CELEX:32016R0679 HTML — eurlex-gdpr-de.html. EUR-Lex was NOT WAF-blocked this time (HTTP 200, 864,799 bytes). Verified wording:
+  Art. 6(1)(b) "Erfüllung eines Vertrags, dessen Vertragspartei die betroffene Person ist ... erforderlich"
+  Art. 9(1) "... Gesundheitsdaten ... ist untersagt."; Art. 9(2)(a) "... für einen oder mehrere festgelegte Zwecke ausdrücklich eingewilligt"
+  Art. 13(1)(e)/(f) recipients; intent to transfer to a third country + adequacy decision or safeguards
+  Art. 25(2) "durch Voreinstellung grundsätzlich nur personenbezogene Daten, deren Verarbeitung für den jeweiligen bestimmten Verarbeitungszweck erforderlich ist"
+  Art. 28(3) contract contents; (a) "nur auf dokumentierte Weisung des Verantwortlichen — auch in Bezug auf die Übermittlung ... an ein Drittland"
+  Art. 35(1) "insbesondere bei Verwendung neuer Technologien ... voraussichtlich ein hohes Risiko"; 35(3)(b) "umfangreiche Verarbeitung besonderer Kategorien"; 35(4) authority list
+  Art. 44 general principle for transfers
+  Second copies (unofficial): dsgvo-gesetz-art{4,5,6,9,13,25,28,32,35,44,45,46}.html.
+- § 25 TDDDG, https://www.gesetze-im-internet.de/ttdsg/__25.html (page title "§ 25 TDDDG") — tdddg-25.html. (1) consent for storage/access; (2) Nr. 2 "unbedingt erforderlich ..., damit der Anbieter eines digitalen Dienstes einen vom Nutzer ausdrücklich gewünschten digitalen Dienst zur Verfügung stellen kann."
+- CJEU C-252/21 Meta v Bundeskartellamt (DE), EUR-Lex CELEX:62021CJ0252 — paras 68–69: Art. 9(1) applies where processing allows sensitive information to be revealed "unabhängig davon, ob diese Informationen einen Nutzer dieses Netzwerks oder eine andere natürliche Person betreffen", and "unabhängig davon, ... ob der Verantwortliche mit dem Ziel handelt, Informationen zu erhalten, die unter eine der ... besonderen Kategorien fallen".
+- CJEU C-21/23 Lindenapotheke (DE), EUR-Lex CELEX:62023CJ0021 — operative part 2: order data for pharmacy-only medicines are "Gesundheitsdaten ..., auch wenn der Verkauf dieser Arzneimittel keiner ärztlichen Verschreibung bedarf".
+- Commission Implementing Decision (EU) 2023/1795 (DPF adequacy), EUR-Lex CELEX:32023D1795 — eurlex-dpf-2023-1795-de.html (fetched, in force).
+- General Court T-553/23 Latombe v Commission, EUR-Lex CELEX:62023TJ0553 — "Die Klage wird abgewiesen." delivered 3 September 2025.
+- Appeal C-703/25 P, EUR-Lex CELEX:62025CN0703 (OJ notice) — "Appeal brought on 31 October 2025". Pending status as of 11 Nov 2026 taken from secondary web reports only (UNVERIFIED on curia: the curia case page is JS-rendered; curia-t553-23.html is an empty shell).
+
+AUTHORITY GUIDANCE
+- DSK Muss-Liste DSFA v1.1 (datenschutzkonferenz-online.de PDF) — dsk-mussliste.pdf/.txt. Items checked: Nr. 11 (KI zur Steuerung der Interaktion / Bewertung persönlicher Aspekte), Nr. 14 (umfassende Profile über Kaufverhalten, e.g. Kundenkarten), Nr. 15 (Anonymisierung Art. 9 data). None matches the N-127 design.
+- WP29 WP248 rev.01 DPIA guidelines (endorsed by EDPB) — wp248.pdf via ec.europa.eu/newsroom/article29/redirection/document/47711: criteria 4 (sensitive/highly personal) and 8 (innovative use); "In most cases, a data controller can consider that a processing meeting two criteria would require a DPIA".
+- EDPB Guidelines 07/2020 controller/processor v2.0 — edpb-07-2020.pdf: processor that "starts to determine its own purposes and means ... will then be considered a controller".
+- EDPB Guidelines 2/2019 Art. 6(1)(b) — edpb-02-2019.pdf: processing must be "objectively necessary for the performance of a contract"; 6(1)(b) "will not cover processing which is useful but not objectively necessary".
+- LfDI BW: not fetched (not needed).
+
+STORE POLICY
+- Apple App Store Review Guidelines (apple-guidelines.html): 5.1.1(ii) "Paid functionality must not be dependent on or require a user to grant access to this data."; 5.1.1(iii) "use the out-of-process picker ... rather than requesting full access to protected resources like Photos"; 5.1.2(i) "clearly disclose where personal data will be shared with third parties, including with third-party AI, and obtain explicit permission before doing so."
+- Apple App Privacy Details (apple-app-privacy.html): "Collect" = transmitting off device and accessible "for a period longer than what is necessary to service the transmitted request in real time"; data types "Photos or Videos", "Purchase History".
+- Google Play Data safety (play-datasafety.html): ephemeral processing still entered in the form; "Service provider" transfers are not "sharing"; data types Photos, Purchase history, User payment info. play-userdata.html fetched (User Data policy).
+
+VENDOR FACTS (candidates only — none approved)
+- Google Document AI: v-google-docai-setup ("If you choose the European Union location, your data and processes are only stored in the European Union." + "You and your users can access the data from any location."); v-google-docai-security ("processed in memory, encrypted in flight, and not persisted to disk"; "we never use customer data to train our Document AI models"; Google "temporarily logs some metadata"). DPA page v-google-dpa fetched; contracting entity UNVERIFIED. Google LLC DPF statement: v-google-frameworks.
+- Azure AI Document Intelligence: v-azure-di-privacy ("processed in the same region where the Document Intelligence resource was created"; "stores submitted input data and analyze results for 24 hours"; Delete Analyze Result API). No-training statement NOT found on this page (UNVERIFIED). Microsoft DPF: v-ms-dpf ("Last Updated: September 2026 Microsoft complies with the EU-U.S. ... Data Privacy Frameworks").
+- Amazon Textract: v-aws-service-terms §50.3 ("we may use and store AI Content ... to develop and improve" and may store it "in an AWS region outside of the AWS region" where used); v-aws-ai-optout (opt-out via AWS Organizations policy). AWS DPF: v-aws-dpf. Retention of inputs UNVERIFIED.
+- Mistral AI (EU HQ): v-mistral-storage (12 Aug 2026: "By default, your data is hosted in the European Union"; "can be temporarily transferred outside of the European Union" depending on feature, per Trust Center sub-processors); v-mistral-zdr (ZDR covers /v1/ocr; Files API outside ZDR); v-mistral-inference ("Data sent through our API isn’t used for model training, and zero data retention is available on request"); v-mistral-cts §4.2 (no training except opt-in/opt-out settings, Feedback, Order Form, Labs/Preview models); v-mistral-training (Studio Free mode trains by default; pay-as-you-go wording ambiguous); v-mistral-dpa (transfers on adequacy or SCCs). Sub-processor list (trust.mistral.ai, JS) UNVERIFIED.
+- Official DPF list (dataprivacyframework.gov/list) is JS-rendered — vendor self-statements only; UNVERIFIED on the official list.
+- Art. 7(4) (EUR-Lex text): "... Erfüllung eines Vertrags, einschließlich der Erbringung einer Dienstleistung, von der Einwilligung abhängig ist, obwohl diese Einwilligung für die Erfüllung nicht erforderlich ist".
+- NOT re-fetched this session: EDPB Recommendations 01/2020 (supplementary measures) — referenced only conditionally; LfDI BW (not used).
+
+ADDENDUM 11 Nov 2026 ~21:45–22:05 CET — Vertex AI / Gemini, Chinese open models (Peter t91u U2B; t92u)
+GOOGLE CLOUD TERMS (curl, HTTP 200)
+- g-cdpa (cloud.google.com/terms/data-processing-addendum; "Last modified October 30, 2026"): 10.1 "Subject to Google’s data location commitments under the Service Specific Terms ... Customer Data may be processed in any country where Google or its Subprocessors maintain facilities"; §11 subprocessor consent / 11.4 objection; SCCs + "Alternative Transfer Solution" (e.g. adequacy framework) defined.
+- g-contracting (terms/google-entity): "EMEA except France, Italy and Poland — Google Cloud EMEA Limited". Individual (non-business) account status re CDPA: UNVERIFIED.
+- g-service-terms: §16 AI/ML Data Location — ML processing and storage "only in that Multi-Region" (contractual commitment is multi-region); §18 Training Restriction "Google will not use Customer Data to train or fine-tune any AI/ML models without Customer's prior permission or instruction."; "Handling of Prompts and Generated Output" (no storage outside the account beyond what is reasonably necessary); §19 Separate Offerings "subject to separate terms and conditions" and Google disclaims liability; §20 Grounding with Google Search/Maps.
+- g-terms (GCP ToS) 4.3 Generative AI Safety and Abuse: if tools detect potential abuse "Google may log Customer prompts".
+- g-data-residency (terms/data-residency): "Generative AI on Gemini Enterprise Agent Platform (formerly Generative AI on Vertex AI) (except for Grounding with Google Search, Grounding with Google Maps, and RAG Engine)" and Document AI listed.
+- g-subprocessors ("Last modified October 19, 2026"): Google Group subprocessors worldwide for "All AI Solutions, Pre-Trained APIs, AI Platform/Gemini platform (formerly Vertex AI), Generative AI Services" (e.g. technical support, service maintenance); parent Google LLC.
+- DPF official list, dataprivacyframework.gov/participant/5780 (rendered via WebFetch; curl gets JS shell): Google LLC — EU-U.S. DPF "Active", next certification due 09/13/2027. Saved: dpf-google-5780-webfetch.txt.
+VERTEX DOCS (docs.cloud.google.com, redirects to gemini-enterprise-agent-platform/*; all "Last updated 2026-11-10/11 UTC")
+- vx-zdr: no training "without your prior permission or instruction"; abuse prompt logging; Grounding w/ Search logs up to 3 days, Maps 30 days, cannot be disabled; request-response logging "disabled by default"; Interactions API store defaults true -> set false; implicit caching in-memory + durable "Enabled by default", deleted ≤24 h, can be disabled per project ("Turning off caching disables both in-memory caching and durable caching").
+- vx-abuse: Google models (non-Frontier): if classifiers flag, prompts logged "for up to 90 days in the same region or multi-region selected", human review possible; Master Agreement customers exempt; online-terms customers in scope. No opt-out for online-terms customers found.
+- vx-data-residency: table (compare-yes icons parsed from HTML): gemini-3.5-flash ML processing ticks EU multi-region AND Germany (europe-west3); gemini-3.5-flash-lite / 3.1-flash-lite: EU multi-region only; DeepSeek-V4.1-Flash: no US/EU tick; "Requests submitted to a global endpoint may be processed in any Google Cloud location".
+- vx-gemini-35-flash: availability incl. europe-west3; "ML processing ... Europe: europe-west2, europe-west3"; "Launch stage: GA Release date: May 19, 2026 Retirement date: May 19, 2027 or later"; image input (max images per prompt 3,000).
+- vx-locations: per-cell availability JS-rendered -> not read (UNVERIFIED from that page; model page used instead).
+- vx-open-models: "Customer prompts and model responses are not shared with third parties when using the Gemini Enterprise API, including open models."; data at rest in region, "regionalization of data processing may vary".
+- vx-maas-deepseek: DeepSeek-V4.1-Flash "accepts text and image input"; Regions "global"; "Separate Offerings" + "separate terms found in the relevant model card".
+- vx-maas-qwen (redirected to deprecations/open-models): all qwen3-*-maas, deepseek-ocr-maas, deepseek-v3.x/r1 MaaS deprecated 21 Jul 2026, retired 21 Oct 2026; self-deploy alternatives.
+- vx-qwen3vl-notebook.ipynb (GoogleCloudPlatform/vertex-ai-samples, raw GitHub): model "qwen/qwen3-vl", deploy(accept_eula=True), verified config a3-highgpu-1g + 1x H100; default region us-central1. europe-west3 H100 availability UNVERIFIED.
+- hf-qwen3-vl-8b (license: apache-2.0); hf-deepseek-ocr (license: mit).
+- vx-pricing / vx-genai-pricing (cloud.google.com/model-garden/pricing): Gemini 3.5 Flash non-global $1.65 / 1M input (text, image), $9.90 / 1M output; Flash-Lite non-global $0.33 / $2.75. DeepSeek/Qwen MaaS prices not on page (retired / not found). Self-deploy GPU hourly price NOT fetched.
+- docai-pricing: Expense parser $0.10 per document (1 count); Enterprise Document OCR $1.50 per 1,000 (after 1,000 free).
+NON-LEGAL QUALITY EVIDENCE
+- q-nanonets-idp (benchmarking.nanonets.com/benchmarks/idp, vendor-run benchmark): Gemini-3-Flash overall 80.5 (OCR 81.7); Qwen3-VL-235B 80.0 (OCR 71.7); DeepSeek-OCR not listed. Older model generations than those offered now.
