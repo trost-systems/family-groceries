@@ -1,13 +1,13 @@
 # App language
 
-The app speaks German or English. By default it follows the device's preferred languages (German when the device prefers neither). Under Mehr → Einstellungen → Sprache the user can pick „Deutsch“ or „English“ instead. The switch applies live to the whole UI (labels, snackbars, category names of the default categories) without a restart and is stored on the device only, also across sign-out.
+The app speaks German or English. By default it follows the device's preferred languages (German when the device prefers neither). Under Mehr → Einstellungen → Sprache the user can pick „Deutsch“ or „English“ instead. The switch applies live to the whole UI (labels, snackbars, category names of the default categories) without a restart and is stored on the device, also across sign-out. The account keeps only the mail language: the language the app shows is saved as `mail_locale`, so sign-in and confirmation mails follow it (sign-in, `mail-language`).
 
 ## Sub-features
 
 - `language-system` „Wie Gerät“ with the line „Gerade Deutsch“ / "Currently English" (the language the device gives).
 - `language-de` „Deutsch“ (its own name in every UI language).
 - `language-en` „English“ (its own name in every UI language).
-- `language-persist` kept on the device across reload and sign-out; not part of the account.
+- `language-persist` kept on the device across reload and sign-out; the pick is not part of the account and does not move to other devices (only the mail language is saved to the account).
 
 ## How to get to it (user POV)
 
@@ -30,7 +30,7 @@ Preconditions:
 ## Gotchas
 
 - Only de and en exist. The first of them in the device's preferred languages wins (fr, en gives English); German only when neither is listed.
-- Texts from the server do not follow this setting: the Siri Shortcut always answers in German (its requests carry no language), native Siri (held) sends its own language with each request, the Alexa skill answers in English on an English Alexa device and in German otherwise, the AI-assistant (MCP) tools answer in German (only the held Premium-lock message follows the client's Accept-Language), the Snacklist API's error messages (held) are English, the sign-in and confirmation emails are Supabase's English defaults, and add-sheet catalogue rows (section „Aus dem Katalog“ / "From the catalogue") are German words in both UI languages (driven 2026-11-01).
+- Texts from the server do not follow this setting: the Siri Shortcut always answers in German (its requests carry no language), native Siri (held) sends its own language with each request, the Alexa skill answers in English on an English Alexa device and in German otherwise, the AI-assistant (MCP) tools answer in German (only the held Premium-lock message follows the client's Accept-Language), the Snacklist API's error messages (held) are English, and add-sheet catalogue rows (section „Aus dem Katalog“ / "From the catalogue") are German words in both UI languages (driven 2026-11-01). The sign-in and confirmation emails do follow it: German for a German app, English otherwise (driven 2026-11-11, sign-in `mail-language`).
 - The setting is per device: a fresh browser context starts on „Wie Gerät“.
 - Einstellungen has a section heading „Sprache“ / "Language" too, so `heading 'Language'` is true on both pages: pair it with the URL check.
 - Back-button names flip with the language („Zurück“ / "Back").
