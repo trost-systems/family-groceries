@@ -689,3 +689,7 @@ The Ignored Build Step diffed against a commit outside Vercel's 10-commit clone,
 ## Job 183: reliability beta readiness, free core (2026-11-11)
 
 No check found a blocker for the 15 Nov beta. On main 3119516d, the e2e, widget and pgTAP tests for all seven areas were green, and the hosted auth config, mails and links checked out live. Docs only: Apple S2 and the Android release-key clients are done. Native Apple and Google sign-in in the store builds, and an invite link opening the installed app, need a phone and are listed as blocked. PR #368. Details: [docs/done/183-beta-readiness.md](docs/done/183-beta-readiness.md).
+
+## Job 188: planned vs bought in the product feature map (2026-11-11)
+
+`planned-vs-bought` added as a considering row after `receipt-scanning` in `docs/PRODUCT_FEATURE_MAP.md` (Considering: 7). Docs only. Details: [docs/done/188-docs-planned-vs-bought.md](docs/done/188-docs-planned-vs-bought.md).

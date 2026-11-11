@@ -11218,3 +11218,15 @@ main before the rename) keeps a Hummlist hotfix build possible.
 - **Crash reports need the analytics yes.** PostHog error tracking starts only after consent
   (job 44), so a tester who declines sends no crashes. That is the consent design, not a gap to fix.
   The handoff tells Ops that feedback (Mehr, „Feedback senden“) is the channel that always works.
+
+## Job 188: planned vs bought in the product feature map, 2026-11-11
+
+- **Recorded as considering, nothing built.** Peter asked at 08:09 Europe/Berlin to write down
+  the idea of comparing what was bought with what was on the list. `planned-vs-bought` is a
+  candidate row right after `receipt-scanning` in
+  [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md), and Considering counts 7. It compares a list
+  snapshot taken when shopping starts (not later edits) with confirmed receipt purchases, needs
+  `receipt-scanning` plus purchase-to-item matching, and is not an approved build or a sales
+  prerequisite. Tier is left "Not decided", impact qualitative, cost not estimated.
+- **No legacy ID.** The map forbids new letter-and-number codes, so the row has only its slug and
+  the legacy table is unchanged.
