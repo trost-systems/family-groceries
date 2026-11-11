@@ -212,7 +212,7 @@ class FakeHouseholds(final FakeAuth fakeAuth)
         if (_requests[key] case final id?) {
           return {'id': id, 'name': households[id]!.name};
         }
-        if (mine.length >= 10) {
+        if (mine.length >= 20) {
           throw const _Refused('too_many_households');
         }
         final id = nextIds.isEmpty ? 'h${++_n}' : nextIds.removeAt(0);
@@ -232,7 +232,7 @@ class FakeHouseholds(final FakeAuth fakeAuth)
           return {'status': 'declined_recently', 'household_id': null};
         }
         // Joins and join requests alike (job 173).
-        if (mine.length >= 10) {
+        if (mine.length >= 20) {
           throw const _Refused('too_many_households');
         }
         if (approval.contains(id)) {

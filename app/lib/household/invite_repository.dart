@@ -122,7 +122,7 @@ enum HouseholdProblem() {
   /// No answer from the server.
   offline,
 
-  /// The user is in 10 households already: no more.
+  /// The user is in 20 households already (`public.household_cap()`): no more.
   tooManyHouseholds,
 
   /// The user is not (or no longer) in that household.

@@ -655,7 +655,7 @@ class SessionCubit(
   /// server answers with the household it made and creates no second one.
   /// A caller that must survive an app kill passes its own kept
   /// [requestId] (the guided start's draft, job 168c).
-  /// Throws [HouseholdError]: [HouseholdProblem.tooManyHouseholds] over 10
+  /// Throws [HouseholdError]: [HouseholdProblem.tooManyHouseholds] at 20
   /// households, [HouseholdProblem.offline] without an answer.
   Future<String> createHousehold(
     String name, {

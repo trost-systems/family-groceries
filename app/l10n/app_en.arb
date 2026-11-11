@@ -713,7 +713,7 @@
   "tipAmountsBody": "Write “2 cucumbers” or “milk 2 l” and Snacklist picks up the amount.",
   "tipDismiss": "Hide tip",
   "@premiumWithVat": {"placeholders": {"period": {"type": "String"}}},
-  "tooManyHouseholds": "You are in 10 households already. Leave one before you create or join another.",
+  "tooManyHouseholds": "You are in 20 households already. Leave one before you create or join another.",
   "householdSwitch": "Switch household",
   "householdsTitle": "Your households",
   "householdMembers": "{count, plural, =1{1 member} other{{count} members}}",

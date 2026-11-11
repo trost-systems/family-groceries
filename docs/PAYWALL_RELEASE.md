@@ -32,8 +32,8 @@ status are in [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md).
   ships later, when it works well. This replaces Peter's earlier hold that
   also waited for it (`sales-prerequisite` in the map).
 - **Household limit**: a user belongs to at most 20 households, on Free
-  and on Premium. Approved, not implemented yet: the database still stops
-  a user at 10 (job 173).
+  and on Premium. In the database since job 200 (`public.household_cap()`);
+  the paywall and the terms do not name it yet (job 187).
 - **Also approved and not yet in this checklist**: per-user Premium,
   Lifetime at EUR 39.99 and Siri free under the lock. The map lists them
   under "Now and what blocks sales"; the steps below still describe the
