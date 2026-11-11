@@ -30,6 +30,12 @@ manual gate: a build that the internal testers have had, after a full
 end-to-end pass on it, weekly or more often once that is quick and reliable.
 It needs its own job and Peter's go.
 
+The reliability beta from 2026-11-15 (job 183) is not a public release.
+Beta testers get the same internal builds: TestFlight group "Familie" and
+the Play internal track, uploaded after every green `main` as above. Work
+keeps merging during the beta (no freeze); unfinished features stay behind
+flags.
+
 The store rating prompt (job 155, `app/lib/review/`) fits this:
 
 - iOS: no define. Every iPhone release build may ask, and StoreKit never

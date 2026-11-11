@@ -11197,3 +11197,24 @@ main before the rename) keeps a Hummlist hotfix build possible.
   the draft said the code has no membership cap, but job 173's trigger has stopped a user at 10
   households since 9 Nov. The decision (20) is unchanged. The code check moved to `3119516d`; the
   three commits since the draft's `0286a194` change no feature it lists.
+
+## Job 183: reliability beta readiness, free core (2026-11-11)
+
+- **No new tests.** Each of the seven beta areas already has green e2e, widget and pgTAP coverage
+  that runs on every merge. On main 3119516d (CI run 42931150622), 253 e2e tests passed in two
+  shards with none flaky, plus the `fg sync` smoke. The coverage matrix is in `DONE_SUMMARY.md`
+  (job 183). A copy of a passing test proves nothing new.
+- **No code fix.** None of the checks found a beta blocker. The hosted auth config (read-only
+  Management API GET, non-secret fields only) already has `com.snacklist.app` in the Apple client
+  list, the web and Snacklist iOS Google clients, the nonce check on and Site URL
+  `https://app.snacklist.app`. The hosted mail templates name Snacklist in DE and EN and link only to
+  `{{ .ConfirmationURL }}` and snacklist.app. `assetlinks.json` and the AASA list `com.snacklist.app`
+  with the Play signing key. `AUTH.md` and `NEEDS_PETER.md` still listed S2 and the Android release
+  SHA-1 client as open, so they are corrected.
+- **Native release sign-in stays unproven.** CI builds the release IPA and AAB with
+  `config/auth.json`, but no test drives the native Google or Apple SDK in a store-signed build. That
+  needs a phone with the TestFlight and Play internal builds. It is listed as blocked, not passed
+  (`OPS_HANDOFF.md` in the job directory, `NEEDS_PETER.md` section 4).
+- **Crash reports need the analytics yes.** PostHog error tracking starts only after consent
+  (job 44), so a tester who declines sends no crashes. That is the consent design, not a gap to fix.
+  The handoff tells Ops that feedback (Mehr, „Feedback senden“) is the channel that always works.

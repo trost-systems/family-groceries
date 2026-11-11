@@ -137,7 +137,7 @@ Client IDs are public; secrets are not.
 | Google Android client IDs | yes | only Google Cloud and Supabase (additional client IDs); Android finds them by package name and SHA-1. Snacklist (`com.snacklist.app`): Play app signing `1001040145655-raog296lceu901h72e852e10kt75a7e2`, upload key `1001040145655-q9q9t08ugkv4fr117j01qck0ijobb3ck`, box debug `1001040145655-l88umh5facf1anqmqtpv7mtbtaukqe61`. Hummlist's clients stay |
 | Google Web client secret | **no** | Supabase only (dashboard or `scripts/configure-social-auth.mjs`) |
 | Apple Services ID | yes | Supabase Apple provider (first client ID) |
-| Bundle ID `com.snacklist.app` | yes | Supabase Apple provider (in the client ID list), to add at the Snacklist cut-over (job 174, S2) |
+| Bundle ID `com.snacklist.app` | yes | Supabase Apple provider (in the client ID list; hosted since the Snacklist cut-over, S2, checked 2026-11-11 in job 183) |
 | Bundle ID `com.hummlist.app` | yes | Supabase Apple provider (in the client ID list) until Hummlist retires |
 | Old bundle ID `com.petertrost.familygroceries` | yes | Supabase Apple provider (in the client ID list) until the Hummlist build is verified (`NEEDS_PETER.md`, job 20) |
 | Apple Team ID, Key ID | yes | inputs to the client secret |
@@ -170,8 +170,9 @@ ID), then the bundle IDs; `external_apple_additional_client_ids` stays empty.
 That is the hosted state since job 20. Since job 174 the hosted redirect allow
 list also holds `com.snacklist.app://login-callback` and
 `https://app.snacklist.app/**`, and the Google provider holds Snacklist's iOS
-client (set by the lead on 2026-11-10). Still open: `com.snacklist.app` in
-the Apple client ID list (S2). The hosted Site URL is
+client (set by the lead on 2026-11-10). `com.snacklist.app` is in the
+Apple client ID list (S2; read back from the hosted auth config on
+2026-11-11, job 183). The hosted Site URL is
 `https://app.snacklist.app` since 2026-11-10 (before that `https://app.hummlist.com`); the allow list also keeps
 `https://family-groceries-pied.vercel.app/**` (the old Vercel URL, still an
 alias) and the preview pattern, and neither script removes an entry.
