@@ -386,20 +386,20 @@ select results_eq(
   'only the default went; the restored household is the default'
 );
 
--- The 10-membership cap.
+-- The 20-membership cap (job 200).
 select pg_temp.logout();
 insert into public.households (id, name, created_by)
 select ('00000000-0000-0000-0000-000001690' || lpad(i::text, 3, '0'))::uuid, 'Verein ' || i,
   '00000000-0000-0000-0000-0000000169c1'
-from generate_series(1, 7) i;
+from generate_series(1, 17) i;
 insert into public.household_members (household_id, user_id)
 select ('00000000-0000-0000-0000-000001690' || lpad(i::text, 3, '0'))::uuid, '00000000-0000-0000-0000-0000000169a1'
-from generate_series(1, 7) i;
+from generate_series(1, 17) i;
 select pg_temp.login('00000000-0000-0000-0000-0000000169a1');
-select is((select count(*)::int from public.my_households()), 10, 'ten memberships');
+select is((select count(*)::int from public.my_households()), 20, 'twenty memberships');
 select throws_ok(
   $$ select public.create_household(p_request_id => '00000000-0000-0000-0000-00000169e006', p_name => 'Elfte') $$,
-  'P0001', 'too_many_households', 'an eleventh household is refused'
+  'P0001', 'too_many_households', 'a 21st household is refused'
 );
 select is(
   (select (public.create_household(p_request_id => '00000000-0000-0000-0000-00000169e005')).name), 'Vierte',

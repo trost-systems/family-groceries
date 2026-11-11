@@ -3296,10 +3296,10 @@ abstract class AppLocalizations {
   /// **'Tipp ausblenden'**
   String get tipDismiss;
 
-  /// Job 169b: create_household or accept_invite refused, the user is in 10 households
+  /// Job 169b, job 200: create_household or accept_invite refused, the user is in 20 households (public.household_cap())
   ///
   /// In de, this message translates to:
-  /// **'Du bist schon in 10 Haushalten. Verlasse einen, bevor du einen neuen anlegst oder beitrittst.'**
+  /// **'Du bist schon in 20 Haushalten. Verlasse einen, bevor du einen neuen anlegst oder beitrittst.'**
   String get tooManyHouseholds;
 
   /// Job 169b: screen reader hint of the household name chip top left of the list, which opens the switcher sheet

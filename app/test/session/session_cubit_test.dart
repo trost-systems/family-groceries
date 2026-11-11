@@ -388,8 +388,8 @@ void main() {
       expect(server.memberships['peter'], containsAll([first, second]));
     });
 
-    test('the server refuses an 11th household', () async {
-      for (var i = 0; i < 8; i++) {
+    test('the server refuses a 21st household', () async {
+      for (var i = 0; i < 18; i++) {
         await cubit.createHousehold('H$i');
       }
       await expectLater(
@@ -398,19 +398,22 @@ void main() {
       );
     });
 
-    test('the server refuses joining an 11th household (job 173)', () async {
-      server
-        ..member('mia', 'mia', 'Mias WG')
-        ..invites['ABCD2345'] = 'mia';
-      for (var i = 0; i < 8; i++) {
-        await cubit.createHousehold('H$i');
-      }
-      await expectLater(
-        cubit.join('ABCD2345'),
-        _problem(HouseholdProblem.tooManyHouseholds),
-      );
-      expect(server.memberships['peter'], isNot(contains('mia')));
-    });
+    test(
+      'the server refuses joining a 21st household (job 173, 200)',
+      () async {
+        server
+          ..member('mia', 'mia', 'Mias WG')
+          ..invites['ABCD2345'] = 'mia';
+        for (var i = 0; i < 18; i++) {
+          await cubit.createHousehold('H$i');
+        }
+        await expectLater(
+          cubit.join('ABCD2345'),
+          _problem(HouseholdProblem.tooManyHouseholds),
+        );
+        expect(server.memberships['peter'], isNot(contains('mia')));
+      },
+    );
 
     test('a join adds the household and shows it', () async {
       server

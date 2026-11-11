@@ -693,3 +693,7 @@ No check found a blocker for the 15 Nov beta. On main 3119516d, the e2e, widget 
 ## Job 188: planned vs bought in the product feature map (2026-11-11)
 
 `planned-vs-bought` added as a considering row after `receipt-scanning` in `docs/PRODUCT_FEATURE_MAP.md` (Considering: 7). Docs only. Details: [docs/done/188-docs-planned-vs-bought.md](docs/done/188-docs-planned-vs-bought.md).
+
+## Job 200: the household cap is 20 per user (2026-11-11)
+
+The per-user cap moved from 10 to 20 households, Free and Premium (`public.household_cap()`). Nobody in production was over it. Details: [docs/done/200-household-cap-enforcement.md](docs/done/200-household-cap-enforcement.md).

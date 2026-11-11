@@ -11244,3 +11244,31 @@ main before the rename) keeps a Hummlist hotfix build possible.
 - **Sources.** Fetch record and hashes are in
   [`legal/sources/2026-11-11-n127/`](legal/sources/2026-11-11-n127/). Raw HTML, PDF and
   text copies stay on the box and are not in this repository.
+
+## Job 200: the household cap is 20, 2026-11-11
+
+- **Raise job 173's cap, don't add a second one.** Peter approved `household-limit` (at most 20
+  households per user, Free and Premium) on 11 Nov 2026. Job 173 already enforces a cap of 10 on
+  every way in: the before-insert triggers on `household_members` and `join_requests`,
+  `create_household`'s check and `decide_join_request`'s early close. Migration 20261111214106
+  moves all of them to `public.household_cap()` (returns 20), so the number lives in one place.
+  The two functions are copied from their live definitions with only the cap line changed (diff
+  of `pg_get_functiondef` before and after). The trigger function is renamed
+  `refuse_household_over_cap` and the old `refuse_eleventh_household` dropped (trigger-only, no
+  client calls it). Keyed by the Snacklist user id; no RevenueCat id and no Premium check, so it
+  does not wait on per-user Premium (185) or the price UI (190).
+- **No new UI, no flag.** A refused create or join keeps the existing problem text, now
+  „Du bist schon in 20 Haushalten. …“ / "You are in 20 households already. …". Old store builds
+  still say 10 in that sentence until they update; the server's answer (`too_many_households`)
+  is the same, so they show the refusal correctly with the old number. Not worth an answer-shape
+  change. Raising a cap only lets people do more, so no flag guards it.
+- **Nobody is over the cap.** Read-only query on production, 11 Nov 2026 22:43 Europe/Berlin:
+  67 users with a membership, the most households any user is in is 2, none above 10 or 20. A
+  user above 20 (none exist) would keep every household and could add one only below 20, as
+  job 173 handles users above 10.
+- **Changelog `improved`.** The cap is visible on Free today (the refusal names 10), so moving
+  it to 20 is a user-visible change with its own item; the paywall and terms copy that should
+  name the cap stays with job 187.
+- Tests: `households_join_cap.test.sql` (20 refused and 19 let in on every path) and
+  `households_multi.test.sql` (a 21st create refused); both fail with the cap at 10 or 21.
+  Driven on the web build: `journeys/household-cap.mjs`.

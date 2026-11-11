@@ -225,16 +225,16 @@ void main() {
     for (final (locale, text) in [
       (
         const Locale('de'),
-        'Du bist schon in 10 Haushalten. Verlasse einen, bevor du einen neuen '
+        'Du bist schon in 20 Haushalten. Verlasse einen, bevor du einen neuen '
             'anlegst oder beitrittst.',
       ),
       (
         const Locale('en'),
-        'You are in 10 households already. Leave one before you create or '
+        'You are in 20 households already. Leave one before you create or '
             'join another.',
       ),
     ]) {
-      testWidgets('$locale: in 10 households, the join says so', (
+      testWidgets('$locale: in 20 households, the join says so', (
         tester,
       ) async {
         final o = await pumpOnboarding(

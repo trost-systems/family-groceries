@@ -1978,7 +1978,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tooManyHouseholds =>
-      'You are in 10 households already. Leave one before you create or join another.';
+      'You are in 20 households already. Leave one before you create or join another.';
 
   @override
   String get householdSwitch => 'Switch household';
