@@ -3,6 +3,7 @@ import {
   checkServerEvent,
   type Env,
   framesOf,
+  mcpTools,
   RefusedEvent,
   scrubMessage,
   telemetryFor,
@@ -353,4 +354,47 @@ Deno.test('integration_blocked (jobs 50, 73): the integration only, never what w
   const batch = post.body.batch as { properties: Record<string, unknown> }[];
   assertEquals(batch.map((e) => e.properties.integration), ['siri', 'mcp', 'api']);
   assertEquals(batch[0]?.properties.household_id, household);
+});
+
+Deno.test('mcp_tool_call and api_key_used (job 195): a listed tool, the outcome, the scope', async () => {
+  const { sent, fetchImpl } = recorder();
+  const t = telemetryFor('mcp', env({ POSTHOG_PROJECT_API_KEY: KEY, POSTHOG_HOST: EU }), fetchImpl);
+  const household = '7d1e4f0a-2b3c-4d5e-8f90-a1b2c3d4e5f6';
+  const subject = { installId: INSTALL, householdId: household, internal: true };
+  const call = { tool: 'add_items', result: 'success', reason: 'done' };
+  for (const tool of mcpTools) assert(t.event('mcp_tool_call', subject, { ...call, tool }), tool);
+  for (const reason of ['tool_error', 'premium_required', 'server']) {
+    assert(t.event('mcp_tool_call', subject, { ...call, result: 'fail', reason }), reason);
+  }
+  assertFalse(t.event('mcp_tool_call', subject, { ...call, tool: 'delete_everything' }));
+  assertFalse(t.event('mcp_tool_call', subject, { ...call, tool: 'Milch' }));
+  assertFalse(t.event('mcp_tool_call', subject, { ...call, arguments: '{"items":["Milch"]}' }));
+  assertFalse(t.event('mcp_tool_call', subject, { ...call, store: 'Lidl' }));
+  assertFalse(t.event('mcp_tool_call', subject, { ...call, client: 'claude-desktop' }));
+  for (const scope of ['read', 'write']) assert(t.event('api_key_used', subject, { scope }), scope);
+  assertFalse(t.event('api_key_used', subject, { scope: 'admin' }));
+  assertFalse(t.event('api_key_used', subject, { scope: 'read', token_hint: 'a1b2' }));
+  assertFalse(t.event('api_key_used', subject, { scope: 'read', route: '/v1/items' }));
+  assertFalse(t.event('api_key_used', subject, { scope: 'read', token_id: INSTALL }));
+  await t.flush();
+  const [post] = sent;
+  assertExists(post);
+  const batch = post.body.batch as { event: string; properties: Record<string, unknown> }[];
+  assertEquals(batch.length, mcpTools.length + 3 + 2);
+  for (const e of batch) {
+    assertEquals(e.properties.household_id, household);
+    assertEquals(e.properties.install_id, INSTALL);
+    assertEquals(e.properties.is_internal, true);
+    assertEquals(e.properties.$geoip_disable, true);
+  }
+});
+
+Deno.test('withTelemetry returns a finished answer untouched, keeping its length', async () => {
+  const t = telemetryFor(
+    'api',
+    env({ POSTHOG_PROJECT_API_KEY: KEY, POSTHOG_HOST: EU }),
+    recorder().fetchImpl,
+  );
+  const answer = Response.json({ ok: true });
+  assert((await withTelemetry('api', () => answer, t)(new Request('http://x/api'))) === answer);
 });

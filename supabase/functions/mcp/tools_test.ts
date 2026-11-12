@@ -5,7 +5,16 @@ import { assert, assertEquals, assertFalse } from '@std/assert';
 import { createMcpHandler } from '@modelcontextprotocol/server';
 import type { Auth } from '../_shared/auth.ts';
 import type { Access } from '../_shared/premium.ts';
-import { buildServer, type Gate, langOf, premiumRequired } from './tools.ts';
+import { mcpTools, telemetryFor, withTelemetry } from '../_shared/telemetry.ts';
+import {
+  buildServer,
+  type CallReason,
+  type Gate,
+  langOf,
+  premiumRequired,
+  type ReportCall,
+  reportToolCalls,
+} from './tools.ts';
 
 const auth: Auth = { userId: 'u', householdId: 'h', via: 'pat' };
 
@@ -48,10 +57,16 @@ function serve(gate: Gate, lang?: string) {
     asked.push(household);
     return gate(household);
   };
+  const reports: { tool: string; household: string; reason: CallReason }[] = [];
+  const report: ReportCall = (call) => {
+    reports.push(call);
+    return Promise.resolve();
+  };
   const handle = (req: Request) =>
-    createMcpHandler(() => buildServer(auth, counted, langOf(req.headers.get('accept-language'))))
-      .fetch(req);
-  return { handle, asked: () => asked.length, households: () => asked, lang };
+    createMcpHandler(() =>
+      buildServer(auth, counted, report, langOf(req.headers.get('accept-language')))
+    ).fetch(req);
+  return { handle, asked: () => asked.length, households: () => asked, reports, lang };
 }
 
 const locked: Gate = () => Promise.resolve<Access>('locked');
@@ -97,7 +112,58 @@ Deno.test('locked: every tool call is an isError result with HTTP 200, data unto
     assertEquals(result.content, [{ type: 'text', text: premiumRequired.de }], name);
     assertEquals(s.asked(), 1, name);
     assertEquals(s.households(), ['h'], `${name}: without "household" the credential's household`);
+    assertEquals(s.reports, [{ tool: name, household: 'h', reason: 'premium_required' }], name);
   }
+});
+
+Deno.test('job 195: mcp_tool_call can name every tool the server lists, no other', async () => {
+  const s = serve(locked);
+  const { tools } = (await message(await s.handle(rpc('tools/list')))).result;
+  assertEquals(tools.map((t) => t.name).sort(), [...mcpTools].sort());
+  assertEquals(s.reports, [], 'tools/list is no tool call');
+});
+
+Deno.test('job 195: the event of a tool call reaches PostHog although the SSE answer streams', async () => {
+  const sent: string[] = [];
+  const fetchImpl = (_url: string | URL | Request, init?: RequestInit) => {
+    sent.push(...JSON.parse(String(init?.body)).batch.map((e: { event: string }) => e.event));
+    return Promise.resolve(new Response('{}'));
+  };
+  const telemetry = telemetryFor(
+    'mcp',
+    {
+      get: (k) =>
+        ({
+          POSTHOG_PROJECT_API_KEY: 'phc_testprojectkey0123456789',
+          POSTHOG_HOST: 'https://eu.i.posthog.com',
+        })[k],
+    },
+    fetchImpl as typeof fetch,
+  );
+  const consenting = (
+    _u: string,
+    _household: string,
+    event: string,
+    properties: Record<string, unknown>,
+  ) => {
+    telemetry.event(event, {
+      installId: '0b6f7a52-6c1e-4f4e-9d55-3f1f0c2a9e01',
+      householdId: '7d1e4f0a-2b3c-4d5e-8f90-a1b2c3d4e5f6',
+    }, properties);
+    return Promise.resolve();
+  };
+  const slowLock: Gate = () => new Promise((r) => setTimeout(() => r('locked'), 50));
+  const serve = withTelemetry(
+    'mcp',
+    (req) =>
+      createMcpHandler(() => buildServer(auth, slowLock, reportToolCalls(consenting, 'u'))).fetch(
+        req,
+      ),
+    telemetry,
+  );
+  const res = await serve(rpc('tools/call', { name: 'list_items', arguments: {} }));
+  assertEquals((await message(res)).result.isError, true);
+  assertEquals(sent, ['mcp_tool_call']);
 });
 
 Deno.test('job 169b: list_households does not ask the gate', async () => {
@@ -143,6 +209,7 @@ Deno.test('the check fails: no premium answer (an error, like any database failu
   const text = JSON.stringify(await message(res));
   assertFalse(text.includes('Premium'));
   assert(text.includes('error') || text.includes('isError'));
+  assertEquals(s.reports, [{ tool: 'list_items', household: 'h', reason: 'server' }]);
 });
 
 Deno.test('langOf: English only when preferred over German', () => {

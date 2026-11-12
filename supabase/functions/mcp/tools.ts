@@ -3,6 +3,8 @@ import { type CallToolResult, McpServer } from '@modelcontextprotocol/server';
 import { z } from 'zod';
 import type { Auth } from '../_shared/auth.ts';
 import type { Access } from '../_shared/premium.ts';
+import type { McpTool } from '../_shared/telemetry.ts';
+import type { UserEvent } from '../_shared/user_events.ts';
 import { asUser, type Tx } from '../_shared/db.ts';
 import {
   addItems,
@@ -68,10 +70,29 @@ export function langOf(acceptLanguage: string | null): Lang {
 /** Whether a household may use the tools; asked once per household and request. */
 export type Gate = (householdId: string) => Promise<Access>;
 
+/** How a tool call ended, as mcp_tool_call reports it (job 195). */
+export type CallReason = 'done' | 'tool_error' | 'premium_required' | 'server';
+
+/** Reports one finished tool call; never throws. */
+export type ReportCall = (
+  call: { tool: McpTool; household: string; reason: CallReason },
+) => Promise<void>;
+
+/** Reports each tool call of [userId] as mcp_tool_call through [send]. */
+export function reportToolCalls(send: UserEvent, userId: string): ReportCall {
+  return ({ tool, household, reason }) =>
+    send(userId, household, 'mcp_tool_call', {
+      tool,
+      result: reason === 'done' ? 'success' : 'fail',
+      reason,
+    });
+}
+
 /**
  * A tool body: runs as the caller in one transaction once the household (the [household]
  * argument, else the one the credential acts in) may use MCP; ToolErrors become tool-level
- * errors. A failing check throws, like any database error. A null [gate] is no check.
+ * errors. A failing check throws, like any database error. A null [gate] is no check. Every call
+ * ends with one [done], in the household it resolved to (the credential's while unresolved).
  */
 function run(
   auth: Auth,
@@ -79,19 +100,25 @@ function run(
   lang: Lang,
   household: string | undefined,
   body: (tx: Tx, household: string) => Promise<unknown>,
+  done: (household: string, reason: CallReason) => Promise<void>,
 ) {
   return async (): Promise<CallToolResult> => {
+    let h = auth.householdId;
     try {
-      const h = household === undefined
-        ? auth.householdId
-        : await asUser(auth.userId, (tx) => householdNamed(tx, auth, household));
+      if (household !== undefined) {
+        h = await asUser(auth.userId, (tx) => householdNamed(tx, auth, household));
+      }
       if (gate && await gate(h) === 'locked') {
+        await done(h, 'premium_required');
         return { isError: true, content: [{ type: 'text', text: premiumRequired[lang] }] };
       }
       const result = await asUser(auth.userId, (tx) => body(tx, h));
+      await done(h, 'done');
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     } catch (e) {
-      if (!(e instanceof ToolError)) throw e;
+      const toolError = e instanceof ToolError;
+      await done(h, toolError ? 'tool_error' : 'server');
+      if (!toolError) throw e;
       return { isError: true, content: [{ type: 'text', text: e.message }] };
     }
   };
@@ -173,7 +200,12 @@ export async function listLists(tx: Tx, household: string): Promise<ListEntry[]>
   return (await lists(tx, household)).map((l, i) => ({ id: l.id, name: l.name, default: i === 0 }));
 }
 
-export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServer {
+export function buildServer(
+  auth: Auth,
+  gate: Gate,
+  report: ReportCall,
+  lang: Lang = 'de',
+): McpServer {
   const server = new McpServer(
     { name: 'snacklist', title: 'Snacklist', version: '1.0.0' },
     { instructions: INSTRUCTIONS, cacheHints: CACHE_HINTS },
@@ -186,6 +218,13 @@ export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServe
     asked.set(household, access);
     return access;
   };
+  const call = (
+    tool: McpTool,
+    gate: Gate | null,
+    household: string | undefined,
+    body: (tx: Tx, household: string) => Promise<unknown>,
+  ) =>
+    run(auth, gate, lang, household, body, (h, reason) => report({ tool, household: h, reason }));
 
   server.registerTool('list_households', {
     title: 'Haushalte anzeigen',
@@ -195,7 +234,7 @@ export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServe
     annotations: { readOnlyHint: true },
     // Ungated: it lists only the user's own households, so a locked default can still find an
     // unlocked one.
-  }, () => run(auth, null, lang, undefined, (tx) => households(tx, auth))());
+  }, () => call('list_households', null, undefined, (tx) => households(tx, auth))());
 
   server.registerTool('list_lists', {
     title: 'Listen anzeigen',
@@ -204,7 +243,7 @@ export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServe
       'die erste Liste, in der die anderen Werkzeuge ohne "list" arbeiten (auch Siri und Alexa).',
     inputSchema: z.object({ household: householdRef }),
     annotations: { readOnlyHint: true },
-  }, ({ household }) => run(auth, once, lang, household, (tx, h) => listLists(tx, h))());
+  }, ({ household }) => call('list_lists', once, household, (tx, h) => listLists(tx, h))());
 
   server.registerTool(
     'list_items',
@@ -225,7 +264,7 @@ export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServe
       annotations: { readOnlyHint: true },
     },
     ({ household, ...args }) =>
-      run(auth, once, lang, household, (tx, h) => listItems(tx, h, args))(),
+      call('list_items', once, household, (tx, h) => listItems(tx, h, args))(),
   );
 
   server.registerTool(
@@ -265,7 +304,7 @@ export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServe
       }),
     },
     ({ items, household, list }) =>
-      run(auth, once, lang, household, (tx, h) => addItems(tx, h, items, list))(),
+      call('add_items', once, household, (tx, h) => addItems(tx, h, items, list))(),
   );
 
   server.registerTool(
@@ -284,7 +323,7 @@ export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServe
       annotations: { destructiveHint: false, idempotentHint: true },
     },
     ({ items, household, list }) =>
-      run(auth, once, lang, household, (tx, h) => tickItems(tx, h, items, list))(),
+      call('tick_items', once, household, (tx, h) => tickItems(tx, h, items, list))(),
   );
 
   server.registerTool(
@@ -306,7 +345,7 @@ export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServe
       annotations: { idempotentHint: true },
     },
     ({ household, ...args }) =>
-      run(auth, once, lang, household, (tx, h) => moveItem(tx, h, args))(),
+      call('move_item', once, household, (tx, h) => moveItem(tx, h, args))(),
   );
 
   server.registerTool('list_categories', {
@@ -314,14 +353,14 @@ export function buildServer(auth: Auth, gate: Gate, lang: Lang = 'de'): McpServe
     description: 'Listet die Kategorien des Haushalts in Gang-Reihenfolge.',
     inputSchema: z.object({ household: householdRef }),
     annotations: { readOnlyHint: true },
-  }, ({ household }) => run(auth, once, lang, household, (tx, h) => categories(tx, h))());
+  }, ({ household }) => call('list_categories', once, household, (tx, h) => categories(tx, h))());
 
   server.registerTool('list_stores', {
     title: 'Läden anzeigen',
     description: 'Listet die Läden des Haushalts.',
     inputSchema: z.object({ household: householdRef }),
     annotations: { readOnlyHint: true },
-  }, ({ household }) => run(auth, once, lang, household, (tx, h) => stores(tx, h))());
+  }, ({ household }) => call('list_stores', once, household, (tx, h) => stores(tx, h))());
 
   return server;
 }

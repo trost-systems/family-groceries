@@ -27,6 +27,7 @@ type Fake = Deps & {
   begun: { tokenHash: string | null; ipHash: string }[];
   executed: Execution[];
   logs: Record<string, unknown>[];
+  keysUsed: { key: Key; scope: string }[];
 };
 
 function fake(
@@ -40,12 +41,17 @@ function fake(
     begun: [],
     executed: [],
     logs: [],
+    keysUsed: [],
     begin: (tokenHash, ipHash) => {
       deps.begun.push({ tokenHash, ipHash });
       return Promise.resolve(begin);
     },
     premium: () =>
       premium === 'throws' ? Promise.reject(new Error('down')) : Promise.resolve(premium),
+    used: (key, scope) => {
+      deps.keysUsed.push({ key, scope });
+      return Promise.resolve();
+    },
     execute: (execution) => {
       deps.executed.push(execution);
       return result instanceof Error
@@ -195,6 +201,53 @@ Deno.test('a household without Premium under the lock gets 402 and nothing runs'
   assertEquals((await errorOf(res)).code, 'premium_required');
   assertEquals(deps.executed, []);
   assertRateHeaders(res, '20', '19');
+});
+
+Deno.test('api_key_used (job 195): once per request let through, with its scope only', async () => {
+  const read = fake();
+  await handle(call('/items'), read);
+  assertEquals(read.keysUsed, [{ key: writer, scope: 'read' }]);
+  const write = fake();
+  await handle(call(`/items/${ID}/tick`, { method: 'POST' }), write);
+  assertEquals(write.keysUsed, [{ key: writer, scope: 'write' }]);
+  const failing = fake({ result: new Error('down') });
+  assertEquals((await handle(call('/items'), failing)).status, 500);
+  assertEquals(failing.keysUsed.length, 1, 'authorized, then the operation failed');
+
+  const refused: [string, Fake, Request][] = [
+    ['no key', fake({ begin: invalid }), call('/items', { token: null })],
+    ['unknown key', fake({ begin: invalid }), call('/items')],
+    ['disabled', fake({ begin: { outcome: 'disabled' } }), call('/items')],
+    ['missing scope', fake({ begin: ok(reader) }), call(`/items/${ID}/tick`, { method: 'POST' })],
+    ['locked', fake({ premium: 'locked' }), call('/items')],
+    ['gate down', fake({ premium: 'throws' }), call('/items')],
+    ['no route', fake(), call('/nothing')],
+  ];
+  for (const [why, deps, req] of refused) {
+    await handle(req, deps);
+    assertEquals(deps.keysUsed, [], why);
+  }
+});
+
+Deno.test('api_key_used: the answer waits for the event, also when the body is refused', async () => {
+  for (
+    const [why, req, status] of [
+      ['ok', call('/items'), 200],
+      ['bad body', call('/items', { method: 'POST', body: '{"items":"Milch"}' }), 400],
+    ] as const
+  ) {
+    const deps = fake();
+    let queued = false;
+    deps.used = () =>
+      new Promise((r) =>
+        setTimeout(() => {
+          queued = true;
+          r();
+        }, 20)
+      );
+    assertEquals((await handle(req, deps)).status, status, why);
+    assert(queued, `${why}: queued before the answer, so the flush sends it`);
+  }
 });
 
 Deno.test('an unlocked household runs the operation and gets its answer', async () => {

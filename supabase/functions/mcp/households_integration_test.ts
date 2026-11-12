@@ -20,7 +20,7 @@ async function call(
   name: string,
   args: Record<string, unknown> = {},
 ): Promise<Result> {
-  const res = await createMcpHandler(() => buildServer(auth, gate)).fetch(
+  const res = await createMcpHandler(() => buildServer(auth, gate, () => Promise.resolve())).fetch(
     new Request('http://edge/mcp', {
       method: 'POST',
       headers: {

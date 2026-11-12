@@ -5,6 +5,7 @@ import { PAT_PREFIX, sha256Hex } from '../_shared/auth.ts';
 import { asUser, asUserWithin, oneRow, serviceDb } from '../_shared/db.ts';
 import { ToolError } from '../_shared/list.ts';
 import { type Access, requirePremiumWith } from '../_shared/premium.ts';
+import { userEvents } from '../_shared/user_events.ts';
 import { ApiError, internalError, noSuchEndpoint, unavailable } from './errors.ts';
 import {
   AUTH_FAILURE_WINDOW_SECONDS,
@@ -45,6 +46,8 @@ export type Deps = {
   /** Checks the address's failure budget, the key (by SHA-256) and its limits; takes a request. */
   begin: (tokenHash: string | null, ipHash: string) => Promise<Begin>;
   premium: (key: Key) => Promise<Access>;
+  /** api_key_used for the key's user (job 195); never throws. */
+  used: (key: Key, scope: Scope) => Promise<void>;
   /** Runs the operation as the key's member; with an Idempotency-Key, at most once per request. */
   execute: (execution: Execution) => Promise<Executed>;
   report: (error: unknown) => void;
@@ -168,21 +171,27 @@ async function authorized(
     );
   }
 
-  const idempotencyKey = route.idempotent ? idempotencyKeyOf(req) : null;
-  const raw: Raw = { id, query: queryOf(url), body: await bodyOf(req) };
-  const run = operations[route.operation](raw);
-  const idempotency = idempotencyKey === null ? null : {
-    key: idempotencyKey,
-    requestHash: await sha256Hex(
-      `${req.method} ${routePath(url.pathname)}\n${canonical(raw.body ?? null)}`,
-    ),
-  };
-  const done = await deps.execute({ key, run, idempotency });
-  return {
-    status: done.status,
-    body: done.body,
-    headers: done.replayed ? { 'idempotent-replayed': 'true' } : {},
-  };
+  // The consent lookup runs next to the operation; both end before the answer (and the flush).
+  const used = deps.used(key, route.scope);
+  try {
+    const idempotencyKey = route.idempotent ? idempotencyKeyOf(req) : null;
+    const raw: Raw = { id, query: queryOf(url), body: await bodyOf(req) };
+    const run = operations[route.operation](raw);
+    const idempotency = idempotencyKey === null ? null : {
+      key: idempotencyKey,
+      requestHash: await sha256Hex(
+        `${req.method} ${routePath(url.pathname)}\n${canonical(raw.body ?? null)}`,
+      ),
+    };
+    const done = await deps.execute({ key, run, idempotency });
+    return {
+      status: done.status,
+      body: done.body,
+      headers: done.replayed ? { 'idempotent-replayed': 'true' } : {},
+    };
+  } finally {
+    await used;
+  }
 }
 
 // Routing ------------------------------------------------------------------------------------
@@ -467,6 +476,7 @@ async function executeIdempotent(
 }
 
 const requirePremium = requirePremiumWith(telemetry);
+const sendEvent = userEvents(telemetry);
 
 const defaultDeps: Deps = {
   begin: async (tokenHash, ipHash) => {
@@ -476,6 +486,7 @@ const defaultDeps: Deps = {
     return beginOf(oneRow(rows, 'api_begin'));
   },
   premium: (key) => requirePremium({ userId: key.userId, householdId: key.householdId }, 'api'),
+  used: (key, scope) => sendEvent(key.userId, key.householdId, 'api_key_used', { scope }),
   execute: async (execution) => {
     const { idempotency } = execution;
     if (idempotency) return await executeIdempotent({ ...execution, idempotency });

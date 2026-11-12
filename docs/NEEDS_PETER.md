@@ -1601,3 +1601,20 @@ onboarding and notice mails. Nothing is live, nothing was sent, the hosted proje
 
    Then send yourself a sign-in link from the app in each language. To go back, run the same
    script from a checkout of `0873093e` (AL4's plain templates).
+
+## Job 195: validation events and PostHog's test-account filter (2026-11-12)
+
+1. **Check cohort 293017** in PostHog (project Snacklist, Settings → Product analytics →
+   "Filter out internal and test users"). The repository's key cannot read cohorts or project
+   settings (error-tracking scope only), so job 195 could not look. The app and the functions send
+   every event without a person profile (`$process_person_profile: false`), and a cohort holds
+   persons, so by PostHog's documented behaviour the cohort filter keeps every event, internal ones
+   included (`docs/ANALYTICS.md`, `is_internal`).
+2. **If you want the default filter to drop internal events**, add the event-property filter
+   `is_internal` · `is not` · `true` next to the cohort there. Nothing in the repository depends on
+   it: the gate queries filter through `analytics/queries/internal.sql` already, which also drops
+   an install's events from before it was marked internal. Job 195 changed no project setting and
+   created no person profiles.
+3. **Set the pass bars** for F2, F3 and F5. The events are in the catalog; `mcp_tool_call` and
+   `api_key_used` are sent from the next functions deploy on, the F2 and F3 events once the prices
+   and scanner UIs ship behind their flags.

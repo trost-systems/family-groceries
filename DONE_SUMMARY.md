@@ -37,6 +37,7 @@
 - Job 168c, guided start (#331) rebased onto several households (#327) and landed: [docs/done/168c.md](docs/done/168c.md)
 - Job 173, partner news under the household chip on phones; the 10-household cap on every join: [docs/done/173-phone-news-join-cap.md](docs/done/173-phone-news-join-cap.md)
 - Job 174, S1 of the Snacklist rename: identifiers, copy, docs and skills in three PRs, Hummlist kept working: [docs/done/174-snacklist-rename.md](docs/done/174-snacklist-rename.md)
+- Job 195, validation events for prices, scans, MCP and the API (F2, F3, F5), consent-gated, no UI; MCP events now reach PostHog: [docs/done/195-validation-events.md](docs/done/195-validation-events.md)
 
 ## Job 1: foundation (2026-10-22)
 

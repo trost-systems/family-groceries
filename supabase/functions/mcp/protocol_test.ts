@@ -44,9 +44,14 @@ const d: Deps = {
   authenticate: () => Promise.resolve(auth),
   // The database is never reached: the gate says locked, so tool calls touch no data.
   serve: (req, a) =>
-    createMcpHandler(() => buildServer(a, () => Promise.resolve<Access>('locked'), 'de')).fetch(
-      req,
-    ),
+    createMcpHandler(() =>
+      buildServer(
+        a,
+        () => Promise.resolve<Access>('locked'),
+        () => Promise.resolve(),
+        'de',
+      )
+    ).fetch(req),
   allowedOriginHosts: () => [],
 };
 

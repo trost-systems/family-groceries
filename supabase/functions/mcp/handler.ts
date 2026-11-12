@@ -15,6 +15,7 @@ import {
 } from '../_shared/auth.ts';
 import { serviceDb } from '../_shared/db.ts';
 import { requirePremiumWith } from '../_shared/premium.ts';
+import { userEvents } from '../_shared/user_events.ts';
 import { fetchClientMetadata } from './cimd.ts';
 import {
   LIMITS,
@@ -26,7 +27,7 @@ import {
 } from './cimd_clients.ts';
 import { type OAuthDeps, oauthRoute } from './oauth.ts';
 import { telemetry } from './telemetry.ts';
-import { buildServer, langOf } from './tools.ts';
+import { buildServer, langOf, reportToolCalls } from './tools.ts';
 
 const PRM_SUFFIXES = ['/.well-known/oauth-protected-resource', '/oauth-protected-resource'];
 
@@ -320,6 +321,7 @@ function supabaseAuthServerMetadata(): Promise<Record<string, unknown>> {
 }
 
 const requirePremium = requirePremiumWith(telemetry);
+const sendEvent = userEvents(telemetry);
 
 export const productionDeps: Deps = {
   endpoints: projectEndpoints,
@@ -367,6 +369,7 @@ export const productionDeps: Deps = {
       buildServer(
         auth,
         (householdId) => requirePremium({ userId: auth.userId, householdId }, 'mcp'),
+        reportToolCalls(sendEvent, auth.userId),
         langOf(req.headers.get('accept-language')),
       )
     ).fetch(req),
