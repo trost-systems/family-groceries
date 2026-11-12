@@ -33,6 +33,11 @@ void main() {
       'hint_acted',
       'checklist_step_done',
       'checklist_dismissed',
+      'shop_started',
+      'price_entered',
+      'trip_total_viewed',
+      'scan_started',
+      'off_miss',
     });
   });
 
@@ -128,10 +133,25 @@ void main() {
       ('checklist_step_done', {'step': step}),
     for (final open in [0, 3]) ('checklist_dismissed', {'open_steps': open}),
   ];
+  const allowed195 = <(String, Map<String, Object>)>[
+    ('shop_started', {}),
+    ('price_entered', {'confirmed': false}),
+    ('price_entered', {'confirmed': true}),
+    ('trip_total_viewed', {'final': false}),
+    ('trip_total_viewed', {'final': true}),
+    ('scan_started', {}),
+    ('off_miss', {}),
+    ('item_added', {'source': 'scan'}),
+    (
+      'item_added',
+      {'source': 'scan', 'actor_role': 'owner', 'household_size': 2},
+    ),
+  ];
   for (final (event, properties) in [
     ...allowed,
     ...allowed32a,
     ...allowed168b,
+    ...allowed195,
   ]) {
     test('allows $event $properties', () {
       expect(() => checkEvent(event, properties), returnsNormally);
@@ -206,6 +226,20 @@ void main() {
     ('hint_acted', {'target': '/more/invites'}, 'where it led'),
     ('checklist_step_done', {'step': 'started'}, 'the step done from start'),
     ('checklist_dismissed', {'open_steps': 4}, 'more steps than there are'),
+    ('shop_started', {'store': 'Lidl'}, 'the store name'),
+    ('shop_started', {'store_id': 's1'}, 'a store id'),
+    ('price_entered', {'price': 1.99}, 'the price'),
+    ('price_entered', {'price_cents': 199}, 'the price in cents'),
+    ('price_entered', {'confirmed': 'yes'}, 'confirmed as text'),
+    ('price_entered', {'item': 'Hafermilch'}, 'the item'),
+    ('trip_total_viewed', {'total': 42.17}, 'the total'),
+    ('trip_total_viewed', {'final': 1}, 'final as a number'),
+    ('trip_total_viewed', {'currency': 'EUR'}, 'a currency'),
+    ('scan_started', {'ean': '4006381333931'}, 'the EAN'),
+    ('off_miss', {'ean': '4006381333931'}, 'the EAN'),
+    ('off_miss', {'product': 'Hafermilch'}, 'a product name'),
+    ('item_added', {'source': 'barcode'}, 'the other word for scan'),
+    ('item_added', {'ean': '4006381333931'}, 'the EAN of a scanned add'),
   ];
   for (final (event, properties, why) in refused) {
     if (event == 'invite_accepted' && properties.isEmpty) {

@@ -30,6 +30,10 @@ enum AddSource() {
   /// A row the app suggested: bought before, a pack or size, a brand, a
   /// dictionary word, a due usual, or a re-add from recently used.
   suggestion,
+
+  /// A barcode scan (job 195, F3). Listed before the scanner exists; only
+  /// its flagged code path may send it.
+  scan,
 }
 
 /// Which order a category reorder changed; [wire] is what is sent.
@@ -188,6 +192,17 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
     }),
   },
   'checklist_dismissed': const {'open_steps': IntIn(0, 3)},
+  // Job 195 (F2): a shopping trip began, a price was entered or a remembered
+  // one confirmed, the running or final trip total was shown. Listed before
+  // the prices UI exists. Never a store name, a price or a total.
+  'shop_started': const {},
+  'price_entered': const {'confirmed': IsBool()},
+  'trip_total_viewed': const {'final': IsBool()},
+  // Job 195 (F3): a barcode scan began; the Open Food Facts lookup for a
+  // scanned code found nothing. Listed before the scanner exists. Never the
+  // EAN or a product name.
+  'scan_started': const {},
+  'off_miss': const {},
   // Job 21: after the server took a note, once per note. Never its text.
   'feedback_submitted': {
     'category': const OneOf({'bug', 'idea', 'other', 'none'}),

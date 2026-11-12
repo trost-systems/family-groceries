@@ -5,7 +5,8 @@
 // item text. Events pass an allow-list.
 //
 // Use: `Deno.serve(withTelemetry('voice', handler))`. Errors a handler catches itself go through
-// `telemetry.exception(e)`; the wrapper sends everything queued before the response returns.
+// `telemetry.exception(e)`; the wrapper sends everything queued before the response returns, and
+// what an event stream queues when it ends.
 
 export const posthogEuHost = 'https://eu.i.posthog.com';
 
@@ -43,6 +44,20 @@ const revenue = {
   // Job 49: which Snacklist Premium product the event is about. Promotional grants send no events.
   premium_source: oneOf('yearly', 'lifetime'),
 } satisfies Record<string, Rule>;
+
+/** The MCP server's tools (mcp/tools.ts), the only names mcp_tool_call may carry. */
+export const mcpTools = [
+  'list_households',
+  'list_lists',
+  'list_items',
+  'add_items',
+  'tick_items',
+  'move_item',
+  'list_categories',
+  'list_stores',
+] as const;
+
+export type McpTool = typeof mcpTools[number];
 
 /**
  * The events a function may send (docs/ANALYTICS.md, "Purchases"). Adding one: list it here,
@@ -88,6 +103,16 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
   // most once an hour per household and integration, _shared/premium.ts). Never what was said.
   // Alexa stays free (job 72), so it is never blocked; the API (job 73) is.
   'integration_blocked': { integration: oneOf('siri', 'mcp', 'api') },
+  // Job 195 (F5): one per MCP tools/call, for a caller whose newest consent answer is yes. The tool
+  // is one of mcpTools; never its arguments, an item, a store or a household name.
+  'mcp_tool_call': {
+    tool: oneOf(...mcpTools),
+    result: oneOf('success', 'fail'),
+    reason: oneOf('done', 'tool_error', 'premium_required', 'server'),
+  },
+  // Job 195 (F5): one per API request the key, its scope and the household's access let through,
+  // before it runs. Only the route's scope; never the token, its hint, the route or the body.
+  'api_key_used': { scope: oneOf('read', 'write') },
 };
 
 /** Properties every server event carries besides its own. */
@@ -257,8 +282,20 @@ export function withTelemetry(
       });
     }
     await telemetry.flush();
-    return response;
+    return flushAtEnd(response, telemetry);
   };
+}
+
+/**
+ * An event stream (the mcp function's SSE) is still being written when the handler returns, and
+ * what it queues meanwhile is sent when it ends. Any other answer is returned untouched, so it
+ * keeps its Content-Length.
+ */
+function flushAtEnd(response: Response, telemetry: Telemetry): Response {
+  const streamed = response.headers.get('content-type')?.startsWith('text/event-stream');
+  if (!response.body || !streamed) return response;
+  const body = response.body.pipeThrough(new TransformStream({ flush: () => telemetry.flush() }));
+  return new Response(body, response);
 }
 
 // ---------------------------------------------------------------------------------------------

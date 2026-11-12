@@ -156,7 +156,7 @@ property and `$lib: hummlist-app`; no query reads them.
 | `item_claimed` | job 169b L: the user said "Ich bringe das" on an item they had not claimed; once per claim, never for a changed amount, a retry or an undo | `actor_role`, `household_size`; never the item, the amount or who else brings it |
 | `join_requested` | job 169b W3 M: the user accepted an invite to a household that confirms joins (`accept_invite` answered `requested`); the request waits for an owner or admin | none; the user's own household rides along as `household_id`, never the one asked to join or its name |
 | `join_request_decided` | job 169b W3 M: an owner or admin let someone in or turned them away on the household page and the server confirmed it | `approved`: `true` or `false`; never who asked or their name |
-| `item_added` | the user added an item | `source`: `typed` (taken as typed), `spoken` (in-app dictation), `suggestion` (any other row of the add sheet, a due usual, a re-add from "Zuletzt verwendet" more than 10 minutes after the tick), `alexa` (server only, job 31: added through the Alexa skill, sent by the `alexa` function); `actor_role` (`owner`, `admin` since job 169b, `member`; the `alexa` function reports an admin as `member`); `household_size` |
+| `item_added` | the user added an item | `source`: `typed` (taken as typed), `spoken` (in-app dictation), `suggestion` (any other row of the add sheet, a due usual, a re-add from "Zuletzt verwendet" more than 10 minutes after the tick), `scan` (job 195, F3: added from a barcode scan; allowed, not sent until the scanner ships behind its flag), `alexa` (server only, job 31: added through the Alexa skill, sent by the `alexa` function); `actor_role` (`owner`, `admin` since job 169b, `member`; the `alexa` function reports an admin as `member`); `household_size` |
 | `item_ticked` | the user ticked an item off | `actor_role`, `household_size` |
 | `category_reordered` | a new category order reached the server | `scope`: `default` (route order) or `store` (a store's layout) |
 | `store_reordered` | a new store order reached the server | none |
@@ -168,6 +168,13 @@ property and `$lib: hummlist-app`; no query reads them.
 | `siri_add` | server only (job 51): a Siri add reached the `voice` function, signed in with the app's Siri credential or a Shortcut's PAT; once per request, after authentication, for a user whose newest consent answer is yes (the Alexa lookup) | `result` (`success`, `fail`), `reason` (`added`, `nothing_added`, `no_text`, `too_long`, `nothing_understood`, `server`, `premium_required` (job 50: the household is locked); `no_household` is allowed but not sent yet), `language` (`en`, `de`), `source` (`native`: the Siri credential, `shortcut`: a PAT), `count` (items understood, 0 to 30). Never a name or the text |
 | `siri_read` | server only (job 51): "What's on my Snacklist?" (`mode: read`) through the `voice` function, same rules as `siri_add` | `result`, `reason` (`read`, `server`, `premium_required` (job 50); `no_household` allowed, not sent yet), `language`, `source`, `count` (open items). Never a name |
 | `integration_blocked` | server only (job 50): a household without Snacklist Premium used Siri, MCP or the API (job 73) while the server's `integration_lock` switch is on and was refused; at most once an hour per household and integration (`integration_blocks`), for a caller whose newest consent answer is yes (the Alexa lookup). Off while the switch is off | `integration` (`siri`, `mcp`, `api`; Alexa stays free since job 72, so `alexa` is refused) and the household id. Never what was said, a tool name or its arguments |
+| `mcp_tool_call` | server only (job 195, F5): one per MCP `tools/call` the `mcp` function answered, for a caller whose newest consent answer is yes (the Alexa lookup); also a locked or failed call. Not for `initialize`, `tools/list` or a request refused before a tool ran | `tool`: the tool's name from the fixed list `mcpTools` in `telemetry.ts` (`list_households`, `list_lists`, `list_items`, `add_items`, `tick_items`, `move_item`, `list_categories`, `list_stores`); `result` (`success`, `fail`); `reason` (`done`, `tool_error`: a tool-level error such as an unknown item or store, `premium_required`, `server`); the household the call acted in. Never the arguments, an item, store, list or household name, or the client. Like every server event, nothing for a user without a default household |
+| `api_key_used` | server only (job 195, F5): one per REST API request whose key, scope and household access let it through, before the operation runs (also when it then fails), for a key owner whose newest consent answer is yes. Not for a missing, unknown or rate-limited key, a missing scope, a locked household or an unknown path. At most 1000 a day per household (the API's day limit) | `scope` (`read`, `write`: the route's scope); the key's household. Never the token, its hint or id, the route or the body |
+| `shop_started` | job 195 (F2): a shopping trip began. Allowed, not sent: the prices and trip UI does not exist yet; it sends this only from its flagged code path | none; never the store |
+| `price_entered` | job 195 (F2): a price was entered for an item, or a remembered one confirmed. Allowed, not sent yet (as `shop_started`) | `confirmed` (`true`: a remembered price confirmed, `false`: a price typed). Never the amount, the item or the store |
+| `trip_total_viewed` | job 195 (F2): the trip's total was shown. Allowed, not sent yet (as `shop_started`) | `final` (`true`: the finished trip's total, `false`: the running total). Never the amount |
+| `scan_started` | job 195 (F3): a barcode scan began. Allowed, not sent: no scanner exists yet; it sends this only from its flagged code path | none; never the EAN |
+| `off_miss` | job 195 (F3): the Open Food Facts lookup for a scanned code found no product. Allowed, not sent yet (as `scan_started`) | none; never the EAN or a product name |
 | `paywall_viewed` | job 50: the Premium page showed a plan with its store price to a household that can buy it; once per visit. Never with the switch `premium_offer` or `REVENUECAT_PURCHASES` off (the page offers nothing then) | `entry_point` (`more`: More's row, `integrations`: the integration settings' Buy) |
 | `review_prompt_requested` | job 155: the app asked the store for its rating prompt (`ReviewPrompt.requestIfDue`) after a completed trip in a public store build, every gate passed (`app/lib/review/review_gates.dart`) and the store had a prompt; at most twice per version, three times a year. The store decides whether it shows and never says, so this counts requests, not prompts shown. iPhone release builds count as store builds, so TestFlight installs send it too, although Apple shows nothing there (their counters also start the 120-day cooldown, which carries over when a tester installs the App Store build); filter internal installs before reading it. More's "Snacklist bewerten" opens the store listing and sends nothing | none |
 | `hint_shown` | job 168b: a List tab hint showed, once per session that shows it (at most one per session; a hint shows at most three sessions) | `hint_id`: the catalogue id (`HintId` in `app/lib/tips/hints.dart`: `edit-long-press`, `quick-add-amounts`, `dictation`, `siri`, `store-order`, `add-store`, `invite-partner`, `second-household`, `own-household`, `ai-assistant`, `home-widget`). Never its text |
@@ -268,11 +275,25 @@ True when any of these holds (`isInternal`, `app/lib/analytics/internal.dart`):
   `.localhost`, `example.com/.net/.org`: the fixtures' `fg.test` and `fg-test.invalid`, e2e's
   `example.test`) or in `ANALYTICS_INTERNAL_EMAIL_DOMAINS`. The e-mail is read on the device only.
 
-Server events take it from the `ANALYTICS_INTERNAL` function secret (true only for local proofs).
+Server events are internal when the `ANALYTICS_INTERNAL` function secret is `true` (local proofs)
+or when the install they are sent for was recorded internal with its consent answer
+(`analytics_consents.internal`, the app's `isInternal` at the time; the Alexa lookup).
 Every gate query drops every event of an install or household that **ever** sent
 `is_internal = true` (`internal.sql`, AC10), so a phone marked internal late, or a tester in a
 household, leaves no trace. PostHog cohorts need person profiles, which the app does not create,
 so the filter is this pair of lists in each query rather than a saved cohort.
+
+### PostHog's "Filter out internal and test users"
+
+The project's test-account filter (on by default in new insights) excludes cohort 293017. A
+cohort is a set of persons, and the app and the functions send every event with
+`$process_person_profile: false`, so no event has a person to match against: going by PostHog's
+documented behaviour, the cohort filter removes none of these events, internal or not (job 195
+could not read the cohort with this repository's key, which has the error-tracking scope only).
+Use the gate queries (`internal.sql`) or an event-property filter `is_internal` is not `true` in
+ad-hoc insights. Adding that property filter to the project's test-account filters is Peter's
+call (`docs/NEEDS_PETER.md`, job 195); unlike `internal.sql` it drops only the events that carry
+`is_internal = true`, not the earlier events of an install marked internal later.
 
 ## Error tracking
 

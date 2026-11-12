@@ -6,9 +6,9 @@
 // integration counts as integration_blocked for an install that said yes to analytics.
 // A failing check throws: the endpoint answers with its transient error, never as locked and
 // never by going ahead (DECISIONS "Job 50").
-import { analyticsSubject } from '../alexa/store.ts';
 import { serviceDb, type Sql } from './db.ts';
 import type { Telemetry } from './telemetry.ts';
+import { userEvents } from './user_events.ts';
 
 export type Integration = 'siri' | 'mcp' | 'api';
 
@@ -59,17 +59,10 @@ export function requirePremiumWith(
   telemetry: Telemetry,
   sql: () => Sql = serviceDb,
 ): RequirePremium {
+  const send = userEvents(telemetry, sql);
   return premiumGate({
     gate: (householdId, integration) => integrationGate(sql(), householdId, integration),
-    blocked: async (caller, integration) => {
-      if (!telemetry.enabled) return;
-      const subject = await analyticsSubject(sql(), caller.userId);
-      if (!subject) return;
-      telemetry.event('integration_blocked', {
-        installId: subject.installId,
-        householdId: caller.householdId,
-        internal: subject.internal,
-      }, { integration });
-    },
+    blocked: (caller, integration) =>
+      send(caller.userId, caller.householdId, 'integration_blocked', { integration }),
   });
 }

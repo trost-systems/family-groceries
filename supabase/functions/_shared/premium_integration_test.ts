@@ -12,11 +12,12 @@ import { sha256Hex } from './auth.ts';
 import { asUser } from './db.ts';
 import { requirePremiumWith } from './premium.ts';
 import { Telemetry } from './telemetry.ts';
+import { userEvents } from './user_events.ts';
 import { productionDeps } from '../alexa/deps.ts';
 import { createHandler as alexaHandler, type Linked } from '../alexa/handler.ts';
 import { testSkillId } from '../alexa/test_ca.ts';
 import type { Envelope } from '../alexa/verify.ts';
-import { buildServer, premiumRequired } from '../mcp/tools.ts';
+import { buildServer, premiumRequired, reportToolCalls } from '../mcp/tools.ts';
 import { copy } from '../voice/copy.ts';
 import { createHandler as voiceHandler } from '../voice/handler.ts';
 import { addItems, splitItems } from '../voice/items.ts';
@@ -123,10 +124,15 @@ function alexa(m: Member, telemetry: Telemetry) {
 
 function mcp(m: Member, telemetry: Telemetry) {
   const gate = requirePremiumWith(telemetry);
+  const send = userEvents(telemetry);
   const auth = { userId: m.userId, householdId: m.householdId, via: 'pat' as const };
   return async (name: string) => {
     const res = await createMcpHandler(() =>
-      buildServer(auth, (householdId) => gate({ userId: auth.userId, householdId }, 'mcp'))
+      buildServer(
+        auth,
+        (householdId) => gate({ userId: auth.userId, householdId }, 'mcp'),
+        reportToolCalls(send, auth.userId),
+      )
     ).fetch(
       new Request('http://edge/mcp', {
         method: 'POST',
@@ -169,6 +175,14 @@ test('switch off: a household without premium adds over Siri, Alexa and MCP as b
     assertFalse((await mcp(m, t)('add_items')).isError);
     assertEquals(await items(sql, m.householdId), ['Milch', 'Eier', 'Kaffee']);
     assertEquals(t.queued.filter((e) => e.event === 'integration_blocked'), []);
+    const [call, ...more] = t.queued.filter((e) => e.event === 'mcp_tool_call');
+    assertEquals(more, [], 'one tools/call, one mcp_tool_call');
+    const p = call?.properties as Record<string, unknown>;
+    assertEquals(
+      [p.tool, p.result, p.reason, p.household_id, p.distinct_id, p.is_internal],
+      ['add_items', 'success', 'done', m.householdId, m.install, true],
+    );
+    assertFalse(JSON.stringify(call).includes('Kaffee'), 'never the arguments');
     assertEquals(
       (await sql`select count(*)::int as n from public.integration_blocks
                  where household_id = ${m.householdId}`)[0].n,
@@ -204,6 +218,14 @@ test('switch on: Siri and MCP locked, Alexa still adds (free, job 72), integrati
       blocked.map((e) => (e.properties as Record<string, unknown>).integration),
       ['siri', 'mcp'],
       'once per locked integration within the hour',
+    );
+    assertEquals(
+      t.queued.filter((e) => e.event === 'mcp_tool_call').map((e) => {
+        const p = e.properties as Record<string, unknown>;
+        return [p.tool, p.result, p.reason];
+      }),
+      [['add_items', 'fail', 'premium_required'], ['list_items', 'fail', 'premium_required']],
+      'every locked call counts, not once an hour',
     );
     for (const e of blocked) {
       const p = e.properties as Record<string, unknown>;

@@ -11296,3 +11296,43 @@ main before the rename) keeps a Hummlist hotfix build possible.
   7 of 7.
 - **Changelog `none`.** Users could only notice a late unlock on a slow Realtime start, cured by the
   next reconnect.
+
+## Job 195: validation events F2, F3 and F5, 2026-11-12
+
+Peter's validation plan F1-F6 (11 Nov 2026 21:15) needs events the catalog lacked. This job adds
+them; Peter sets the pass bars.
+
+- **F2 and F3 are catalog entries only.** No prices, trip or scanner code exists in `app/lib`, so
+  nothing sends `shop_started`, `price_entered`, `trip_total_viewed`, `scan_started`, `off_miss` or
+  `item_added` with `source: scan` yet. The jobs that build those UIs send them from their flagged
+  code paths. Properties are booleans only: `price_entered.confirmed` (a remembered price
+  confirmed vs typed) and `trip_total_viewed.final` (finished trip vs running total). `off_miss`
+  carries nothing: the event is the miss. `scan`, not `barcode`, as the `AddSource` value: the
+  brief allowed either, and the user's action is a scan.
+- **`mcp_tool_call` is sent for every tools/call**, also locked and failed ones, with `result`
+  and `reason` in the shape of `siri_add`. The tool name comes from `mcpTools`, the eight tools the
+  server registers; a test fails when `tools/list` and `mcpTools` differ. Not throttled like
+  `integration_blocked`: F5 needs per-call counts, and one event per tool call is small.
+- **`api_key_used` is sent once the key, its scope and the household's access let a request
+  through**, before the operation runs, with the route's `scope` only. Refused requests already
+  have their own signals (the request log, `integration_blocked`). The day limit caps it at 1000 a
+  household.
+- **Both F5 events need the same consent as every server event**: `userEvents`
+  (`_shared/user_events.ts`) looks up the user's newest consent answer (the Alexa lookup) and sends
+  nothing without a yes to the current text. `integration_blocked` now goes through it too. The
+  lookup is one query per tool call or API request, and only when the function has a PostHog key.
+  The event uses the household the call acted in, not the user's default household.
+- **`withTelemetry` also flushes when a streamed body ends.** The MCP SDK answers `tools/call`
+  with an SSE stream at once and runs the tool afterwards, so the flush before the response
+  returned found an empty queue; the event waited for a later request in the same isolate or was
+  lost with it. That already held for `integration_blocked` from MCP. Shown on the local edge
+  runtime with a fake `phc_` key (no project, nothing ingested): without the fix the event is
+  queued and never sent, with it it is sent when the stream ends. Only `text/event-stream`
+  answers are wrapped: any other keeps its body and Content-Length untouched (review: a wrapped
+  body goes out chunked). A client that drops the stream early leaves its event to the next
+  flush, as before.
+- **`api_key_used`'s consent lookup runs next to the operation**, not before it, so an API call
+  waits for at most one of the two queries; the handler awaits both before it answers.
+- **The PostHog test-account cohort (293017) cannot see these events**: they have no person
+  profiles. Documented in `docs/ANALYTICS.md` and `docs/NEEDS_PETER.md`; no project setting was
+  changed.

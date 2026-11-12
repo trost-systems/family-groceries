@@ -31,7 +31,9 @@ WHERE timestamp > now() - INTERVAL 90 DAY
     '$recording_status', '$sdk_debug_pending_queue_size', '$sdk_debug_current_session_duration',
     '$sdk_debug_session_start', '$exception_source', '$debug_images',
     -- Job 51: siri_add and siri_read.
-    'result', 'reason', 'language', 'count'
+    'result', 'reason', 'language', 'count',
+    -- Job 50: integration_blocked. Job 195: price_entered, trip_total_viewed, mcp_tool_call.
+    'integration', 'confirmed', 'final', 'tool'
   )
 GROUP BY key
 ORDER BY events DESC;
@@ -79,7 +81,16 @@ SELECT 'siri reason', toString(properties.reason), count() FROM events
 WHERE event IN ('siri_add', 'siri_read') GROUP BY toString(properties.reason)
 UNION ALL
 SELECT 'siri language', toString(properties.language), count() FROM events
-WHERE event IN ('siri_add', 'siri_read') GROUP BY toString(properties.language);
+WHERE event IN ('siri_add', 'siri_read') GROUP BY toString(properties.language)
+UNION ALL
+SELECT 'mcp tool', toString(properties.tool), count() FROM events
+WHERE event = 'mcp_tool_call' GROUP BY toString(properties.tool)
+UNION ALL
+SELECT 'mcp reason', toString(properties.reason), count() FROM events
+WHERE event = 'mcp_tool_call' GROUP BY toString(properties.reason)
+UNION ALL
+SELECT 'api scope', toString(properties.scope), count() FROM events
+WHERE event = 'api_key_used' GROUP BY toString(properties.scope);
 
 -- 5. Error messages: every distinct exception type and value. Values are scrubbed (quoted text,
 --    e-mails, URLs, UUIDs, long numbers replaced; non-runtime errors keep only a code); read
