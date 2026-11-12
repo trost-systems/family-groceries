@@ -123,7 +123,7 @@ Deno.test('job 195: mcp_tool_call can name every tool the server lists, no other
   assertEquals(s.reports, [], 'tools/list is no tool call');
 });
 
-Deno.test('job 195: the event of a tool call reaches PostHog although the SSE answer streams', async () => {
+Deno.test('N-147: a tool call sends no mcp_tool_call while capture is off', async () => {
   const sent: string[] = [];
   const fetchImpl = (_url: string | URL | Request, init?: RequestInit) => {
     sent.push(...JSON.parse(String(init?.body)).batch.map((e: { event: string }) => e.event));
@@ -163,7 +163,7 @@ Deno.test('job 195: the event of a tool call reaches PostHog although the SSE an
   );
   const res = await serve(rpc('tools/call', { name: 'list_items', arguments: {} }));
   assertEquals((await message(res)).result.isError, true);
-  assertEquals(sent, ['mcp_tool_call']);
+  assertEquals(sent, [], 'N-147: mcp_tool_call capture is off');
 });
 
 Deno.test('job 169b: list_households does not ask the gate', async () => {
