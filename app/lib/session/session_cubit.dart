@@ -131,6 +131,17 @@ class const JoinRequest({
 /// the session shows the household already.
 typedef JoinDecision = ({String household, bool approved});
 
+/// A household `userId` is no longer in. `removal`: an owner or admin
+/// removed them in the last 30 days, while old invites can't bring them
+/// back (Legal N-114), by `_Removal.key`, which [SessionCubit.removalsTold]
+/// takes once the user saw it; null: it went another way, such as leaving
+/// on another device.
+typedef LostHousehold = ({String userId, String name, String? removal});
+
+/// One of the user's removals as `my_household_removals()` answers it;
+/// `key` tells this removal from an earlier one of the same household.
+typedef _Removal = ({String householdId, String name, String key});
+
 /// What `accept_invite` did with a join.
 sealed class const JoinAnswer();
 
@@ -231,6 +242,13 @@ abstract interface class SessionCache() {
 
   /// Drops everything cached for every user.
   Future<void> forget();
+
+  /// The removals of [userId] this device told them about, by
+  /// `_Removal.key`. Kept across sign-outs: each is told once per device.
+  Future<Set<String>> toldRemovals(String userId);
+
+  /// Keeps [keys] as [userId]'s told removals, in place of the ones before.
+  Future<void> rememberToldRemovals(String userId, Set<String> keys);
 }
 
 class SessionCubit(
@@ -309,13 +327,23 @@ class SessionCubit(
   final _created = <String>{};
 
   /// Households this device is leaving: gone after the next refresh, but
-  /// not removed by someone else.
+  /// not lost.
   final _leaving = <String>{};
-  final _removals = StreamController<Household>.broadcast();
+  final _lost = StreamController<LostHousehold>.broadcast();
 
-  /// Each household someone else removed the user from (job 169b W2), as a
-  /// refresh finds it gone. The session already shows another one.
-  Stream<Household> get removals => _removals.stream;
+  /// Removals told on this device since the start, so two refreshes at once
+  /// tell one once.
+  final _toldRemovals = <String>{};
+
+  /// The last write of the told removals, see [_editTold].
+  Future<void> _toldWrites = Future.value();
+
+  /// Each household the user is no longer in that a refresh finds (job
+  /// 169b W2): gone since the last one without this device leaving it, or
+  /// a removal of the last 30 days not told on this device yet, also right
+  /// after signing in. The session already shows another one. A removal
+  /// counts as told once [removalsTold] says so.
+  Stream<LostHousehold> get lostHouseholds => _lost.stream;
 
   /// Join requests this device withdrew: gone after the next refresh, but
   /// not declined.
@@ -414,10 +442,13 @@ class SessionCubit(
       }
     }
     final cached = await _cache.householdsOf(userId);
+    final told = await _cache.toldRemovals(userId);
     final householdRows = _client.rpc<List<dynamic>>('my_households');
     final ownRequests = _ownRequests();
+    final ownRemovals = _ownRemovals();
     final rows = await householdRows;
     final own = await ownRequests;
+    final removals = await ownRemovals;
     if (reload != _reloads) {
       return;
     }
@@ -486,9 +517,24 @@ class SessionCubit(
         ],
       _ => const <Household>[],
     };
+    // Unknown removals (an older server, offline): every one gone is told
+    // without the 30 days.
+    final lost = <LostHousehold>[
+      for (final h in gone)
+        if (!(removals?.any((r) => r.householdId == h.id) ?? false))
+          (userId: userId, name: h.name, removal: null),
+      for (final r in removals ?? const <_Removal>[])
+        if (!told.contains(r.key) && _toldRemovals.add(r.key))
+          (userId: userId, name: r.name, removal: r.key),
+    ];
     // Shown before the write: a switch during it must not be undone.
     emit(next);
-    gone.forEach(_removals.add);
+    lost.forEach(_lost.add);
+    if (removals != null) {
+      final current = {for (final r in removals) r.key};
+      // The server forgets a removal after 30 days, and so does the device.
+      await _editTold(userId, (told) => told.intersection(current));
+    }
     await _cache.remember(
       userId,
       households: households,
@@ -502,6 +548,26 @@ class SessionCubit(
     }
   }
 
+  /// [userId] saw the notices of the removals [keys] (told by
+  /// [lostHouseholds]): this device does not tell them again, also after a
+  /// restart. Not before: a notice held behind the analytics consent and
+  /// lost to an app kill shows on the next start.
+  Future<void> removalsTold(String userId, Iterable<String> keys) =>
+      _editTold(userId, (told) => {...told, ...keys});
+
+  /// One edit of the told removals after the other: a prune by [refresh]
+  /// and [removalsTold] both read and write the whole set.
+  Future<void> _editTold(
+    String userId,
+    Set<String> Function(Set<String> told) edit,
+  ) => _toldWrites = _toldWrites.then((_) async {
+    final told = await _cache.toldRemovals(userId);
+    final next = edit(told);
+    if (!setEquals(next, told)) {
+      await _cache.rememberToldRemovals(userId, next);
+    }
+  });
+
   /// The user's pending join requests, or null when the server did not
   /// say.
   Future<List<JoinRequest>?> _ownRequests() async {
@@ -510,6 +576,29 @@ class SessionCubit(
       return [
         for (final row in rows.whereType<Map<String, dynamic>>())
           ?JoinRequest.fromJson(row),
+      ];
+    } on Object {
+      return null;
+    }
+  }
+
+  /// The user's removals of the last 30 days, or null when the server did
+  /// not say.
+  Future<List<_Removal>?> _ownRemovals() async {
+    try {
+      final rows = await _client.rpc<List<dynamic>>('my_household_removals');
+      return [
+        for (final row in rows.whereType<Map<String, dynamic>>())
+          if (row case {
+            'household_id': final String id,
+            'household_name': final String name,
+            'removed_at': final String at,
+          })
+            (
+              householdId: id,
+              name: name,
+              key: '$id ${DateTime.parse(at).toUtc().toIso8601String()}',
+            ),
       ];
     } on Object {
       return null;
@@ -936,7 +1025,7 @@ class SessionCubit(
     await _auth.cancel();
     await _requestWatch?.stop();
     _requestWatch = null;
-    await _removals.close();
+    await _lost.close();
     await _decisions.close();
     await super.close();
   }

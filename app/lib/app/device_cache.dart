@@ -67,11 +67,6 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   /// forgets) must keep the link that is about to be signed in for.
   static const _pendingInviteKey = 'invite.pending';
 
-  /// Set once the Play Store's install referrer was read (job 169b W2): it
-  /// is read on the first start only. Not under [forget]'s prefixes: it
-  /// belongs to the install.
-  static const _installReferrerKey = 'invite.referrer_read';
-
   /// The List tab's dismissed tips per user (job 80), a JSON list of tip
   /// ids: read once into [_hintsPrefix]'s log.
   static const _tipsPrefix = 'tips.';
@@ -98,6 +93,11 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   /// The household kinds a user picked after the first one (job 168b), a
   /// JSON list per user, for when a user can have several households.
   static const _laterKindsPrefix = 'onboarding.later.';
+
+  /// The household removals each user was told about on this device (Legal
+  /// N-114), a JSON list of keys. Not under [forget]'s prefixes: signing in
+  /// again tells none twice.
+  static const _toldRemovalsPrefix = 'removals.told.';
 
   static String _householdKey(String userId) => '$_householdPrefix$userId';
 
@@ -239,19 +239,6 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
       null => _prefs.remove(_pendingInviteKey),
     },
   );
-
-  @override
-  Future<bool> installReferrerRead() async {
-    try {
-      return await _prefs.getBool(_installReferrerKey) ?? false;
-    } on Object {
-      return false;
-    }
-  }
-
-  @override
-  Future<void> saveInstallReferrerRead() =>
-      _write(() => _prefs.setBool(_installReferrerKey, true));
 
   /// The log, or job 80's dismissed tips as `{"dismissed": [ids]}` for a
   /// user who has none yet.
@@ -419,6 +406,30 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
           k.startsWith(_seenPrefix) ||
           k.startsWith(_prefsPrefix),
     ),
+  );
+
+  @override
+  Future<Set<String>> toldRemovals(String userId) async {
+    try {
+      return switch (jsonDecode(
+        await _prefs.getString('$_toldRemovalsPrefix$userId') ?? '[]',
+      )) {
+        final List<Object?> keys => keys.whereType<String>().toSet(),
+        _ => const {},
+      };
+    } on Object {
+      return const {};
+    }
+  }
+
+  @override
+  Future<void> rememberToldRemovals(String userId, Set<String> keys) => _write(
+    () => keys.isEmpty
+        ? _prefs.remove('$_toldRemovalsPrefix$userId')
+        : _prefs.setString(
+            '$_toldRemovalsPrefix$userId',
+            jsonEncode([...keys]),
+          ),
   );
 
   Future<void> _removeWhere(bool Function(String key) test) async {

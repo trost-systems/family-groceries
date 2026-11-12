@@ -1099,7 +1099,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get analyticsConsentBody =>
-      'Snacklist (Anbieter: Peter Trost) möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Snacklist trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Snacklist eine zufällige Kennung auf diesem Gerät und sendet damit pseudonyme Nutzungsdaten, Fehlerberichte, die Kennung deines Haushalts und technische Angaben zu Gerät oder Browser an unseren Dienstleister PostHog (Server in der EU). Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet. Du kannst jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der';
+      'Snacklist (Anbieter: Peter Trost) möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Snacklist trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Snacklist eine zufällige Kennung auf diesem Gerät und sendet damit pseudonyme Nutzungsdaten (etwa zu Einträgen, Haushalten und der Einrichtung und welche Tipps du siehst), Fehlerberichte, die Kennung deines Haushalts und technische Angaben zu Gerät oder Browser an unseren Dienstleister PostHog (Server in der EU). Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet. Du kannst jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der';
 
   @override
   String get analyticsConsentPrivacyLink => 'Datenschutzerklärung';
@@ -2141,6 +2141,10 @@ class AppLocalizationsDe extends AppLocalizations {
   String get invitePersonBody => 'Ein Link für eine Person, 7 Tage gültig.';
 
   @override
+  String get inviteJoinPageHint =>
+      'Wer den Link hat, sieht auf der Beitrittsseite deinen Vornamen (aus deinem Anzeigenamen), den Namen und die Art des Haushalts und die Zahl der Mitglieder. Gib den Link nur an Personen weiter, die du einladen willst.';
+
+  @override
   String get inviteGroupTitle => 'Gruppenlink';
 
   @override
@@ -2256,6 +2260,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String householdRemovedNotice(String name) {
+    return 'Du wurdest aus dem Haushalt „$name“ entfernt. 30 Tage lang kommst du über alte Einladungen nicht zurück. Beitreten kannst du in dieser Zeit nur über eine neue Einladung vom Hauptadmin oder einem Admin.';
+  }
+
+  @override
+  String householdGoneNotice(String name) {
     return 'Du bist nicht mehr Mitglied von „$name“.';
   }
 
