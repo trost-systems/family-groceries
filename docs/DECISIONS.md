@@ -11336,3 +11336,26 @@ them; Peter sets the pass bars.
 - **The PostHog test-account cohort (293017) cannot see these events**: they have no person
   profiles. Documented in `docs/ANALYTICS.md` and `docs/NEEDS_PETER.md`; no project setting was
   changed.
+
+## Job 198: grocery log prototypes (sandbox only), 2026-11-12
+
+- **Started early on the lead's word.** The brief's `start_after` was 16 Nov 2026 00:00
+  Europe/Berlin. The lead pulled it on the BOARD at 20:13 on 12 Nov (Peter t803u, prototypes only),
+  so the job started at 20:26.
+- **Vanilla HTML/JS in `docs/design/grocery-log/`, like job 196.** A throwaway needs no build
+  step. It uses the 6b tokens from `site/public/tokens.css` and the site's fonts by relative path,
+  and the app's own Material glyphs (`icons.js`, generated from Flutter's MaterialIcons font).
+  `docs/design/` is outside the TS lint pack (`tool/lint/ts/pack.ts`, "archived design
+  prototypes"), and nothing under `app/`, `supabase/` or `site/` changed.
+- **One data shape and one entry sheet for all five.** A trip is a store, a day, who logged it,
+  and items with optional quantities. No price field exists, so no spend view can creep in. The
+  approaches differ only in how a trip gets in and how you find it again, which is the decision
+  Peter has to make.
+- **No Vercel preview.** The page needs no server beyond a static file server, and the brief
+  allows a preview only "if needed". Screenshots of every scenario are in `docs/screenshots/198/`
+  and `shoot.mjs` reruns them, so no Vercel project or protection was touched.
+- **German and light only.** The app's template language is German. English, dark mode and the
+  358 px compact layout are listed as not prototyped in `RECOMMENDATION.md`.
+- **Recommendation:** `post-shop-entry-sheet` for capture, with `trip-journal-by-date` as the
+  history screen; everything Free. Reasons and open questions are in
+  `docs/design/grocery-log/RECOMMENDATION.md`. Job 199 still waits for Peter's pick.
