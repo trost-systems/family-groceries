@@ -11272,3 +11272,27 @@ main before the rename) keeps a Hummlist hotfix build possible.
 - Tests: `households_join_cap.test.sql` (20 refused and 19 let in on every path) and
   `households_multi.test.sql` (a 21st create refused); both fail with the cap at 10 or 21.
   Driven on the web build: `journeys/household-cap.mjs`.
+
+## Job 191: integration-lock e2e missed a grant on PR #363 (2026-11-11)
+
+- **Cause.** The entitlements channel read the rows again when the server confirmed its join, but
+  Supabase Realtime confirms the join before its Postgres listener runs and says so later with
+  "Subscribed to PostgreSQL". In CI's `e2e (1)` on #363 (run 42976560182) Peter's page rejoined after
+  the Alexa linking reload, the grant's INSERT landed about 3 s later, and his list's second resync
+  (which runs on that system message) came 400 ms after the grant. The INSERT fell into that gap, so
+  his card stayed. The same test failed this way for Lea on 2026-11-09 (job 169b, CI job
+  128936161825), so #363 did not cause it.
+- **Fix.** `SupabaseEntitlementsSource.watch` also reads on the `postgres_changes` system `ok`, as
+  the list channel does (`list_repository.dart`). A purchase made right after the app starts now
+  shows without waiting for a reconnect.
+- **Proof.** A local copy of the spec held back the entitlements channel's "Subscribed to
+  PostgreSQL" and dropped its change events until 1 s after the grant: 3 of 3 failed at the CI
+  assertion before the fix and 3 of 3 passed after it, each with the INSERT dropped. The unchanged
+  spec passed 9 of 9. That harness stays out of the repo: it rewrites the socket and would only
+  re-prove one line.
+- **club.spec.ts polls the list delete.** #370's first CI run failed `club.spec.ts:236`: the list's
+  row goes before the server answers, and the test read the lists 20 ms after `delete_list` started.
+  It polls now. With `delete_list` held 1 s the old read failed and the poll passed; the spec passed
+  7 of 7.
+- **Changelog `none`.** Users could only notice a late unlock on a slow Realtime start, cured by the
+  next reconnect.

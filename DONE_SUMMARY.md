@@ -697,3 +697,7 @@ No check found a blocker for the 15 Nov beta. On main 3119516d, the e2e, widget 
 ## Job 200: the household cap is 20 per user (2026-11-11)
 
 The per-user cap moved from 10 to 20 households, Free and Premium (`public.household_cap()`). Nobody in production was over it. Details: [docs/done/200-household-cap-enforcement.md](docs/done/200-household-cap-enforcement.md).
+
+## Job 191: integration-lock e2e race on PR #363 (2026-11-11)
+
+The entitlements channel missed a grant written between its join and its Postgres listener, so a member's Premium card could stay up until a reconnect. It now also reads on "Subscribed to PostgreSQL". This was older than #363, which stays unmerged under the Legal hold. Cause, proof and numbers: docs/DECISIONS.md, section "Job 191".
