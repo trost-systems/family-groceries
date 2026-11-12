@@ -24,3 +24,7 @@ Or serve a prebuilt preview without installing anything:
 python3 -m http.server 8771 --directory docs/design/h-satz-final/h-dist
 # http://127.0.0.1:8771/#/h-satz-final
 ```
+
+## Feature prototypes
+
+- **Grocery log (job 198):** [`grocery-log/`](grocery-log/), five interactive approaches behind one switcher, plus [`RECOMMENDATION.md`](grocery-log/RECOMMENDATION.md). Serve the repo root (`python3 -m http.server 4198 --bind 127.0.0.1`) and open `/docs/design/grocery-log/index.html`.

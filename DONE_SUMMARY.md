@@ -702,3 +702,7 @@ The per-user cap moved from 10 to 20 households, Free and Premium (`public.house
 ## Job 191: integration-lock e2e race on PR #363 (2026-11-11)
 
 The entitlements channel missed a grant written between its join and its Postgres listener, so a member's Premium card could stay up until a reconnect. It now also reads on "Subscribed to PostgreSQL". This was older than #363, which stays unmerged under the Legal hold. Cause, proof and numbers: docs/DECISIONS.md, section "Job 191".
+
+## Job 198: grocery log prototypes, sandbox only (2026-11-12)
+
+Five interactive prototypes behind one switcher in `docs/design/grocery-log/`: `trip-journal-by-date`, `store-timeline`, `post-shop-entry-sheet`, `calendar-trip-browse` and `relist-from-past-trip`. The recommendation is `post-shop-entry-sheet` for capture with the journal as history, all Free. It is in `docs/design/grocery-log/RECOMMENDATION.md`. No production UI, receipt scanning or spend graphs. Details: [docs/done/198-grocery-log-prototypes.md](docs/done/198-grocery-log-prototypes.md)

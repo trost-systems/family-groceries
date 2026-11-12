@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Einkaufsverlauf: fünf Prototypen</title>
+  <link rel="stylesheet" href="../../../site/public/tokens.css">
+  <link rel="stylesheet" href="proto.css">
+</head>
+<body>
+  <main class="stage">
+    <aside class="panel">
+      <h1>Einkaufsverlauf</h1>
+      <p class="note">Wegwerf-Prototypen (Job 198). Keine App-Oberfläche, kein Bon-Scan, keine Ausgaben-Grafik, erfundene Daten. Heute ist hier Do., 12. Nov. 2026.</p>
+      <h2>Ansatz <span class="note">(Tasten 1 bis 5)</span></h2>
+      <div id="tabs" class="tabs"></div>
+      <p id="pitch" class="pitch"></p>
+      <h2>Daten</h2>
+      <div class="row-controls"><div id="scenarios" class="tabs inline"></div><button id="reset">Von vorn</button></div>
+      <h2>Die vier Szenarien</h2>
+      <ol id="steps" class="steps"></ol>
+      <h2>Abwägung</h2>
+      <p class="pm"><b>Dafür.</b> <span id="plus"></span></p>
+      <p class="pm"><b>Dagegen.</b> <span id="minus"></span></p>
+      <p class="note"><a href="RECOMMENDATION.md">Empfehlung und offene Fragen</a></p>
+    </aside>
+    <section class="phone" aria-label="Snacklist">
+      <header class="appbar"><span id="appbar-lead" class="lead"></span><span id="appbar-title" class="title"></span></header>
+      <div id="screen" class="screen"></div>
+    </section>
+  </main>
+  <script type="module" src="proto.js"></script>
+</body>
+</html>
