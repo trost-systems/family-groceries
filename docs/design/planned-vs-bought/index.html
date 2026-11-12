@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Geplant und gekauft: fünf Prototypen</title>
+  <link rel="stylesheet" href="../../../site/public/tokens.css">
+  <link rel="stylesheet" href="proto.css">
+</head>
+<body>
+  <main class="stage">
+    <aside class="panel">
+      <h1>Geplant und gekauft</h1>
+      <p class="note">Wegwerf-Prototypen (Job 196). Keine App-Oberfläche, kein Bon-Scan, erfundene Daten.</p>
+      <h2>Ansatz</h2>
+      <div id="tabs" class="tabs"></div>
+      <h2>Szenario</h2>
+      <div id="scenarios" class="tabs"></div>
+      <label class="switch"><input id="prices" type="checkbox"> Bestätigte Preise zeigen</label>
+      <h2>Ablauf</h2>
+      <div class="controls">
+        <button data-act="reset">Von vorn</button>
+        <button id="next" data-act="next">Nächster Schritt</button>
+        <button data-act="partner">Ben schreibt etwas dazu</button>
+      </div>
+      <p id="step" class="note"></p>
+      <p class="note"><a href="RECOMMENDATION.md">Empfehlung</a></p>
+    </aside>
+    <section class="phone" aria-label="Snacklist">
+      <header class="appbar">
+        <span class="title">Einkaufsliste</span>
+        <span id="appbar-sub" class="sub"></span>
+      </header>
+      <div id="screen" class="screen"></div>
+    </section>
+  </main>
+  <script type="module" src="proto.js"></script>
+</body>
+</html>

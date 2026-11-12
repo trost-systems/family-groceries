@@ -706,3 +706,7 @@ The entitlements channel missed a grant written between its join and its Postgre
 ## Job 198: grocery log prototypes, sandbox only (2026-11-12)
 
 Five interactive prototypes behind one switcher in `docs/design/grocery-log/`: `trip-journal-by-date`, `store-timeline`, `post-shop-entry-sheet`, `calendar-trip-browse` and `relist-from-past-trip`. The recommendation is `post-shop-entry-sheet` for capture with the journal as history, all Free. It is in `docs/design/grocery-log/RECOMMENDATION.md`. No production UI, receipt scanning or spend graphs. Details: [docs/done/198-grocery-log-prototypes.md](docs/done/198-grocery-log-prototypes.md)
+
+## Job 196: planned vs bought, five prototypes (2026-11-12)
+
+Five interactive throwaway prototypes behind one switcher in `docs/design/planned-vs-bought/`; recommended `trip-review-unplanned`. No app change, no receipt scanning. Details: [docs/done/196-planned-vs-bought-prototypes.md](docs/done/196-planned-vs-bought-prototypes.md).
