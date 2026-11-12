@@ -1088,7 +1088,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get analyticsConsentBody =>
-      'Snacklist (run by Peter Trost) wants to see which features are used, find bugs, measure whether Snacklist pays for itself and switch new features on step by step. For that, Snacklist stores a random ID on this device and uses it to send pseudonymous usage data, error reports, your household\'s ID and technical details of your device or browser to our service provider PostHog (servers in the EU). List contents, names and e-mail addresses are never sent. You can withdraw any time under More → Usage data. More in the';
+      'Snacklist (run by Peter Trost) wants to see which features are used, find bugs, measure whether Snacklist pays for itself and switch new features on step by step. For that, Snacklist stores a random ID on this device and uses it to send pseudonymous usage data (for example about items, households and setup, and which tips you see), error reports, your household\'s ID and technical details of your device or browser to our service provider PostHog (servers in the EU). List contents, names and e-mail addresses are never sent. You can withdraw any time under More → Usage data. More in the';
 
   @override
   String get analyticsConsentPrivacyLink => 'privacy policy';
@@ -2120,6 +2120,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invitePersonBody => 'A link for one person, valid for 7 days.';
 
   @override
+  String get inviteJoinPageHint =>
+      'Anyone with the link sees your first name (from your display name), the household\'s name and kind and the number of members on the join page. Only share the link with people you want to invite.';
+
+  @override
   String get inviteGroupTitle => 'Group link';
 
   @override
@@ -2235,6 +2239,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String householdRemovedNotice(String name) {
+    return 'You were removed from the household “$name”. For 30 days, old invites won\'t let you back in. In that time you can only rejoin through a new invite from the owner or an admin.';
+  }
+
+  @override
+  String householdGoneNotice(String name) {
     return 'You\'re no longer a member of “$name”.';
   }
 

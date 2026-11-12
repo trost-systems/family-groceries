@@ -104,11 +104,14 @@ Our guarantees sit on top of it (DECISIONS Job 44):
 - Peter approved the wording (DE and EN, the legal review's version) on 2026-10-30; job 33b
   removed the "ENTWURF" mark from the screen and from More. Version 2026-11-01 is Legal's
   12:55 text with the buttons „Erlauben“ / „Nicht erlauben“ ("Allow" / "Don't allow"), equal
-  weight, none pre-selected (approved by Peter 2026-11-01). The current text, version
-  2026-11-10, is the same text with Snacklist for Hummlist (job 174).
+  weight, none pre-selected (approved by Peter 2026-11-01). Version 2026-11-10 is the
+  same text with Snacklist for Hummlist (job 174). The current text, version 2026-11-11, adds
+  examples of the usage data (items, households, setup, which tips are shown), since the app sends
+  household and setup events and tip ids: the policy promises a new ask when the notice covers new
+  data (job 178, Legal N-125).
 - **Consent text version** (Legal Review 2026-11-01, addendum 12:35; EDPB Guidelines 05/2020
   Rn. 108, 110): every decision is stored with the version of the text it was given under,
-  `consentTextVersion` in `app/lib/analytics/consent_version.dart` (now `2026-11-10`). On the
+  `consentTextVersion` in `app/lib/analytics/consent_version.dart` (now `2026-11-11`). On the
   device it is `analytics.consent_text_version` next to `analytics.consent`; on the server
   `analytics_consents.consent_text_version` (`record_analytics_consent(p_install, p_consent,
   p_internal, p_answered, p_text_version)`). Each version's exact DE and EN text is kept in
@@ -121,8 +124,9 @@ Our guarantees sit on top of it (DECISIONS Job 44):
   starts the SDK, with a new install id. A no stays a no whatever its version. The server does
   the same for its events (`analyticsSubject` in `supabase/functions/alexa/store.ts`): only a
   newest answer that is a yes to a current version counts (`CURRENT_CONSENT_TEXT_VERSIONS` in
-  `supabase/functions/_shared/consent_version.ts`: 2026-11-10, and 2026-11-01, which Hummlist
-  builds show until Snacklist replaces them), so a yes an older build recorded
+  `supabase/functions/_shared/consent_version.ts`: only 2026-11-11, since the policy promises to
+  send nothing after a notice that names new data until the user answers again; job 178, Legal
+  N-125), so a yes an older build recorded
   (the four-argument `record_analytics_consent`, kept for those builds, stores no version) sends
   nothing. Changing the text means a new version: a new file in `docs/consent/`, the new date in
   both constants, and everyone is asked again.
@@ -148,7 +152,7 @@ property and `$lib: hummlist-app`; no query reads them.
 | `first_open` | the first yes on an install | none |
 | `household_created` | the server created the household; once, also when a retry finds the household a lost answer made (job 22) | `store_count` (0 to 50: how many stores were picked or typed in onboarding, job 58; never their names); `default_stores` from builds before job 58 (true: dm, Lidl and Edeka; false: Skip); `context` (job 169b: `onboarding`, or `switcher` for the switcher's "Neuer Haushalt"; missing from builds before it). A retry with the same request id answers the same household, which is counted once |
 | `household_switched` | job 169b: the user picked another of their households in the switcher sheet; not for the switch that follows a create or a join (those send `household_created` and `invite_accepted`) | none; the household switched to rides along as `household_id` |
-| `invite_accepted` | the server confirmed a new membership from an invite (`accept_invite` answered `joined`; not when the user was a member already, except as the answer to a try whose answer was lost) | `method`: `link` (the code came from `/join/<code>`, `?invite=` or the pending invite kept on the device, and was not edited), `code` (typed), `referrer` (job 169b W2: from the Play Store's install referrer, read once on the first start) or `paste` (job 169b W2: the start screens' "Einladung einfügen") |
+| `invite_accepted` | the server confirmed a new membership from an invite (`accept_invite` answered `joined`; not when the user was a member already, except as the answer to a try whose answer was lost) | `method`: `link` (the code came from `/join/<code>`, `?invite=` or the pending invite kept on the device, and was not edited), `code` (typed) or `paste` (job 169b W2: the start screens' "Einladung einfügen") |
 | `invite_sent` | job 22: an invite was handed out: the share sheet opened, or its link or code was copied; once per tap | `channel` (`share_sheet`, `copy_link`, `copy_code`), `context` (`onboarding`: Step 3 after creating; `settings`: More, Einladungen; `switcher`: the invite sheet from a household's row in the switcher; `household`: the invite sheet from the household page; the last two job 169b W2), `kind` (`person`: one person, 7 days; `group`: the group link, up to 50 people, 30 days; job 169b W2). Never the code, the link or the household's name |
 | `member_removed` | job 169b W2: the owner or an admin removed a member from the household on the household page and the server confirmed it | none; never who was removed or their name |
 | `list_created` | job 169b K: the user added a list to the household (the tabs' "+" or the household page's "Neue Liste") and the server confirmed it | none; never the list's name |

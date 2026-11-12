@@ -395,12 +395,18 @@ class TestSession(super.initialState)
   @override
   PendingInvite? get pendingInvite => null;
 
-  /// What [removals] tells: add a household to say someone removed the
-  /// user from it.
-  final removedFrom = StreamController<Household>.broadcast();
+  /// What [lostHouseholds] tells.
+  final lost = StreamController<LostHousehold>.broadcast();
 
   @override
-  Stream<Household> get removals => removedFrom.stream;
+  Stream<LostHousehold> get lostHouseholds => lost.stream;
+
+  /// Each [removalsTold] call's keys.
+  final toldRemovals = <List<String>>[];
+
+  @override
+  Future<void> removalsTold(String userId, Iterable<String> keys) async =>
+      toldRemovals.add([...keys]);
 
   /// What [joinDecisions] tells.
   final decidedOn = StreamController<JoinDecision>.broadcast();
@@ -410,7 +416,7 @@ class TestSession(super.initialState)
 
   @override
   Future<void> close() async {
-    await removedFrom.close();
+    await lost.close();
     await decidedOn.close();
     await super.close();
   }
@@ -587,19 +593,12 @@ class TestSession(super.initialState)
 
 class MemoryPendingStore() implements PendingInviteStore {
   KeptInvite? saved;
-  var referrerRead = false;
 
   @override
   Future<KeptInvite?> pendingInvite() async => saved;
 
   @override
   Future<void> savePendingInvite(KeptInvite? invite) async => saved = invite;
-
-  @override
-  Future<bool> installReferrerRead() async => referrerRead;
-
-  @override
-  Future<void> saveInstallReferrerRead() async => referrerRead = true;
 }
 
 typedef Onboarding = ({
@@ -868,3 +867,14 @@ Future<void> scrollTo(WidgetTester tester, Finder finder) async {
   }
   await tester.ensureVisible(finder);
 }
+
+/// Legal's invite-sheet hint (N-112), byte for byte.
+const joinPageHintDe =
+    'Wer den Link hat, sieht auf der Beitrittsseite deinen Vornamen (aus '
+    'deinem Anzeigenamen), den Namen und die Art des Haushalts und die Zahl '
+    'der Mitglieder. Gib den Link nur an Personen weiter, die du einladen '
+    'willst.';
+const joinPageHintEn =
+    'Anyone with the link sees your first name (from your display name), '
+    "the household's name and kind and the number of members on the join "
+    'page. Only share the link with people you want to invite.';

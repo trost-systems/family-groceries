@@ -319,7 +319,9 @@ class _AppState() extends State<App> {
           builder: (context, child) => NoticesHost(
             popups: _popups,
             child: RemovedNotices(
+              router: _router,
               child: JoinDecisionNotices(
+                router: _router,
                 child: BlocBuilder<SessionCubit, Session>(
                   builder: (context, session) => session is SessionLoading
                       ? const Scaffold(

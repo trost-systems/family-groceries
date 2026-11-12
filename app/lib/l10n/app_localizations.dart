@@ -1832,10 +1832,10 @@ abstract class AppLocalizations {
   /// **'Darf Snacklist Nutzungsdaten erfassen?'**
   String get analyticsConsentTitle;
 
-  /// Analytics consent screen: who asks, why, what is stored and sent and what never is, how to withdraw. Ends right before analyticsConsentPrivacyLink, which follows after a space and is closed by a full stop. Version 2026-11-10 (consentTextVersion, docs/consent/2026-11-10.md): changing it needs a new version. Approved by Peter 2026-11-01 (Legal 12:55); 2026-11-10 swaps only the name (job 174)
+  /// Analytics consent screen: who asks, why, what is stored and sent and what never is, how to withdraw. Ends right before analyticsConsentPrivacyLink, which follows after a space and is closed by a full stop. Version 2026-11-11 (consentTextVersion, docs/consent/2026-11-11.md): changing it needs a new version. Approved by Peter 2026-11-01 (Legal 12:55); 2026-11-10 swaps only the name (job 174); 2026-11-11 names examples of the usage data (job 178, Legal N-125), wording approved by Peter 2026-11-11 with PR #363
   ///
   /// In de, this message translates to:
-  /// **'Snacklist (Anbieter: Peter Trost) möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Snacklist trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Snacklist eine zufällige Kennung auf diesem Gerät und sendet damit pseudonyme Nutzungsdaten, Fehlerberichte, die Kennung deines Haushalts und technische Angaben zu Gerät oder Browser an unseren Dienstleister PostHog (Server in der EU). Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet. Du kannst jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der'**
+  /// **'Snacklist (Anbieter: Peter Trost) möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Snacklist trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Snacklist eine zufällige Kennung auf diesem Gerät und sendet damit pseudonyme Nutzungsdaten (etwa zu Einträgen, Haushalten und der Einrichtung und welche Tipps du siehst), Fehlerberichte, die Kennung deines Haushalts und technische Angaben zu Gerät oder Browser an unseren Dienstleister PostHog (Server in der EU). Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet. Du kannst jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der'**
   String get analyticsConsentBody;
 
   /// Analytics consent screen: the link to the privacy policy that ends analyticsConsentBody. approved by Peter 2026-10-30 (legal review H-03)
@@ -3506,6 +3506,12 @@ abstract class AppLocalizations {
   /// **'Ein Link für eine Person, 7 Tage gültig.'**
   String get invitePersonBody;
 
+  /// Job 178 (Legal N-112): plain text on every surface that makes or shares an invite (invite sheet, Einladungen, onboarding invite steps): what the public join page shows. Wording from Legal, 2026-11-10; change only with Legal
+  ///
+  /// In de, this message translates to:
+  /// **'Wer den Link hat, sieht auf der Beitrittsseite deinen Vornamen (aus deinem Anzeigenamen), den Namen und die Art des Haushalts und die Zahl der Mitglieder. Gib den Link nur an Personen weiter, die du einladen willst.'**
+  String get inviteJoinPageHint;
+
   /// Job 169b W2: section of the invite sheet for the reusable group link (owner and admins)
   ///
   /// In de, this message translates to:
@@ -3668,11 +3674,17 @@ abstract class AppLocalizations {
   /// **'Entfernen'**
   String get memberRemoveConfirm;
 
-  /// Job 169b W2: shown when a refresh finds that someone removed the user from a household
+  /// Job 169b W2: shown once per device for each removal of the last 30 days the server reports (my_household_removals), also right after signing in. Wording from Legal (job 178, N-114, 2026-11-10): the 30-day rule; change only with Legal
+  ///
+  /// In de, this message translates to:
+  /// **'Du wurdest aus dem Haushalt „{name}“ entfernt. 30 Tage lang kommst du über alte Einladungen nicht zurück. Beitreten kannst du in dieser Zeit nur über eine neue Einladung vom Hauptadmin oder einem Admin.'**
+  String householdRemovedNotice(String name);
+
+  /// Job 178: shown when a refresh finds a household gone that nobody removed the user from in the last 30 days (left on another device, a removal long ago). Never the 30-day rule: it does not apply
   ///
   /// In de, this message translates to:
   /// **'Du bist nicht mehr Mitglied von „{name}“.'**
-  String householdRemovedNotice(String name);
+  String householdGoneNotice(String name);
 
   /// No description provided for @householdNotAdmin.
   ///
