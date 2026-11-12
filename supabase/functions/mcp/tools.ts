@@ -78,14 +78,24 @@ export type ReportCall = (
   call: { tool: McpTool; household: string; reason: CallReason },
 ) => Promise<void>;
 
-/** Reports each tool call of [userId] as mcp_tool_call through [send]. */
+/**
+ * Reports each tool call of [userId] as mcp_tool_call through [send].
+ *
+ * N-147 (Legal Review, 12 Nov 2026): capture is off until the analytics
+ * consent text covers connected-app (MCP) usage events. The catalog and this
+ * helper stay; set [mcpToolCallCapture] back to true to restore the send.
+ */
+export const mcpToolCallCapture = false;
+
 export function reportToolCalls(send: UserEvent, userId: string): ReportCall {
-  return ({ tool, household, reason }) =>
-    send(userId, household, 'mcp_tool_call', {
+  return ({ tool, household, reason }) => {
+    if (!mcpToolCallCapture) return Promise.resolve();
+    return send(userId, household, 'mcp_tool_call', {
       tool,
       result: reason === 'done' ? 'success' : 'fail',
       reason,
     });
+  };
 }
 
 /**

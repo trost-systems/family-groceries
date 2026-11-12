@@ -175,14 +175,11 @@ test('switch off: a household without premium adds over Siri, Alexa and MCP as b
     assertFalse((await mcp(m, t)('add_items')).isError);
     assertEquals(await items(sql, m.householdId), ['Milch', 'Eier', 'Kaffee']);
     assertEquals(t.queued.filter((e) => e.event === 'integration_blocked'), []);
-    const [call, ...more] = t.queued.filter((e) => e.event === 'mcp_tool_call');
-    assertEquals(more, [], 'one tools/call, one mcp_tool_call');
-    const p = call?.properties as Record<string, unknown>;
     assertEquals(
-      [p.tool, p.result, p.reason, p.household_id, p.distinct_id, p.is_internal],
-      ['add_items', 'success', 'done', m.householdId, m.install, true],
+      t.queued.filter((e) => e.event === 'mcp_tool_call'),
+      [],
+      'N-147: mcp_tool_call capture is off',
     );
-    assertFalse(JSON.stringify(call).includes('Kaffee'), 'never the arguments');
     assertEquals(
       (await sql`select count(*)::int as n from public.integration_blocks
                  where household_id = ${m.householdId}`)[0].n,
@@ -220,12 +217,9 @@ test('switch on: Siri and MCP locked, Alexa still adds (free, job 72), integrati
       'once per locked integration within the hour',
     );
     assertEquals(
-      t.queued.filter((e) => e.event === 'mcp_tool_call').map((e) => {
-        const p = e.properties as Record<string, unknown>;
-        return [p.tool, p.result, p.reason];
-      }),
-      [['add_items', 'fail', 'premium_required'], ['list_items', 'fail', 'premium_required']],
-      'every locked call counts, not once an hour',
+      t.queued.filter((e) => e.event === 'mcp_tool_call'),
+      [],
+      'N-147: mcp_tool_call capture is off, including locked calls',
     );
     for (const e of blocked) {
       const p = e.properties as Record<string, unknown>;
