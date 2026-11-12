@@ -233,7 +233,8 @@ test('lists: a second list, adds stay on their list, tabs switch, a move between
   await expect(shown(page, 'Die 2 offenen Artikel darauf werden mit gelöscht.')).toBeVisible();
   await page.getByRole('button', { name: 'Löschen', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Aktionen für „Vereinsheim“' })).toHaveCount(0);
-  expect((await listsOf(household)).map((l) => l.name)).toEqual(['Einkaufsliste', 'Sommerfest']);
+  // The row goes before the server answers (optimistic).
+  await expect.poll(async () => (await listsOf(household)).map((l) => l.name)).toEqual(['Einkaufsliste', 'Sommerfest']);
   expect((await itemsOn(household)).map((i) => i.name).sort()).toEqual(['Grillkohle', 'Kuchen', 'Milch']);
   await openTab(page, 'Liste');
   await expect(listTab(page, 'Vereinsheim')).toHaveCount(0);

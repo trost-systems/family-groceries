@@ -426,6 +426,15 @@ class const SupabaseEntitlementsSource(final SupabaseClient _client)
         table: 'entitlements',
         callback: (_) => onChange(),
       )
+      // The join is confirmed before the server's Postgres listener runs; a
+      // row written in between arrives only through the read on "Subscribed
+      // to PostgreSQL".
+      ..onSystemEvents((payload) {
+        final Object? system = payload;
+        if (system case {'extension': 'postgres_changes', 'status': 'ok'}) {
+          onChange();
+        }
+      })
       ..subscribe((status, _) {
         if (status == RealtimeSubscribeStatus.subscribed) {
           onChange();
