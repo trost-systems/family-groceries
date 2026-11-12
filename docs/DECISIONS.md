@@ -11359,3 +11359,24 @@ them; Peter sets the pass bars.
 - **Recommendation:** `post-shop-entry-sheet` for capture, with `trip-journal-by-date` as the
   history screen; everything Free. Reasons and open questions are in
   `docs/design/grocery-log/RECOMMENDATION.md`. Job 199 still waits for Peter's pick.
+
+## Job 196: planned vs bought, five prototypes, 2026-11-12
+
+- **Started early on the lead's word.** The brief's `start_after` was 16 Nov; the lead pulled it
+  on 12 Nov 20:13 Europe/Berlin (BOARD, Peter t803u). Prototypes only; job 197 still waits for
+  Peter's pick.
+- **Plain HTML, one model, five views.** `docs/design/planned-vs-bought/` (lint-exempt with the
+  other design prototypes): `model.js` holds one trip (the snapshot taken at "Einkauf starten",
+  items with origin list / added during the shop / logged as bought) and one `classify()`, so
+  the five approaches differ only in presentation. Tokens and fonts come from `site/public` by
+  relative path, so nothing is copied.
+- **Recommended `trip-review-unplanned`** (`RECOMMENDATION.md`): it leaves the walking-order list
+  alone while shopping, can be corrected ("War geplant"), and needs neither prices nor a receipt.
+- **Items added by someone else mid-shop count as extra, attributed and correctable.** Open
+  question 2 in the recommendation; the prototype makes the call so the review can show it.
+- **No shareable preview.** The PR's screenshots and the local sandbox cover review; a Vercel
+  preview would need a new project, which the brief rules out.
+- **Proof:** `shoot.mjs` drives all five approaches through four scenarios with and without
+  prices and checks counts and empty states in the page text; 32 screenshots in
+  `docs/screenshots/196/`. Its static server is not the e2e stack, so it does not take
+  `/tmp/fg-e2e.lock`.
