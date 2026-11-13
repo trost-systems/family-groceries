@@ -226,27 +226,42 @@ export async function verifyRequest(
   return envelope;
 }
 
+/** Real chains are a handful; the cap bounds what paths under /echo.api/ can make the worker keep. */
+const MAX_CACHED_CHAINS = 16;
+
 /**
  * Fetches a chain over https, at most 64 KiB, within 3 s, and keeps it for this worker's life
- * (Amazon rotates the URL, not the content behind it). A failed fetch is not kept.
+ * (Amazon rotates the URL, not the content behind it). A failed fetch is not kept. A chain is the
+ * object at host and path: the caller chooses the URL before any signature is checked, so a query
+ * string neither reaches S3 nor makes a second entry, and only a fetched chain takes a place: the
+ * oldest goes when there are 16.
  */
 export function cachingFetcher(fetchImpl: typeof fetch = fetch): (url: URL) => Promise<string> {
-  const cache = new Map<string, Promise<string>>();
+  const kept = new Map<string, string>();
+  const fetching = new Map<string, Promise<string>>();
   return (url) => {
-    const key = url.toString();
-    let hit = cache.get(key);
-    if (!hit) {
-      hit = (async () => {
-        const res = await fetchImpl(url, { signal: AbortSignal.timeout(3_000) });
+    const key = url.origin + url.pathname;
+    const chain = kept.get(key);
+    if (chain !== undefined) return Promise.resolve(chain);
+    let pending = fetching.get(key);
+    if (!pending) {
+      pending = (async () => {
+        const res = await fetchImpl(key, { signal: AbortSignal.timeout(3_000) });
         if (!res.ok) throw new Error(`certificate chain: ${res.status}`);
         const text = await res.text();
         if (text.length > 65_536) throw new Error('certificate chain too large');
+        if (kept.size >= MAX_CACHED_CHAINS) {
+          const oldest = kept.keys().next().value;
+          if (oldest !== undefined) kept.delete(oldest);
+        }
+        kept.set(key, text);
         return text;
       })();
-      cache.set(key, hit);
-      hit.catch(() => cache.delete(key));
+      fetching.set(key, pending);
+      const done = () => fetching.delete(key);
+      pending.then(done, done);
     }
-    return hit;
+    return pending;
   };
 }
 

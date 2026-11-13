@@ -155,7 +155,8 @@ Amazon requires it of every skill hosted outside Lambda; `verify.ts`, unit-teste
 
 1. `SignatureCertChainUrl`: `https`, host `s3.amazonaws.com` (any case), path starting with
    `/echo.api/` (case-sensitive, after normalizing `..`), port 443 if given, no user info.
-2. The chain behind it (fetched once per worker, 3 s timeout, at most 64 KiB): the first
+2. The chain behind it (fetched once per worker and path, without the URL's query string, 3 s
+   timeout, at most 64 KiB, at most 16 fetched chains kept): the first
    certificate valid now and with the SAN `echo-api.amazon.com`; each certificate signed by the
    next one (a CA, valid now) until one is signed by a pinned root: Amazon Root CA 1-4 and
    Starfield Services Root CA - G2 ([`anchors.ts`](../supabase/functions/alexa/anchors.ts)). A test

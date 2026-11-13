@@ -13,7 +13,7 @@ import {
   UnauthorizedError,
 } from '@modelcontextprotocol/client';
 import { serviceDb } from '../_shared/db.ts';
-import { type ClientIdUrl, parseClientMetadata } from './cimd.ts';
+import { CimdError, type ClientIdUrl, parseClientMetadata } from './cimd.ts';
 import { resolveClient, secretKeyFromEnv, supabaseClientAdmin } from './cimd_clients.ts';
 import { handle, productionDeps } from './handler.ts';
 
@@ -50,7 +50,9 @@ const deps = {
         fetchDocument: (u) => {
           fetches++;
           const doc = documents.get(u);
-          if (!doc) return Promise.reject(new Error(`no document at ${u}`));
+          if (!doc) {
+            return Promise.reject(new CimdError('invalid_client', `client metadata: none at ${u}`));
+          }
           return Promise.resolve({ metadata: parseClientMetadata(u, doc), maxAgeSeconds: 600 });
         },
       }),
@@ -421,6 +423,102 @@ Deno.test({
       await sql`delete from public.oauth_cimd_rate where key in (${`new:${host}`}, ${`fetch:${host}`})`;
       await sql.end();
       await cleanUp(undefined, [documentUrl], []);
+    }
+  },
+});
+
+Deno.test({
+  name: 'CIMD: a known client signs in while strangers have used up the host and overall limits',
+  ignore: !enabled,
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    const host = `${crypto.randomUUID()}.example`;
+    const documentUrl = `https://${host}/mcp.json`;
+    const strangerUrl = `https://${host}/other.json`;
+    for (const url of [documentUrl, strangerUrl]) {
+      documents.set(url, { client_id: url, client_name: 'Known', redirect_uris: [CALLBACK] });
+    }
+    const authorize = (clientId: string) =>
+      routed(
+        `${mcpUrl()}/oauth/authorize?${new URLSearchParams({
+          response_type: 'code',
+          client_id: clientId,
+          redirect_uri: CALLBACK,
+          code_challenge: 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM',
+          code_challenge_method: 'S256',
+        })}`,
+        { redirect: 'manual' },
+      );
+    // The 31 requests at the end count in one hourly window: start after the turn of the hour.
+    const untilTheHour = 3_600_000 - Date.now() % 3_600_000;
+    if (untilTheHour < 30_000) await new Promise((r) => setTimeout(r, untilTheHour + 1_000));
+    const sql = admin();
+    // Limits are used up in this window and the next, should the hour turn all the same.
+    const [{ hour } = { hour: '' }] = await sql<{ hour: string }[]>`
+      select date_trunc('hour', now())::text as hour`;
+    const useUp = (key: string, hits: number) =>
+      sql`insert into public.oauth_cimd_rate (key, window_start, hits)
+        values (${key}, ${hour}::timestamptz, ${hits}),
+          (${key}, ${hour}::timestamptz + interval '1 hour', ${hits})
+        on conflict (key, window_start) do update set hits = excluded.hits`;
+    const expire = () =>
+      sql`update public.oauth_cimd_clients set fresh_until = now() - interval '1 minute'
+        where client_id = ${documentUrl}`;
+    const [overall] = await sql<{ hits: number }[]>`select hits from public.oauth_cimd_rate
+      where key = 'fetch:all' and window_start = ${hour}::timestamptz`;
+    try {
+      const first = await authorize(documentUrl);
+      assertEquals(first.status, 302);
+      await expire();
+      await useUp(`fetch:${host}`, 30);
+      await useUp('fetch:all', 600);
+      const before = fetches;
+
+      const known = await authorize(documentUrl);
+      assertEquals(known.status, 302, 'the known client still signs in');
+      assertEquals(fetches, before + 1, 'from its document, fetched again');
+
+      const stranger = await authorize(strangerUrl);
+      assertEquals(stranger.status, 503, 'a new URL on that host is still refused');
+      await stranger.body?.cancel();
+      assertEquals(fetches, before + 1);
+
+      // Parallel sign-ins at the moment the document went stale each fetch it, up to the limit.
+      await expire();
+      const burst = await Promise.all(Array.from({ length: 30 }, () => authorize(documentUrl)));
+      assertEquals(burst.map((res) => res.status), Array.from({ length: 30 }, () => 302));
+      await expire();
+      const afterBurst = await authorize(documentUrl);
+      assertEquals(afterBurst.status, 302, 'fetches that worked do not use the limit up');
+
+      await expire();
+      documents.delete(documentUrl);
+      const failed = fetches;
+      for (let n = 1; n <= 31; n++) {
+        const res = await authorize(documentUrl);
+        assertEquals(res.status, n === 31 ? 503 : 400, `fetch ${n} of a document that is gone`);
+        await res.body?.cancel();
+      }
+      assertEquals(
+        fetches,
+        failed + 30,
+        'its own limit holds while the document cannot be fetched',
+      );
+    } finally {
+      try {
+        await sql`delete from public.oauth_cimd_rate
+          where key in (${`fetch:${host}`}, ${`fetch:${documentUrl}`}, ${`new:${host}`})`;
+        await sql`delete from public.oauth_cimd_rate
+          where key = 'fetch:all' and window_start >= ${hour}::timestamptz`;
+        if (overall) {
+          await sql`insert into public.oauth_cimd_rate (key, window_start, hits)
+            values ('fetch:all', ${hour}::timestamptz, ${overall.hits})`;
+        }
+      } finally {
+        await sql.end();
+        await cleanUp(undefined, [documentUrl, strangerUrl], []);
+      }
     }
   },
 });

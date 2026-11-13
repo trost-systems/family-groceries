@@ -426,11 +426,31 @@ with the same message. The document must name its own URL as `client_id`, a
 interface or a private-use scheme with a dot, carry no secret, and use
 `token_endpoint_auth_method` `none`; its authorization requests must use
 PKCE with S256. Hourly limits (`public.oauth_cimd_rate`): 30 document
-fetches per host and 600 in all, 5 new clients per host and 100 in all
-(authorize answers 503 beyond them), 120 token requests per client address
-(429), since Supabase sees every forwarded token request from the function's
-address. The address is `x-vercel-forwarded-for` through mcp.snacklist.app
-(there `X-Real-IP` is Vercel's) and `X-Real-IP` on the supabase.co URL.
+fetches per host and 600 in all for URLs that are not a client yet, 5 new
+clients per host and 100 in all (authorize answers 503 beyond them), 120
+token requests per client address (429), since Supabase sees every forwarded
+token request from the function's address. The address is
+`x-vercel-forwarded-for` through mcp.snacklist.app (there `X-Real-IP` is
+Vercel's) and `X-Real-IP` on the supabase.co URL.
+
+A URL that is a client already has its own count (`fetch:<url>`), outside the
+host's and the overall one, so strangers who use those up cannot keep its
+users from signing in. The count bounds fetches that fail in a row: after 30
+in an hour without one that worked, authorize answers 503 for that client
+until the hour ends, also when its document can be fetched again. A fetch
+that works starts the count again, so there is no fixed number of fetches
+while a document is stale. Sign-ins that arrive together each fetch it; 30 can
+be under way before the first one finishes, and requests that saw the stale
+document before that pass in further rounds (on the local stack, 1,500
+requests at about 5 per ms made 44 fetches with an immediate answer and 122
+with one after 500 ms). No limit covers these fetches in all: each one answers
+a request to authorize and goes to a URL that has served a valid document
+naming itself. Whoever registers such URLs on names of their own (5 an hour
+per host, 100 in all) can point the names elsewhere later and have each
+fetched there, one fetch per request they send: 30 times in a row, or, with
+one working fetch in between to start the count again, about 29 times every
+5 minutes (a document is stale again after 5 minutes at the least), which is
+about 350 an hour for each URL.
 
 2025-era clients keep Supabase Auth as their authorization server: the 2026
 spec makes a client re-register when the authorization server changes, which

@@ -304,3 +304,44 @@ Deno.test('the chain fetcher keeps a chain, retries after a failure, and caps th
   const big = cachingFetcher(() => Promise.resolve(new Response('x'.repeat(70_000))));
   await assertRejects(() => big(url));
 });
+
+Deno.test('the chain fetcher keeps one entry per path, whatever the query, and at most 16', async () => {
+  const fetched: string[] = [];
+  const fetcher = cachingFetcher(
+    ((input: string | URL | Request) => {
+      fetched.push(String(input));
+      return Promise.resolve(new Response('PEM'));
+    }) as typeof fetch,
+  );
+  for (const suffix of ['', '?a=1', '?a=2', '#x']) await fetcher(new URL(testCertUrl + suffix));
+  assertEquals(fetched, [testCertUrl], 'one fetch, without the query');
+
+  const other = (n: number) => new URL(`https://s3.amazonaws.com/echo.api/other-${n}.pem`);
+  for (let n = 1; n <= 16; n++) await fetcher(other(n));
+  assertEquals(fetched.length, 17);
+  await fetcher(other(16));
+  assertEquals(fetched.length, 17, 'the newest is kept');
+  await fetcher(new URL(testCertUrl));
+  assertEquals(fetched.length, 18, 'the oldest made room');
+});
+
+Deno.test('the chain fetcher gives no place to a path that cannot be fetched', async () => {
+  const fetched: string[] = [];
+  const fetcher = cachingFetcher(
+    ((input: string | URL | Request) => {
+      fetched.push(String(input));
+      const missing = String(input).includes('/made-up-');
+      return Promise.resolve(missing ? new Response('no', { status: 403 }) : new Response('PEM'));
+    }) as typeof fetch,
+  );
+  await fetcher(new URL(testCertUrl));
+  const madeUp = Array.from(
+    { length: 40 },
+    (_, n) => fetcher(new URL(`https://s3.amazonaws.com/echo.api/made-up-${n}.pem`)),
+  );
+  const [again, ...refused] = await Promise.allSettled([fetcher(new URL(testCertUrl)), ...madeUp]);
+  assertEquals(again, { status: 'fulfilled', value: 'PEM' });
+  assertEquals(refused.filter((r) => r.status === 'rejected').length, 40);
+  await fetcher(new URL(testCertUrl));
+  assertEquals(fetched.filter((url) => url === testCertUrl).length, 1, 'the chain kept its place');
+});
