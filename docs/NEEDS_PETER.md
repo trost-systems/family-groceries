@@ -807,14 +807,14 @@ Live with the next release; nothing to switch on. Details in [FEEDBACK.md](FEEDB
    app version and build, platform and OS version (on the web the browser family and OS), the
    app language, the name of the screen they came from, their account id and household id. No
    list items, no screenshots, no device model; the e-mail is not copied. Stored at Supabase
-   (EU, Frankfurt), readable only by Peter and the Snacklist PM. Deleted 12 months after sending
+   (EU, Frankfurt), readable only by Peter (job 224). Deleted 12 months after sending
    (daily cleanup), at once when the account is deleted; the encrypted nightly backups keep a
    deleted note up to 90 more days. Contact happens only by Peter and only when the user ticked
    "Peter darf mich dazu kontaktieren". Legal basis: the user sends it on purpose (Art. 6(1)(b)
    or (f) GDPR; your lawyer's call). Notes are part of "Meine Daten exportieren".
 2. **Your household as internal.** Notes from your family count as internal only through the
    `ANALYTICS_INTERNAL_HOUSEHOLDS` build define (Job 19, item 6). Until it is set in the release
-   and Vercel builds, your own notes show in the Monday summary's external part (debug builds and
+   and Vercel builds, your own notes show in the weekly queries' external part (debug builds and
    test accounts are internal regardless).
 3. **After the deploy (lead)**: check the cleanup is scheduled on the hosted project:
    `select jobname, schedule, active from cron.job where jobname = 'purge-old-feedback';` should
@@ -1785,3 +1785,48 @@ its RevenueCat customer stays. Before sales go on, **Ops** (one look, no code):
    App User ID is a household id (test and beta households from `scripts/iap/promotional.ts`).
 2. For each one, either grant again and revoke at once (the two events note the household), or
    delete the customer in RevenueCat by hand if the household is gone.
+
+## Job 138: shake to send feedback, more context
+
+Ships with the next app release; nothing to switch on. Details in [FEEDBACK.md](FEEDBACK.md).
+
+1. **Privacy policy: Legal's text is in this PR; the merge waits for two checks.** Job 202 pasted
+   Legal Review's paragraph verbatim into §10 of `site/content/legal/datenschutz.md` and
+   `privacy.md`, and its support sentence into `support.md` and `support-en.md` (Legal Review
+   2026-11-10, Snacklist feedback, §2.2 and §2.3). A merge to main goes to TestFlight and Play
+   internal on its own, so #281 merges only after Snacklist PM's user-facing check and Legal
+   Review's GO on the final head SHA. DONE_SUMMARY "Job 202" has the code-vs-text table and two
+   points for Legal (`is_internal`, and `entitlement` since per-user Premium). If the merge falls
+   after 13 November 2026, „Stand:“ and "Last updated:" move to that day.
+2. **Try a shake on a phone build** (TestFlight or Play internal, once this is in one). This
+   host has no phone or emulator, so the shake is proven by widget tests that feed accelerometer
+   samples into the real app shell. On the phone: open the list's „Anpassen“, shake firmly two
+   or three times. The form opens with the hint „Einen Fehler gefunden? …“, and the stored note
+   has `entry_point = 'shake'`, `screen = 'stores'`. If a shake feels too hard or too easy to
+   trigger, say so: the threshold (2.7 g, three swings in 0.8 s) is one constant in
+   `app/lib/feedback/shake.dart`.
+3. **App Store privacy label / Play data safety** are answered from `docs/PRIVACY_DATA_MAP.md`
+   (its feedback row now lists the new fields). They are diagnostics ("Diagnostics" at Apple,
+   "App info and performance" at Google), linked to the account, not used for tracking: check the
+   answers cover that when you next fill them in. No permission prompt: reading the accelerometer
+   asks nothing on iOS or Android. iOS still gets an `NSMotionUsageDescription` purpose string
+   („Schüttle das Handy, um Feedback zu dem Bildschirm zu senden, auf dem du gerade bist.“, EN in
+   `en.lproj/InfoPlist.strings`). sensors_plus links CoreMotion, and its README says the key is
+   required; without it App Store Connect's purpose-string scan (ITMS-90683) can flag the upload.
+
+## Job 224: #281's Legal GO conditions
+
+1. **§8 of the privacy policy should name feedback in the export** (Legal Review 13 Nov, N-156,
+   a SHOULD within 7 days). The export includes it (`export_my_data`, section `feedback`), but §8
+   doesn't say so. Legal suggested „deine Rückmeldungen aus der App“ / "your in-app feedback" in
+   the §8 list. Legal text changes go through Legal, so this job left §8 alone: Legal or the PM
+   drafts the line, then a follow-up PR pastes it.
+2. **PM to confirm in writing** that no PM routine or bot on the box queries `public.feedback`
+   (G4). The box also holds the backup key (`~/groceries-ops/backup-age-key.txt`, docs/BACKUP.md),
+   which opens the nightly backups and so the notes in them; nothing should use it but a restore
+   by hand.
+3. **Known risk: a release doesn't wait for the migration deploy.** `release.yml` follows CI on
+   main, not `supabase-deploy`. If that deploy failed, a build from the same commit would ship
+   with a feedback form whose every send fails (unknown columns). Nothing would be collected, so
+   it is legally safe, but users would see „Nicht gesendet“. Check the `supabase-deploy` run of
+   the #281 merge commit before the build reaches testers.

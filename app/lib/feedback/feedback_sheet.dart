@@ -11,18 +11,26 @@ import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_cubit.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
 import 'package:family_groceries/feedback/screen_tracker.dart';
+import 'package:family_groceries/feedback/shake.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/session/session_cubit.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// From this many characters on, the form shows how many are used.
 const _counterFrom = 1800;
 
-/// Opens the feedback form over the whole app (More's row). The note
-/// waiting in [FeedbackCubit] comes back; after a send the form closes and
-/// says thanks.
-Future<void> showFeedbackSheet(BuildContext context) async {
+/// Opens the feedback form over the whole app, from More's row or a shake
+/// ([entry]); while it shows, this does nothing. The note waiting in
+/// [FeedbackCubit] comes back; after a send the form closes and says
+/// thanks.
+Future<void> showFeedbackSheet(
+  BuildContext context, {
+  required FeedbackEntryPoint entry,
+}) async {
   final cubit = context.read<FeedbackCubit>();
   final session = context.read<SessionCubit>().state;
   cubit.open(
@@ -31,8 +39,7 @@ Future<void> showFeedbackSheet(BuildContext context) async {
       _ => null,
     },
   );
-  // Taken now: the form reports the screen the user came from.
-  final screen = context.read<ScreenTracker>().feedbackScreen;
+  final scene = _sceneOf(context, entry);
   final messenger = Notices.of(context);
   final l10n = AppLocalizations.of(context);
   final sent = await showModalBottomSheet<bool>(
@@ -49,7 +56,7 @@ Future<void> showFeedbackSheet(BuildContext context) async {
     ),
     builder: (_) => BlocProvider.value(
       value: cubit,
-      child: FeedbackForm(screen: screen),
+      child: FeedbackForm(scene: scene),
     ),
   );
   if (sent ?? false) {
@@ -62,9 +69,29 @@ Future<void> showFeedbackSheet(BuildContext context) async {
   }
 }
 
+/// Taken when the form opens: the note is about the screen the user was
+/// on then, as it looked then.
+FeedbackScene _sceneOf(BuildContext context, FeedbackEntryPoint entry) {
+  final screens = context.read<ScreenTracker>();
+  final entitlements = context.read<Entitlements>();
+  return FeedbackScene(
+    entryPoint: entry,
+    screen: switch (entry) {
+      FeedbackEntryPoint.more => screens.feedbackScreen,
+      FeedbackEntryPoint.shake => screens.current,
+    },
+    theme: Theme.of(context).brightness,
+    orientation: MediaQuery.orientationOf(context),
+    // At body size: Android's non-linear scaling grows small text more.
+    textScale: textScaleBucket(MediaQuery.textScalerOf(context).scale(14) / 14),
+    online: FeedbackOnline.of(context.read<ListCubit?>()?.state.connection),
+    entitlement: FeedbackEntitlement.of(entitlements.state, entitlements.clock),
+  );
+}
+
 /// The form: the note, the optional kind and contact, what is attached,
 /// Send (Retry after a failure). Pops `true` once the note arrived.
-class const FeedbackForm({required final String screen, super.key})
+class const FeedbackForm({required final FeedbackScene scene, super.key})
     extends StatefulWidget {
   @override
   State<FeedbackForm> createState() => _FeedbackFormState();
@@ -101,10 +128,11 @@ class _FeedbackFormState() extends State<FeedbackForm> {
         build: facts.build,
         platform: facts.platform,
         osVersion: facts.osVersion,
+        deviceModel: facts.deviceModel,
         locale: locale,
-        screen: widget.screen,
         isInternal: analytics.internalNow,
         householdId: householdId,
+        scene: widget.scene,
       ),
     );
     if (ok && mounted) {
@@ -263,8 +291,20 @@ class _FeedbackFormState() extends State<FeedbackForm> {
                             context.read<FeedbackCubit>().setContact(ok: on),
                 ),
               ),
+              if (shakeSupported(web: kIsWeb, platform: defaultTargetPlatform))
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                  child: Text(
+                    l10n.feedbackShakeHint,
+                    key: const ValueKey('feedback-shake-hint'),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: scheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                 child: Text(
                   '${l10n.feedbackAttachedTitle} ${l10n.feedbackAttached}',
                   key: const ValueKey('feedback-attached'),

@@ -498,22 +498,24 @@ The household picks its currency under „Währung“ (EN "Currency"): euro by d
 
 ## Feedback
 
-**What it does.** Users can send Peter a short note from inside the app: a bug, an idea or anything else, up to 2000 characters. They can optionally say Peter may contact them. The app attaches its version, device type, language and the screen the user came from, but never anything from the shopping list. If there is no connection the note stays in the form and can be sent again.
+**What it does.** Users can send Peter a short note from inside the app: a bug, an idea or anything else, up to 2000 characters. They can optionally say Peter may contact them. The app attaches its version, device and model, language, the screen, light or dark mode, orientation, text size, whether it was connected and whether the household has Premium, but never anything from the shopping list. On iPhone and Android, shaking the phone opens the form right on the screen where something went wrong, so the note says which screen it was; the form explains this. If there is no connection the note stays in the form and can be sent again.
 
 **How to get there.**
 1. „Mehr“ (EN: "More") → „Feedback senden“ (EN: "Send feedback").
 2. Write in „Deine Nachricht“ (EN: "Your message"), optionally pick „Bug“, „Idee“ or „Sonstiges“ (EN: "Bug", "Idea", "Other") and tick „Peter darf mich dazu kontaktieren“ (EN: "Peter may contact me about this").
 3. Tap „Senden“ (EN: "Send"); the app answers „Danke!“ (EN: "Thanks!").
+4. Or, on iPhone and Android: go to the screen where the bug happened, make it happen again and shake the phone. The same form opens.
 
 **Never claim.**
-- Shake-to-report, feedback from the list screen, or screenshots/attachments.
+- Shake on the web or a computer, a feedback button on the list screen, or screenshots/attachments.
+- That shaking works during sign-in or setup, or while another window of the app is open.
 - A reply is guaranteed; contact only happens if the box is ticked and Peter chooses to.
 - That list contents are sent.
 - That users can read their sent notes back in the app (they come back only in their own data export, Konto → „Meine Daten exportieren“, EN "Export my data").
 
 **Unverified.** How quickly or by what channel Peter sees notes (not in the app).
 
-**Last verified.** main 3d41f964, 2026-11-13 (CET), driven on the web build (verify-snacklist): „Feedback senden“ with „Idee“, stored as an idea from the web in German. Earlier: main add1fb19, 2026-11-12 (CET), driven on the web build (verify-snacklist): „Feedback senden“ with „Idee“, „Danke!“, the note stored. Earlier: main 3119516d, 2026-11-11 (CET), from code and driven on the web build (verify-snacklist): „Feedback senden“ with „Idee“, „Danke!“, the note stored with platform web, language de and screen list. Earlier: main 1f8e5edb, 2026-11-10 (CET), from code and driven on the web build (verify-snacklist): a note sent, „Danke!“. Earlier: main c3636541, 2026-11-09 (CET), from code and driven on the web build (verify-snacklist): a note sent, „Danke!“; the row after „Tipps“. Earlier: main 6c93da99, 2026-11-08 (CET), from code and driven on the web build (verify-snacklist): a note sent from a new account, „Danke!“. Earlier: main c2ce938f, 2026-11-07 (CET), from code and driven on the web build (verify-snacklist): the sheet with its kinds, contact box and the „Wird mitgeschickt“ line, a note sent, „Danke!“. Recipe: [feedback.md](./feedback.md).
+**Last verified.** branch job/138-feedback-shake rebased on main b39430a6, 2026-11-13 (CET), from code and widget tests on the real shell (`app/test/feedback/shake_to_feedback_test.dart`, `feedback_sheet_test.dart`): a shake on Anpassen opens the form and stores `screen = stores`, `entry_point = shake`; no shake under an open dialog or on desktop; the teach line on phones only. Earlier: main 3d41f964, 2026-11-13 (CET), driven on the web build (verify-snacklist): „Feedback senden“ with „Idee“, stored as an idea from the web in German. Earlier: main add1fb19, 2026-11-12 (CET), driven on the web build (verify-snacklist): „Feedback senden“ with „Idee“, „Danke!“, the note stored. Earlier: main 3119516d, 2026-11-11 (CET), from code and driven on the web build (verify-snacklist): „Feedback senden“ with „Idee“, „Danke!“, the note stored with platform web, language de and screen list. Earlier: main 1f8e5edb, 2026-11-10 (CET), from code and driven on the web build (verify-snacklist): a note sent, „Danke!“. Earlier: main c3636541, 2026-11-09 (CET), from code and driven on the web build (verify-snacklist): a note sent, „Danke!“; the row after „Tipps“. Earlier: main 6c93da99, 2026-11-08 (CET), from code and driven on the web build (verify-snacklist): a note sent from a new account, „Danke!“. Earlier: main c2ce938f, 2026-11-07 (CET), from code and driven on the web build (verify-snacklist): the sheet with its kinds, contact box and the „Wird mitgeschickt“ line, a note sent, „Danke!“. Recipe: [feedback.md](./feedback.md).
 
 ## The More tab, help and legal pages
 

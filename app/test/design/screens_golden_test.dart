@@ -159,8 +159,11 @@ Future<FakeRepository> _pumpShell(
     initialLocation: initialLocation,
     routes: [
       StatefulShellRoute.indexedStack(
-        builder: (_, _, shell) =>
-            AppShell(shell: shell, repositories: (_) => repo),
+        builder: (_, _, shell) => AppShell(
+          shell: shell,
+          repositories: (_) => repo,
+          shakeSamples: const Stream.empty(),
+        ),
         branches: [
           StatefulShellBranch(
             routes: [

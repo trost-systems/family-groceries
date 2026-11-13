@@ -74,24 +74,10 @@ class SupabaseFeedbackRepository(
   static const _duplicate = '23505';
 
   Future<void> _insert(FeedbackSubmission note) async {
-    final context = note.context;
     try {
       await _client.rest
           .from('feedback')
-          .insert({
-            'id': note.id,
-            'message': note.message,
-            'category': note.category?.name,
-            'contact_ok': note.contactOk,
-            'app_version': context.appVersion,
-            'build': context.build,
-            'platform': context.platform,
-            'os_version': context.osVersion,
-            'locale': context.locale,
-            'screen': context.screen,
-            'is_internal': context.isInternal,
-            'household_id': ?context.householdId,
-          })
+          .insert(feedbackRow(note))
           .timeout(timeout);
     } on PostgrestException {
       rethrow;
@@ -100,6 +86,33 @@ class SupabaseFeedbackRepository(
       throw const FeedbackOffline();
     }
   }
+}
+
+/// [note] as its `public.feedback` row: these columns and nothing else.
+Map<String, Object?> feedbackRow(FeedbackSubmission note) {
+  final context = note.context;
+  final scene = context.scene;
+  return {
+    'id': note.id,
+    'message': note.message,
+    'category': note.category?.name,
+    'contact_ok': note.contactOk,
+    'app_version': context.appVersion,
+    'build': context.build,
+    'platform': context.platform,
+    'os_version': context.osVersion,
+    'device_model': context.deviceModel,
+    'locale': context.locale,
+    'screen': scene.screen,
+    'is_internal': context.isInternal,
+    'entry_point': scene.entryPoint.name,
+    'theme': scene.theme.name,
+    'orientation': scene.orientation.name,
+    'text_scale': scene.textScale,
+    'online': scene.online.name,
+    'entitlement': scene.entitlement.name,
+    'household_id': ?context.householdId,
+  };
 }
 
 /// The longest note, in characters (Unicode code points, as Postgres'

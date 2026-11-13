@@ -745,3 +745,92 @@ A production build of `hummlist-site` now waits until the push-triggered **Supab
 ## Job 208: more space between a field and its helper, error and counter (2026-11-13)
 
 The field theme puts every field's helper, error and counter `HlSpace.s2` past the focus ring (13 dp below the contour, was 4), app-wide. Merged as 4a4f7fd1 (#403). Details: [docs/done/208-input-helper-spacing.md](docs/done/208-input-helper-spacing.md).
+
+## Job 138: shake to send feedback, more context
+
+Shaking the phone opens the feedback form on the screen where the bug happened, and a note carries seven more fixed-value fields. Details: [docs/done/138-feedback-shake.md](docs/done/138-feedback-shake.md).
+
+## Job 202: #281 rebased, Legal's feedback paragraph pasted (2026-11-13)
+
+PR #281 is rebased onto main b39430a6 and keeps main's naming and logic (`material_ui`, Verlauf tab and `trips` in the shell, `Unlocks`). The migration is now `20261113160000_feedback_context.sql`, sorting after main's newest (`20261113094500`). Its `export_my_data` is the prices migration's body plus the 7 feedback keys, and nothing else differs. Legal Review's text from `2026-11-10-snacklist-feedback.md` §2.2 and §2.3 is pasted verbatim. A script took the quotes from the review file, and a second check found each quote in the page with the markup stripped. The DE §10 paragraph is `site/content/legal/datenschutz.md:158`, the EN one `site/content/legal/privacy.md:141`, and the support sentences are `support.md:17` and `support-en.md:17`. „Stand:“ and "Last updated:" already read 13 November 2026. If the merge wave falls on a later day, the date moves with it. Not merged: the merge waits for Snacklist PM's check and Legal Review's SHA-bound GO.
+
+### Code vs text
+
+Line numbers are on the rebased branch. `feedbackRow` is `app/lib/feedback/feedback_repository.dart:92`, and the table is `supabase/migrations/20261030070000_feedback.sql` (base) and `20261113160000_feedback_context.sql` (job 138).
+
+| Text (DE / EN) | Column, check | Set in code |
+| --- | --- | --- |
+| Nachricht (bis zu 2.000 Zeichen) / message (up to 2,000 characters) | `message`, 1 to 2000 after trim (`20261030070000_feedback.sql:24`) | `feedback_repository.dart:97` |
+| Kategorie, falls du eine wählst / category if you choose one | `category` bug, idea, other or null (`:25`) | `feedback_repository.dart:98` |
+| ob wir dich kontaktieren dürfen / whether we may contact you | `contact_ok` (`:26`) | `feedback_repository.dart:99` |
+| App-Version und Build / app version and build | `app_version`, `build` (`:27`, `:28`) | `feedback_repository.dart:100-101` |
+| Plattform / platform | `platform` (`:29`) | `feedback_repository.dart:102` |
+| Betriebssystem-Version (im Browser: Browser und Betriebssystem) / OS version (in the browser: browser and OS) | `os_version` (`:30`) | `feedback_repository.dart:103` |
+| Sprache / language | `locale` (`:31`) | `feedback_repository.dart:105` |
+| den Bildschirm, von dem aus du schreibst / the screen you wrote from | `screen`, a fixed name (`:32`) | `feedback_repository.dart:106`, `feedback_sheet.dart:79-82` |
+| wie du das Formular geöffnet hast (Mehr / Schütteln) / how you opened the form | `entry_point` more or shake (`20261113160000_feedback_context.sql:8`) | `feedback_repository.dart:108` |
+| Gerätemodell ohne Seriennummer oder Gerätekennung (im Browser nur „web“) / device model, no serial or device id (browser just "web") | `device_model`, 1 to 48 characters, no control characters (`:9`) | `feedback_repository.dart:104`; `feedback_context.dart:183` (`web`), `:185-188` (Android maker and model), `:193-204` (iOS and macOS `modelName`), `:206-214` (`unknown` otherwise) |
+| Design (hell oder dunkel) / design (light or dark) | `theme` light or dark (`:10`) | `feedback_repository.dart:109`, `feedback_sheet.dart:83` |
+| Ausrichtung / orientation | `orientation` portrait or landscape (`:11`) | `feedback_repository.dart:110`, `feedback_sheet.dart:84` |
+| Textgröße in Stufen / text size in steps | `text_scale`, 8 buckets (`:12`) | `feedback_repository.dart:111`, `feedback_context.dart:91-112` |
+| ob die Liste mit dem Server verbunden war / whether the list was connected to the server | `online` yes, no or unknown (`:13`) | `feedback_repository.dart:112`, `feedback_context.dart:61-64` (the list's `ConnectionStatus`) |
+| Art der Freischaltung deines Haushalts (ohne, Lifetime, Jahresabo, Aktionsfreischaltung, noch unbekannt) / household's unlock type | `entitlement` free, lifetime, yearly, promotional or unknown (`:14`), mapped one to one | `feedback_repository.dart:113`, `feedback_context.dart:70-87` |
+| Nutzerkennung / user ID | `user_id` default `auth.uid()` (`20261030070000_feedback.sql:21`) | server default |
+| Haushaltskennung / household ID | `household_id`, checked by the trigger (`20261108125048_households_multi.sql:790-806`) | `feedback_repository.dart:114` (sent; the trigger keeps it only for a household the sender is in) |
+| Das Schütteln öffnet nur das Formular; keine Bewegungsdaten / shaking only opens the form; no motion data | no motion column | `app/lib/feedback/shake.dart`: samples stay in memory (`:94-107`), iOS and Android only (`:13-15`, `:83`); `feedbackRow` has no motion field |
+| Supabase (Server in der EU) / Supabase (servers in the EU) | `public.feedback` | no other processor: no edge function or script sends rows on (`grep` over `supabase/functions`, `scripts`, `app/lib`); PostHog's `feedback_submitted` carries only `category`, `entry_point`, `screen`, `contact_ok` (`app/lib/analytics/events.dart:213-218`, privacy policy §9) |
+| lesen kann sie nur Peter Trost / only Peter Trost can read it | insert-only policy `feedback_insert_own` (`20261030070000_feedback.sql:93`), no select policy | read with the service role (Legal F5: `docs/FEEDBACK.md` also names the PM, pre-existing) |
+| 12 Monate / 12 months | `purge_old_feedback()` deletes `created_at < now() - interval '12 months'` (`20261030070000_feedback.sql:105-110`), pg_cron `purge-old-feedback` daily 03:17 (`:119`) | |
+| beim Löschen deines Kontos sofort / at once if you delete your account | `user_id … references auth.users (id) on delete cascade` (`20261030070000_feedback.sql:21`) | pgTAP `supabase/tests/account_deletion.test.sql` |
+| in the user's export | `export_my_data`'s `feedback` with all 7 new keys (`20261113160000_feedback_context.sql`, diff vs `20261113094500` = those keys) | pgTAP `supabase/tests/feedback.test.sql` |
+
+Two things for Legal. Neither one changed the text.
+
+1. **`is_internal` is stored but not named in the paragraph** (`feedback_repository.dart:107`, `20261030070000_feedback.sql:33`). It flags a note from Peter's household, a test account or a debug build, and the summary uses it to leave those notes out. The column predates #281, the live paragraph doesn't name it either, and Legal's review read `feedbackRow` and raised nothing.
+2. **`entitlement` since per-user Premium (#387, job 185) merged after Legal's review.** The value is Premium in the household where the form opened, from the household's rows or the sender's own (`feedback_context.dart:79-87` via `Unlocks.premiumAt`). Per-user purchases are still dark (`REVENUECAT_PURCHASES` and `premium_offer` off, `docs/PRIVACY_DATA_MAP.md:138`), so today it is the household's unlock. Once a user's own purchase can unlock, "die Art der Freischaltung deines Haushalts" also covers a purchase that belongs to the sender. The column comment, enum doc and `docs/FEEDBACK.md` say so now.
+
+Source of the text: the box copy wasn't on hz, so it came from the Legal export at `/tmp/legal-review/20261111T081120-3888039-23113/2026-11-10-snacklist-feedback.md` (sha256 `93d0d078…3844`), copied to `jobs/202-281-rebase-legal-text/legal-2026-11-10-snacklist-feedback.md`. Its "This review" footer names `/workspace/legal/reviews/2026-11-10-snacklist-feedback.md`. Legal reviewed PR head `d37e8b54`.
+
+## Job 224: #281's Legal GO conditions (2026-11-13)
+
+Legal Review gave #281 a conditional final GO at b5dfd360 (13 Nov 2026). This job met the conditions on #281's branch and did not merge; the lead merges. The landing SHA is the commit GitHub's rebase-merge puts on main. It is never the PR head: the merge rewrites the committer and keeps the tree.
+
+**Land checklist for the lead:**
+
+1. The PM's written G4 confirmation is in: no PM routine or bot on the box reads `public.feedback` (NEEDS_PETER "Job 224", item 2). Legal made it a MUST before the merge, and this job can't close it.
+2. Run `jobs/224-feedback-doc-reader-cleanup/land-281.sh --merge` (ops dir) inside the merge lock, before 22:30 Berlin time; it refuses later, because lock, CI and merge take up to 90 minutes and the pages must carry the merge day.
+
+The script works in this order and stops on any difference:
+
+- It dates the four legal files to the merge day (Europe/Berlin) if needed, then runs `scripts/push-pr.sh`.
+- G1: Legal's b5dfd360 files, replayed onto the new base with `git merge-file`, must equal the head's files byte for byte, date lines aside.
+- G2: it writes both notes under `research/legal-review/pr-281/<PR head>/` before the merge. It carries ACCURACY_NOTE forward only if none of the files it cites changed.
+- G3: it waits for ci-ok on that head.
+- It stops if the Berlin day changed meanwhile. Otherwise it runs `scripts/merge-pr.sh --wait 281`.
+- It reads the SHA on main and checks that its tree equals the head's. It copies the notes to `research/legal-review/pr-281/<main SHA>/` with `LANDED.md` (PR head, tree, merge time and day), and reports the main SHA as the landing SHA on the BOARD.
+
+Rerun it when main moves, or after resolving a docs append conflict.
+
+**G4: only Peter reads feedback.** `docs/FEEDBACK.md` no longer has the PM reading `public.feedback` with the service role through the Supabase connector every Monday (old lines 10-12, 57-58, 75-76). It now says only Peter reads it, by hand in the dashboard, and that no bot, connector or routine reads the notes (only the daily purge and the encrypted nightly backup touch the table). The Monday SQL stays as Peter's weekly queries. The table comment the dashboard shows says the same (#281's own migration). Every reader of `public.feedback` in `docs/`, `scripts/`, `supabase/`, `.github/`, `e2e/`, `analytics/`, `nexus/`, `site/scripts/` and `mcp-proxy/`:
+
+| Reader | What it does | Reads note content for anyone? |
+| --- | --- | --- |
+| Peter, Supabase dashboard (`docs/FEEDBACK.md`) | Table Editor or SQL editor, by hand | Yes, Peter only |
+| `export_my_data()` (`supabase/migrations/20261113160000_feedback_context.sql:178-202`) | The signed-in sender's own notes in "Meine Daten exportieren" | The sender's own only |
+| `purge-old-feedback` pg_cron, 03:17 UTC (`supabase/migrations/20261030070000_feedback.sql:105-119`) | Deletes notes older than 12 months | No, delete by date |
+| `feedback_before_insert` trigger (`20261108125048_households_multi.sql:790-815`) | Dedupes a retried note by id | No |
+| Account deletion (`on delete cascade`, `20261030070000_feedback.sql:21`) | Deletes the user's notes | No |
+| Nightly backup (`.github/workflows/backup.yml`, `scripts/backup/dump.sh:23-25`) | `pg_dump` of `public.*`, encrypted with age before it leaves the runner; a 90-day GitHub artifact. The private key that opens it is in Peter's password manager and on the build box at `~/groceries-ops/backup-age-key.txt` (`docs/BACKUP.md:63-64`); no script or routine uses it except a restore by hand | No |
+| `scripts/feedback-monday.sh`, `scripts/backup/drill.sh` (db gate), pgTAP (`supabase/tests/feedback.test.sql`, `rls.test.sql`, `account_deletion.test.sql`, `households_multi.test.sql`), `scripts/backup/fixtures.sql`, `e2e/tests/feedback.spec.ts`, `rls.spec.ts`, `account.spec.ts`, the verify recipes `.cursor/skills/verify-*/features/feedback.md` | Fake notes on a local or CI stack | No production data |
+
+No edge function in `supabase/functions/` touches the table, no workflow but `backup.yml` reaches it, and the ops dir mirrored on hz (`~/groceries-ops`, outside the repo) has no routine, script or cron line that queries it. The box's PM routines aren't visible from hz.
+
+**Lead and PM to confirm before the merge:** no PM routine or bot on the box queries `public.feedback` (G4 asks Engineering and PM to confirm in writing), and nothing on the box reads `~/groceries-ops/backup-age-key.txt` but a restore by hand.
+
+**N-156: does the account export include `public.feedback`? Yes.** `export_my_data()` returns a `feedback` section with each of the sender's notes: message, category, contact consent, screen, app and device context, household id, `is_internal` and the 7 new fields: `supabase/migrations/20261113160000_feedback_context.sql:178-202` (`where f.user_id = v_user`, line 201), tested in `supabase/tests/feedback.test.sql:136`. The export was not changed.
+
+**G1: legal file hashes.** Rebased onto main d3c01d09. `datenschutz.md` and `privacy.md` equal Legal's b5dfd360 hashes. `support.md` and `support-en.md` differ only by main's #402 (the "join with a code" answer, one line each); the shake sentence and the `updated:` line are byte-identical. Date lines are `Stand: 13. November 2026`, `Last updated: 13 November 2026`, `updated: 2026-11-13`. A merge after 13 Nov must move those to the merge day; `land-281.sh` does that and reports the new hashes and date diff in DELTA_NOTE.md.
+
+**G2.** `ACCURACY_NOTE.md` (each §10 field vs code, file:line) and `DELTA_NOTE.md` (b5dfd360 to the landing SHA) are in `research/legal-review/pr-281/<PR head>/` before the merge, and `land-281.sh` copies them to `<landing SHA on main>/` with `LANDED.md` right after it.
+
+**G3: migration before collection.** On merge, the push to `main` starts `supabase-deploy.yml` at once (`paths: supabase/**`; migrations, about a minute). `release.yml` starts after CI on that main commit completes (`workflow_run: [CI]`, about 30 minutes; its Monday 03:00 UTC catch-up and a hand dispatch also build main's head, so only a dispatch within a minute of the merge could start earlier, and its build still takes longer than the deploy), then builds, signs and uploads (about 15 more), and TestFlight and Play process the build after that. So `20261113160000_feedback_context.sql` is live well before any build that collects the new fields can be installed. The site's §10 goes live after the same commit's `supabase-deploy` run (`site/scripts/supabase-gate.mjs`), so the policy is never behind the collection. If `supabase-deploy` failed, a new build's insert with the new columns would fail and send nothing; it could not collect ahead of the policy. Old store builds keep inserting without the new columns (all nullable).

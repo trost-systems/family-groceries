@@ -3099,7 +3099,7 @@ Overview: [FEEDBACK.md](FEEDBACK.md). Peter's decisions of 2026-10-27, which clo
 open questions 1-5:
 
 - **D1. No notification of any kind** on new feedback: no e-mail digest, push, Slack or function
-  that sends anything. The PM reads the table every Monday (FEEDBACK.md, "Monday summary").
+  that sends anything. The PM reads the table every Monday (FEEDBACK.md, "Monday summary"). Superseded by Job 224: only Peter reads it.
 - **D2. No shake-to-open and no long press on a title.** Mehr → "Feedback senden" is the only
   entry point; spec AC13 does not apply. `entry_point` stays an enum (`settings`) for later.
 - **D3. No screenshots**, now or as a hidden option: the typed note and the context fields only.
@@ -12087,3 +12087,64 @@ build of `hummlist-site` waits for the push-triggered **Supabase deploy** run th
   event for an id that names nothing still answers `no_household`, also for a deleted user:
   `app_user_owner` cannot tell a deleted user from an unknown id, so `store.ts` documents the label
   instead of guessing.
+
+## Job 138: shake to send feedback, teach copy, more context (2026-11-06)
+
+Peter's calls (Q84 = FB3, Q85 = CX1-CX6 + TC1, 2026-11-05) replace Job 21's D2: More →
+„Feedback senden“ stays, and shaking the phone opens the same form on the screen where the bug
+happened. Overview: [FEEDBACK.md](FEEDBACK.md).
+
+1. **Which screen a note names depends on how the form opened.** Shake: the screen on display
+   (`ScreenTracker.current`), since the user is looking at the bug. More: the last screen before
+   the More tab, as since Job 21 (21.6), since from More it is usually an idea about the list.
+2. **Shake listens only in the signed-in shell, only on iOS and Android.** The listener sits
+   inside `ListScope` in `AppShell`, so login, welcome, onboarding, analytics consent and OAuth
+   consent (all outside the shell) never open the form, and every shake has a household and a
+   signed-in sender, which the insert needs. Web and desktop do not subscribe to the sensor:
+   the form is reached through More only there.
+3. **What counts as a shake:** the accelerometer's g-force above 2.7 g three times within
+   800 ms, then 1.5 s in which nothing fires. One bump or walking with the phone does not count
+   (unit tests over synthetic samples). A shake while the feedback form or any other dialog or
+   sheet is open does nothing: one guard, `Popups.openAbove` (the root navigator's top route is a
+   popup), covers both. No haptic. The sensor is released while the app is in the
+   background. iOS gets an `NSMotionUsageDescription` purpose string, though the accelerometer
+   shows no prompt: sensors_plus links CoreMotion and its README requires the key (review 0).
+4. **The teach line shows only where shaking works** (iOS, Android). On the web it would tell
+   the user to do something that does nothing in that window. The factual „Wird mitgeschickt:“
+   line shows everywhere and lists every field.
+5. **The new context is read when the form opens, not at Send**: entry point, screen, theme,
+   orientation, text size, connection and Premium status describe the moment of the bug. The
+   device facts (version, build, OS, model) are read once per app run as before.
+6. **`entitlement` has five values, not two.** The brief said `lifetime | free`, but a household
+   can also have a yearly plan or a promotional grant (testers); filing those as `free` would
+   mislead a bug report about Premium. Values: `free`, `lifetime`, `yearly`, `promotional`,
+   `unknown` (rows not read yet). No RevenueCat or store ids.
+7. **`online` is the list's own view of the connection** (`ListCubit`'s realtime and fetch
+   state) when the form opens: `yes`, `no`, or `unknown` while it is still connecting. A
+   reading at send time would always say `yes`, since a note only arrives online; the
+   connectivity plugin reports a network interface, not whether the server answers.
+8. **`device_model` is the marketing name where the OS gives one**: iOS `modelName` ("iPhone 15
+   Pro"), Android manufacturer and model ("Google Pixel 8"), `web` on the web, at most 48
+   characters. Never a serial, IMEI, device name or id.
+9. **`text_scale` is one of eight buckets** (`0.8-`, `0.9` … `1.4`, `1.5+`), never the raw
+   factor.
+10. **`entry_point` is `more` or `shake`** in the table and in the analytics event. Builds
+    before this job sent `settings` for More (no insight reads the property yet; one that does
+    counts `settings` as `more`).
+11. **All new columns are nullable**, with checks: store builds older than this job insert
+    without them and keep working (squawk compat rules).
+
+## Job 202: #281 rebased again, Legal's feedback paragraph (2026-11-13)
+
+1. **The migration moved to `20261113160000_feedback_context.sql`**, after main's newest. Its `export_my_data` is `20261113094500_prices_and_currency.sql`'s body plus the 7 feedback keys.
+2. **Legal's §2.2 and §2.3 text went in verbatim.** On the support pages the bold UI names (**Mehr**, **Feedback senden**) stay, and only Legal's new sentence was inserted, so the words match the review and the page keeps its markup.
+3. **Two code-vs-text points were reported, not edited** (DONE_SUMMARY "Job 202"). `is_internal` predates #281 and was already unnamed in the live text Legal reviewed. Since #387, `entitlement` can also reflect the sender's own purchase, which is still dark. Neither is a field the text names but the code lacks, nor a field that #281 adds without the text naming it. So the paste went ahead, and Legal decides.
+4. **„Stand:“ stays at 13 November 2026**, the date main already carries. A merge on a later day moves it.
+
+## Job 224: #281's Legal GO conditions, only Peter reads feedback (2026-11-13)
+
+1. **Only Peter reads `public.feedback`, by hand in the Supabase dashboard** (Peter's rule of 1 Nov 2026 as Legal Review cites it, 13 Nov 2026, G4). `docs/FEEDBACK.md` no longer has the PM reading it with the service role through the Supabase connector every Monday. The Monday SQL stays as Peter's weekly queries for the dashboard's SQL editor, and `scripts/feedback-monday.sh` still proves them on fake notes in the db gate. No bot, connector or routine reads the notes. Only two scheduled jobs touch the table: the daily purge (deletes by date) and the nightly backup (`pg_dump`, encrypted with age before it leaves the runner).
+2. **The table comment the dashboard shows is replaced in #281's own migration** (`20261113160000_feedback_context.sql`, not yet deployed): "Only Peter reads it … no bot, connector or routine does". The SQL comment in `20261030070000_feedback.sql` still says "Peter and the PM read them"; that migration is on main and may not change (schema check: history).
+3. **Rebased onto main d3c01d09.** The feedback recipe keeps job 203's wording ("above the legal rows"). The support pages differ from Legal's b5dfd360 hashes only by main's #402 join answer; the shake sentence and §10 are byte-identical.
+4. **The account export already includes feedback** (section `feedback`), so N-156 is answered "yes" and the export is unchanged.
+5. **The land is a script** (`jobs/224-feedback-doc-reader-cleanup/land-281.sh` in the ops dir): Legal's conditions bind to the landing SHA, which only the land makes: the rebase makes the PR head, and GitHub's rebase-merge then rewrites the committer, so main's SHA differs from the head with the same tree. The script dates the legal pages to the merge day, pushes, checks Legal's text byte for byte, writes the notes under the head and waits for ci-ok. Then it merges, checks that main's commit has the head's tree, and copies the notes to main's SHA with LANDED.md. It refuses to start after 22:30 Berlin time and stops if the day changes before the merge.

@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_cubit.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../analytics/fakes.dart';
@@ -187,12 +189,53 @@ void main() {
     expect(events, hasLength(1));
     final properties = events.single['properties']! as Map<String, Object?>;
     expect(properties['category'], 'idea');
-    expect(properties['entry_point'], 'settings');
+    expect(properties['entry_point'], 'more');
     expect(properties['screen'], 'list');
     expect(properties['contact_ok'], true);
     expect(
       '${events.single}',
       allOf(isNot(contains('Geheimer')), isNot(contains('Hafermilch'))),
+    );
+  });
+
+  test('a shake is the entry point "shake"; the scene stays off the event '
+      '(job 138)', () async {
+    await start();
+    cubit.edit('Wackelt');
+    await cubit.send(
+      FeedbackContext(
+        appVersion: sampleContext.appVersion,
+        build: sampleContext.build,
+        platform: sampleContext.platform,
+        osVersion: sampleContext.osVersion,
+        deviceModel: sampleContext.deviceModel,
+        locale: sampleContext.locale,
+        isInternal: false,
+        scene: const FeedbackScene(
+          entryPoint: FeedbackEntryPoint.shake,
+          screen: 'stores',
+          theme: Brightness.dark,
+          orientation: Orientation.landscape,
+          textScale: '1.3',
+          online: FeedbackOnline.no,
+          entitlement: FeedbackEntitlement.lifetime,
+        ),
+      ),
+    );
+    final properties =
+        (await sent()).single['properties']! as Map<String, Object?>;
+    expect(properties['entry_point'], 'shake');
+    expect(properties['screen'], 'stores');
+    expect(
+      properties.keys.toSet().intersection({
+        'device_model',
+        'theme',
+        'orientation',
+        'text_scale',
+        'online',
+        'entitlement',
+      }),
+      isEmpty,
     );
   });
 
