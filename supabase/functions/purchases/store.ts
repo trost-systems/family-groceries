@@ -198,7 +198,8 @@ export async function deletionDone(sql: Sql, id: string): Promise<void> {
 
 /**
  * promotional_premium_sync's and promotional_premium_sync_user's outcome (migrations
- * 20261101143000_revenuecat_promotional.sql, 20261112232617_per_user_premium.sql). As for
+ * 20261101143000_revenuecat_promotional.sql, 20261112232617_per_user_premium.sql,
+ * 20261113155327_revenuecat_known_customers.sql). As for
  * [Outcome], an id that names nothing (a deleted user's too) answers no_household.
  */
 export type PromotionalOutcome =

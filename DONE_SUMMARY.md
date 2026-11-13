@@ -605,6 +605,7 @@ A short 504 from GitHub releases or dl.deno.land no longer fails the gitleaks, l
 - Job 166, the sync indicator follows the device's network (flight mode on shows „Offline“ at once, off clears it on its own): [docs/done/166.md](docs/done/166.md)
 - Job 166b, the network watch's edge cases (a stale startup check; a new realtime socket after a real down, so partner changes arrive at once): [docs/done/166b.md](docs/done/166b.md)
 - Job 167, internal work (Nexus, CI, scripts, docs, tests, the site) stays out of the testers' "What to Test" and the changelog; testers read the PRs' changelog items: [docs/done/167.md](docs/done/167.md)
+- Job 211, Premium pre-sales fixes: a pending purchase keeps Buy off after leaving the last household, RevenueCat deletions only for households it knows, account deletion no longer races a customer note: [docs/done/211-premium-presales-fixes.md](docs/done/211-premium-presales-fixes.md)
 
 
 
