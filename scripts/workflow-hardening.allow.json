@@ -1,0 +1,25 @@
+{
+  "entries": [
+    {
+      "file": ".github/workflows/supabase-deploy.yml",
+      "job": "deploy",
+      "rule": "secret-in-step",
+      "secrets": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"],
+      "reason": "Job 220 had to leave this workflow alone (job 209's deploy-wait work): SUPABASE_ACCESS_TOKEN and the SUPABASE_PROJECT_REF fallback sit in the job's env. Move them to the steps that call the Management API, then remove this entry (docs/done/220-security-hardening.md)."
+    },
+    {
+      "file": ".github/workflows/supabase-deploy.yml",
+      "job": "deploy",
+      "rule": "secret-needs-environment",
+      "secrets": ["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"],
+      "reason": "Job 220 had to leave this workflow alone (job 209's deploy-wait work): the deploy job names no environment and reads the repository-level SUPABASE_ACCESS_TOKEN. Give it one that only main may use, then remove this entry (docs/done/220-security-hardening.md)."
+    },
+    {
+      "file": ".github/workflows/supabase-deploy.yml",
+      "job": "deploy",
+      "rule": "no-cache-in-trusted-job",
+      "actions": ["supabase/setup-cli"],
+      "reason": "Job 220 had to leave this workflow alone (job 209's deploy-wait work): supabase/setup-cli restores the bun binary it then runs from the Actions cache, in the job whose env holds SUPABASE_ACCESS_TOKEN. Install the CLI in a step without that cache, then remove this entry (docs/done/220-security-hardening.md)."
+    }
+  ]
+}

@@ -167,9 +167,11 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 
 `scripts/lint.sh` runs these locally and in CI, and each error names the fix.
 Rules live in `ast-grep/rules/` with tests in `ast-grep/tests/`, the schema
-guards in `supabase/checks/schema_check.ts`. Silence one finding only on the
+guards in `supabase/checks/schema_check.ts`, the workflow rules in
+`scripts/workflow-hardening.ts`. Silence one finding only on the
 line above it, with the reason: `// ast-grep-ignore: <rule-id> -- <reason>` or
-`-- squawk-ignore <rule> -- <reason>`.
+`-- squawk-ignore <rule> -- <reason>`; a workflow exception is an entry with
+its reason, and the secrets or actions it covers, in `scripts/workflow-hardening.allow.json`.
 
 | Rule | What fails | Why |
 | --- | --- | --- |
@@ -198,6 +200,10 @@ line above it, with the reason: `// ast-grep-ignore: <rule-id> -- <reason>` or
 | schema check: RLS | A public table without RLS; a `household_id` table without an `is_household_member(household_id)` policy or a two-household pgTAP case | PostgREST serves every public table |
 | squawk compat rules | Dropping or renaming a column or table, NOT NULL without default, type changes, dropping a function or view | TestFlight and Play builds lag `main`; old apps must keep working |
 | `brand-names` | ChatGPT, OpenAI, Claude or Anthropic in site/content, site/public, mcp-proxy/public or an ARB value, outside `scripts/brand-names.allow.json` (or a stale entry there) | Legal N-80..N-86: brand names only in functional help and the trademark notice |
+| `action-pinned` | A `uses:` in `.github/workflows` or `.github/actions` that is neither a local path nor a full 40-hex commit SHA (a `docker://` image: its sha256 digest) | A tag can be moved to other code, which then runs with the job's token and secrets (job 220) |
+| `secret-in-step` | `secrets.X` anywhere but a step's `env:` or `with:`, such as a job's or the workflow's `env:`, a `run:` or an `if:` (`secrets.GITHUB_TOKEN` is the run's own token and exempt) | From a job's `env:` every step and action of the job gets it; one step needs it |
+| `secret-needs-environment` | A job that reads a secret without `environment:`, or in one that is neither `release` nor `ops` | A workflow file on any pushed branch can read a repository-level secret; an environment can be limited to `main`, and its secrets go only to its jobs (`release` for the store release, `ops` for the scheduled production jobs) |
+| `no-cache-in-trusted-job` | In a job that reads a secret, names an environment or whose token may write: an action with `cache` in its name, a `cache:` or `...-cache:` input that is not `false` (`no-cache:` that is not `true`; setup-java's `cache-jdk:` too), `actions/setup-node` without `package-manager-cache: false`, the local `deno` action without `cache: false`, `oven-sh/setup-bun` without `no-cache: true`, `supabase/setup-cli` (it has no such input), or a local action that runs one of these | Any run on `main` can write a cache entry, which the job would unpack and run next to its secrets and token; it installs from the lockfile instead |
 | merge conflict markers | A tracked file with a line starting `<<<<<<< ` or `>>>>>>> ` | A 3-way apply that stopped left them staged in two feature docs (job 169b W2); no other gate reads those files |
 | `no-hummlist` | A tracked file naming Hummlist (any case) that `scripts/checks/hummlist-allow.txt` does not list with its exception and reason | The product is Snacklist (job 174); only redirects, old builds' ids and wire names, and history keep the old name, each until it retires |
 | `ignore-needs-reason`, schema check: ignores | An `ast-grep-ignore` or `squawk-ignore` without ` -- <reason>` | An exception a reviewer cannot judge gets copied |

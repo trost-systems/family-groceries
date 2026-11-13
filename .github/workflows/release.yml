@@ -99,6 +99,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
+          package-manager-cache: false
       # A workflow_run or scheduled run has no inputs; it gets the dispatch defaults here, so
       # every event takes the same path from this step on.
       - id: inputs
@@ -155,11 +156,18 @@ jobs:
           check ios APPLE_TEAM_ID MATCH_GIT_URL MATCH_DEPLOY_KEY MATCH_PASSWORD \
             APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_API_KEY_P8
           check android ANDROID_KEYSTORE_BASE64 ANDROID_KEY_PROPERTIES
+      # No Actions cache in a job with the signing secrets: any run on main can write an entry
+      # that this job would unpack and run (job 220).
       - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         if: steps.secrets.outputs.ios == 'true'
         with:
           working-directory: app
-          bundler-cache: true
+      - name: Install the gems from the lockfile
+        if: steps.secrets.outputs.ios == 'true'
+        working-directory: app
+        run: |
+          bundle config set --local deployment true
+          bundle install --jobs 4
       - name: Check the profile and read TestFlight's builds
         if: steps.secrets.outputs.ios == 'true'
         working-directory: app
@@ -232,15 +240,20 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ needs.plan.outputs.sha }}
+      # No Actions cache in a job with the signing secrets: any run on main can write an entry
+      # that this job would unpack and run (job 220).
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: false
       - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         with:
           working-directory: app
-          bundler-cache: true
+      - name: Install the gems from the lockfile
+        run: |
+          bundle config set --local deployment true
+          bundle install --jobs 4
       # match clones the private certificates repo over SSH.
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:
@@ -301,15 +314,20 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      # No Actions cache in a job with the signing secrets: any run on main can write an entry
+      # that this job would unpack and run (job 220).
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: false
       - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         with:
           working-directory: app
-          bundler-cache: true
+      - name: Install the gems from the lockfile
+        run: |
+          bundle config set --local deployment true
+          bundle install --jobs 4
       # key.properties names storeFile=../upload-keystore.jks, which resolves
       # from android/app to android/upload-keystore.jks.
       - name: Write the upload keystore
@@ -376,6 +394,7 @@ jobs:
       && (needs.ios.result == 'success' || needs.android.outputs.uploaded == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions: {}
     steps:
       - env:
           BUILD_NUMBER: ${{ needs.plan.outputs.build_number }}
