@@ -12076,6 +12076,10 @@ build of `hummlist-site` waits for the push-triggered **Supabase deploy** run th
   within `app/lib`. Job 185's "a household id cannot reach `buy`" holds by that rule and the
   cubit's tests, not by the type: other ways around a lint (an `ignore`, code outside `app/lib`)
   stay possible.
+- **A deletion may wait for a promotional read.** `promotional()` in `store.ts` takes
+  `purchase_user_lock` before it reads the grant from RevenueCat (up to 10 s), so an account
+  deletion that meets a promotional event for the same user now waits that long, then finishes.
+  Accepted: the lock is what keeps the read and the write in order, and deletions are rare.
 - **Known gap, for Ops.** A household whose promotional grant ended before this migration has no
   trace to note, so its RevenueCat customer stays if it is deleted later (before this job it was
   queued). NEEDS_PETER "Job 211" has the one-time check.
