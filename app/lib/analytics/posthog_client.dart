@@ -103,11 +103,17 @@ class PostHogClient({
     };
   }
 
+  /// Person properties for flag targeting only: they go with each flag
+  /// request and make no person profile. Waits for the flags they select.
+  Future<void> flagProperties(Map<String, Object> properties) =>
+      Posthog().setPersonPropertiesForFlags(properties);
+
   Future<void> flush() => Posthog().flush();
 
   /// Stops the SDK and deletes what it keeps on the device, ids and queued
   /// events included; [start] sets it up again.
   Future<void> stop() async {
+    await Posthog().resetPersonPropertiesForFlags(reloadFeatureFlags: false);
     await Posthog().close();
     await forget();
   }

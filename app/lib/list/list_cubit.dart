@@ -197,6 +197,9 @@ final class const CategoriesReordered() extends ListActivity;
 /// they ticked since it last had none.
 final class const TripCompleted(final int ticked) extends ListActivity;
 
+/// The user ticked [item] off (active to bought), as it was before the tick.
+final class const OwnItemTicked(final Item item) extends ListActivity;
+
 const _maxResubscribe = Duration(seconds: 30);
 
 /// How long the OS's network stays up before the list reconnects: a
@@ -676,15 +679,17 @@ class ListCubit(
   ].join('|');
 
   void tick(String id) {
-    final active = state.allItems[id]?.status == ItemStatus.active;
+    final before = state.allItems[id];
+    final active = before?.status == ItemStatus.active;
     // Counted before the enqueue, whose emptied list resets the count.
     if (active) {
       _tripTicked.add(id);
     }
     final ticked = _tripTicked.length;
     _enqueue(SetStatus(id, ItemStatus.bought, _clock()));
-    if (active) {
+    if (before != null && active) {
       _track('item_ticked', _actor());
+      _tell(OwnItemTicked(before));
       final now = _clock();
       // Emptied again within the undo window (a re-add from "recently used"
       // ticked off again): the same trip, not a second one.

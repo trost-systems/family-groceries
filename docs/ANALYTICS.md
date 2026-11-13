@@ -164,6 +164,7 @@ property and `$lib: hummlist-app`; no query reads them.
 | `item_ticked` | the user ticked an item off | `actor_role`, `household_size` |
 | `category_reordered` | a new category order reached the server | `scope`: `default` (route order) or `store` (a store's layout) |
 | `store_reordered` | a new store order reached the server | none |
+| `trip_logged` | job 199 (flag `grocery-log`): the server saved a new trip in the grocery log, once per trip on the save that closes its sheet (a save whose answer was lost and that the user then abandons is not counted); not for an edit, a retry or a delete | `source`: `manual` (the history's "Einkauf eintragen") or `prompt` (the list's card after a store's section was ticked off); never the store, the day or the items |
 | `feedback_submitted` | the server stored a feedback note (job 21, docs/FEEDBACK.md); once per note, also after a Retry whose first answer was lost | `category` (`bug`, `idea`, `other`, `none`), `entry_point` (`settings`; More is the only entry), `screen` (a name from `screenNames` in `router.dart`, e.g. `list`; `stores` for the List tab's Anpassen pages, never a store's id, job 78), `contact_ok` (true, false). Never the note's text |
 | `item_categorized` | the server confirmed an add from the app (job 32a); once per added item, also after a retry whose first answer was lost; not for a restored deletion | `via`: how the server chose the category (`items.categorized_via`): `household` (a correction of this household, also for the item's spelling variants and synonyms), `exact` (the dictionary, also after folding spelling: Karrotten), `synonym` (Paradeiser), `fuzzy` (a typo: Schokolde), `fallback` (Sonstiges), `picked` (the add brought another category than the guess). Never the name or the canonical key |
 | `dedupe_hint_shown`, `dedupe_hint_merged`, `dedupe_hint_ignored` | job 32b's duplicate hint ("Möhren steht schon auf der Liste"): `shown` when the snackbar shows, then once either `merged` (Zusammenführen) or `ignored` (any other close); the merge's undo sends nothing. Listed by 32a, sent by `ListCubit` since 32b | `actor_role`, `household_size`. Never the item names |
@@ -179,7 +180,7 @@ property and `$lib: hummlist-app`; no query reads them.
 | `trip_total_viewed` | job 195 (F2): the trip's total was shown. Allowed, not sent yet (as `shop_started`) | `final` (`true`: the finished trip's total, `false`: the running total). Never the amount |
 | `scan_started` | job 195 (F3): a barcode scan began. Allowed, not sent: no scanner exists yet; it sends this only from its flagged code path | none; never the EAN |
 | `off_miss` | job 195 (F3): the Open Food Facts lookup for a scanned code found no product. Allowed, not sent yet (as `scan_started`) | none; never the EAN or a product name |
-| `paywall_viewed` | job 50: the Premium page showed a plan with its store price to a household that can buy it; once per visit. Never with the switch `premium_offer` or `REVENUECAT_PURCHASES` off (the page offers nothing then) | `entry_point` (`more`: More's row, `integrations`: the integration settings' Buy) |
+| `paywall_viewed` | job 50: the Premium page showed a plan with its store price to a household that can buy it; once per visit. Never with the switch `premium_offer` or `REVENUECAT_PURCHASES` off (the page offers nothing then) | `entry_point` (`more`: More's row, `integrations`: the integration settings' Buy, `history`: the history's locked row of older trips, job 199) |
 | `review_prompt_requested` | job 155: the app asked the store for its rating prompt (`ReviewPrompt.requestIfDue`) after a completed trip in a public store build, every gate passed (`app/lib/review/review_gates.dart`) and the store had a prompt; at most twice per version, three times a year. The store decides whether it shows and never says, so this counts requests, not prompts shown. iPhone release builds count as store builds, so TestFlight installs send it too, although Apple shows nothing there (their counters also start the 120-day cooldown, which carries over when a tester installs the App Store build); filter internal installs before reading it. More's "Snacklist bewerten" opens the store listing and sends nothing | none |
 | `hint_shown` | job 168b: a List tab hint showed, once per session that shows it (at most one per session; a hint shows at most three sessions) | `hint_id`: the catalogue id (`HintId` in `app/lib/tips/hints.dart`: `edit-long-press`, `quick-add-amounts`, `dictation`, `siri`, `store-order`, `add-store`, `invite-partner`, `second-household`, `own-household`, `ai-assistant`, `home-widget`). Never its text |
 | `hint_dismissed` | job 168b: the X on a hint (it never shows again) | `hint_id` |
@@ -381,8 +382,15 @@ Runtime toggles are PostHog feature flags, read in one place: `Analytics.flags.i
 - **Reading a flag sends nothing** (`sendFeatureFlagEvent` off, no `$feature_flag_called`).
   Flags are read with `getAllFeatureFlags()` after the SDK starts and whenever it reports new
   ones.
-- **Keys and rollouts live in PostHog** (project 319492); the Lead creates them. No flag exists
-  yet. A flag gates code paths only; it never gates consent, data or legal texts.
+- **Keys and rollouts live in PostHog** (project 319492); the Lead creates them. The app reads
+  two keys: `public-api` (the API keys under Zugänge, job 73) and `grocery-log` (the Verlauf
+  tab, job 199). A flag gates code paths only; it never gates consent, data or legal texts.
+- **Targeting internal installs.** A flag may be released by the person property
+  `is_internal`, so that only internal installs get it (Peter's TestFlight build, marked
+  internal under More). The app sends `{'is_internal': Analytics.internalNow}` with
+  `setPersonPropertiesForFlags` when the SDK starts and whenever the value changes, then
+  reads the flags again (`PostHogClient.flagProperties`). It clears the value on a no. No
+  person profile is created: the property goes only with the flag request.
 - **`releases/flags.json` is not this.** It only says which changelog items wait for a rollout
   or a hold (job 40, docs/CHANGELOG.md, "Gated items"). A feature behind a PostHog flag gets its
   key there too (`"rollout": "off"`, `partial`, `full`), set by hand when the PostHog rollout

@@ -48,7 +48,8 @@ language sql as $$
   union all select 'api_household_days', count(*)::int from public.api_household_days where household_id = p_household
   union all select 'lists', count(*)::int from public.lists where household_id = p_household
   union all select 'item_claims', count(*)::int from public.item_claims where household_id = p_household
-  union all select 'join_requests', count(*)::int from public.join_requests where household_id = p_household;
+  union all select 'join_requests', count(*)::int from public.join_requests where household_id = p_household
+  union all select 'trips', count(*)::int from public.trips where household_id = p_household;
 $$;
 
 select is(
@@ -233,6 +234,8 @@ set category_id = (select id from public.categories where household_id = (select
     store_id = public.add_store((select id from h), 'Supermarkt'),
     brand = 'Hofbäckerei Kurz'
 where name = 'Brot';
+-- Job 199: Carl logged a trip.
+select public.save_trip((select id from h), gen_random_uuid(), null, current_date, '[{"name": "Brot"}]');
 select pg_temp.as_postgres();
 -- Job 25 (as of job 43, through RevenueCat): Carl bought Snacklist Lifetime for the household.
 select public.purchase_claim('00000000-0000-0000-0000-0000000000c1', (select id from h), 'apple', '2000000000002501');
@@ -295,8 +298,10 @@ select pg_temp.login('00000000-0000-0000-0000-0000000000f1');
 select public.join_household((select code from inv_e));
 insert into public.items (household_id, name) select id, 'Fridas Geheimnis' from he;
 select public.claim_item((select id from public.items where name = 'Fridas Geheimnis'), '2');
+select public.save_trip((select id from he), gen_random_uuid(), null, current_date, '[{"name": "Fridas Geheimnis"}]');
 select pg_temp.login('00000000-0000-0000-0000-0000000000e1');
 select public.claim_item((select id from public.items where name = 'Äpfel'), null);
+select public.save_trip((select id from he), gen_random_uuid(), null, current_date, '[{"name": "Äpfel", "quantity": "1 kg"}]');
 select pg_temp.as_postgres();
 insert into auth.oauth_clients (id, registration_type, redirect_uris, grant_types, client_name, client_type, token_endpoint_auth_method)
 values ('00000000-0000-0000-0000-00000000c11e', 'dynamic', 'https://claude.ai/cb', 'authorization_code', 'Claude', 'public', 'none');
@@ -311,7 +316,7 @@ select is(
   (select array_agg(k order by k) from export, jsonb_object_keys(doc) k),
   array['access_tokens', 'account', 'alexa_links', 'analytics_decisions', 'archived_households', 'connected_apps', 'exported_at',
         'feedback', 'format', 'history', 'household', 'household_removals', 'households', 'invite_uses', 'invites_created', 'item_claims',
-        'items_added', 'join_requests', 'lists_created', 'profile', 'purchases', 'version'],
+        'items_added', 'join_requests', 'lists_created', 'profile', 'purchases', 'trips_logged', 'version'],
   'the export has the documented sections'
 );
 select is(
@@ -356,7 +361,11 @@ select is(
       'name', 'Einkaufsliste', 'created_at', now())),
     'item_claims', jsonb_build_array(jsonb_build_object('household_id', (select id from he),
       'item_name', 'Äpfel', 'quantity', null, 'created_at', now())),
-    'join_requests', '[]'::jsonb
+    'join_requests', '[]'::jsonb,
+    -- Job 199: his trip, not Frida's.
+    'trips_logged', jsonb_build_array(jsonb_build_object('household_id', (select id from he), 'store_name', null,
+      'shopped_on', current_date, 'items', jsonb_build_array(jsonb_build_object('name', 'Äpfel', 'quantity', '1 kg')),
+      'created_at', now()))
   ),
   'the export holds the user''s own data and nothing of the other member''s'
 );

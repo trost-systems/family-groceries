@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/consent_screen.dart';
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/app/deep_links.dart';
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/shell.dart';
@@ -16,6 +17,8 @@ import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/store_details_screen.dart';
 import 'package:family_groceries/list/stores_screen.dart';
+import 'package:family_groceries/log/history_screen.dart';
+import 'package:family_groceries/log/trip_repository.dart';
 import 'package:family_groceries/more/more_screen.dart';
 import 'package:family_groceries/oauth/consent_screen.dart';
 import 'package:family_groceries/onboarding/draft.dart';
@@ -26,6 +29,7 @@ import 'package:family_groceries/purchases/premium_page_cubit.dart';
 import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 const listPath = '/';
@@ -93,6 +97,10 @@ const analyticsConsentPath = '/analytics-consent';
 const consentPath = '/oauth/consent';
 const morePath = '/more';
 
+/// The Verlauf tab (job 199): the grocery log, only while the flag
+/// `grocery-log` is on; otherwise the path goes to the list.
+const historyPath = '/history';
+
 /// More's Zugänge: the MCP server, tokens and connected apps.
 const accessPath = '/more/access';
 
@@ -140,6 +148,7 @@ const screenNames = {
   'list',
   'stores',
   'more',
+  'history',
   'access',
   'account',
   'invites',
@@ -183,6 +192,7 @@ String _screenNameOfPath(Uri location) => switch (location.path) {
   listPath || '' => 'list',
   _ when location.pathSegments.firstOrNull == 'edit' => 'stores',
   morePath => 'more',
+  historyPath => 'history',
   accessPath => 'access',
   accountPath => 'account',
   invitesPath => 'invites',
@@ -240,6 +250,7 @@ bool inListTab(Uri location) {
 /// on a gate they would cover its answers and run out while it is read.
 bool atHome(Uri location) =>
     location.path == listPath ||
+    location.path == historyPath ||
     inListTab(location) ||
     inMoreTab(location) ||
     location.path == welcomePath ||
@@ -384,7 +395,8 @@ String? authRedirect(
             uri.path == newHouseholdPath ||
             uri.path == joinCodePath ||
             inMoreTab(uri) ||
-            inListTab(uri) =>
+            inListTab(uri) ||
+            uri.path == historyPath =>
       uri.toString(),
     // Where the list would open: a link (`next`) went first and stays.
     InHousehold() when pending != null => onboardingPath(OnboardingStep.invite),
@@ -544,17 +556,31 @@ List<RouteBase> moreTabRoutes() => [
   ),
 ];
 
-/// Every route of the app; [repositories] overrides the Supabase list
-/// repository per household, for tests.
+/// The Verlauf tab's route; with the flag off it is the list.
+List<RouteBase> historyTabRoutes() => [
+  GoRoute(
+    path: historyPath,
+    redirect: (context, _) =>
+        context.read<Flags?>()?.isOn(groceryLogFlag) ?? false ? null : listPath,
+    builder: (_, _) => const HistoryScreen(),
+  ),
+];
+
+/// Every route of the app; [repositories] and [trips] override the
+/// Supabase list repository and trips per household, for tests.
 List<RouteBase> appRoutes({
   ListRepository Function(String householdId)? repositories,
+  TripRepository Function(String householdId)? trips,
 }) => [
   StatefulShellRoute.indexedStack(
     builder: (_, _, shell) =>
-        AppShell(shell: shell, repositories: repositories),
+        AppShell(shell: shell, repositories: repositories, trips: trips),
+    // The shell's tabs keep these branch indices; Verlauf shows between
+    // Liste and Mehr (`_Destination`).
     branches: [
       StatefulShellBranch(routes: listTabRoutes()),
       StatefulShellBranch(routes: moreTabRoutes()),
+      StatefulShellBranch(routes: historyTabRoutes()),
     ],
   ),
   GoRoute(

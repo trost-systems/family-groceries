@@ -531,7 +531,13 @@ class const OptionChip({
         child: Row(
           mainAxisSize: MainAxisSize.min,
           spacing: 6,
-          children: [?leading, Text(label)],
+          // A long name at large text ends in an ellipsis inside the row.
+          children: [
+            ?leading,
+            Flexible(
+              child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ),
+          ],
         ),
       ),
     );

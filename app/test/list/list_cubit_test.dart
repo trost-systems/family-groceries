@@ -2408,6 +2408,31 @@ void main() {
       },
     );
 
+    test('only my tick of an open item is told, with the item as it was; '
+        "a second tick, an untick and a partner's tick are not", () async {
+      final milk = await added('2 l Milch');
+      final bread = await added('Brot');
+      cubit
+        ..tick(milk)
+        ..tick(milk)
+        ..untick(milk);
+      repo.emitItem!(
+        repo.rows[bread]!.copyWith(
+          status: ItemStatus.bought,
+          boughtAt: () => DateTime.utc(2026, 11, 6, 9),
+        ),
+      );
+      await settle();
+      expect(
+        [
+          for (final a in heard)
+            if (a case OwnItemTicked(:final item))
+              (item.id, item.name, item.quantity, item.status),
+        ],
+        [(milk, 'Milch', '2 l', ItemStatus.active)],
+      );
+    });
+
     test('a re-add after the undo window is an add', () async {
       var now = DateTime.utc(2026, 11, 6, 9);
       final clocked = ListCubit(

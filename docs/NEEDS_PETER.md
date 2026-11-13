@@ -1691,3 +1691,33 @@ the Android job uploads and "Web production" runs, and `https://app.snacklist.ap
 contains `const wasmAllowList = { blink: true, webkit: true, gecko: true };` and engine
 `371f77202a73e8dff57a8b3bff75bca55c090aee`. The workflow's provider path keeps its id
 `family-groceries`; nothing in the repo changes.
+
+## Job 199: grocery log behind `grocery-log` (2026-11-13)
+
+The Verlauf tab, the trip sheet and the list's trip card ship behind the PostHog flag
+`grocery-log`, off for everyone (`releases/flags.json` rollout `off`). Nothing waits on you to
+merge; these are the steps to see it and the one open legal question.
+
+1. **Lead or Peter: create the flag for your TestFlight install only (t834u).** In PostHog
+   (project 319492), Feature flags, New: key `grocery-log`, release condition "Users" with the
+   person property `is_internal` equals `true`, rollout 100 %, everyone else off. The app sends
+   `is_internal` only with the flag request (no person profile is created; docs/ANALYTICS.md,
+   "Feature flags"). On the phone: the analytics yes must be given (More → Nutzungsdaten), and
+   the install must be internal: long-press the version line under More until "Interne
+   Installation" shows (or the household is in `ANALYTICS_INTERNAL_HOUSEHOLDS`); then restart the
+   app. The next green `main` build after this merge carries the code to
+   TestFlight (`release.yml`). Lea's install sees it too if it is internal; for you alone, add a
+   second condition on the install's distinct id instead (PostHog → Activity, your events).
+2. **Legal: drugstore lines in a manual purchase log (Art. 9).** The log stores what a household
+   member typed or ticked, for example "Schwangerschaftstest" or "Insulin-Pen-Nadeln" bought at dm,
+   with the day and the store. N-127 treats pharmacy lines on receipts as Art. 9 health data and
+   asks for explicit consent and a pharmacy discard. Question for Legal: does a log the user
+   writes themselves (no receipt, no OCR, items the user chose to keep, visible to the household
+   members, kept until the user, the household or the account deletes it, in the GDPR export)
+   need Art. 9(2)(a) consent, a drugstore filter, a notice in the sheet, or nothing beyond the
+   existing privacy text? Until the answer, the flag stays off for the public; the flagged merge
+   did not wait for it (brief).
+3. **Copy check before a public rollout.** The locked-history row reads "Ältere Einkäufe siehst
+   du mit Snacklist Premium" / "See older trips with Snacklist Premium". It reuses the Premium
+   naming of existing hints and adds no pricing copy. Say if you want different words before the
+   flag goes beyond internal installs.

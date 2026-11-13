@@ -8,6 +8,7 @@ void main() {
       '/': 'list',
       '/?invite=ABCD2345': 'list',
       '/more': 'more',
+      '/history': 'history',
       '/edit': 'stores',
       '/edit/none': 'stores',
       '/edit/3f0c-Hafermilch': 'stores',

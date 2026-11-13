@@ -28,6 +28,7 @@ import 'package:family_groceries/list/list_tabs.dart';
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/sync_indicator.dart';
+import 'package:family_groceries/log/trip_prompts.dart';
 import 'package:family_groceries/review/review_prompt_trigger.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/tips/hint_views.dart';
@@ -84,9 +85,12 @@ class const ShoppingList({
     // (joining or restoring one from More): the sheet and the screen start
     // over with it, or adds would go to the household that was left.
     final list = context.select<ListCubit, ListCubit>((cubit) => cubit);
-    return BlocProvider(
+    return MultiBlocProvider(
       key: ObjectKey(list),
-      create: (_) => AddSheetCubit(list),
+      providers: [
+        BlocProvider(create: (_) => AddSheetCubit(list)),
+        BlocProvider(create: (_) => TripPrompts(list)),
+      ],
       child: ProvideHints(
         list: list,
         // The list's snackbars float above the add bar, not above the tabs.

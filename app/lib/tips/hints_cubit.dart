@@ -138,6 +138,7 @@ class HintsCubit(
         ItemEdited() => log.record(Signal.itemEdited),
         CategoriesReordered() => log.record(Signal.categoryReorder),
         TripCompleted() => log.record(Signal.shopDone),
+        OwnItemTicked() => log,
       };
       _update();
     }

@@ -79,6 +79,68 @@ void main() {
     expect(analytics.flags.isOn('new-thing'), isFalse);
   });
 
+  group('targeting by is_internal', () {
+    setUp(
+      () => native.targeting = (properties) => {
+        'internal-only': properties['is_internal'] == true,
+      },
+    );
+
+    List<Object?> sent() => [
+      for (final c in native.calls)
+        if (c.method == 'setPersonPropertiesForFlags')
+          (c.arguments as Map)['userProperties'],
+    ];
+
+    test('after the yes PostHog evaluates flags with is_internal, as a '
+        'flag property only', () async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: true);
+      await pumpEventQueue();
+      expect(sent(), [
+        {'is_internal': false},
+      ]);
+      expect(analytics.flags.isOn('internal-only'), isFalse);
+      expect(native.methods, isNot(contains('setPersonProperties')));
+      expect(native.methods, isNot(contains('identify')));
+    });
+
+    test('marked internal: sent again once, and the flags follow', () async {
+      analytics.setUser(customer);
+      await analytics.decide(granted: true);
+      await pumpEventQueue();
+      await analytics.markInternalInstall(internal: true);
+      await pumpEventQueue();
+      expect(analytics.flags.isOn('internal-only'), isTrue);
+      // Context registered again without a change sends nothing new.
+      analytics.testerHousehold = null;
+      await pumpEventQueue();
+      await analytics.markInternalInstall(internal: false);
+      await pumpEventQueue();
+      expect(sent(), [
+        {'is_internal': false},
+        {'is_internal': true},
+        {'is_internal': false},
+      ]);
+      expect(analytics.flags.isOn('internal-only'), isFalse);
+    });
+
+    test('a no clears it; the next yes sends it again', () async {
+      await analytics.markInternalInstall(internal: true);
+      await analytics.decide(granted: true);
+      await pumpEventQueue();
+      await analytics.decide(granted: false);
+      await pumpEventQueue();
+      expect(native.methods, contains('resetPersonPropertiesForFlags'));
+      expect(native.flagProperties, isEmpty);
+      expect(analytics.flags.isOn('internal-only'), isFalse);
+      await analytics.decide(granted: true);
+      await pumpEventQueue();
+      expect(native.flagProperties, {'is_internal': true});
+      expect(analytics.flags.isOn('internal-only'), isTrue);
+    });
+  });
+
   test('a build without a key has every flag off', () async {
     final off = Analytics.off(store);
     await off.load();

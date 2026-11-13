@@ -99,6 +99,11 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
   /// again tells none twice.
   static const _toldRemovalsPrefix = 'removals.told.';
 
+  /// The grocery log's view, `journal` or `stores` (job 199); absent is
+  /// the journal. Kept across sign-outs like the theme: it belongs to the
+  /// device.
+  static const _logViewKey = 'log.view';
+
   static String _householdKey(String userId) => '$_householdPrefix$userId';
 
   static String _listKey(String userId, String householdId) =>
@@ -133,6 +138,12 @@ class DeviceCache(final SharedPreferencesAsync _prefs)
         ? _prefs.remove(_themeKey)
         : _prefs.setString(_themeKey, name),
   );
+
+  /// The grocery log's view as saved, or null.
+  Future<String?> logView() => _readString(_logViewKey);
+
+  Future<void> saveLogView(String name) =>
+      _write(() => _prefs.setString(_logViewKey, name));
 
   @override
   Future<String?> installId() => _readString(_installIdKey);

@@ -11721,3 +11721,110 @@ project. Migration `20261112232617_per_user_premium.sql`; docs/PURCHASES.md "Per
   every store, a PR deletes the superseded amounts. USD, GBP, CHF and the yearly-only
   storefronts keep today's store figures; Ops sets their new prices without Peter, and a PR
   records what the stores then report. No store, RevenueCat or console was touched.
+
+## Job 199: grocery log, G1 journal and G2 store timeline behind `grocery-log`, 2026-11-13
+
+Peter's picks: t828u (13 Nov 2026 07:51 Europe/Berlin) and t830u (07:57). They replace the
+"waiting for Peter's pick" state of job 198's prototypes (`docs/design/grocery-log/`).
+
+- **Two views, one button (t828u).** The Verlauf tab shows G1 `trip-journal-by-date` (default)
+  or G2 `store-timeline`. One icon button at the top of the screen cycles G1 → G2 → G1; its
+  tooltip names the view it switches to. The choice is a device preference (`DeviceCache`
+  key `log.view`), like the theme: no server setting exists for per-user preferences, and the
+  view is a display choice, not data. G3 (prompt as home), G4 (calendar as home) and G5
+  (relist as home) were not picked and are not built.
+- **The calendar sits in G1's header, as a month grid.** Neither G1 nor G2 had a calendar in the
+  prototypes; only G4 did. Peter's example (Lidl twice and Rewe once on one day) is a month-grid
+  pattern, and a week strip would hide every trip outside the current week. G2 keeps its date
+  labels on the trip rows and gets no second calendar.
+- **Dots: one per trip, at most three, no +N (t828u, t830u).** Each past day shows overlapping
+  round dots, one per trip that day, newest first (leftmost and on top of the pile), each in its
+  store's colour with a ring in the surface colour between them. Four or more trips still show three dots and no "+N"; the
+  day's screen-reader label gives the real count ("Donnerstag, 12. November, 4 Einkäufe").
+  G4's look (same-colour hex marks in a row) was deliberately not copied.
+- **Store colours come from the token palette by household store order.** Stores have no
+  colour of their own (`StoreBadge`: retailers get plain names and neutral marks, Legal
+  Addendum D). A store's dot takes slot `index mod 6` of its place in the household's store
+  order: brand, tomato, mint, honey, then success and warning (light) or cobalt and mintEdge
+  (dark; `accent` equals `brand`, and dark `success` equals `mint`). The colours therefore match
+  the list's section order and are distinct for the first six stores. Reordering stores
+  reorders the colours; that keeps every screen consistent at any moment, which a hash of the
+  store id could not (two stores could share a colour). A trip without a store, or whose store
+  was deleted, gets a neutral grey dot. Every dot has a thin navy outline so honey stays visible.
+- **A day tap filters, it does not scroll.** Tapping a past day shows only that day's trips
+  under an "Einkäufe am …" line with a clear button; the same day again clears. An empty past
+  day offers "Einkauf eintragen" for that day. Future days are not buttons.
+- **A new trip picks no store by itself.** As in the prototype (`draftFrom`: `store: ''`), the
+  sheet opened from "Eintragen" or the empty state has no store chip picked; "Ohne Laden" is a
+  choice like a store, not the default, so a trip at Lidl is not saved storeless by a skipped
+  tap. Saving without a choice says "Wähle einen Laden." under the chips, outside any pill, and
+  saves nothing. G2's + and the list's card preset their store (or "Ohne Laden" for the
+  storeless section); a household without stores starts at "Ohne Laden". `StorePick` in
+  `trip_sheet.dart` holds the three states.
+- **English says "trip".** One visit to one store is a "trip" in every English string ("Log a
+  trip", "Trips on …", "Log your trip to Lidl?"); "shop" reads as the store. German keeps
+  "Einkauf".
+- **Trips snapshot their items.** `public.trips` stores `items` as a JSON array of
+  `{name, quantity, canonical_key}`, never `items` ids. Verified in
+  `supabase/tests/grocery_log.test.sql`: re-adding a bought item updates the same `items` row
+  back to `active` and clears its `bought_at`/`bought_by`; ticking it again sets a new
+  `bought_at` on the same row. A link to the row would lose the earlier trip. After re-add,
+  re-tick, rename and delete of that row the trip is unchanged. `canonical_key` comes from
+  `public.canonical_key(name)` on the server, so later suggestions can join trips by key without
+  a schema change; no suggestion uses it yet.
+- **Store name is a snapshot too.** `store_id` follows items' composite FK with
+  `on delete set null (store_id)`; `store_name` keeps the name, so a deleted store's trips stay
+  readable and G2 groups them under that name. Saving such a trip with no store keeps the name
+  (`save_trip`), and the sheet shows it as the selected store with "Dieser Laden wurde gelöscht."
+- **Writes are idempotent RPCs.** The app creates the trip id; `save_trip` upserts by id, so a
+  retried save changes nothing; the sheet mints the id once, so a retry after a lost answer
+  writes the same row. Trip writes are not `ItemOp`s: they are not item mutations and need no
+  optimistic list folding. A failed save or delete keeps the sheet open and says so in red above
+  its buttons (review 0: a snackbar sat on Speichern for 4 s, right where the retry goes); there
+  is no offline queue for trips (the sheet is a deliberate act, and the user sees the failure).
+- **H1, Free history is the last 4 weeks (t830u).** The window is 28 calendar days including
+  today: a Free user sees trips with `shopped_on >= today - 27`, where today is the device's
+  local date, sent as `p_today` and clamped to the server's `current_date ± 1`, so a wrong clock
+  cannot widen it by more than a day. The server enforces it: direct `select` on `trips` is
+  revoked, reads go through `trip_history(p_household, p_today)`, which returns the visible
+  trips, `premium`, `since` and the count of hidden older trips. Premium is the rule
+  `integration_gate` uses since job 185: `household_has_premium(p_household) or
+  user_has_premium(auth.uid())`, so household entitlements (household-bound Lifetime,
+  promotional and tester grants) open it for every member, a purchase of the user's own for
+  that user only. Older trips are kept (no purge) and appear once the user has Premium; the
+  screen refetches when the entitlement changes. Logging stays unlimited for everyone, any past day.
+- **Locked history is quiet.** With hidden trips, G1 and G2 end in one row with a lock icon
+  ("Ältere Einkäufe siehst du mit Snacklist Premium", "2 ältere Einkäufe"), and the calendar
+  marks days before the window muted with a lock, without dots, not tappable, with the same
+  hint once under the month. The row is its title and count, never more: before sales start
+  nothing may say "bald verfügbar" or "kaufst du in der iPhone- oder Android-App" (job 87,
+  `premium.md`). It opens the Premium page (`/more/lifetime?from=history`, `paywall_viewed`
+  entry `history`, a chevron and button semantics) exactly when More lists "Snacklist Premium"
+  (`premiumListed()`: the `premium_offer` switch on and, in a store build, the purchases define,
+  or Premium held); otherwise it is plain text. No new pricing copy; the copy never says all
+  history is free.
+- **H2, the prompt appears when a store's section is fully ticked (t830u, confirmed).** The
+  list remembers what this device ticked (`OwnItemTicked`), by store section. When the shown
+  list has no open item of that store left, a card offers "Einkauf bei Lidl eintragen?" with
+  Eintragen and Später. Not on the first tick, not tied to `TripCompleted`, not on backgrounding.
+  A partner's ticks never prompt. An item put back leaves its prompt; a prompt with nothing left
+  goes. Another list or household starts over. The cards live in memory only.
+- **H3, one prompt and one trip per store.** Two stores ticked off give two cards in store order;
+  each Eintragen opens the sheet prefilled with that store, today and the ticked items with their
+  quantities. Items stay in "Zuletzt verwendet" as before; logging does not touch the list.
+- **H4, privacy and retention (confirmed).** Trips go with the household (cascade); `logged_by`
+  is nulled when the account is deleted (FK) and when the member leaves
+  (`household_member_forget_user`). `export_my_data` has a `trips_logged` key with the trips the
+  user logged. No time-based purge. Not in the realtime publication (the screen fetches on open,
+  on return to the tab and after own saves), not on the public API or MCP. The Art. 9 question
+  for drugstore lines is in NEEDS_PETER ("Job 199"); the flagged merge does not wait for it.
+- **Analytics.** `trip_logged` with `source` (`manual` or `prompt`) for new trips only; nothing
+  about stores or items. Flags can now be targeted by `is_internal`: the app hands it to PostHog
+  as a person property for flag evaluation only (no person profiles), so `grocery-log` can be
+  released to internal installs, Peter's TestFlight among them (t834u), before anyone else.
+- **The tab bar fits three tabs at 358 px.** Each tab first gets the width its label needs; with
+  large text the unselected tabs show only their icon (screen readers keep the names). With the
+  flag off the history branch is still registered (StatefulShellRoute branches are static) but
+  has no tab, and `/history` redirects to the list. Liste and Mehr keep branch indices 0 and 1.
+- **No Vercel preview (t834u).** Peter reviews on TestFlight with the flag on for his install;
+  the next green `main` build after the merge carries it.
