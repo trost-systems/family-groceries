@@ -157,8 +157,13 @@ site's `ignoreCommand` (`site/vercel.json`) runs `site/scripts/supabase-gate.mjs
 before the build:
 
 - It lists the commits since the live site (`VERCEL_GIT_PREVIOUS_SHA`, the
-  last successful production deployment, up to this commit; only this commit
-  when that one is not in Vercel's 10-commit clone).
+  last successful production deployment, up to this commit). Vercel clones
+  10 commits deep; when the live site's commit is further back (after a run
+  of ERROR builds, say), the gate fetches more history from GitHub, up to
+  850 commits. If it still cannot reach that commit, it exits 2: checking
+  only this commit would skip an earlier commit whose run failed. Check
+  **Supabase deploy** for the commits in between, then Redeploy with the
+  Ignore Build Step off.
 - None of them touches the workflow's paths (`DEPLOY_PATHS` in the script;
   a site test keeps it equal to `on.push.paths`): the site builds at once.
   This is the case for a site-only push.
@@ -176,8 +181,14 @@ before the build:
 A site-only push that follows a mixed push before that push's site is live
 waits for the mixed push's run too: it carries the same pages. Once the site
 of a commit with a green run is live, later site-only pushes no longer wait
-for anything. A commit whose message has `[skip ci]` starts no run; the gate
-then waits 90 s for one and builds.
+for anything. A commit whose message has a skip-CI marker (or the
+`skip-checks: true` trailer) starts no run; the gate then waits 90 s for one
+and builds.
+
+When a mixed push and a site-only push behind it both wait on the same run,
+both open when it turns green, about 30 s apart at most. If the older one
+finished last and took the domains, the next push corrects it; or promote the
+newer deployment in Vercel.
 
 After a failed run, the site of that commit stays off production. Fix
 forward: the next push's run succeeds and its site carries both changes. If
@@ -187,10 +198,12 @@ Step" on), and the gate passes. To publish a site past a failing Supabase
 deploy on purpose, Redeploy with that box off.
 
 The gate calls the GitHub API without a token (60 requests per hour per
-address; a normal deploy needs about 10, and a spent limit makes the gate sleep until its reset). If a build log shows `GitHub
-answered 403` with `remaining 0`, a read-only GitHub token in the project's
-environment variable `GITHUB_ACTIONS_READ_TOKEN` lifts the limit
-([`NEEDS_PETER.md`](NEEDS_PETER.md), "Job 209"). A waiting build holds one of
+address; a normal deploy needs about 10, and a spent limit makes the gate
+sleep until its reset). Vercel's build machines share addresses with other
+customers, so a spent limit is not ours to prevent: a read-only GitHub token
+in the project's environment variable `GITHUB_ACTIONS_READ_TOKEN` lifts it,
+and is recommended ([`NEEDS_PETER.md`](NEEDS_PETER.md), "Job 209"). Without
+it, the sign is `GitHub answered 403` with `remaining 0` in the build log. A waiting build holds one of
 the team's concurrent build slots, so an app or MCP proxy build may queue
 behind it for those minutes.
 

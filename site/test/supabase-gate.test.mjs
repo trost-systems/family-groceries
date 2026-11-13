@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import yaml from 'js-yaml';
-import { DEPLOY_PATHS, decide, main, planFromGit } from '../scripts/supabase-gate.mjs';
+import { DEPLOY_PATHS, decide, main, planFromGit, supportedPattern } from '../scripts/supabase-gate.mjs';
 import { REPO_DIR, SITE_DIR, tempDir } from './helpers.mjs';
 
 const LIMITS = { graceMs: 90_000, limitMs: 25 * 60_000 };
@@ -58,6 +58,8 @@ test('decide: a timeout says to redeploy once supabase-deploy is green', () => {
 test('DEPLOY_PATHS equals the on.push.paths of supabase-deploy.yml', () => {
   const workflow = yaml.load(readFileSync(join(REPO_DIR, '.github/workflows/supabase-deploy.yml'), 'utf8'));
   assert.deepEqual(DEPLOY_PATHS, workflow.on.push.paths);
+  for (const p of DEPLOY_PATHS) assert.ok(supportedPattern(p), `touchesDeploy cannot match ${p}; teach it the pattern`);
+  assert.ok(!supportedPattern('scripts/*.sh') && !supportedPattern('supabase/**/x.sql'));
 });
 
 test('vercel.json runs the gate as its ignoreCommand', () => {
@@ -65,12 +67,12 @@ test('vercel.json runs the gate as its ignoreCommand', () => {
   assert.equal(config.ignoreCommand, 'node scripts/supabase-gate.mjs');
 });
 
-function tempRepo() {
-  const dir = tempDir();
+function tempRepo(dir = tempDir()) {
   const git = (args) => execFileSync('git', args, { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   git(['init', '-q', '-b', 'main']);
   git(['config', 'user.email', 'test@example.com']);
   git(['config', 'user.name', 'test']);
+  git(['config', 'uploadpack.allowReachableSHA1InWant', 'true']);
   const commit = (message, files) => {
     for (const file of files) {
       mkdirSync(dirname(join(dir, file)), { recursive: true });
@@ -80,7 +82,7 @@ function tempRepo() {
     git(['commit', '-q', '-m', message]);
     return git(['rev-parse', 'HEAD']).trim();
   };
-  return { git, commit };
+  return { dir, git, commit };
 }
 
 test('planFromGit: range, triggering commits, [skip ci] and an unknown previous SHA', () => {
@@ -101,11 +103,36 @@ test('planFromGit: range, triggering commits, [skip ci] and an unknown previous 
 
   const skipped = commit('migration [skip ci]', ['supabase/migrations/1.sql']);
   assert.deepEqual(planFromGit(git, skipped, lookalike), { head: skipped, range: [skipped], triggering: [skipped], headTriggers: false });
+  const trailer = commit('migration\n\nskip-checks: true', ['supabase/migrations/2.sql']);
+  assert.equal(planFromGit(git, trailer, skipped).headTriggers, false);
 
-  const missing = '0123456789abcdef0123456789abcdef01234567';
-  for (const previous of [undefined, '', missing, skipped]) {
+  for (const previous of [undefined, '']) {
     assert.deepEqual(planFromGit(git, lookalike, previous).range, [lookalike], `previous ${previous}`);
   }
+  const missing = '0123456789abcdef0123456789abcdef01234567';
+  for (const previous of [missing, skipped]) {
+    assert.throws(() => planFromGit(git, lookalike, previous), /not an ancestor/, `previous ${previous} fails closed`);
+  }
+});
+
+test('planFromGit: a live site older than the shallow clone deepens it and keeps the failed commit in range', () => {
+  const origin = tempRepo();
+  const live = origin.commit('live site', ['site/index.md']);
+  const failed = origin.commit('mixed, its supabase-deploy failed', ['site/policy.md', 'supabase/functions/api/index.ts']);
+  for (let i = 0; i < 12; i += 1) origin.commit(`site only ${i}`, [`site/page${i}.md`]);
+  const head = origin.git(['rev-parse', 'HEAD']).trim();
+  const dir = tempDir();
+  execFileSync('git', ['clone', '-q', '--depth', '10', `file://${origin.dir}`, dir]);
+  const git = (args) => execFileSync('git', args, { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  assert.throws(() => git(['cat-file', '-e', `${live}^{commit}`]), 'the live commit is outside the clone');
+
+  const plan = planFromGit(git, head, live, `file://${origin.dir}`);
+  assert.equal(plan.range.length, 13);
+  assert.deepEqual(plan.triggering, [failed]);
+  assert.equal(decide(plan, [{ sha: failed, status: 'completed', conclusion: 'failure', url: 'u' }], 0, LIMITS).action, 'fail');
+
+  const unreachable = '0123456789abcdef0123456789abcdef01234567';
+  assert.throws(() => planFromGit(git, head, unreachable, `file://${origin.dir}`), /Redeploy with the Ignore Build Step off/);
 });
 
 function harness({ ref = 'main', responses = [], files = ['supabase/functions/x.ts'], previous, rateLimitReset = 0 } = {}) {
@@ -192,9 +219,10 @@ test('main: a spent rate limit sleeps until its reset, never past the limit', as
   assert.deepEqual(late.slept, [25 * 60_000]);
 });
 
-test('main: a previous SHA git does not know checks HEAD alone', async () => {
+test('main: a live site commit git cannot find fails closed', async () => {
   const h = harness({ responses: [[['completed', 'success']]], previous: 'not-a-sha' });
-  assert.equal(await h.result, 1);
+  assert.equal(await h.result, 2);
+  assert.match(h.lines.join('\n'), /not an ancestor/);
 });
 
 test('main: an unexpected error fails closed', async () => {

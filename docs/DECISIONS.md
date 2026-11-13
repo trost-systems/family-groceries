@@ -12132,3 +12132,19 @@ build of `hummlist-site` waits for the push-triggered **Supabase deploy** run th
   90 of 90 locally (each test 10 times in each engine) and the CI runs in the PR. All three tests
   are now `test.slow` in WebKit, not only the wasm one: on CI the JS fallback ran out of its 60 s in
   5 of 10 runs (53 s on main already).
+
+
+### Job 209 review 0 fix, 2026-11-13
+
+- **The gate no longer falls back to HEAD alone.** With the live site's commit outside Vercel's
+  10-commit clone, the range used to shrink to HEAD, skipping an earlier commit whose
+  supabase-deploy failed: after a run of ERROR builds about ten pushes long, the next site-only
+  push would have published that commit's pages. `planFromGit` now deepens the clone from GitHub
+  (`git fetch --deepen`, 40, 160 and 640 commits; git over HTTPS, no API quota) and fails closed
+  when the commit is still unreachable or not an ancestor. Reproduced on main's real history
+  (head 61434faf, live a1f53b75): before, no triggering commit; now 799f8ca5 is in range and its
+  run decides.
+- The gate also honours the `skip-checks: true` trailer, as push-pr.sh does, and a test rejects a
+  deploy path pattern `touchesDeploy` cannot match. The out-of-order case (two waiting builds
+  opening on one green run) and the shared-address rate limit are documented; the token is now
+  recommended in NEEDS_PETER.
