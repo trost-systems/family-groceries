@@ -64,7 +64,6 @@
   "syncFailed": "Change refused: {name}",
   "@syncFailed": {"placeholders": {"name": {"type": "String"}}},
   "inviteMember": "Invite your partner",
-  "joinOtherHousehold": "Join another household",
   "signOut": "Sign out",
   "inviteTitle": "Invite member",
   "inviteBody": "Enter this code in the app or share the link. The invite is valid for 7 days and for one person.",

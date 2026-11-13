@@ -57,8 +57,8 @@ class _JoinViewState() extends State<_JoinView> {
     super.dispose();
   }
 
-  /// Back where the user came from (More, whose page this is), or to the
-  /// list, which is Step 1 without a household. The link is answered.
+  /// Back where the user came from, or to the list, which is Step 1
+  /// without a household. The link is answered.
   void _cancel() {
     context.read<PendingInvite>().clear();
     final navigator = Navigator.of(context);

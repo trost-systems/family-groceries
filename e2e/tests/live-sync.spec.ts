@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { addField, invitePath, openJoinLink, signUpHere, addItem, apiAs, confirmJoin, createHousehold, createInviteCode, editField, householdChip, invitePreview, itemRow, joinWithCode, must, newEmail, offlineIndicator, openEdit, openMore, saveEdit, screenshot, signUp, signUpWithHousehold, skipInvite, switchHousehold, tick, typeInto, within } from './helpers';
+import { addField, invitePath, openJoinLink, signUpHere, addItem, apiAs, confirmJoin, createHousehold, createInviteCode, editField, householdChip, invitePreview, itemRow, joinWithCode, must, newEmail, offlineIndicator, openEdit, openHouseholds, saveEdit, screenshot, signUp, signUpWithHousehold, skipInvite, switchHousehold, tick, typeInto, within } from './helpers';
 
 test('two members of one household see each other\'s changes live', async ({ browser }) => {
   const peter = await (await browser.newContext()).newPage();
@@ -62,7 +62,7 @@ test('an invite link takes a new user through sign-up straight into the househol
   await within(2_000, (timeout) => expect(itemRow(peter, 'Brot'), 'and the other way').toBeVisible({ timeout }));
 });
 
-test('a member of another household joins with a code from the menu and keeps both', async ({ browser }) => {
+test('a member of another household joins with a code from the household sheet and keeps both', async ({ browser }) => {
   const peter = await (await browser.newContext()).newPage();
   const lea = await (await browser.newContext()).newPage();
   const errors: string[] = [];
@@ -76,8 +76,9 @@ test('a member of another household joins with a code from the menu and keeps bo
   await signUpWithHousehold(lea, newEmail('lea'));
   await addItem(lea, 'Tee');
 
-  await openMore(lea, 'Anderem Haushalt beitreten');
-  await expect(lea).toHaveURL(/\/more\/join$/);
+  await openHouseholds(lea, 'Unser Haushalt');
+  await lea.getByRole('button', { name: 'Mit Code beitreten', exact: true }).click();
+  await expect(lea).toHaveURL(/\/join$/);
   await typeInto(lea.getByRole('textbox', { name: 'Einladungscode' }), code.toLowerCase());
   await lea.getByRole('button', { name: 'Weiter', exact: true }).click();
   await expect(invitePreview(lea, 'Familie Trost')).toBeVisible();

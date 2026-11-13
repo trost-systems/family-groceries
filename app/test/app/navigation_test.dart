@@ -25,20 +25,51 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('More, Anderem Haushalt beitreten, back: More again', (
-    tester,
-  ) async {
-    final more = await pumpMore(tester, app: true);
-    await tester.tap(key('more-join'));
+  // Job 206: joining is the household sheet's, no longer a row of More.
+  testWidgets('List, the household sheet, Mit Code beitreten, back: the '
+      'list', (tester) async {
+    final more = await pumpMore(tester, location: listPath, app: true);
+    await tester.tap(key('household-chip'));
+    await tester.pumpAndSettle();
+    await tester.tap(key('household-join'));
     await tester.pumpAndSettle();
     expect(key('join-screen'), findsOneWidget);
-    expect(more.router.state.uri.path, moreJoinPath);
-    expect(tab(tester), 1, reason: 'inside the More tab');
+    expect(more.router.state.uri.path, joinCodePath);
     await back(tester);
     expect(key('join-screen'), findsNothing);
-    expect(key('more-screen'), findsOneWidget);
-    expect(tab(tester), 1);
-    expect(more.router.state.uri.path, morePath);
+    expect(key('list-header'), findsOneWidget);
+    expect(tab(tester), 0);
+    expect(more.router.state.uri.path, listPath);
+  });
+
+  // Pushed over the list: Android's back returns to it instead of closing
+  // the app, on the join screen and on Neuer Haushalt.
+  for (final (row, page) in const [
+    ('household-join', 'join-screen'),
+    ('household-new', 'create-household-screen'),
+  ]) {
+    testWidgets('List, the household sheet, $row, system back: the list', (
+      tester,
+    ) async {
+      final more = await pumpMore(tester, location: listPath, app: true);
+      await tester.tap(key('household-chip'));
+      await tester.pumpAndSettle();
+      await tester.tap(key(row));
+      await tester.pumpAndSettle();
+      expect(key(page), findsOneWidget);
+      expect(await tester.binding.handlePopRoute(), isTrue, reason: 'popped');
+      await tester.pumpAndSettle();
+      expect(key(page), findsNothing);
+      expect(key('list-header'), findsOneWidget);
+      expect(tab(tester), 0);
+      expect(more.router.state.uri.path, listPath);
+    });
+  }
+
+  testWidgets('the old link /more/join opens the join screen', (tester) async {
+    final more = await pumpMore(tester, location: '/more/join', app: true);
+    expect(more.router.state.uri.path, joinCodePath);
+    expect(key('join-screen'), findsOneWidget);
   });
 
   testWidgets('List, Anpassen, a store, back, back: the list, its tab '

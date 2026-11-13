@@ -200,9 +200,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inviteMember => 'Invite your partner';
 
   @override
-  String get joinOtherHousehold => 'Join another household';
-
-  @override
   String get signOut => 'Sign out';
 
   @override

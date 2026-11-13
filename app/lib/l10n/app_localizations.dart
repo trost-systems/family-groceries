@@ -422,12 +422,6 @@ abstract class AppLocalizations {
   /// **'Partner einladen'**
   String get inviteMember;
 
-  /// No description provided for @joinOtherHousehold.
-  ///
-  /// In de, this message translates to:
-  /// **'Anderem Haushalt beitreten'**
-  String get joinOtherHousehold;
-
   /// No description provided for @signOut.
   ///
   /// In de, this message translates to:

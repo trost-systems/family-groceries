@@ -26,31 +26,44 @@ class const OnboardingPage({
   required final List<Widget> children,
   final List<Widget>? actions,
 
-  /// The app bar's back button; none when null and nothing to pop.
+  /// The app bar's back button, and Android's back; none when null and
+  /// nothing to pop.
   final VoidCallback? onBack,
   final Key? listKey,
   super.key,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(title),
-      automaticallyImplyLeading: false,
-      leading: onBack == null ? null : BackButton(onPressed: onBack),
-      actions: actions,
-    ),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: ListView(
-          key: listKey,
-          // Clear of the home indicator, and in the More tab of the
-          // floating tab pill.
-          padding: const EdgeInsets.all(
-            24,
-          ).add(EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom)),
-          shrinkWrap: true,
-          children: children,
+  Widget build(BuildContext context) => PopScope(
+    // A page gone to (the household sheet's join and create, job 206) is
+    // its navigator's only one: Android's back would close the app. Always
+    // there, since a wrapper that comes and goes with [onBack] would build
+    // the page anew and lose what was typed.
+    canPop: onBack == null,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) {
+        onBack?.call();
+      }
+    },
+    child: Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        automaticallyImplyLeading: false,
+        leading: onBack == null ? null : BackButton(onPressed: onBack),
+        actions: actions,
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: ListView(
+            key: listKey,
+            // Clear of the home indicator, and in the More tab of the
+            // floating tab pill.
+            padding: const EdgeInsets.all(24).add(
+              EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+            ),
+            shrinkWrap: true,
+            children: children,
+          ),
         ),
       ),
     ),

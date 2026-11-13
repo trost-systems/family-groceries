@@ -33,6 +33,7 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -215,6 +216,8 @@ Future<More> pumpMore(
       [Household(id: 'home', name: 'Zuhause')],
     ),
   );
+  // The household sheet asks for fresh counts as it opens.
+  when(session.refresh).thenAnswer((_) async {});
   final purchases = TestPurchases(
     session: session,
     store: store,
@@ -342,7 +345,7 @@ Future<More> pumpMore(
 /// in a build without analytics (no Nutzungsdaten row).
 const menuGroups = [
   ['menu-account', 'more-lifetime'],
-  ['more-invite', 'more-join'],
+  ['more-invite'],
   ['more-access'],
   ['more-settings'],
   ['more-tips', 'more-feedback', 'more-rate', 'more-help'],

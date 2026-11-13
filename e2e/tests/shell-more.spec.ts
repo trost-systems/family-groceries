@@ -5,6 +5,7 @@ import {
   addField, addItem, boxOf, itemRow, newEmail, password, screenshot, signUpWithHousehold, typeInto, inviteCodeLabel, wheelTo,
   openEmailSignIn,
   onboardingChip,
+  openHouseholds,
 } from './helpers';
 
 const moreTab = (page: Page) => page.getByRole('tab', { name: 'Mehr' });
@@ -31,15 +32,20 @@ test('More opens every entry; Nutzungsdaten is a page; the legal rows sit on Mor
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more$/);
 
-  // Job 78: More pushes the join screen, so back (and Abbrechen) returns to More, not the list.
+  // Job 206: joining is the list's household sheet's; More offers no join, and back (and Abbrechen) return to the list.
+  await expect(page.getByRole('button', { name: /^Partner einladen/ }), 'More is drawn').toBeVisible();
+  await expect(page.getByRole('button', { name: /beitreten/ }), 'no join row on More').toHaveCount(0);
+  await page.getByRole('tab', { name: 'Liste' }).click();
   for (const leave of ['Zurück', 'Abbrechen']) {
-    await wheelTo(page, page.getByRole('button', { name: 'Anderem Haushalt beitreten' }));
-    await page.getByRole('button', { name: 'Anderem Haushalt beitreten' }).click();
+    await openHouseholds(page, 'Unser Haushalt');
+    await page.getByRole('button', { name: 'Mit Code beitreten', exact: true }).click();
+    await expect(page).toHaveURL(/\/join$/);
     await expect(page.getByRole('textbox', { name: 'Einladungscode' })).toBeVisible();
     await page.getByRole('button', { name: leave, exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Mehr' }), `${leave} returns to More`).toBeVisible();
+    await expect(addField(page), `${leave} returns to the list`).toBeVisible();
     await expect(page.getByRole('textbox', { name: 'Einladungscode' })).toHaveCount(0);
   }
+  await openMore(page);
   await expect(page.getByRole('button', { name: 'Kategorien verwalten' }), 'job 78: under Liste → Anpassen now').toHaveCount(0);
 
   // Job 78: Liste → Anpassen lists every store, Ohne Laden last; a store opens its details.
