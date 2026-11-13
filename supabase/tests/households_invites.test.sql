@@ -569,8 +569,8 @@ select is((select count(*)::int from public.invite_preview_rate where window_sta
 select is(
   (select array_agg(p.proname::text order by p.proname) from pg_proc p
    where p.pronamespace = 'public'::regnamespace and has_function_privilege('anon', p.oid, 'execute')),
-  array['archive_deletes_at', 'items_rename_duplicate', 'items_skip_duplicate', 'preview_invite_public'],
-  'signed out, only preview_invite_public is new to call'
+  array['preview_invite_public'],
+  'signed out, only preview_invite_public can be called'
 );
 select is(
   (select array_agg(p.proname::text order by p.proname) from pg_proc p
