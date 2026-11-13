@@ -11,28 +11,48 @@ import { fileURLToPath } from 'node:url';
 export const DEPLOY_PATHS = ['supabase/**', 'scripts/smoke-remote.sh', 'scripts/mcp-smoke.sh', '.github/workflows/supabase-deploy.yml'];
 
 const SKIP_MARKERS = ['[skip ci]', '[ci skip]', '[no ci]', '[skip actions]', '[actions skip]'];
+const SKIP_TRAILER = /^skip-checks: *true$/m;
+// Vercel clones 10 commits deep. A live site further back gets the history fetched in these steps.
+const DEEPEN_STEPS = [40, 160, 640];
 const POLL_MS = 30_000;
 const GRACE_MS = 90_000;
 const LIMIT_MS = 25 * 60_000;
 const FETCH_TIMEOUT_MS = 15_000;
 const EXIT = { skip: 0, build: 1, fail: 2 };
 
+// touchesDeploy understands only `dir/**` and exact paths; a test rejects any other pattern.
+export const supportedPattern = (p) => !/[*?[\]{}!]/.test(p.endsWith('/**') ? p.slice(0, -3) : p);
+
 export function touchesDeploy(file) {
   return DEPLOY_PATHS.some((p) => (p.endsWith('/**') ? file.startsWith(p.slice(0, -2)) : file === p));
 }
 
-// git(args) returns stdout and throws on a non-zero exit.
-export function planFromGit(git, head, previous) {
-  const known = (sha) => {
+// git(args) returns stdout and throws on a non-zero exit. remote is the repository's fetch URL.
+// Without the live site's commit the range would shrink to HEAD and skip an earlier commit whose
+// supabase-deploy failed, so a commit that stays unknown after deepening fails closed.
+export function planFromGit(git, head, previous, remote) {
+  const succeeds = (args) => {
     try {
-      git(['cat-file', '-e', `${sha}^{commit}`]);
-      git(['merge-base', '--is-ancestor', sha, head]);
+      git(args);
       return true;
     } catch {
       return false;
     }
   };
-  const range = previous && known(previous) ? git(['rev-list', '--reverse', `${previous}..${head}`]).split('\n').filter(Boolean) : [head];
+  const present = () => succeeds(['cat-file', '-e', `${previous}^{commit}`]);
+  let range = [head];
+  if (previous) {
+    for (const depth of DEEPEN_STEPS) {
+      if (present() || git(['rev-parse', '--is-shallow-repository']).trim() !== 'true') break;
+      git(['fetch', '--quiet', '--no-tags', `--deepen=${depth}`, remote, head]);
+    }
+    if (!present() || !succeeds(['merge-base', '--is-ancestor', previous, head])) {
+      throw new Error(
+        `the live site's commit ${short(previous)} is not an ancestor of ${short(head)} within ${DEEPEN_STEPS.reduce((a, b) => a + b, 10)} commits; check supabase-deploy for the commits in between, then Redeploy with the Ignore Build Step off`,
+      );
+    }
+    range = git(['rev-list', '--reverse', `${previous}..${head}`]).split('\n').filter(Boolean);
+  }
   if (range.at(-1) !== head) range.push(head);
   const triggering = range.filter((sha) =>
     git(['diff-tree', '--no-commit-id', '--name-only', '-r', '--root', '--diff-merges=first-parent', sha])
@@ -40,7 +60,7 @@ export function planFromGit(git, head, previous) {
       .some((file) => file && touchesDeploy(file)),
   );
   const message = git(['log', '-1', '--format=%B', head]).toLowerCase();
-  const headTriggers = triggering.includes(head) && !SKIP_MARKERS.some((m) => message.includes(m));
+  const headTriggers = triggering.includes(head) && !SKIP_MARKERS.some((m) => message.includes(m)) && !SKIP_TRAILER.test(message);
   return { head, range, triggering, headTriggers };
 }
 
@@ -70,10 +90,10 @@ const short = (sha) => sha.slice(0, 8);
 
 // Resolves to { runs, waitMs }: runs is null when GitHub gave no list, waitMs how long GitHub asks us to
 // back off (a rate limit's reset or Retry-After), else 0.
+const repoPath = (env) => `${env.VERCEL_GIT_REPO_OWNER || 'trost-systems'}/${env.VERCEL_GIT_REPO_SLUG || 'snacklist'}`;
+
 async function fetchRuns(fetch, env, log, now) {
-  const owner = env.VERCEL_GIT_REPO_OWNER || 'trost-systems';
-  const repo = env.VERCEL_GIT_REPO_SLUG || 'snacklist';
-  const url = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/supabase-deploy.yml/runs?event=push&branch=main&per_page=50`;
+  const url = `https://api.github.com/repos/${repoPath(env)}/actions/workflows/supabase-deploy.yml/runs?event=push&branch=main&per_page=50`;
   const headers = { accept: 'application/vnd.github+json', 'user-agent': 'snacklist-site-supabase-gate' };
   if (env.GITHUB_ACTIONS_READ_TOKEN) headers.authorization = `Bearer ${env.GITHUB_ACTIONS_READ_TOKEN}`;
   try {
@@ -105,7 +125,7 @@ export async function main({ env, git, fetch, now, sleep, log }) {
       return EXIT.skip;
     }
     const head = env.VERCEL_GIT_COMMIT_SHA || git(['rev-parse', 'HEAD']).trim();
-    const plan = planFromGit(git, head, env.VERCEL_GIT_PREVIOUS_SHA);
+    const plan = planFromGit(git, head, env.VERCEL_GIT_PREVIOUS_SHA, `https://github.com/${repoPath(env)}.git`);
     const start = now();
     let lastReason;
     for (;;) {

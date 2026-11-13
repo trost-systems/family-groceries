@@ -1758,17 +1758,20 @@ Before the flag goes on for everyone: the privacy policy's section 5 lists what 
 and does not name prices or the household currency yet (`docs/PRIVACY_DATA_MAP.md`, differences
 to the policy). That text needs your approval first.
 
-## Job 209: optional GitHub token for the site's deploy gate
+## Job 209: recommended GitHub token for the site's deploy gate
 
-Nothing is needed for the gate to work. The site's build asks GitHub's public API whether
-**Supabase deploy** has finished, without a token (60 requests per hour per address). Only if a
-`hummlist-site` build log in Vercel shows `GitHub answered 403 (rate limit remaining 0, ...)`:
+The gate works without it. The site's build asks GitHub's public API whether **Supabase deploy**
+has finished, without a token (60 requests per hour per address). Vercel's build machines share
+addresses with other customers, so that limit can be spent by others; the build then sleeps
+until the reset or ends in ERROR after 25 minutes, and the new site silently stays unpublished
+(the build log says `GitHub answered 403 (rate limit remaining 0, ...)`). A token avoids that:
 
 1. GitHub, Settings, Developer settings, Fine-grained tokens: a token for
    `trost-systems/snacklist` with **Actions: Read-only** and nothing else.
 2. Vercel project `hummlist-site`, Settings, Environment Variables: add
    `GITHUB_ACTIONS_READ_TOKEN` with that token for **Production**, marked Sensitive.
-3. Redeploy the ERROR deployment (keep "Use project's Ignore Build Step" on).
+3. If a deployment already ended in ERROR this way, Redeploy it (keep "Use project's Ignore
+   Build Step" on).
 
 The dashboard's old Ignored Build Step can stay as it is: `site/vercel.json`'s `ignoreCommand`
 overrides it.
