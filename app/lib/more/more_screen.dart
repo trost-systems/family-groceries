@@ -32,6 +32,7 @@ import 'package:family_groceries/settings/account_screen.dart';
 import 'package:family_groceries/settings/settings_screen.dart';
 import 'package:family_groceries/tips/tips_page.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
@@ -701,6 +702,16 @@ class const _Version() extends StatelessWidget {
             key: const ValueKey('more-internal'),
             style: Theme.of(context).textTheme.bodySmall,
           ),
+          if (context.read<Analytics>().flagInstallId case final id?)
+            TextButton(
+              key: const ValueKey('more-install-id'),
+              onPressed: () {
+                unawaited(Clipboard.setData(ClipboardData(text: id)));
+                Notices.of(context)
+                    .showSnackBar(SnackBar(content: Text(l10n.copied)));
+              },
+              child: Text(l10n.copyInstallId(id)),
+            ),
           TextButton(
             key: const ValueKey('more-test-error'),
             onPressed: _raiseTestError,

@@ -1721,3 +1721,27 @@ merge; these are the steps to see it and the one open legal question.
    du mit Snacklist Premium" / "See older trips with Snacklist Premium". It reuses the Premium
    naming of existing hints and adds no pricing copy. Say if you want different words before the
    flag goes beyond internal installs.
+## Job 190: prices and trip total on your TestFlight phone only (2026-11-13)
+
+Prices, the list total and the store subtotals ship behind the PostHog flag
+`prices-and-trip-total`, off for everyone. To review them on TestFlight (t834u), turn it on for
+your install only. Flags load only after the analytics yes, so:
+
+1. On the TestFlight build that carries this change (the first green `main` build after it
+   merges), say yes to Nutzungsdaten (More → Nutzungsdaten) if you have not.
+2. More → long press the version line at the bottom → "Interne Installation" appears. Tap
+   "Installations-ID kopieren: …" and send the id to the lead (it is the PostHog distinct id of
+   this install, not your account; a reinstall makes a new one).
+3. Lead, in PostHog (project 319492): create the flag `prices-and-trip-total` if it does not
+   exist, release condition "Person property `distinct_id` equals <that id>", 100 %, no other
+   condition. Save. The app picks it up on the next start or flag refresh.
+   PostHog documents this condition for `distinct_id`; it has not been tried on this project
+   yet, where person profiles are off. If the phone still shows no "+ Preis" chip after a
+   restart, use the flag's "Overrides" with the same id instead, and tell the lead.
+   It targets the phone, not the account: a reinstall makes a new id.
+4. To turn it off again, remove the condition. Lea's phone stays off unless her install id is
+   added the same way.
+
+Before the flag goes on for everyone: the privacy policy's section 5 lists what an entry holds
+and does not name prices or the household currency yet (`docs/PRIVACY_DATA_MAP.md`, differences
+to the policy). That text needs your approval first.

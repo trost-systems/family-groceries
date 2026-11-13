@@ -1113,6 +1113,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get internalInstall => 'Internal installation';
 
   @override
+  String copyInstallId(String id) {
+    return 'Copy installation ID: $id';
+  }
+
+  @override
   String get sendTestError => 'Send a test error';
 
   @override
@@ -2736,4 +2741,149 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripLogged => 'Trip logged';
+
+  @override
+  String get priceAdd => 'Price';
+
+  @override
+  String priceChipEmpty(String name) {
+    return 'Price for $name';
+  }
+
+  @override
+  String priceChipSet(String name, String amount) {
+    return 'Price for $name: $amount, change';
+  }
+
+  @override
+  String get priceField => 'Price';
+
+  @override
+  String get weightField => 'Weight in kg';
+
+  @override
+  String get pricePerPiece => 'per item';
+
+  @override
+  String get pricePerKg => 'per kg';
+
+  @override
+  String get pricePerLitre => 'per l';
+
+  @override
+  String get priceUnitLitre => 'l';
+
+  @override
+  String get volumeField => 'Amount in l';
+
+  @override
+  String get volumeErrorEmpty => 'Enter the amount.';
+
+  @override
+  String get volumeErrorZero => 'The amount must be over 0 ml.';
+
+  @override
+  String get volumeErrorTooLarge => 'At most 50 l.';
+
+  @override
+  String get priceLine => 'Total';
+
+  @override
+  String get priceBasisLabel => 'Price is';
+
+  @override
+  String get priceUnitPiece => 'Item';
+
+  @override
+  String get priceUnitKg => 'kg';
+
+  @override
+  String get priceUnitLabel => 'Unit';
+
+  @override
+  String get priceCountLess => 'One less';
+
+  @override
+  String get priceCountMore => 'One more';
+
+  @override
+  String priceCount(int count) {
+    return 'Quantity $count';
+  }
+
+  @override
+  String priceTogether(String amount) {
+    return 'Together $amount';
+  }
+
+  @override
+  String priceUnitIs(String amount, String per) {
+    return 'That is $amount $per';
+  }
+
+  @override
+  String priceTotalAfter(String amount) {
+    return 'Total after $amount';
+  }
+
+  @override
+  String priceDearer(String amount) {
+    return '$amount more than last time';
+  }
+
+  @override
+  String priceCheaper(String amount) {
+    return '$amount less than last time';
+  }
+
+  @override
+  String get priceSame => 'Same as last time';
+
+  @override
+  String get priceErrorEmpty => 'Enter a price.';
+
+  @override
+  String priceErrorTooLarge(String amount) {
+    return 'At most $amount per item.';
+  }
+
+  @override
+  String get weightErrorEmpty => 'Enter the weight.';
+
+  @override
+  String get weightErrorZero => 'The weight must be over 0 g.';
+
+  @override
+  String get weightErrorTooLarge => 'At most 50 kg.';
+
+  @override
+  String get priceRemove => 'Remove price';
+
+  @override
+  String get tripTotal => 'Shopping total';
+
+  @override
+  String tripCounts(int priced, int open) {
+    return '$priced priced · $open open';
+  }
+
+  @override
+  String tripTotalLabel(String amount, int priced, int open) {
+    return 'Shopping total $amount, $priced priced, $open open';
+  }
+
+  @override
+  String storeSubtotal(String store, String amount) {
+    return 'Total $store $amount';
+  }
+
+  @override
+  String get currencyTitle => 'Currency';
+
+  @override
+  String get currencyHint =>
+      'For prices and the shopping total, for everyone in the household';
+
+  @override
+  String get currencyPick => 'Choose currency';
 }

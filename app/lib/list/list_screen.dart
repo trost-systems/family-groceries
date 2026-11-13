@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' show max;
 import 'dart:ui' show SemanticsHitTestBehavior;
 
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/scroll_through.dart';
@@ -25,6 +26,7 @@ import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/list/list_scope.dart';
 import 'package:family_groceries/list/list_tabs.dart';
+import 'package:family_groceries/list/list_view/price_views.dart';
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/sync_indicator.dart';
@@ -116,6 +118,10 @@ class _ShoppingListState() extends State<_ShoppingList> {
 
   /// The page under the add bar, which takes the wheel over the bar.
   final _page = GlobalKey(debugLabel: 'list-page');
+
+  /// The item whose price editor is open (job 190): the add bar steps
+  /// aside for it, so the editor and the total fit above the keyboard.
+  final _pricing = ValueNotifier<String?>(null);
 
   /// The household chip's and Anpassen's widths in the top bar, once laid
   /// out: the sync pill sits right of the chip, the chip leaves Anpassen
@@ -235,6 +241,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
 
   @override
   void dispose() {
+    _pricing.dispose();
     _chipWidth.dispose();
     _anpassenWidth.dispose();
     _statusRoom.dispose();
@@ -434,6 +441,12 @@ class _ShoppingListState() extends State<_ShoppingList> {
     final tabs = context.select<ListCubit, bool>(
       (c) => ListTabs.shownFor(c.state.catalog.lists),
     );
+    final prices = context.select<Flags?, bool>(
+      (flags) => flags?.isOn(pricesFlag) ?? false,
+    );
+    final hasItems = context.select<ListCubit, bool>(
+      (c) => c.state.items.isNotEmpty,
+    );
     return ReviewPromptTrigger(
       cubit: context.read<ListCubit>(),
       listening: _listening,
@@ -522,6 +535,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
                               child: BottomScrollEdge(
                                 child: ShoppingListView(
                                   onInteract: _leaveField,
+                                  pricing: _pricing,
                                   header: _Header(
                                     chipWidth: _chipWidth,
                                     anpassenWidth: _anpassenWidth,
@@ -580,35 +594,57 @@ class _ShoppingListState() extends State<_ShoppingList> {
                 ),
               ],
             ),
-            bottomNavigationBar: ScrollThrough(
-              under: _page,
-              child: TextFieldTapRegion(
-                child: _AddBar(
-                  input: _input,
-                  inputScroll: _inputScroll,
-                  focus: _inputFocus,
-                  barFocus: _barFocus,
-                  autofocus: _autofocus,
-                  listening: _listening,
-                  onSubmit: () => unawaited(_submit()),
-                  onClose: _close,
-                  onLeave: _leaveField,
-                  onRefocus: _refocusAfterTap,
-                  dictation: switch (widget.dictation) {
-                    final dictation? => DictationButton(
-                      dictation: dictation,
-                      input: _input,
-                      onMessage: _snack,
-                      onListening: (listening) =>
-                          setState(() => _listening = listening),
-                      // The dictated text waits in the field; a tap opens it.
-                      onDone: () {
-                        _openOnFocus = false;
-                        _inputFocus.requestFocus();
-                      },
+            bottomNavigationBar: ValueListenableBuilder(
+              valueListenable: _pricing,
+              builder: (context, pricing, addBar) => Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (prices && hasItems)
+                    // In the add bar's place, it keeps clear of the shell's
+                    // tab pill as the add bar does.
+                    SafeArea(
+                      top: false,
+                      bottom: pricing != null,
+                      child: const TotalBar(),
                     ),
-                    null => null,
-                  },
+                  Visibility(
+                    visible: pricing == null,
+                    maintainState: true,
+                    child: addBar!,
+                  ),
+                ],
+              ),
+              child: ScrollThrough(
+                under: _page,
+                child: TextFieldTapRegion(
+                  child: _AddBar(
+                    input: _input,
+                    inputScroll: _inputScroll,
+                    focus: _inputFocus,
+                    barFocus: _barFocus,
+                    autofocus: _autofocus,
+                    listening: _listening,
+                    onSubmit: () => unawaited(_submit()),
+                    onClose: _close,
+                    onLeave: _leaveField,
+                    onRefocus: _refocusAfterTap,
+                    dictation: switch (widget.dictation) {
+                      final dictation? => DictationButton(
+                        dictation: dictation,
+                        input: _input,
+                        onMessage: _snack,
+                        onListening: (listening) =>
+                            setState(() => _listening = listening),
+                        // The dictated text waits in the field; a tap opens it.
+                        onDone: () {
+                          _openOnFocus = false;
+                          _inputFocus.requestFocus();
+                        },
+                      ),
+                      null => null,
+                    },
+                  ),
                 ),
               ),
             ),

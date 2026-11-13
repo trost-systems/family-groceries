@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:family_groceries/list/pricing.dart';
 import 'package:flutter/foundation.dart' show immutable, listEquals, mapEquals;
 
 enum ItemStatus() {
@@ -87,6 +88,8 @@ class const StoreCategory({
   };
 }
 
+const defaultCurrency = 'EUR';
+
 /// The household's categories, stores and store layouts: everything the list
 /// is sorted by. [categories] and [stores] are in their sort order.
 @immutable
@@ -99,6 +102,9 @@ class const Catalog({
   /// The household's lists in their order (job 169b K); empty from a server
   /// or a device copy without lists, which shows every item as one list.
   final List<HouseholdList> lists = const [],
+
+  /// The household's currency, an ISO 4217 code (job 190).
+  final String currency = defaultCurrency,
 }) {
   factory fromJson(Map<String, Object?> json) => Catalog(
     categories: [
@@ -121,6 +127,7 @@ class const Catalog({
       for (final row in json['lists']! as List<Object?>)
         HouseholdList.fromJson(row! as Map<String, Object?>),
     ],
+    currency: json['currency'] as String? ?? defaultCurrency,
   );
 
   Map<String, Object?> toJson() => {
@@ -129,7 +136,17 @@ class const Catalog({
     'layout': [for (final row in layout) row.toJson()],
     'members': [for (final m in members) m.toJson()],
     'lists': [for (final l in lists) l.toJson()],
+    'currency': currency,
   };
+
+  Catalog withCurrency(String currency) => Catalog(
+    categories: categories,
+    stores: stores,
+    layout: layout,
+    members: members,
+    lists: lists,
+    currency: currency,
+  );
 
   HouseholdList? list(String? id) => lists.where((l) => l.id == id).firstOrNull;
 
@@ -173,6 +190,7 @@ class const Catalog({
     layout: layout,
     members: members,
     lists: lists,
+    currency: currency,
   );
 
   Member? member(String? id) => members.where((m) => m.id == id).firstOrNull;
@@ -195,6 +213,7 @@ class const Catalog({
     layout: layout,
     members: members,
     lists: lists,
+    currency: currency,
   );
 
   /// A chain store given another name stops being its chain, as
@@ -219,6 +238,7 @@ class const Catalog({
     layout: layout,
     members: members,
     lists: lists,
+    currency: currency,
   );
 
   Catalog withoutStore(String storeId) => Catalog(
@@ -227,6 +247,7 @@ class const Catalog({
     layout: [...layout.where((row) => row.storeId != storeId)],
     members: members,
     lists: lists,
+    currency: currency,
   );
 
   /// The store order is the position in [ids].
@@ -247,6 +268,7 @@ class const Catalog({
       layout: layout,
       members: members,
       lists: lists,
+      currency: currency,
     );
   }
 
@@ -268,6 +290,7 @@ class const Catalog({
       layout: layout,
       members: members,
       lists: lists,
+      currency: currency,
     );
   }
 
@@ -288,6 +311,7 @@ class const Catalog({
     layout: layout,
     members: members,
     lists: lists,
+    currency: currency,
   );
 
   Catalog withStoreLayout(
@@ -309,6 +333,7 @@ class const Catalog({
     ],
     members: members,
     lists: lists,
+    currency: currency,
   );
 }
 
@@ -511,6 +536,9 @@ class const Item({
   /// lists, and for an add queued then: it is on the household's first
   /// list, where the server puts an add without one.
   final String? listId,
+
+  /// Its price (job 190); null for none.
+  final Price? price,
 }) {
   factory fromJson(Map<String, Object?> json) => Item(
     id: json['id']! as String,
@@ -533,6 +561,7 @@ class const Item({
     categorizedVia: json['categorized_via'] as String?,
     canonicalKey: json['canonical_key'] as String?,
     listId: json['list_id'] as String?,
+    price: Price.fromColumns(json),
   );
 
   /// The same keys as a server row, so [Item.fromJson] reads it back.
@@ -553,6 +582,7 @@ class const Item({
     'categorized_via': categorizedVia,
     'canonical_key': canonicalKey,
     'list_id': listId,
+    ...price?.toColumns() ?? Price.noColumns,
   };
 
   Item copyWith({
@@ -566,6 +596,7 @@ class const Item({
     ItemStatus? status,
     DateTime? Function()? boughtAt,
     String? listId,
+    Price? Function()? price,
   }) => Item(
     id: id,
     name: name ?? this.name,
@@ -583,6 +614,7 @@ class const Item({
     categorizedVia: categorizedVia,
     canonicalKey: canonicalKey,
     listId: listId ?? this.listId,
+    price: price == null ? this.price : price(),
   );
 
   /// The list it is on, where [firstList] is the household's first list.
@@ -814,6 +846,17 @@ sealed class const ItemOp(final String itemId) {
         at: DateTime.parse(json['at']! as String),
       ),
       'unclaim' => UnclaimItem(id, userId: json['user_id']! as String),
+      'price' => SetPrice(
+        id,
+        price: switch (json['price']) {
+          final Map<String, Object?> columns => Price.fromColumns(columns),
+          _ => null,
+        },
+        quantity: json.containsKey('quantity')
+            ? SetTo(json['quantity'] as String?)
+            : null,
+        restored: json['restored'] == true,
+      ),
       final op => throw FormatException('unknown op', op),
     };
   }
@@ -864,6 +907,14 @@ sealed class const ItemOp(final String itemId) {
         at: at,
       ),
       UnclaimItem(:final userId) => UnclaimItem(kept, userId: userId),
+      // An undone delete's price is that copy's: a partner's open twin
+      // keeps its own.
+      SetPrice(restored: true) => null,
+      SetPrice(:final price, :final quantity) => SetPrice(
+        kept,
+        price: price,
+        quantity: quantity,
+      ),
       PlaceItem(
         :final anchorId,
         :final edge,
@@ -971,6 +1022,12 @@ sealed class const ItemOp(final String itemId) {
         'at': at.toIso8601String(),
       },
       UnclaimItem(:final userId) => {'op': 'unclaim', 'user_id': userId},
+      SetPrice(:final price, :final quantity, :final restored) => {
+        'op': 'price',
+        'price': price?.toColumns(),
+        if (quantity case SetTo(:final value)) 'quantity': value,
+        if (restored) 'restored': true,
+      },
       MergeItems(
         :final mergeId,
         :final otherId,
@@ -1122,6 +1179,33 @@ final class const UnclaimItem(super.itemId, {required final String userId})
     extends ItemOp {
   @override
   Item? apply(Item? current) => current;
+}
+
+/// Sets or clears the item's [price] (job 190), and its [quantity] when
+/// set: the scale weight replaces the planned one, the stepper's count the
+/// typed one. Never its status: a price does not tick an item, a tick
+/// needs no price (t832u). [restored]: the price of a deleted item put
+/// back, dropped when the add lands on an open twin.
+final class const SetPrice(
+  super.itemId, {
+  required final Price? price,
+  final SetTo<String?>? quantity,
+  final bool restored = false,
+}) extends ItemOp {
+  /// The PATCH body: all five price columns, and the quantity when set.
+  Map<String, Object?> toColumns() => {
+    ...price?.toColumns() ?? Price.noColumns,
+    if (quantity case SetTo(:final value)) 'quantity': value,
+  };
+
+  @override
+  Item? apply(Item? current) => current?.copyWith(
+    price: () => price,
+    quantity: switch (quantity) {
+      SetTo(:final value) => () => value,
+      null => null,
+    },
+  );
 }
 
 /// Folds the open item [otherId] into the open item [itemId] with

@@ -26,6 +26,8 @@ const sameInBothLanguages = {
   'feedbackCounter': 'only numbers',
   'siriHeader': 'product name',
   'syncOffline': '"Offline" is German too (job 161)',
+  'priceUnitKg': 'the unit symbol kg (job 190)',
+  'priceUnitLitre': 'the unit symbol l (job 190)',
 };
 
 Map<String, Object?> readArb(String path) =>

@@ -7,6 +7,7 @@ import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/household/create_household_screen.dart';
+import 'package:family_groceries/household/currency_section.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/invite_sheet.dart';
@@ -23,7 +24,8 @@ import 'package:material_ui/material_ui.dart';
 
 /// More's Haushalt (job 169b): the shown household's name (rename), its
 /// members with their roles (the owner and admins remove members, the
-/// owner names admins), "Leute einladen", its lists ([ListsSection]),
+/// owner names admins), "Leute einladen", its lists ([ListsSection]), its
+/// currency ([CurrencySection]),
 /// whether Siri, Alexa and AI assistants use it, and leaving it.
 class const HouseholdPage({
   super.key,
@@ -358,6 +360,7 @@ class _HouseholdViewState() extends State<_HouseholdView> {
           ),
         ),
         const ListsSection(),
+        const CurrencySection(),
         JoinApprovalSection(
           household: household,
           onApproved: () => setState(() {

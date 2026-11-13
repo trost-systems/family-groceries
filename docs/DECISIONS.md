@@ -11828,3 +11828,79 @@ Peter's picks: t828u (13 Nov 2026 07:51 Europe/Berlin) and t830u (07:57). They r
   has no tab, and `/history` redirects to the list. Liste and Mehr keep branch indices 0 and 1.
 - **No Vercel preview (t834u).** Peter reviews on TestFlight with the flag on for his install;
   the next green `main` build after the merge carries it.
+## Job 190: prices on the list row, list total and per-store subtotals, 2026-11-13
+
+Peter picked `inline-row-price` with the recommendation's extras on 13 Nov 2026 08:13
+Europe/Berlin (t832u). Everything here is Free for every signed-in member (t788u): no
+entitlement, paywall or Premium check anywhere on the path. It ships behind the PostHog flag
+`prices-and-trip-total` (`releases/flags.json`, rollout off).
+
+- **Decided by Peter (t832u).** Saving a price never ticks the item, and ticking never needs a
+  price. The total is the list's: all stores on one list, with a subtotal line at the end of
+  each store section and the total pinned below the list. Per item −9999,00 to 9999,00 (0 and
+  negative deposits allowed) and weights up to 50 kg. The whole household sees prices and totals
+  live, over the existing `items` realtime (this is not the open multi-household `shared-views`
+  question). The currency is an ISO 4217 code on the household (`households.currency`, default
+  `EUR`), any member changes it, live; nothing hardcodes the euro sign.
+- **LQ2: the unit price is the source of truth (Peter, t833u, 13 Nov 2026 08:21).** The editor
+  takes either the line total ("Gesamt") or the unit price ("pro Stück", "pro kg", "pro l"), and
+  shows the other one derived. A typed total is divided by the quantity at save; a later quantity
+  change keeps the unit price and scales the line (2 packs at 1,38 €, then 3: 2,07 €). The row
+  always shows the line total. `items.price_unit_micros` stores the unit price in millionths of
+  the currency, so 1,00 € for 3 (333333) sums back to 1,00 €; `price_basis` only remembers which
+  field was typed, so the editor reopens that way. This replaced t832u's provisional "keep the
+  typed line total" before anything shipped.
+- **PW1: planned weight on the list, the scale weight replaces it (Peter, t833u).** The planned
+  weight is the item's quantity text ("846 g Bananen"). The editor prefills it; the shopper types
+  the per-kg price or the label price with the weight, and the other is derived. Saving writes
+  the weighed amount back to `items.quantity` ("846 g", "1,24 kg"). Volumes work the same way in
+  litres. No second weight column.
+- **The unit follows the item.** A quantity in g or kg is priced per kg, ml or l per litre (the
+  Grundpreis units on German shelf labels), anything else per Stück. A menu in the editor
+  switches Stück, kg or l for an item whose quantity says nothing. Per gram or per millilitre
+  would show amounts like 0,002 €, so g and ml quantities read per kg and per l.
+- **What counts as this trip's price (lead's call).** A price counts for the running total while
+  its `priced_at` falls on the device's current local day, the same grain as job 199's
+  per-store-per-day trip log. A price from an earlier day becomes "last time's price": the row
+  offers "+ Preis" again and the panel compares the new price with it ("0,30 € teurer als
+  zuletzt"). Nothing is deleted by this rule. A shop that crosses midnight splits in two; that
+  is rare and the alternative (an explicit trip start) is the approach-3 mode Peter did not pick.
+- **What the total sums.** Items on the shown list, open or ticked off (the app holds the 50
+  newest ticked rows), with a current price in the household currency. "N mit Preis · M offen"
+  counts the summed items and the open items still without a price. A price typed before a
+  currency change keeps its own code on the row and is not summed.
+- **Last-price memory without a new store.** Ticked rows keep their price, so the comparison
+  reads the newest earlier price (same currency, same unit) of the item itself or of the
+  household's items with the same `canonical_key`. No price ledger, no `public.trips` reuse. It
+  is a Free convenience behind the same flag until Peter re-tiers `last-price-memory`.
+- **Storage.** Five nullable columns on `items` (`price_unit_micros`, `price_basis`, `price_per`
+  `piece|kg|l`, `price_currency`, `priced_at`), all set or all null. The app keeps each line
+  within ±9999,00; the server bounds the unit price. A new `ItemOp` (`SetPrice`) writes them with the optional quantity change, as
+  every item write: optimistic, idempotent, retried. Job 199 landed first (#394), so the
+  migration (`20261113094500`) sorts after its `20261113070349_grocery_log.sql`, and its
+  `export_my_data` is 199's body (with `trips_logged`) plus the price and currency fields.
+- **Known limits, accepted (review 0).** A store's subtotal line goes when its section does (all
+  its items ticked, or the section folded); the total still counts those items, so it can be
+  more than the visible subtotals. Merging two items keeps the kept item's price only. The total
+  sees the 50 newest ticked items of the household, across all its lists, which a day's shop rarely passes. A
+  quantity edited after the price can make a line beyond ±9999,00; only the editor enforces the
+  limit. An undone delete gets its price back as a second write, since `put_item` takes none, unless the item landed on a partner's open twin, which keeps its own price.
+- **Job 199's trips are untouched.** `public.trips` stays 199's historical per-store log (no
+  prices in its snapshot). Its per-store-per-day grain matches the current-day rule above, so a
+  later change can add an optional price and currency to the snapshot additively and sum a
+  day's store trips into the list total. 199 landed just before this job; its snapshot is left
+  as it is (the brief allowed an additive change but did not need one), so a logged trip still
+  carries names and quantities only.
+- **Not built.** The approach-3 end-of-trip summary ("Summe …, N Artikel ohne Preis,
+  Nachtragen") is a later screen for receipt-at-home entry. No receipt scanning, spend history,
+  planned-vs-bought, shelf-label scanning, photos, API or MCP exposure of prices, and no
+  multi-household shared views. No region-based currency default.
+- **Peter reviews on TestFlight with the flag on for his install only (t834u).** No Vercel
+  preview: the next green `main` build goes to TestFlight. The app's PostHog distinct id is the
+  install id (no `identify`, no person profiles), and a release condition "`distinct_id` equals
+  <id>" targets one install. An internal install (long press on the version under More) now
+  shows "Installations-ID kopieren"; the steps are in NEEDS_PETER ("Job 190"). Flags load only
+  after the analytics yes.
+- **Analytics.** `price_entered` (`confirmed: false`) on each saved price and
+  `trip_total_viewed` (`final: false`) once per list and session, both allow-listed in job 195
+  for this path. `shop_started` stays unsent: there is no trip-start step.

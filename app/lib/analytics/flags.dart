@@ -7,6 +7,10 @@ const publicApiFlag = 'public-api';
 /// The flag that shows the Verlauf tab, the grocery log (job 199).
 const groceryLogFlag = 'grocery-log';
 
+/// The flag that shows prices on the list's rows, the list's total and
+/// the household's currency (job 190). Free for everyone.
+const pricesFlag = 'prices-and-trip-total';
+
 /// PostHog feature flags, the app's runtime toggles (job 44,
 /// docs/ANALYTICS.md "Feature flags"). Read a toggle with [isOn] wherever it
 /// matters; nothing else in the app reads PostHog flags.

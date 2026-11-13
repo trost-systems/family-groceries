@@ -55,6 +55,9 @@ abstract interface class ListRepository() {
   /// [ids] is every store, in the new order.
   Future<void> reorderStores(List<String> ids);
 
+  /// The household's currency, an ISO 4217 code (job 190).
+  Future<void> setCurrency(String code);
+
   /// The id of the household's store named [name] (any case or spacing),
   /// created after the others when there is none.
   Future<String> addStore(String name);
@@ -186,7 +189,8 @@ class SupabaseListRepository(
   static const _itemColumns =
       'id, name, quantity, brand, properties, category_id, store_id, '
       'sort_key, status, created_at, updated_at, bought_at, added_by, '
-      'categorized_via, canonical_key, list_id';
+      'categorized_via, canonical_key, list_id, price_unit_micros, '
+      'price_basis, price_per, price_currency, priced_at';
 
   @override
   Future<Catalog> fetchCatalog() => _answered(() async {
@@ -230,7 +234,10 @@ class SupabaseListRepository(
     );
     // Not a record `.wait`: its ParallelWaitError would hide whether the
     // server answered. Future.wait throws the first error once all settled.
-    await Future.wait([categories, stores, layout, members, lists]);
+    final household = _sent(
+      _client.rest.from('households').select('currency').eq('id', householdId),
+    );
+    await Future.wait([categories, stores, layout, members, lists, household]);
     return Catalog(
       categories: (await categories).map(Category.fromJson).toList(),
       stores: (await stores).map(Store.fromJson).toList(),
@@ -248,6 +255,10 @@ class SupabaseListRepository(
             ),
       ],
       lists: (await lists).map(HouseholdList.fromJson).toList(),
+      currency: switch ((await household).firstOrNull?['currency']) {
+        final String code => code,
+        _ => defaultCurrency,
+      },
     );
   });
 
@@ -308,6 +319,14 @@ class SupabaseListRepository(
       'reorder_categories',
       params: {'p_household': householdId, 'p_ids': ids},
     ),
+  );
+
+  @override
+  Future<void> setCurrency(String code) => _refusable(
+    () => _client.rest
+        .from('households')
+        .update({'currency': code})
+        .eq('id', householdId),
   );
 
   @override
@@ -527,6 +546,11 @@ class SupabaseListRepository(
           'p_anchor': anchorId,
           'p_edge': edge.name,
         });
+      case SetPrice():
+        rows = await items
+            .update(op.toColumns())
+            .eq('id', op.itemId)
+            .select(_itemColumns);
       case MoveToList(:final listId):
         rows = await items
             .update({'list_id': listId})
@@ -694,7 +718,19 @@ class SupabaseListRepository(
             : (_) => onCatalogChanged(),
       );
     }
+    // The household's currency (job 190).
     channel
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'households',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'id',
+            value: householdId,
+          ),
+          callback: (_) => onCatalogChanged(),
+        )
         .onPostgresChanges(
           event: PostgresChangeEvent.insert,
           schema: 'public',
