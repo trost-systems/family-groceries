@@ -740,3 +740,7 @@ More no longer has „Anderem Haushalt beitreten“; joining is the list's house
 ## Job 209: production site deploys wait for supabase-deploy (2026-11-13)
 
 A production build of `hummlist-site` now waits until the push-triggered **Supabase deploy** run for its commits has passed migrations, functions and the smoke test. If that run fails, the build ends in ERROR and the last good site stays live. The wait sits in the site's Vercel ignore step (`site/scripts/supabase-gate.mjs`, `site/vercel.json`), so it needs no secret and no dashboard change. Site-only pushes build at once, and rollback dispatches never count. Deployment Protection and all domains are untouched. `scripts/push-pr.sh` now also refuses a title or description with a skip-CI marker. Merged as 5fcad5bb (#404). Details: [docs/done/209-site-deploy-waits-supabase.md](docs/done/209-site-deploy-waits-supabase.md).
+
+## Job 208: more space between a field and its helper, error and counter (2026-11-13)
+
+The field theme puts every field's helper, error and counter `HlSpace.s2` past the focus ring (13 dp below the contour, was 4), app-wide. Merged as 4a4f7fd1 (#403). Details: [docs/done/208-input-helper-spacing.md](docs/done/208-input-helper-spacing.md).
