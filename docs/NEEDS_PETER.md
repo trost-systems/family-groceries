@@ -1647,3 +1647,47 @@ both off. Before either goes on:
    there. Rewrite them once `shared-views` is decided.
 4. **Ops: nothing in RevenueCat changes.** Keep "Keep with original App User ID". Testers keep
    household grants (`scripts/iap/promotional.ts`) until the privacy text describes user grants.
+
+## Job 201: Play uploads and web production stopped at the repo rename (2026-11-13)
+
+Every `release.yml` run since the repository became `trost-systems/snacklist` (2026-11-12 21:50)
+fails in the Android job at `google-github-actions/auth`: "The given credential is rejected by the
+attribute condition" (runs 43345705603, 43351664814, 43357310646). The AAB builds, but nothing
+reaches Play, and the jobs after it ("Uploaded", "Web production") are skipped. So
+`app.snacklist.app` still serves the build from before Flutter 3.50 and the Wasm opt-in for
+Safari and Firefox (#381). iOS uploads are not affected (build 1265 reached App Store Connect).
+
+GitHub now signs the release job's token with the subject
+`repo:trost-systems@267752722/snacklist@1429864759:environment:release` (the repo id 1429864759
+and owner id 267752722 did not change; only the name did). Google Cloud still expects
+`family-groceries`. Two places in the Google Cloud console, project `family-groceries-ci`
+(number 1023711338330):
+
+1. **IAM & Admin → Workload Identity Federation → pool `github` → provider `family-groceries`
+   → Edit → Attribute condition.** Replace `family-groceries` with `snacklist` in it, or, so the
+   next rename cannot break it, set it to `assertion.repository_id == '1429864759'`. Save.
+   Equivalent command:
+
+   ```
+   gcloud iam workload-identity-pools providers update-oidc family-groceries \
+     --project=family-groceries-ci --location=global --workload-identity-pool=github \
+     --attribute-condition="assertion.repository_id == '1429864759'"
+   ```
+
+2. **IAM & Admin → Service accounts → `play-release@family-groceries-ci.iam.gserviceaccount.com`
+   → Principals with access.** Remove the `roles/iam.workloadIdentityUser` principal ending in
+   `subject/repo:trost-systems@267752722/family-groceries@1429864759:environment:release` and add
+   the same role for the new subject:
+
+   ```
+   gcloud iam service-accounts add-iam-policy-binding \
+     play-release@family-groceries-ci.iam.gserviceaccount.com --project=family-groceries-ci \
+     --role=roles/iam.workloadIdentityUser \
+     --member="principal://iam.googleapis.com/projects/1023711338330/locations/global/workloadIdentityPools/github/subject/repo:trost-systems@267752722/snacklist@1429864759:environment:release"
+   ```
+
+Then rerun the latest `release.yml` run on `main` (Actions → Release → Re-run all jobs). Done when
+the Android job uploads and "Web production" runs, and `https://app.snacklist.app/flutter_bootstrap.js`
+contains `const wasmAllowList = { blink: true, webkit: true, gecko: true };` and engine
+`371f77202a73e8dff57a8b3bff75bca55c090aee`. The workflow's provider path keeps its id
+`family-groceries`; nothing in the repo changes.
