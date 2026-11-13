@@ -1,14 +1,15 @@
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/tips/hint_host.dart';
 import 'package:family_groceries/tips/hints.dart';
 import 'package:family_groceries/tips/tips_page.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 void main() {
   Widget app(Widget child, {HintHost? host}) => MaterialApp(
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     locale: const Locale('de'),
     home: RepositoryProvider.value(

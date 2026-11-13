@@ -1,6 +1,6 @@
 import 'package:family_groceries/design/fonts.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A section title in the list's category-label style (the site's `.cat`):
 /// [overline] capitals, muted, and a 1 px rule running on after the

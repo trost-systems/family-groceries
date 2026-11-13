@@ -1,7 +1,7 @@
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// How a [StoreBadge] marks its store.
 enum StoreBadgeStyle() {

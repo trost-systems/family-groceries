@@ -35,8 +35,9 @@ done
 
 # Job 33c (legal review H-02): the engine and every font load from our origin, never gstatic.com.
 # The loader reads canvasKitBaseUrl from load(), the engine fontFallbackBaseUrl from initializeEngine().
-for code in "const config = { canvasKitBaseUrl: '/canvaskit/', fontFallbackBaseUrl: '/fonts/' };" \
-  'config,' 'initializeEngine(config)'; do
+# Job 201: the config also carries the wasm allow list, the one-line switch per engine.
+for code in "const config = { canvasKitBaseUrl: '/canvaskit/', fontFallbackBaseUrl: '/fonts/', wasmAllowList };" \
+  'const wasmAllowList = {' 'config,' 'initializeEngine(config)'; do
   grep -qF "$code" "$out/flutter_bootstrap.js" \
     || { echo "web-prod: flutter_bootstrap.js lacks: $code (job 33c: engine and fonts from our origin)" >&2; exit 1; }
 done

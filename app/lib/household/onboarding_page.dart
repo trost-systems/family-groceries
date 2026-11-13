@@ -1,8 +1,8 @@
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Back out of an onboarding step: to the list, which the router turns
 /// into Step 1 without a household. An MCP authorization the onboarding is

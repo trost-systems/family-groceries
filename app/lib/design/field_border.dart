@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The outline of a text field: a hex for single-line fields, a rounded
 /// rectangle ([HlRadius.s]) for multi-line ones.
@@ -262,4 +262,27 @@ class const LabeledField({
       Semantics(label: label, child: field),
     ],
   );
+}
+
+/// A [field] named by its [hint] alone, with no label: the hint names it for
+/// screen readers once it holds text too. Flutter takes a hint out of the
+/// field's name when text comes in; on the web the name lived on in the
+/// placeholder that autofill set, and a field with `autofillHints: null`
+/// has none (job 201). While [controller] is empty the shown hint names the
+/// field, so the label stays empty: both together would say it twice. The
+/// [Semantics] stays in the tree either way, so the web keeps its input.
+class const HintNamed({
+  required final TextEditingController controller,
+  required final String hint,
+  required final Widget field,
+  super.key,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, field) =>
+            Semantics(label: value.text.isEmpty ? '' : hint, child: field),
+        child: field,
+      );
 }

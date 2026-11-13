@@ -3,8 +3,8 @@ import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/invite_sheet.dart';
 import 'package:family_groceries/household/invites_cubit.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// More's Einladungen (`/more/invites`): the invite sheet's panel as a
 /// page, for the shown household: person invites (make, share, revoke)

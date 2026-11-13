@@ -5,3 +5,7 @@ analyzer:
   exclude:
     - build/**
     - web/**
+  errors:
+    # flutter_agent_lints 1.1.0 still lists three codes Dart 3.14 removed (deprecated_new_in_comment_reference,
+    # doc_import_cannot_have_combinators, doc_import_cannot_have_prefix); drop this once the pack does.
+    included_file_warning: ignore

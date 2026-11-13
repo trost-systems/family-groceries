@@ -13,8 +13,8 @@ import 'package:family_groceries/feedback/feedback_repository.dart';
 import 'package:family_groceries/feedback/screen_tracker.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// From this many characters on, the form shows how many are used.
 const _counterFrom = 1800;
@@ -182,6 +182,7 @@ class _FeedbackFormState() extends State<FeedbackForm> {
                   child: Semantics(
                     hint: tooLong ?? '',
                     child: TextField(
+                      autofillHints: null,
                       key: const ValueKey('feedback-message'),
                       controller: _message,
                       autofocus: true,

@@ -99,7 +99,6 @@ test('REFUSED STORE: the message shows above the open dialog, and goes with it (
   await page.getByRole('button', { name: 'Abbrechen' }).click();
   await expect(field).toHaveCount(0);
   // A message left above the routes would cover the tabs for its 4 s and take this click.
-  await page.getByRole('tab', { name: 'Mehr', exact: true }).or(page.getByRole('button', { name: 'Mehr Tab ' }))
-    .click({ timeout: 1500 });
+  await page.getByRole('tab', { name: 'Mehr', exact: true }).click({ timeout: 1500 });
   await expect(page).toHaveURL(/\/more/);
 });

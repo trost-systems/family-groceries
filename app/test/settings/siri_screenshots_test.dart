@@ -5,14 +5,15 @@
 //     test/settings/siri_screenshots_test.dart
 import 'dart:io';
 
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/settings/access_repository.dart';
 import 'package:family_groceries/settings/access_screen.dart';
 import 'package:family_groceries/siri/siri_channel.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../siri/fake_siri_channel.dart';
 import 'access_screen_test.dart' show FakeAccessRepository;
@@ -86,7 +87,7 @@ void main() {
           MaterialApp(
             debugShowCheckedModeBanner: false,
             theme: appTheme(Brightness.light),
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: Locale(lang),
             home: Builder(

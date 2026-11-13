@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The 6b switch: a horizontal hex track with a 2 px contour and a hex thumb
 /// nested in it, its slanted sides parallel to the track's. Off is a sunken

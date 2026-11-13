@@ -13,8 +13,8 @@ import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:family_groceries/siri/siri_suggestions.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
 /// The household's list above both tabs: the List tab shows it and its

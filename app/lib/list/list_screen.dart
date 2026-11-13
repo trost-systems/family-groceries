@@ -7,6 +7,7 @@ import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/scroll_through.dart';
 import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/design/bottom_scroll_edge.dart';
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/measured_width.dart';
 import 'package:family_groceries/design/motion.dart';
@@ -31,11 +32,11 @@ import 'package:family_groceries/review/review_prompt_trigger.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/tips/hint_views.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show OrdinalSortKey;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The List tab: a status bar on top, the list, and the add bar at the
 /// bottom, which opens the add sheet. Needs the list scope
@@ -644,6 +645,7 @@ class const _AddBar({
     final list = context.watch<ListCubit>();
     final open = sheet.open;
     final t = SnacklistColors.of(Theme.of(context).brightness);
+    final hint = listening ? l10n.dictationListening : l10n.addFieldHint;
     void show() {
       cubit.show();
       // Text the microphone left behind.
@@ -706,42 +708,45 @@ class const _AddBar({
                 // must not reach this field (DECISIONS job 52, item 7).
                 child: InputDecorationTheme(
                   data: const InputDecorationThemeData(),
-                  child: TextField(
-                    key: const ValueKey('add-item-field'),
+                  child: HintNamed(
                     controller: input,
-                    scrollController: inputScroll,
-                    focusNode: focus,
-                    autofocus: autofocus,
-                    // Focus comes back after every tap in the
-                    // sheet; typing goes on where it was.
-                    selectAllOnFocus: false,
-                    // The server caps names at 120 characters.
-                    maxLength: 120,
-                    maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                    textInputAction: TextInputAction.send,
-                    textCapitalization: TextCapitalization.sentences,
-                    style: TextStyle(fontSize: 18, color: scheme.onSurface),
-                    decoration: InputDecoration(
-                      hintText: listening
-                          ? l10n.dictationListening
-                          : l10n.addFieldHint,
-                      hintStyle: TextStyle(
-                        fontSize: 18,
-                        color: scheme.onSurfaceVariant,
+                    hint: hint,
+                    field: TextField(
+                      autofillHints: null,
+                      key: const ValueKey('add-item-field'),
+                      controller: input,
+                      scrollController: inputScroll,
+                      focusNode: focus,
+                      autofocus: autofocus,
+                      // Focus comes back after every tap in the
+                      // sheet; typing goes on where it was.
+                      selectAllOnFocus: false,
+                      // The server caps names at 120 characters.
+                      maxLength: 120,
+                      maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                      textInputAction: TextInputAction.send,
+                      textCapitalization: TextCapitalization.sentences,
+                      style: TextStyle(fontSize: 18, color: scheme.onSurface),
+                      decoration: InputDecoration(
+                        hintText: hint,
+                        hintStyle: TextStyle(
+                          fontSize: 18,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                        border: InputBorder.none,
+                        counterText: '',
                       ),
-                      border: InputBorder.none,
-                      counterText: '',
+                      onTap: show,
+                      onChanged: cubit.type,
+                      // Keeps the soft keyboard up after submitting.
+                      onEditingComplete: () {},
+                      onSubmitted: (_) => onSubmit(),
+                      onTapOutside: (_) {
+                        if (!open) {
+                          onLeave();
+                        }
+                      },
                     ),
-                    onTap: show,
-                    onChanged: cubit.type,
-                    // Keeps the soft keyboard up after submitting.
-                    onEditingComplete: () {},
-                    onSubmitted: (_) => onSubmit(),
-                    onTapOutside: (_) {
-                      if (!open) {
-                        onLeave();
-                      }
-                    },
                   ),
                 ),
               ),

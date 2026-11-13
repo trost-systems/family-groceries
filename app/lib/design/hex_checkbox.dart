@@ -1,7 +1,7 @@
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The 6b check box for opt-ins: a pointy-top hex like the site's `.hxp`
 /// check boxes, 26 px tall, with the 2 px contour. Unchecked it is a raised

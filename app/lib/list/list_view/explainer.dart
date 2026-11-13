@@ -1,7 +1,7 @@
 import 'package:family_groceries/design/pointy_hex.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A honey hex with the cart over the empty list's text, like the site's
 /// numbered step hexes (Peter, job 56 item 31). The text is the screen's

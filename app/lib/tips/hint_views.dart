@@ -19,9 +19,9 @@ import 'package:family_groceries/tips/hints.dart';
 import 'package:family_groceries/tips/hints_cubit.dart';
 import 'package:family_groceries/tips/usage_log.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Provides the List tab's [HintsCubit] for [list] around [child], below
 /// its [AddSheetCubit]. Without a [HintStore] the log starts fresh each

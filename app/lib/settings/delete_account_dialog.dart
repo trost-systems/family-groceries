@@ -9,8 +9,8 @@ import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/refund_help.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/account_repository.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Asks, deletes the account on the server and signs out on this device.
 /// The router then shows the start screen with the confirmation.
@@ -206,6 +206,7 @@ class _DeleteAccountDialogState() extends State<DeleteAccountDialog> {
                 LabeledField(
                   label: l10n.accountDeleteConfirmLabel,
                   field: TextField(
+                    autofillHints: null,
                     key: const ValueKey('account-delete-confirm-field'),
                     controller: _confirmation,
                     enabled: !deleting,

@@ -238,6 +238,21 @@ export async function boxOf(target: Locator): Promise<Box> {
 }
 
 /**
+ * [target]'s bounding box once two reads a frame apart agree: a row that just came on screen is
+ * still sliding in for a few frames (job 201: Flutter 3.50 shows the list sooner after sign-in).
+ */
+export async function settledBox(target: Locator): Promise<Box> {
+  let box = await boxOf(target);
+  await expect.poll(async () => {
+    const previous = box;
+    await nextFrames(target.page());
+    box = await boxOf(target);
+    return JSON.stringify(box) === JSON.stringify(previous);
+  }, { message: `${target} stops moving` }).toBe(true);
+  return box;
+}
+
+/**
  * One finger on a phone's browser (job 29c): it lands on the first point, waits [hold] ms, slides
  * through the others in [steps] moves each, and lifts after [pause] ms more. Chromium gets real
  * touch events over CDP. WebKit has no touch driver in Playwright, so it gets the pointer events
@@ -770,9 +785,9 @@ export async function addItem(page: Page, text: string): Promise<void> {
   await closeSheet(page);
 }
 
-/** Switches tabs: a bottom bar on phones, a rail ("Mehr Tab 2 von 2") from 840 px. */
+/** Switches tabs: a bottom bar on phones, a rail from 840 px; both are tabs since Flutter 3.50. */
 export async function openTab(page: Page, tab: 'Liste' | 'Mehr'): Promise<void> {
-  await page.getByRole('tab', { name: tab, exact: true }).or(page.getByRole('button', { name: `${tab} Tab ` })).click();
+  await page.getByRole('tab', { name: tab, exact: true }).click();
 }
 
 /**
@@ -782,8 +797,10 @@ export async function openTab(page: Page, tab: 'Liste' | 'Mehr'): Promise<void> 
  */
 export async function wheelTo(page: Page, target: Locator): Promise<void> {
   const size = must(page.viewportSize(), 'viewport');
-  // From 840 px there is no tab bar (a rail): don't wait for one.
-  const tabs = await page.getByRole('tab', { name: /^(Liste|List)$/ }).boundingBox({ timeout: 200 }).catch(() => null);
+  // From 840 px there is no tab bar but a rail, whose tabs are on the left, not below the list.
+  const tabs = size.width >= 840
+    ? null
+    : await page.getByRole('tab', { name: /^(Liste|List)$/ }).boundingBox({ timeout: 200 }).catch(() => null);
   const bottom = tabs ? tabs.y : size.height;
   // From 840 px More's list is the 360 px pane on the left.
   await page.mouse.move(size.width >= 840 ? 180 : size.width / 2, size.height / 3);

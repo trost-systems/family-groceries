@@ -8,8 +8,8 @@ import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/foldout_chips.dart';
 import 'package:family_groceries/list/list_names.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// What the user changed in the edit sheet, never nothing: the item's
 /// columns, its list (job 169b K) and their "Ich bringe das" (job 169b L).
@@ -547,6 +547,7 @@ class const _Field({
     return LabeledField(
       label: label,
       field: TextField(
+        autofillHints: null,
         key: ValueKey(fieldKey),
         controller: controller,
         textInputAction: TextInputAction.done,

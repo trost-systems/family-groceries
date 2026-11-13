@@ -1,8 +1,8 @@
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/more/app_update.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../analytics/fakes.dart' show MemoryAnalyticsStore, loadedAnalytics;
 import 'more_harness.dart';

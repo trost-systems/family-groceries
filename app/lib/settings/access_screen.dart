@@ -20,10 +20,10 @@ import 'package:family_groceries/settings/integration_lock.dart';
 import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:family_groceries/siri/siri_phrases.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Ways in from outside the app: the MCP endpoint, Siri, personal access
@@ -414,11 +414,9 @@ class const _SiriCard({required final List<AccessToken> shortcutTokens})
               alignment: Alignment.centerRight,
               child: TextButton(
                 key: const ValueKey('siri-phrases'),
-                onPressed: () => unawaited(
-                  showDialog<void>(
-                    context: context,
-                    builder: (_) => const _SiriPhrasesDialog(),
-                  ),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => const _SiriPhrasesDialog(),
                 ),
                 child: Text(l10n.siriShowPhrases),
               ),
@@ -624,17 +622,15 @@ class const _AppTile({
         ].join(' · '),
         paused: paused,
       ),
-      onTap: () => unawaited(
-        showModalBottomSheet<void>(
-          context: context,
-          // Above the tab bar, like a dialog.
-          useRootNavigator: true,
-          showDragHandle: true,
-          isScrollControlled: true,
-          builder: (_) => BlocProvider.value(
-            value: context.read<AccessCubit>(),
-            child: _AppDetails(app: app, paused: paused),
-          ),
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        // Above the tab bar, like a dialog.
+        useRootNavigator: true,
+        showDragHandle: true,
+        isScrollControlled: true,
+        builder: (_) => BlocProvider.value(
+          value: context.read<AccessCubit>(),
+          child: _AppDetails(app: app, paused: paused),
         ),
       ),
       trailing: IconButton(
@@ -860,6 +856,7 @@ class _NameDialogState() extends State<_NameDialog> {
       content: LabeledField(
         label: l10n.tokenName,
         field: TextField(
+          autofillHints: null,
           controller: _name,
           autofocus: true,
           maxLength: 60,
@@ -911,6 +908,7 @@ class _ApiKeyDialogState() extends State<_ApiKeyDialog> {
           LabeledField(
             label: l10n.tokenName,
             field: TextField(
+              autofillHints: null,
               controller: _name,
               autofocus: true,
               maxLength: 60,

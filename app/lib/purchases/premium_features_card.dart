@@ -1,7 +1,7 @@
 import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// What Snacklist Premium holds, as one sticker card: a [title], a [body], the
 /// three connections it unlocks and what comes later. Zugänge shows it for a

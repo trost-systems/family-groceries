@@ -1,18 +1,18 @@
 import { chromium, expect, test, type Browser, type Page } from './fixtures';
 import { newEmail, storeDivider } from './helpers';
-import { householdWithItems, signIn, wasmAllowList, watchBuild, type Build } from './web-build';
+import { engineOf, householdWithItems, signIn, wasmAllowList, watchBuild, type Build, type Engine } from './web-build';
 
 // Job 28: what "clunky" costs, per build, in the same browser and the same run. For each build:
-// the time from navigation to the drawn list (a signed-in reload, three times), and the frame
-// intervals (requestAnimationFrame) while the mouse wheel scrolls a 200-item list down and up,
-// twice (the first pass also builds the rows). Each result is one `PERF {...}` line in the
-// output. The numbers compare builds within one run; a CI runner draws without a GPU, so they
-// are not a phone's. Only when named on the command line (playwright.config.ts).
+// the time from navigation to the app's first frame and to the drawn list (a signed-in reload,
+// three times), the engine files the first load fetched, and the frame intervals
+// (requestAnimationFrame) while the mouse wheel scrolls a 200-item list down and up, twice (the
+// first pass also builds the rows). Each result is one `PERF {...}` line in the output. The
+// numbers compare builds within one run; a CI runner draws without a GPU, so they are not a
+// phone's. Only when named on the command line (playwright.config.ts).
 //
-// Chromium runs wasm by default, wasm multi-threaded when the page is cross-origin isolated, and
-// JS when it is off the allow list. WebKit (the `webkit`
-// project) runs JS by default, as Safari does, and wasm when put on the allow list; a wasm boot
-// that fails there is reported, not a failure, since Flutter keeps WebKit off by default.
+// Job 201: every engine runs wasm by default and JS when it is off the allow list, so each
+// project measures both: JS is what Safari and Firefox ran before. Chromium also runs wasm
+// multi-threaded when the page is cross-origin isolated.
 
 const GROCERIES = [
   'Milch', 'Butter', 'Joghurt', 'Quark', 'Sahne', 'Käse', 'Eier', 'Brot', 'Brötchen', 'Toast',
@@ -37,6 +37,24 @@ function stats(intervals: number[]): Frames {
     maxMs: round(sorted[sorted.length - 1]),
     over25ms: sorted.filter((ms) => ms > 25).length,
   };
+}
+
+/** Milliseconds from navigation to the engine's first frame (flutter_bootstrap.js listens for the same event). */
+async function timeToFirstFrame(page: Page): Promise<number> {
+  const at = await page.waitForFunction(() => (window as unknown as { firstFrameAt?: number }).firstFrameAt, undefined, { timeout: 60_000 });
+  return Math.round(await at.jsonValue() as number);
+}
+
+/** The engine and app files the page fetched: path and body bytes as served, uncompressed here. */
+function watchBootFiles(page: Page): () => Promise<{ path: string; bytes: number }[]> {
+  const files: Promise<{ path: string; bytes: number }>[] = [];
+  page.on('requestfinished', (request) => {
+    const path = new URL(request.url()).pathname;
+    if (/^\/(main\.dart\.(js|mjs|wasm)|canvaskit\/.+|flutter_bootstrap\.js)$/.test(path)) {
+      files.push(request.sizes().then((sizes) => ({ path, bytes: sizes.responseBodySize })));
+    }
+  });
+  return () => Promise.all(files);
 }
 
 /** Milliseconds from navigation to the frame that shows the list's divider "Ohne Laden, 200 Artikel". */
@@ -82,7 +100,7 @@ async function scrollPass(page: Page): Promise<Frames> {
   return stats(intervals);
 }
 
-type Variant = { build: Build; allow?: { blink?: boolean; webkit?: boolean }; isolated?: boolean; optional?: boolean };
+type Variant = { build: Build; allow?: Partial<Record<Engine, boolean>>; isolated?: boolean; optional?: boolean };
 
 /**
  * Serves the page cross-origin isolated (COOP same-origin, COEP credentialless), which lets skwasm
@@ -108,14 +126,23 @@ async function measure(browser: Browser, baseURL: string | undefined, email: str
   const page = await context.newPage();
   if (allow) await wasmAllowList(page, allow);
   if (isolated) await isolate(page);
+  await page.addInitScript(() => {
+    globalThis.addEventListener('flutter-first-frame', () => {
+      (window as unknown as { firstFrameAt: number }).firstFrameAt = performance.now();
+    }, { once: true });
+  });
   const loaded = watchBuild(page);
+  const bootFiles = watchBootFiles(page);
   try {
     await page.goto('/login');
     await signIn(page, email);
+    const boot = await bootFiles();
     const loads: number[] = [];
+    const firstFrames: number[] = [];
     for (let i = 0; i < 3; i++) {
       await page.reload();
       loads.push(await timeToList(page));
+      firstFrames.push(await timeToFirstFrame(page));
     }
     expect([...new Set(loaded())], `every load ran the ${build} build`).toEqual([build]);
     expect(await page.evaluate(() => globalThis.crossOriginIsolated), 'cross-origin isolated').toBe(!!isolated);
@@ -123,7 +150,18 @@ async function measure(browser: Browser, baseURL: string | undefined, email: str
     await page.mouse.move(196, (list?.y ?? 100) + 300);
     const first = await scrollPass(page);
     const second = await scrollPass(page);
-    return { build: `${build}${isolated ? ' isolated' : ''}`, loadMs: loads, loadMedianMs: [...loads].sort((a, b) => a - b)[1], firstScroll: first, secondScroll: second };
+    const median = (values: number[]) => [...values].sort((a, b) => a - b)[1];
+    return {
+      build: `${build}${isolated ? ' isolated' : ''}`,
+      bootFiles: boot,
+      bootBytes: boot.reduce((sum, file) => sum + file.bytes, 0),
+      firstFrameMs: firstFrames,
+      firstFrameMedianMs: median(firstFrames),
+      loadMs: loads,
+      loadMedianMs: median(loads),
+      firstScroll: first,
+      secondScroll: second,
+    };
   } finally {
     await context.close();
     await own?.close();
@@ -134,9 +172,12 @@ test('boot and scroll timings, wasm against JS', { tag: '@perf' }, async ({ brow
   test.setTimeout(300_000);
   const email = newEmail('perf');
   await householdWithItems(email, ITEMS);
-  const variants: Variant[] = browserName === 'webkit'
-    ? [{ build: 'js' }, { build: 'wasm', allow: { webkit: true }, optional: true }]
-    : [{ build: 'wasm' }, { build: 'wasm', isolated: true, optional: true }, { build: 'js', allow: { blink: false } }];
+  const engine = engineOf(browserName);
+  const variants: Variant[] = [
+    { build: 'wasm' },
+    ...(engine === 'blink' ? [{ build: 'wasm', isolated: true, optional: true } as const] : []),
+    { build: 'js', allow: { [engine]: false } },
+  ];
   const results = [];
   for (const variant of variants) {
     try {

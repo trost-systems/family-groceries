@@ -32,9 +32,9 @@ import 'package:family_groceries/settings/account_screen.dart';
 import 'package:family_groceries/settings/settings_screen.dart';
 import 'package:family_groceries/tips/tips_page.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// The pages More opens: beside its list on wide screens, on their own

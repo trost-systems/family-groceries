@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/dictation.dart';
 import 'package:family_groceries/list/list_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The microphone in the add bar: fills [input] while the user speaks, then
 /// adds what the server's splitter makes of the sentence. On failure the

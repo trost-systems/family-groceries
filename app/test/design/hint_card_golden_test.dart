@@ -2,6 +2,7 @@
 // compact width: a flat card with its button, the callout under Anpassen,
 // the „Erste Schritte“ card of a club. After a deliberate look change:
 //   flutter test --update-goldens test/design/hint_card_golden_test.dart
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/household/household_kind.dart';
@@ -10,8 +11,8 @@ import 'package:family_groceries/tips/checklist.dart';
 import 'package:family_groceries/tips/hint_views.dart';
 import 'package:family_groceries/tips/hints.dart';
 import 'package:family_groceries/tips/usage_log.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'fonts.dart';
 
@@ -31,7 +32,7 @@ void main() {
           debugShowCheckedModeBanner: false,
           theme: appTheme(brightness),
           locale: const Locale('de'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Padding(

@@ -69,6 +69,8 @@ runs:
           node -e "import('@playwright/test').then((p) => p['$browser'].launch()).then((b) => b.close())" \
             || npx playwright install --with-deps "$browser"
         done
+        # Job 201: Firefox runs headed under xvfb-run for WebGL (scripts/gates/e2e.sh).
+        command -v xvfb-run >/dev/null || npx playwright install-deps firefox
     # Job 18: the fixtures integration test and the fg sync smoke test run scripts/fg (Deno).
     - uses: ./.github/actions/deno
       with:

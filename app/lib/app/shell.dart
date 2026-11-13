@@ -10,8 +10,8 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_scope.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// From this width the tabs become a rail and More shows two panes.
 const wideLayout = 840.0;

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/household/welcome_screen.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
@@ -11,10 +12,10 @@ import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/account_screen.dart';
 import 'package:family_groceries/settings/delete_account_dialog.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
 import '../household/harness.dart' show TestSession;
@@ -90,7 +91,7 @@ void main() {
             BlocProvider.value(value: entitlements),
           ],
           child: MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             locale: locale,
             home: home,
@@ -555,13 +556,11 @@ void main() {
           body: Builder(
             builder: (context) => TextButton(
               key: const ValueKey('open'),
-              onPressed: () => unawaited(
-                showDialog<AccountDeleted>(
-                  context: context,
-                  builder: (_) => DeleteAccountDialog(
-                    repository: account,
-                    archiveTexts: archiveTexts,
-                  ),
+              onPressed: () => showDialog<AccountDeleted>(
+                context: context,
+                builder: (_) => DeleteAccountDialog(
+                  repository: account,
+                  archiveTexts: archiveTexts,
                 ),
               ),
               child: const SizedBox.square(dimension: 40),

@@ -6,8 +6,8 @@ import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Opens where the yearly plan is managed and cancelled (H-83): StoreKit's
 /// own sheet on iOS, else Apple's page; Google Play's page for the plan on

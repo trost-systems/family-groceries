@@ -1,5 +1,5 @@
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The start page: what the catalogue holds and where its controls are. It
 /// replaces Widgetbook's default page, whose emoji would make the engine

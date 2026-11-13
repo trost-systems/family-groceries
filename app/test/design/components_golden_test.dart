@@ -11,8 +11,8 @@ import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
 import 'package:family_groceries/list/stores_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'fonts.dart';
 

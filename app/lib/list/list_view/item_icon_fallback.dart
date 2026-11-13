@@ -1,6 +1,6 @@
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The icon of an item without a known emoji (job 147): one quiet honeycomb
 /// cell, never the category's emoji, which named the wrong thing

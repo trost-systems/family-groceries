@@ -6,8 +6,8 @@ import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/household/paste_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/onboarding/onboarding_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The first screen signed out (job 168b): the hex mark and wordmark, what
 /// Snacklist is, „Los geht's“ into the guided start (the usage-data question

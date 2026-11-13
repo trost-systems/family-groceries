@@ -37,10 +37,10 @@ import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:family_groceries/siri/siri_credentials.dart';
 import 'package:family_groceries/tips/hint_host.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:http/http.dart' as http;
+import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Set once analytics is loaded; errors before that are not reported.

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/hex_border.dart';
@@ -8,8 +9,8 @@ import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/foldout_chips.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../more/more_harness.dart';
 import 'fonts.dart';
@@ -129,7 +130,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: appTheme(Brightness.light),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: const Locale('de'),
         home: Scaffold(

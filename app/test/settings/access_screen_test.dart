@@ -1,13 +1,14 @@
 import 'package:family_groceries/analytics/flags.dart';
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/settings/access_repository.dart';
 import 'package:family_groceries/settings/access_screen.dart';
 import 'package:family_groceries/siri/siri_channel.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../household/harness.dart' show TestSession;
 import '../siri/fake_siri_channel.dart';
@@ -103,7 +104,7 @@ void main() {
     final Widget screen = AccessScreen(repositories: (_) => repo, siri: siri);
     await tester.pumpWidget(
       MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: Locale(language),
         home: Scaffold(
@@ -176,7 +177,7 @@ void main() {
       BlocProvider<SessionCubit>.value(
         value: session,
         child: MaterialApp(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('de'),
           home: Scaffold(body: AccessScreen(repositories: (h) => repos[h]!)),

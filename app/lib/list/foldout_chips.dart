@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tactile.dart';
@@ -9,9 +10,9 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_name_field.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 
 enum _Fold() {
   store,
@@ -451,21 +452,26 @@ class const _SearchField({
         }
         return KeyEventResult.handled;
       },
-      child: TextField(
-        key: const ValueKey('store-search'),
+      child: HintNamed(
         controller: controller,
-        maxLength: maxStoreNameLength,
-        textInputAction: TextInputAction.search,
-        style: TextStyle(fontSize: 16, color: scheme.onSurface),
-        onChanged: onChanged,
-        onEditingComplete: () {},
-        onSubmitted: onSubmitted,
-        decoration: InputDecoration(
-          hintText: l10n.storeSearch,
-          hintStyle: TextStyle(color: scheme.onSurfaceVariant),
-          prefixIcon: const Icon(Icons.search, size: 20),
-          counterText: '',
-          constraints: const BoxConstraints.tightFor(height: HlSize.target),
+        hint: l10n.storeSearch,
+        field: TextField(
+          autofillHints: null,
+          key: const ValueKey('store-search'),
+          controller: controller,
+          maxLength: maxStoreNameLength,
+          textInputAction: TextInputAction.search,
+          style: TextStyle(fontSize: 16, color: scheme.onSurface),
+          onChanged: onChanged,
+          onEditingComplete: () {},
+          onSubmitted: onSubmitted,
+          decoration: InputDecoration(
+            hintText: l10n.storeSearch,
+            hintStyle: TextStyle(color: scheme.onSurfaceVariant),
+            prefixIcon: const Icon(Icons.search, size: 20),
+            counterText: '',
+            constraints: const BoxConstraints.tightFor(height: HlSize.target),
+          ),
         ),
       ),
     );

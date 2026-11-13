@@ -1,6 +1,6 @@
 import 'package:family_groceries/design/pointy_hex.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snacklist_widgetbook/src/story.dart';
 
 const _path = 'Snacklist/Formen';

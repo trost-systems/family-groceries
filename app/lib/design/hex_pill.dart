@@ -2,7 +2,7 @@ import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tactile.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A settings row as the site's stores scene draws it: a horizontal hex with
 /// the 2 px contour on a raised face, resting on its [HlDepth.edge] edge. The

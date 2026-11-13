@@ -4,9 +4,9 @@ import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/review/review_prompt.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Feeds [cubit]'s activity to the app's [ReviewPrompt] and asks it after
 /// a completed trip of at least [minTicks] ticks, once the user has left

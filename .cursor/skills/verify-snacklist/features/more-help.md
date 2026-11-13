@@ -50,7 +50,7 @@ Preconditions:
 - For the external pages stub the site so the test never hits the live site: `page.context().route('https://snacklist.app/**', r => r.fulfill({contentType:'text/html', body:'<title>stub</title>'}))`.
 - More is a lazy list taller than the window: wheel to a row before clicking it (`wheelTo` in `e2e/tests/helpers.ts`: `page.mouse.wheel(0, 250)` over the list until the row is above the tab pill; `openMore` does it for you).
 
-- **Open More.** Click the tab. `openTab(page, 'Mehr')` (phone: `getByRole('tab', {name:'Mehr', exact:true})`; rail: `getByRole('button', {name:'Mehr Tab '})`). URL `/more`, heading „Mehr“.
+- **Open More.** Click the tab. `openTab(page, 'Mehr')` (`getByRole('tab', {name:'Mehr', exact:true})`, on phones and on the rail alike since Flutter 3.50). URL `/more`, heading „Mehr“.
 - **Open an entry.** `openMore(page, 'Einstellungen')` (taps Mehr, makes sure the list is shown, clicks `getByRole('button', {name: /^Einstellungen( |$)/})`). Rows are buttons named by their label alone (job 85: no hints), so match exactly, e.g. `getByRole('button', {name: 'Konto', exact: true})`; `openMore` matches the label followed by a space or the end.
 - **Help page.** `wheelTo(page, getByRole('button',{name:/^Hilfe & Kontakt/}))`, then `const popup = page.waitForEvent('popup'); await row.click()`. Observable: `(await popup).url()` equals `https://snacklist.app/support`; the app URL is unchanged. Spec: `e2e/tests/help.spec.ts` (also the English URL and 1366 px).
 - **Nutzungsdaten.** `openMore(page, 'Nutzungsdaten')`. Observable: URL `/more/usage-data`, heading „Nutzungsdaten“, the switch `getByRole('switch',{name:/^Nutzungsdaten und Fehlerberichte senden/})` (e2e and verify-snacklist builds), no „Datenschutzerklärung“ button. „Zurück“ returns to `/more`.
@@ -58,7 +58,7 @@ Preconditions:
 - **Licenses.** On More click `getByRole('button',{name:'Lizenzen', exact:true})`. Observable: `page.locator('body').ariaSnapshot()` matches `/Snacklist[\s\S]*Flutter[\s\S]*bloc/`; „Zurück“ returns to More.
 - **Version.** `page.getByText(/^Version \d+\.\d+\.\d+/)` visible at the end of the list.
 - **Sign out.** Click `getByRole('button',{name:/^Abmelden/})`. Observable: `getByRole('textbox',{name:'E-Mail'})` visible, URL contains `/login`.
-- **Wide layout.** `page.setViewportSize({width:1366,height:1024})`, click `getByRole('button',{name:/^Mehr Tab/})`. Observable: the entries and `getByText('MCP-Server',{exact:true})` side by side; „Zurück“ buttons absent; clicking the button „Konto“ (exact) shows Konto alone (URL `/more/account`). At 820 px the tab pill returns.
+- **Wide layout.** `page.setViewportSize({width:1366,height:1024})`, click `getByRole('tab',{name:'Mehr',exact:true})`. Observable: the entries and `getByText('MCP-Server',{exact:true})` side by side; „Zurück“ buttons absent; clicking the button „Konto“ (exact) shows Konto alone (URL `/more/account`). At 820 px the tab pill returns.
 - Specs to run: `scripts/verify.sh --only e2e -- tests/shell-more.spec.ts`, `tests/help.spec.ts`, `tests/legal.spec.ts`.
 
 ## Gotchas

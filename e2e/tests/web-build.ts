@@ -3,9 +3,9 @@ import { addField, anonClient, answerConsent, apiAs, password, typeInto, openEma
 
 /**
  * Job 28: the web build is `flutter build web --wasm`, which holds two apps. flutter_bootstrap.js
- * runs main.dart.wasm (dart2wasm, skwasm renderer) where the browser has WasmGC and its engine is
- * on Flutter's wasm allow list (Chromium only, by default), and main.dart.js (dart2js, CanvasKit)
- * everywhere else.
+ * runs main.dart.wasm (dart2wasm, skwasm renderer) where the browser has the Wasm features
+ * dart2wasm needs and its engine is on the wasm allow list (all three since job 201), and
+ * main.dart.js (dart2js, CanvasKit) everywhere else.
  */
 export type Build = 'wasm' | 'js';
 
@@ -26,17 +26,30 @@ export async function withoutWasmGC(page: Page): Promise<void> {
   });
 }
 
+/** Flutter's name for a Playwright browser's engine, as in `wasmAllowList`. */
+export type Engine = 'blink' | 'webkit' | 'gecko';
+
+export function engineOf(browserName: string): Engine {
+  switch (browserName) {
+    case 'chromium': return 'blink';
+    case 'webkit': return 'webkit';
+    case 'firefox': return 'gecko';
+    default: throw new Error(`no Flutter engine for ${browserName}`);
+  }
+}
+
 /**
- * Passes Flutter's `wasmAllowList` to the loader in our flutter_bootstrap.js, as an app that opts
- * an engine in or out would; the measurement uses it to run both builds in one browser.
+ * Overrides engines in the `wasmAllowList` of our flutter_bootstrap.js, the switch that takes an
+ * engine off wasm in one line; the specs use it to run both apps in one browser.
  */
-export async function wasmAllowList(page: Page, list: { blink?: boolean; webkit?: boolean }): Promise<void> {
+export async function wasmAllowList(page: Page, list: Partial<Record<Engine, boolean>>): Promise<void> {
   await page.route('**/flutter_bootstrap.js', async (route) => {
     const response = await route.fetch();
     const body = await response.text();
-    const config = 'const config = {';
-    if (!body.includes(config)) throw new Error(`flutter_bootstrap.js no longer has ${config}`);
-    await route.fulfill({ response, body: body.replace(config, `${config} wasmAllowList: ${JSON.stringify(list)},`) });
+    const line = /const wasmAllowList = \{([^}]*)\};/;
+    if (!line.test(body)) throw new Error('flutter_bootstrap.js no longer has const wasmAllowList = { ... };');
+    const patched = body.replace(line, (_, engines: string) => `const wasmAllowList = { ${engines}, ...${JSON.stringify(list)} };`);
+    await route.fulfill({ response, body: patched });
   });
 }
 

@@ -120,7 +120,7 @@ const dartShadows = groups(tokens.shadow).map(([k, n]) => `${doc(n)}  static con
 const hex = tokens.shape.hex;
 
 const dart = `// GENERATED from design/tokens/snacklist.tokens.json by design/tokens/build.mjs. Do not edit.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Every colour token, in light or dark. Read it with
 /// \`Theme.of(context).extension<SnacklistColors>()!\` or [SnacklistColors.of].

@@ -15,7 +15,7 @@ import 'package:family_groceries/tips/checklist.dart';
 import 'package:family_groceries/tips/hint_views.dart';
 import 'package:family_groceries/tips/hints.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:snacklist_widgetbook/src/fixtures.dart' as fixtures;
 import 'package:snacklist_widgetbook/src/story.dart';
 

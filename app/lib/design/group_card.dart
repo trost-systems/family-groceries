@@ -1,7 +1,7 @@
 import 'package:family_groceries/design/pointy_hex.dart';
 import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A section's rows in an inset group (More, Einstellungen): the 2 px
 /// contour, the small sticker shadow, hairlines between the rows.

@@ -5,9 +5,9 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/delete_account_dialog.dart';
 import 'package:family_groceries/settings/export_saver.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Who is signed in, exporting the account's data and deleting the account
 /// (`/more/account`). A page of the More tab, which gives it its frame.

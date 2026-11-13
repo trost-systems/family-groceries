@@ -5,10 +5,10 @@ import 'package:family_groceries/design/hex_radio.dart';
 import 'package:family_groceries/design/hex_segmented.dart';
 import 'package:family_groceries/design/hex_switch.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SemanticsData;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One theme for every pump: a new one would animate the theme change.
 final _theme = appTheme(Brightness.light);

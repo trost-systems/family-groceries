@@ -17,9 +17,9 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/purchases/premium_dialogs.dart';
 import 'package:family_groceries/purchases/refund_help.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// More's Haushalt (job 169b): the shown household's name (rename), its
 /// members with their roles (the owner and admins remove members, the
@@ -449,6 +449,7 @@ class _RenameDialogState() extends State<_RenameDialog> {
       key: const ValueKey('household-rename-dialog'),
       title: Text(l10n.householdRenameTitle),
       content: TextField(
+        autofillHints: null,
         key: const ValueKey('household-rename-field'),
         controller: _name,
         autofocus: true,

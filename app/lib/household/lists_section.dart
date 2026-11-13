@@ -8,8 +8,8 @@ import 'package:family_groceries/list/list_names.dart';
 import 'package:family_groceries/list/list_tabs.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/name_dialog.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The household page's "Listen" (job 169b K): the household's lists in
 /// their order, each with how much is open on it and a menu to rename,

@@ -4,8 +4,8 @@ import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../purchases/fakes.dart';
 import 'harness.dart';

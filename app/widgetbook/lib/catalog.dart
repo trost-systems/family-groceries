@@ -2,8 +2,9 @@
 /// shared by the app (`main.dart`) and the tests.
 library;
 
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:flutter/material.dart' hide ThemeMode;
+import 'package:material_ui/material_ui.dart' hide ThemeMode;
 import 'package:snacklist_widgetbook/src/addons.dart';
 import 'package:snacklist_widgetbook/src/app_widgets.dart';
 import 'package:snacklist_widgetbook/src/controls.dart';
@@ -53,7 +54,7 @@ Config catalogConfig({ScenarioCallback? setUp}) => Config(
   home: const CatalogHome(),
   appBuilder: (context, child) => MaterialApp(
     debugShowCheckedModeBanner: false,
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     locale: const Locale('de'),
     home: child,

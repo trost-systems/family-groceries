@@ -3,8 +3,8 @@ import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 const _lidl = Store(id: 'lidl', name: 'Lidl', sortOrder: 0, seedKey: 'lidl');
 const _long = Store(
