@@ -1,9 +1,9 @@
 // Job 50: the integration lock against a database with the repo's migrations, through the
 // functions' production wiring. With app_switches.integration_lock off a household without premium
-// adds as before; with it on Siri and MCP refuse it, add nothing, and integration_blocked goes
-// out once per hour and integration without any content; a yearly plan opens both for the same
-// credentials, its lapse locks them again and deletes nothing. Alexa is free (job 72): it adds with
-// the switch on, before the plan and after its lapse. The db gate sets
+// adds as before; with it on MCP refuses it, adds nothing, and integration_blocked goes out once
+// per hour and integration without any content; a yearly plan opens it for the same credentials,
+// its lapse locks it again and deletes nothing. Siri (job 184) and Alexa (job 72) are free: they
+// add and read with the switch on, before the plan and after its lapse. The db gate sets
 // FG_DB_TEST=1 and SUPABASE_DB_URL; without them this is skipped.
 import { assert, assertEquals, assertFalse } from '@std/assert';
 import postgres from 'postgres';
@@ -19,9 +19,8 @@ import { createHandler as alexaHandler, type Linked } from '../alexa/handler.ts'
 import { testSkillId } from '../alexa/test_ca.ts';
 import type { Envelope } from '../alexa/verify.ts';
 import { buildServer, premiumRequired, reportToolCalls } from '../mcp/tools.ts';
-import { copy } from '../voice/copy.ts';
+import { productionDeps as voiceDeps } from '../voice/deps.ts';
 import { createHandler as voiceHandler } from '../voice/handler.ts';
-import { addItems, splitItems } from '../voice/items.ts';
 
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
 const admin = () => postgres(Deno.env.get('SUPABASE_DB_URL')!, { max: 1, prepare: false });
@@ -70,22 +69,20 @@ const items = (sql: postgres.Sql, householdId: string) =>
   sql<{ name: string }[]>`select name from public.items where household_id = ${householdId}
                           order by created_at, name`.then((rows) => rows.map((r) => r.name));
 
+/** Siri through the voice function's production deps, signed in with the app's Siri credential. */
 function voice(m: Member, telemetry: Telemetry) {
-  const handle = voiceHandler({
-    authenticate: () =>
-      Promise.resolve({ userId: m.userId, householdId: m.householdId, via: 'pat' as const }),
-    requirePremium: requirePremiumWith(telemetry),
-    isMember: () => Promise.resolve(false),
-    addItems: (auth, parsed) => asUser(auth.userId, (tx) => addItems(tx, auth.householdId, parsed)),
-    splitItems: (auth, parsed) =>
-      asUser(auth.userId, (tx) => splitItems(tx, auth.householdId, parsed)),
-  });
-  return async (text: string) => {
+  const handle = voiceHandler(
+    voiceDeps(
+      telemetry,
+      () => Promise.resolve({ userId: m.userId, householdId: m.householdId, via: 'siri' as const }),
+    ),
+  );
+  return async (text: string, mode: 'add' | 'read' = 'add') => {
     const res = await handle(
       new Request('http://local/voice', {
         method: 'POST',
         headers: { authorization: 'Bearer fgp_x', 'content-type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, mode, lang: 'de' }),
       }),
     );
     return { status: res.status, body: await res.json() };
@@ -195,33 +192,42 @@ test('switch off: a household without premium adds over Siri, Alexa and MCP as b
     );
   }));
 
-test('switch on: Siri and MCP locked, Alexa still adds (free, job 72), integration_blocked once each', () =>
+test('switch on: Siri and Alexa add and read without premium (free, jobs 184 and 72), MCP locked, integration_blocked once', () =>
   withHousehold(true, async (m, sql) => {
     const t = recorder();
     const siri = voice(m, t);
-    const locked = await siri('Milch, zwei Gurken und Klopapier');
-    assertEquals(locked, {
-      status: 200,
-      body: { error: 'premium_required', speech: copy.de.failures.premium_required },
-    });
-    await siri('Brot');
+    const added = await siri('Milch, zwei Gurken und Klopapier');
+    assertEquals(added.status, 200);
+    assertEquals(added.body.outcome, 'added');
     assertEquals(
       await alexa(m, t)('Eier'),
       'Ich habe Eier auf die Snacklist gesetzt.',
       'Alexa is never locked',
     );
+    const read = await siri('', 'read');
+    assertEquals([read.status, read.body.outcome, read.body.total], [200, 'read', 4]);
     const tool = mcp(m, t);
     for (const name of ['add_items', 'list_items']) {
       const result = await tool(name);
       assertEquals(result.isError, true);
       assertEquals(result.content[0].text, premiumRequired.de);
     }
-    assertEquals(await items(sql, m.householdId), ['Eier'], 'only the Alexa add went through');
+    assertEquals(
+      await items(sql, m.householdId),
+      ['Gurken', 'Klopapier', 'Milch', 'Eier'],
+      'the Siri and Alexa adds went through, the MCP add did not',
+    );
+    assertEquals(
+      (await sql`select integration from public.integration_blocks
+                 where household_id = ${m.householdId}`).map((r) => r.integration),
+      ['mcp'],
+      'Siri leaves no integration_blocks row',
+    );
 
     const blocked = t.queued.filter((e) => e.event === 'integration_blocked');
     assertEquals(
       blocked.map((e) => (e.properties as Record<string, unknown>).integration),
-      ['siri', 'mcp'],
+      ['mcp'],
       'once per locked integration within the hour',
     );
     assertEquals(
@@ -240,7 +246,7 @@ test('switch on: Siri and MCP locked, Alexa still adds (free, job 72), integrati
     }
   }));
 
-test('a yearly plan opens Siri and MCP with the same credentials; its lapse locks them and deletes nothing', () =>
+test('a yearly plan opens MCP with the same credentials; its lapse locks it and deletes nothing, Siri stays open', () =>
   withHousehold(true, async (m, sql) => {
     const t = recorder();
     const tx = `y50-${m.householdId.slice(0, 8)}`;
@@ -248,7 +254,7 @@ test('a yearly plan opens Siri and MCP with the same credentials; its lapse lock
               values (${m.householdId}, ${m.userId}, 'Kurzbefehl', ${
       crypto.randomUUID().replaceAll('-', '').padEnd(64, '5')
     }, '5050')`;
-    assertEquals((await voice(m, t)('Brot')).body.error, 'premium_required');
+    assertEquals((await mcp(m, t)('list_items')).isError, true);
 
     await yearly(sql, m, tx);
     assertEquals((await voice(m, t)('Milch')).body.speech, 'Hinzugefügt: Milch.');
@@ -257,14 +263,22 @@ test('a yearly plan opens Siri and MCP with the same credentials; its lapse lock
 
     await sql`select public.purchase_lifecycle('apple', ${tx}, now() + interval '1 second',
                 now() - interval '1 minute', false, false)`;
-    assertEquals((await voice(m, t)('Brot')).body.error, 'premium_required');
     assertEquals((await mcp(m, t)('list_items')).isError, true);
+    assertEquals(
+      (await voice(m, t)('Brot')).body.outcome,
+      'added',
+      'lapsed: Siri stays open',
+    );
     assertEquals(
       await alexa(m, t)('Käse'),
       'Ich habe Käse auf die Snacklist gesetzt.',
       'lapsed: Alexa stays open',
     );
-    assertEquals(await items(sql, m.householdId), ['Milch', 'Eier', 'Käse'], 'the list is kept');
+    assertEquals(
+      await items(sql, m.householdId),
+      ['Milch', 'Eier', 'Brot', 'Käse'],
+      'the list is kept',
+    );
     const [kept] = await sql<{ tokens: number; rows: number }[]>`
       select (select count(*)::int from public.personal_access_tokens
               where household_id = ${m.householdId} and revoked_at is null) as tokens,
@@ -273,11 +287,10 @@ test('a yearly plan opens Siri and MCP with the same credentials; its lapse lock
 
     await sql`select public.purchase_lifecycle('apple', ${tx}, now() + interval '2 seconds',
                 now() + interval '365 days', true, false)`;
-    assertEquals((await voice(m, t)('Brot')).body.speech, 'Hinzugefügt: Brot.');
     assert(!(await mcp(m, t)('list_items')).isError, 'renewed: open again, nothing to relink');
   }));
 
-test("job 185: a user's own yearly plan opens Siri and MCP; its lapse locks them, Alexa and the list stay", () =>
+test("job 185: a user's own yearly plan opens MCP; its lapse locks it, Siri, Alexa and the list stay", () =>
   withHousehold(true, async (m, sql) => {
     const t = recorder();
     const tx = `u185-${m.userId.slice(0, 8)}`;
@@ -287,7 +300,11 @@ test("job 185: a user's own yearly plan opens Siri and MCP; its lapse locks them
 
     await sql`select public.purchase_lifecycle('apple', ${tx}, now() + interval '1 second',
                 now() - interval '1 minute', false, false)`;
-    assertEquals((await voice(m, t)('Brot')).body.error, 'premium_required');
+    assertEquals(
+      (await voice(m, t)('Brot')).body.speech,
+      'Hinzugefügt: Brot.',
+      'lapsed: Siri stays free',
+    );
     assertEquals((await mcp(m, t)('list_items')).isError, true);
     assertEquals(await alexa(m, t)('Eier'), 'Ich habe Eier auf die Snacklist gesetzt.');
     await asUser(m.userId, (u) =>
@@ -302,5 +319,5 @@ test("job 185: a user's own yearly plan opens Siri and MCP; its lapse locks them
 
     await sql`select public.purchase_lifecycle('apple', ${tx}, now() + interval '2 seconds',
                 now() + interval '365 days', true, false)`;
-    assertEquals((await voice(m, t)('Brot')).body.speech, 'Hinzugefügt: Brot.');
+    assertFalse((await mcp(m, t)('list_items')).isError, 'renewed: MCP open again');
   }));

@@ -1,6 +1,6 @@
 // Job 51: lang, outcome, mode read and the siri_add / siri_read events of the voice function.
 import { assert, assertEquals, assertFalse, assertMatch } from '@std/assert';
-import { AuthError, type AuthFailure, type Via } from '../_shared/auth.ts';
+import { AuthError, type Via } from '../_shared/auth.ts';
 import { checkServerEvent, Telemetry } from '../_shared/telemetry.ts';
 import { copy, failureCodes } from './copy.ts';
 import { type Added, type Caller, createHandler, type Deps, type VoiceEvent } from './handler.ts';
@@ -28,8 +28,6 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
         ? Promise.resolve({ userId: 'u1', householdId: 'h1', via })
         : Promise.reject(new AuthError('invalid_token', 'test'));
     },
-    // The lock is off (or the household has premium): everything as before job 50.
-    requirePremium: () => Promise.resolve('open'),
     isMember: () => Promise.resolve(false),
     splitItems: (_caller, items) =>
       Promise.resolve(
@@ -302,14 +300,6 @@ Deno.test('every failure code has a German and an English answer', () => {
       assert(copy[lang].failures[code].trim().length > 10, `${lang} ${code}`);
     }
   }
-  assertEquals(
-    copy.de.failures.premium_required,
-    'Sprachbefehle sind Teil von Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.',
-  );
-  assertEquals(
-    copy.en.failures.premium_required,
-    "Voice commands are part of Snacklist Premium. You can unlock it in the app under More, Snacklist Premium. I didn't add anything.",
-  );
 });
 
 Deno.test('English failures say that nothing was added', () => {
@@ -320,50 +310,9 @@ Deno.test('English failures say that nothing was added', () => {
       'no_text',
       'too_long',
       'server',
-      'premium_required',
     ] as const
   ) {
     assertMatch(copy.en.failures[code], /nothing was added|didn't add anything/, code);
-  }
-});
-
-Deno.test('with the gate open (lock off) no request answers premium_required', async () => {
-  const reasons: AuthFailure[] = [
-    'missing_token',
-    'invalid_token',
-    'no_household',
-    'session_required',
-    'user_deleted',
-  ];
-  const variants: Partial<Deps>[] = [
-    {},
-    { addItems: () => Promise.reject(new Error('boom')) },
-    { readItems: () => Promise.reject(new Error('boom')) },
-    { authenticate: () => Promise.reject(new Error('jwks down')) },
-    ...reasons.map((r) => ({ authenticate: () => Promise.reject(new AuthError(r, 'test')) })),
-  ];
-  const texts = [undefined, '', 'milk', 'Milch, Eier und Brot', 'please', 'x '.repeat(600)];
-  const outcomes = new Set<string>();
-  for (const overrides of variants) {
-    const { handle } = fakeDeps(overrides);
-    for (const token of Object.keys(tokens)) {
-      for (const mode of ['add', 'parse', 'read', 'other']) {
-        for (const lang of ['de', 'en']) {
-          for (const text of texts) {
-            for (const query of ['', '?format=text']) {
-              const res = await handle(post({ text, mode, lang }, { token, query }));
-              const body = query ? { outcome: res.headers.get('content-type') } : await res.json();
-              if (query) await res.body?.cancel();
-              outcomes.add(body.outcome);
-            }
-          }
-        }
-      }
-    }
-  }
-  assertFalse(outcomes.has('premium_required'));
-  for (const seen of ['added', 'nothing_added', 'parsed', 'read', 'server', 'unauthorized']) {
-    assert(outcomes.has(seen), seen);
   }
 });
 

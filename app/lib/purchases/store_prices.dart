@@ -145,10 +145,11 @@ class FakeStorePrices(final StorePrices answer, {final bool manages = false})
   }
 }
 
-/// What fg's fake store charges: the launch prices.
+/// What fg's fake store charges: the approved euro prices
+/// (scripts/iap/product.ts).
 const fakeStorePrices = PricesRead({
-  PremiumPlan.yearly: StorePrice('9,99 €', 'EUR'),
-  PremiumPlan.lifetime: StorePrice('29,99 €', 'EUR'),
+  PremiumPlan.yearly: StorePrice('24,99 €', 'EUR'),
+  PremiumPlan.lifetime: StorePrice('149,99 €', 'EUR'),
 });
 
 /// The web app never reads a store, fake or not. [fakeStore] (the

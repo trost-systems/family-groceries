@@ -1665,10 +1665,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Snacklist Premium covers your whole household, including everyone who joins later.';
 
   @override
-  String get premiumBenefitSiri =>
-      'Add to the list with Siri, without opening the app';
-
-  @override
   String get premiumBenefitAi =>
       'Connect AI assistants that support MCP to your list';
 
@@ -1731,8 +1727,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get premiumOneTime => 'one-time';
 
   @override
-  String get premiumLifetimeValue =>
-      'Pay once, for good: as much as three years.';
+  String get premiumLifetimeValue => 'Pay once, for good.';
 
   @override
   String get premiumYearlyTerms =>
@@ -1826,10 +1821,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get integrationPremiumBody =>
-      'Siri and AI assistants are part of Snacklist Premium. Your connections stay saved and work again as soon as your household has Snacklist Premium.';
-
-  @override
-  String get integrationPremiumSiri => 'Siri on iPhone';
+      'AI assistants are part of Snacklist Premium. Your connections stay saved and work again as soon as your household has Snacklist Premium.';
 
   @override
   String get integrationPremiumAi => 'AI assistants that support MCP';

@@ -308,8 +308,10 @@ Deno.test('siri_add and siri_read (job 51): result, reason, language, source and
   const subject = { installId: INSTALL, householdId: household };
   const add = { result: 'success', reason: 'added', language: 'en', source: 'native', count: 3 };
   assert(t.event('siri_add', subject, add));
-  assert(
+  assert(t.event('siri_add', subject, { ...add, result: 'fail', reason: 'server', count: 0 }));
+  assertFalse(
     t.event('siri_add', subject, { ...add, result: 'fail', reason: 'premium_required', count: 0 }),
+    'Siri is free (job 184)',
   );
   assertFalse(t.event('siri_add', subject, { ...add, count: 31 }));
   assertFalse(t.event('siri_add', subject, { ...add, count: 2.5 }));
@@ -337,13 +339,17 @@ Deno.test('integration_blocked (jobs 50, 73): the integration only, never what w
   const t = telemetryFor('mcp', env({ POSTHOG_PROJECT_API_KEY: KEY, POSTHOG_HOST: EU }), fetchImpl);
   const household = '7d1e4f0a-2b3c-4d5e-8f90-a1b2c3d4e5f6';
   const subject = { installId: INSTALL, householdId: household };
-  for (const integration of ['siri', 'mcp', 'api']) {
+  for (const integration of ['mcp', 'api']) {
     assert(t.event('integration_blocked', subject, { integration }));
   }
   assertFalse(t.event('integration_blocked', subject, { integration: 'google' }));
   assertFalse(
     t.event('integration_blocked', subject, { integration: 'alexa' }),
     'Alexa is free (job 72)',
+  );
+  assertFalse(
+    t.event('integration_blocked', subject, { integration: 'siri' }),
+    'Siri is free (job 184)',
   );
   assertFalse(t.event('integration_blocked', subject, { integration: 'mcp', text: 'Milch' }));
   assertFalse(t.event('integration_blocked', subject, { integration: 'mcp', tool: 'add_items' }));
@@ -352,7 +358,7 @@ Deno.test('integration_blocked (jobs 50, 73): the integration only, never what w
   const [post] = sent;
   assertExists(post);
   const batch = post.body.batch as { properties: Record<string, unknown> }[];
-  assertEquals(batch.map((e) => e.properties.integration), ['siri', 'mcp', 'api']);
+  assertEquals(batch.map((e) => e.properties.integration), ['mcp', 'api']);
   assertEquals(batch[0]?.properties.household_id, household);
 });
 

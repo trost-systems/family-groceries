@@ -2792,12 +2792,6 @@ abstract class AppLocalizations {
   /// **'Snacklist Premium gilt für euren ganzen Haushalt, auch für alle, die später dazukommen.'**
   String get premiumHeroBody;
 
-  /// Premium page (PW-P4, job 87): benefit line, Siri
-  ///
-  /// In de, this message translates to:
-  /// **'Per Siri auf die Liste, ohne die App zu öffnen'**
-  String get premiumBenefitSiri;
-
   /// FINAL (Legal Review N-67, 2026-11-04; Peter 2026-10-31: no assistant brand named): Premium page, benefit line, AI assistants over MCP
   ///
   /// In de, this message translates to:
@@ -2888,10 +2882,10 @@ abstract class AppLocalizations {
   /// **'einmalig'**
   String get premiumOneTime;
 
-  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: Lifetime framed as three times the yearly price (Spec #4 AC9), without computing an amount
+  /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the line under the Lifetime tile. No amount and no ratio to the yearly price: the store sets both prices (Peter, t788u, 11 Nov 2026, supersedes Spec #4 AC9's three-years framing)
   ///
   /// In de, this message translates to:
-  /// **'Einmal zahlen, für immer: so viel wie drei Jahre.'**
+  /// **'Einmal zahlen, für immer.'**
   String get premiumLifetimeValue;
 
   /// PLACEHOLDER (job 49): Snacklist Launch / Legal Review K.13 write the final copy (NEEDS_LEAD Job 49). Premium page: the subscription disclosures next to the yearly card and its Buy button (App Store Review Guidelines 3.1.2, Google Play)
@@ -3041,14 +3035,8 @@ abstract class AppLocalizations {
   /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: why the connections are paused; nothing is removed
   ///
   /// In de, this message translates to:
-  /// **'Siri und KI-Assistenten gehören zu Snacklist Premium. Eure Verbindungen bleiben gespeichert und funktionieren wieder, sobald euer Haushalt Snacklist Premium hat.'**
+  /// **'KI-Assistenten gehören zu Snacklist Premium. Eure Verbindungen bleiben gespeichert und funktionieren wieder, sobald euer Haushalt Snacklist Premium hat.'**
   String get integrationPremiumBody;
-
-  /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Snacklist Premium
-  ///
-  /// In de, this message translates to:
-  /// **'Siri auf dem iPhone'**
-  String get integrationPremiumSiri;
 
   /// PLACEHOLDER (job 50): Snacklist Launch writes the final copy (NEEDS_LEAD Job 50). Integration settings, locked household: included in Snacklist Premium
   ///

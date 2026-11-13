@@ -1,9 +1,9 @@
-// Job 50 (Spec #4): Siri and MCP are part of Snacklist Premium once the server's integration_lock
-// switch is on. A household without premium is refused in context and nothing is added; the
-// integration settings say so for every member, with connections paused, not removed; a yearly
-// plan opens both within one sync with the same credentials; its expiry locks them again and
-// deletes nothing. A tester's grant works throughout. Alexa stays free (job 72, Legal Review
-// N-27): it adds throughout and its connection never shows as paused.
+// Job 50 (Spec #4): MCP is part of Snacklist Premium once the server's integration_lock switch is
+// on. A household without premium is refused in context and nothing is added; the integration
+// settings say so for every member, with connections paused, not removed; a yearly plan opens it
+// within one sync with the same credentials; its expiry locks it again and deletes nothing. A
+// tester's grant works throughout. Siri (job 184) and Alexa (job 72, Legal Review N-27) stay free:
+// they add throughout and Alexa's connection never shows as paused.
 //
 // The switch is global, so this spec runs alone after the suite (scripts/gates/e2e.sh,
 // FG_E2E_INTEGRATION_LOCK): it turns the switch on and off again.
@@ -29,8 +29,6 @@ import { connectWithToken } from './mcp-helpers';
 
 test.describe.configure({ mode: 'serial' });
 
-const voicePremium =
-  'Sprachbefehle sind Teil von Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts hinzugefügt.';
 const mcpPremium =
   'Dieser Haushalt braucht Snacklist Premium für den Zugang über KI-Assistenten. Schalte es in der Snacklist-App frei. Es wurde nichts gelesen oder geändert.';
 
@@ -93,8 +91,8 @@ const tile = (page: Page, name: string) =>
     .or(page.getByRole('button', { name: new RegExp(`^${name} .* · `) }));
 const paused = (page: Page) => page.getByRole('group', { name: /Pausiert: braucht Snacklist Premium$/ });
 
-test('locked household: Siri and MCP refuse in context and add nothing, Alexa adds; a yearly plan opens '
-  + 'both for every member with the same credentials; its expiry locks again and keeps everything', async ({ browser, baseURL }) => {
+test('locked household: MCP refuses in context and adds nothing, Siri and Alexa add; a yearly plan opens '
+  + 'MCP for every member with the same credentials; its expiry locks again and keeps everything', async ({ browser, baseURL }) => {
   test.setTimeout(240_000);
   const peterEmail = newEmail('lock-peter');
   const leaEmail = newEmail('lock-lea');
@@ -114,13 +112,14 @@ test('locked household: Siri and MCP refuse in context and add nothing, Alexa ad
   await peter.goto('/');
   const mcp = await connectWithToken(shortcut);
 
-  expect(await siri(shortcut, 'Milch, zwei Gurken und Klopapier')).toEqual({ status: 200, speech: voicePremium });
+  expect(await siri(shortcut, 'Brot'), 'Siri is never locked (job 184)')
+    .toEqual({ status: 200, speech: 'Hinzugefügt: Brot.' });
   expect(await alexaSay(alexa.access_token, 'Eier'), 'Alexa is never locked').toBe('Ich habe Eier auf die Snacklist gesetzt.');
   const tools = (await mcp.listTools()).tools.map((t) => t.name);
   expect(tools, 'tools/list stays reachable').toContain('add_items');
   expect(await toolText(mcp, 'add_items', { items: [{ name: 'Kaffee' }] })).toEqual({ isError: true, text: mcpPremium });
   expect(await toolText(mcp, 'list_items')).toEqual({ isError: true, text: mcpPremium });
-  expect(await openNames(peterEmail), 'only the Alexa add went through').toEqual(['Eier']);
+  expect(await openNames(peterEmail), 'the Siri and Alexa adds went through').toEqual(['Brot', 'Eier']);
 
   // Both members see it in the integration settings; the web sells nothing.
   await openMore(peter, 'Zugänge');
@@ -147,16 +146,18 @@ test('locked household: Siri and MCP refuse in context and add nothing, Alexa ad
   expect(await siri(shortcut, 'Milch')).toEqual({ status: 200, speech: 'Hinzugefügt: Milch.' });
   expect(await alexaSay(alexa.access_token, 'Butter')).toBe('Ich habe Butter auf die Snacklist gesetzt.');
   expect((await toolText(mcp, 'add_items', { items: [{ name: 'Kaffee' }] })).isError).toBe(false);
-  expect(await openNames(peterEmail)).toEqual(['Eier', 'Milch', 'Butter', 'Kaffee']);
+  expect(await openNames(peterEmail)).toEqual(['Brot', 'Eier', 'Milch', 'Butter', 'Kaffee']);
 
   // The plan expires: locked again at read time, nothing deleted or disconnected.
   expect((await rcEvent('EXPIRATION', household, tx, { productId: yearlyId, expiresInDays: -1 })).body)
     .toEqual({ status: 'updated' });
   await expect(card(lea), 'locked again, live').toBeVisible({ timeout: 10_000 });
-  expect(await siri(shortcut, 'Brot')).toEqual({ status: 200, speech: voicePremium });
+  expect(await siri(shortcut, 'Quark'), 'lapsed: Siri stays open')
+    .toEqual({ status: 200, speech: 'Hinzugefügt: Quark.' });
   expect(await alexaSay(alexa.access_token, 'Käse'), 'lapsed: Alexa stays open').toBe('Ich habe Käse auf die Snacklist gesetzt.');
   expect((await toolText(mcp, 'list_items')).isError).toBe(true);
-  expect(await openNames(peterEmail), 'the list stays').toEqual(['Eier', 'Milch', 'Butter', 'Kaffee', 'Käse']);
+  expect(await openNames(peterEmail), 'the list stays')
+    .toEqual(['Brot', 'Eier', 'Milch', 'Butter', 'Kaffee', 'Quark', 'Käse']);
   const { data: tokens } = await (await apiAs(peterEmail)).from('personal_access_tokens').select('name, revoked_at');
   expect(tokens, 'no token revoked').toEqual([{ name: 'Kurzbefehl', revoked_at: null }]);
   await expect(tile(peter, 'Kurzbefehl'), 'the Shortcut token stays, paused')
@@ -168,9 +169,9 @@ test('locked household: Siri and MCP refuse in context and add nothing, Alexa ad
   // Renewed: open again, still the same credentials.
   expect((await rcEvent('RENEWAL', household, tx, { productId: yearlyId })).body).toEqual({ status: 'restored' });
   await expect(card(lea)).toHaveCount(0, { timeout: 10_000 });
-  expect(await siri(shortcut, 'Brot')).toEqual({ status: 200, speech: 'Hinzugefügt: Brot.' });
+  expect((await toolText(mcp, 'add_items', { items: [{ name: 'Senf' }] })).isError).toBe(false);
   await peter.getByRole('tab', { name: 'Liste' }).click();
-  await expect(itemRow(peter, 'Brot')).toBeVisible();
+  await expect(itemRow(peter, 'Senf')).toBeVisible();
   await mcp.close();
 });
 
@@ -187,14 +188,17 @@ test("a tester's household works with the lock on; a beta household without a gr
   // stores it like this (promotional_premium_sync, docs/PURCHASES.md "Testers").
   expect(await promote(await householdOf(tessEmail))).toBe('granted');
 
-  expect(await siri(await pat(tessEmail, 'Kurzbefehl'), 'Milch')).toEqual({ status: 200, speech: 'Hinzugefügt: Milch.' });
-  const beta = await pat(betaEmail, 'Kurzbefehl');
-  expect(await siri(beta, 'Milch')).toEqual({ status: 200, speech: voicePremium });
+  const tessMcp = await connectWithToken(await pat(tessEmail, 'Kurzbefehl'));
+  expect((await toolText(tessMcp, 'list_items')).isError).toBe(false);
+  await tessMcp.close();
+  const beta = await connectWithToken(await pat(betaEmail, 'Kurzbefehl'));
+  expect(await toolText(beta, 'list_items')).toEqual({ isError: true, text: mcpPremium });
 
   // The cut-over: the Lead grants the beta tester's household at RevenueCat
   // (scripts/iap/promotional.ts grant); it unlocks at once and the same token works.
   expect(await promote(await householdOf(betaEmail))).toBe('granted');
-  expect(await siri(beta, 'Milch')).toEqual({ status: 200, speech: 'Hinzugefügt: Milch.' });
+  expect((await toolText(beta, 'list_items')).isError).toBe(false);
+  await beta.close();
   await tess.goto('/');
   await openMore(tess, 'Zugänge');
   await expect(tile(tess, 'Kurzbefehl')).toBeVisible();

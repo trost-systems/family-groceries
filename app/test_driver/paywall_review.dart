@@ -143,8 +143,8 @@ Future<void> main() async {
 /// On GitHub's macOS runner StoreKit's local test store does not open and
 /// the sandbox answers with the US storefront (DECISIONS, job 86).
 const _germanStorefront = {
-  PremiumPlan.yearly: StorePrice('9,99\u00a0€', 'EUR'),
-  PremiumPlan.lifetime: StorePrice('29,99\u00a0€', 'EUR'),
+  PremiumPlan.yearly: StorePrice('24,99\u00a0€', 'EUR'),
+  PremiumPlan.lifetime: StorePrice('149,99\u00a0€', 'EUR'),
 };
 
 /// Asks StoreKit through the page's real channel (up to six times) and

@@ -1,7 +1,7 @@
-// Job 50: Siri and MCP / AI assistants are part of Snacklist Premium (Spec #4), and the API (job
-// 73); Alexa stays free (job 72, Legal Review N-27) and never asks. Every other integration
-// endpoint asks requirePremium once it knows the caller's household; the rule itself lives in
-// Postgres (public.integration_gate: the integration_lock switch, then job 49's
+// Job 50: MCP / AI assistants are part of Snacklist Premium (Spec #4), and the API (job 73);
+// Siri (job 184) and Alexa (job 72, Legal Review N-27) stay free and never ask. Every other
+// integration endpoint asks requirePremium once it knows the caller's household; the rule itself
+// lives in Postgres (public.integration_gate: the integration_lock switch, then job 49's
 // household_has_premium or job 185's user_has_premium of the caller), never here. A locked
 // household's first refusal of the hour per integration counts as integration_blocked for an
 // install that said yes to analytics. A failing check throws: the endpoint answers with its
@@ -10,7 +10,7 @@ import { serviceDb, type Sql } from './db.ts';
 import type { Telemetry } from './telemetry.ts';
 import { userEvents } from './user_events.ts';
 
-export type Integration = 'siri' | 'mcp' | 'api';
+export type Integration = 'mcp' | 'api';
 
 export type Access = 'open' | 'locked';
 

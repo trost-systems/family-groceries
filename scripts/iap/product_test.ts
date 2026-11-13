@@ -116,7 +116,7 @@ Deno.test('Apple: a non-consumable without Family Sharing, priced in Germany', (
   assertEquals(
     basePricePoint([
       { id: 'a', attributes: { customerPrice: '8.99' } },
-      { id: 'b', attributes: { customerPrice: '29.99' } },
+      { id: 'b', attributes: { customerPrice: '149.99' } },
     ])?.id,
     'b',
   );
@@ -126,7 +126,7 @@ Deno.test('Apple: a non-consumable without Family Sharing, priced in Germany', (
   assertEquals(availability.data.attributes.availableInNewTerritories, true);
 });
 
-Deno.test('Google: the same id, listings and 29.99 EUR in Germany', () => {
+Deno.test('Google: the same id, listings and 149.99 EUR in Germany', () => {
   const body = oneTimeProductBody() as {
     productId: string;
     listings: { languageCode: string }[];
@@ -138,7 +138,7 @@ Deno.test('Google: the same id, listings and 29.99 EUR in Germany', () => {
   assertEquals(body.listings.map((l) => l.languageCode), ['de-DE', 'en-US']);
   assertEquals(body.purchaseOptions[0].regionalPricingAndAvailabilityConfigs[0], {
     regionCode: 'DE',
-    price: { currencyCode: 'EUR', units: '29', nanos: 990_000_000 },
+    price: { currencyCode: 'EUR', units: '149', nanos: 990_000_000 },
     availability: 'AVAILABLE',
   } as never);
   assertEquals(money('10', 'CHF'), { currencyCode: 'CHF', units: '10', nanos: 0 });

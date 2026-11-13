@@ -197,14 +197,14 @@ void main() {
       expect(choose(platform: TargetPlatform.linux), isA<NoStorePrices>());
     });
 
-    test('the fake store charges the launch prices outside release', () async {
+    test('the fake store charges approved prices outside release', () async {
       for (final platform in [TargetPlatform.linux, TargetPlatform.android]) {
         final reader = choose(platform: platform, fakeStore: 'ok');
         expect(reader, isA<FakeStorePrices>());
         final read = await reader.read() as PricesRead;
         expect(read.prices, {
-          PremiumPlan.yearly: const StorePrice('9,99 €', 'EUR'),
-          PremiumPlan.lifetime: const StorePrice('29,99 €', 'EUR'),
+          PremiumPlan.yearly: const StorePrice('24,99 €', 'EUR'),
+          PremiumPlan.lifetime: const StorePrice('149,99 €', 'EUR'),
         });
       }
       expect(

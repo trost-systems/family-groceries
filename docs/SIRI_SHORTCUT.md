@@ -191,15 +191,11 @@ die Erinnerungen-App, gib dem Kurzbefehl einen eindeutigeren Namen, etwa
     -d '{"text": "Milch, zwei Gurken und Klopapier"}'
   ```
 
-- Integration lock (Job 50, docs/PURCHASES.md „Integration lock“): Ist der
-  Server-Schalter `integration_lock` an und hat der Haushalt kein Snacklist
-  Premium, antwortet der Endpunkt jeder Anfrage mit einem Zugriffstoken
-  oder der Siri-Anmeldung mit HTTP 200 und dem Satz „Sprachbefehle sind Teil
-  von Snacklist Premium. Du kannst es in der App freischalten. Ich habe nichts
-  hinzugefügt.“ (`error`/`outcome` `premium_required`; Platzhaltertext).
-  Nichts wird hinzugefügt oder vorgelesen; der Token bleibt gültig und
-  funktioniert ohne neue Einrichtung, sobald der Haushalt Premium hat. Die
-  Spracheingabe in der App selbst (Sitzungstoken, `mode: "parse"`) ist frei.
+- Integration lock (Job 50, docs/PURCHASES.md „Integration lock“): Siri
+  ist frei wie Alexa (Job 184). Der Endpunkt fragt das Schloss nicht, auch
+  wenn der Server-Schalter `integration_lock` an ist und der Haushalt kein
+  Snacklist Premium hat; `public.integration_gate` antwortet für `siri`
+  offen, auch einer älteren voice-Funktion.
   Mit `"split": true` (die App seit Job 111) kommt jeder Eintrag zusätzlich
   mit Marke, Eigenschaften und Laden zurück, wie `add_item` sie speichert
   (`brand`, `properties`, `storeId`); ohne bleibt die Antwort wie bisher.
@@ -233,8 +229,9 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
   (`NLLanguageRecognizer`, English or German), else the app's language.
 - **Answer.** A request with `lang` gets `outcome` in every JSON answer: `added`, `nothing_added`,
   `parsed`, `read`, or the failure code (also in `error`): `method`, `unauthorized`,
-  `no_household`, `no_text`, `too_long`, `nothing_understood`, `server`, and `premium_required`
-  (job 50's integration lock, below). `mode: "read"` answers `{outcome, speech, items: [{name,
+  `no_household`, `no_text`, `too_long`, `nothing_understood` and `server`. Since job 184 Siri
+  is free, so the function no longer answers `premium_required` (the app still understands it).
+  `mode: "read"` answers `{outcome, speech, items: [{name,
   quantity}], total}`, the speech naming the first ten. Requests without `lang`, like this
   Shortcut, get exactly the answers from before job 51.
 - **English** splitting is `supabase/functions/voice/parse_en.ts` (cases in `parse_en_test.ts`), every
@@ -313,7 +310,7 @@ The fix:
   allowed Siri for the app: `SiriBridge` asks once (`INPreferences.requestSiriAuthorization`)
   when the app stores the Siri credential after sign-in. A list name the user says is ignored;
   the household has one list. Siri speaks its own confirmation here, not `voice`'s sentence.
-  Every failure, signed out, no household and the integration lock included, answers `failure`:
+  Every failure, signed out and no household included, answers `failure`:
   Siri says its own localized sentence and stays in its sheet (job 97; `failureRequiringAppLaunch`
   opened the app). A Lists response has no field for the app's own words, so the reason ("open
   Snacklist and sign in") is spoken only on the App Shortcuts path.

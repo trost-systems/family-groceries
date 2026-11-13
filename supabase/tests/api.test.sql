@@ -3,7 +3,7 @@
 -- the key's bucket and the household's day, throttles an address after failed authentications,
 -- and reaches only the key's own household; MCP and Siri never take an API key.
 begin;
-select plan(65);
+select plan(67);
 
 -- The API is switched off after the migrations (public_api_switch.test.sql); these run with it on.
 update public.app_switches set enabled = true where key = 'public_api';
@@ -227,9 +227,14 @@ select results_eq($$ select locked, report from public.integration_gate((select 
   $$ values (true, true) $$, 'with it on, a household without Premium is locked and reported once');
 select is((select integration from public.integration_blocks where household_id = (select id from hb)), 'api',
   'the refusal is noted for the API');
--- After every migration (job 72's alexa_free runs before this one): Alexa stays free, the API does not.
+-- After every migration (job 72's alexa_free runs before this one, job 184's siri_free after it):
+-- Siri and Alexa stay free, the API does not.
 select is((select locked from public.integration_gate((select id from hb), 'alexa')), false,
   'with the lock on, Alexa stays open for a household without Premium (job 72)');
+select results_eq($$ select locked, report from public.integration_gate((select id from hb), 'siri') $$,
+  $$ values (false, false) $$, 'and Siri, unreported (job 184)');
+select ok(not exists (select from public.integration_blocks where household_id = (select id from hb) and integration = 'siri'),
+  'Siri is never noted as blocked');
 select is((select locked from public.integration_gate((select id from hb), 'mcp')), true,
   'MCP is locked for it');
 select is(public.promotional_premium_sync((select id from ha), true, '2100-01-01T00:00:00Z'), 'granted',

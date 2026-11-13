@@ -18,7 +18,7 @@ function gate(answer: { locked: boolean; report: boolean } | Error, blocked?: ()
 
 Deno.test('open: nothing is reported', async () => {
   const g = gate({ locked: false, report: false });
-  assertEquals(await g.require(caller, 'siri'), 'open');
+  assertEquals(await g.require(caller, 'mcp'), 'open');
   assertEquals(g.reported, []);
 });
 
@@ -38,5 +38,5 @@ Deno.test('a failing event never changes the answer', async () => {
 
 Deno.test('a failing check throws, so the endpoint answers with its transient error', async () => {
   const g = gate(new Error('connection refused'));
-  await assertRejects(() => g.require(caller, 'siri'), Error, 'connection refused');
+  await assertRejects(() => g.require(caller, 'mcp'), Error, 'connection refused');
 });

@@ -11697,3 +11697,27 @@ project. Migration `20261112232617_per_user_premium.sql`; docs/PURCHASES.md "Per
     account switch and no longer on a household switch (the pending unlock follows the user, and
     a reset would offer Buy again while it is on its way); the fake RevenueCat keeps purchases per App User ID. Documented: rolling
     `purchases` back past this job loses new builds' purchases once sales are on (DEPLOY.md).
+
+## Job 184: Siri free, and the approved prices as a drift-check transition, 2026-11-13
+
+- **Siri is free, like Alexa.** Peter decided it (product feature map, row `siri`). The gate
+  `public.integration_gate` answers open for `siri` as for `alexa`, and still accepts the name,
+  because voice functions deployed before this migration keep asking during a rollout. The voice
+  function stops asking at all, as Alexa's never did, so `premium_required` is gone from its
+  answers. MCP and the API stay Premium. The `integration_lock` switch stays off.
+- **No flag for the copy.** Every changed line is unreachable today: the Zugänge Premium card
+  shows only while the server enforces the lock (off), and the Premium page named Siri only with
+  `NATIVE_SIRI_LIVE` (the `native-siri` hold, not released). Testers see no change, so there is
+  nothing to hide behind a flag, and the changelog says `none`.
+- **Lifetime copy names no ratio.** „so viel wie drei Jahre“ held at €9.99 / €29.99. At the
+  approved €24.99 / €149.99 it is six years, and other currencies will differ again. The line now
+  claims no ratio, so it stays true whatever the stores charge; amounts on the Premium page come
+  from StoreKit and Play Billing only (`store_prices.dart`).
+- **`expectedPrices` holds the approved euro prices, and accepts the old ones with a note.** SP1
+  allows recording €24.99 / €149.99 as the drift check's target now. The stores still charge
+  €9.99 / €29.99 until Ops moves them, and the daily `price-drift.yml` would fail on every run in
+  between. A euro storefront therefore names the superseded amounts too: the store at the old
+  price is a note, at the approved price clean, at any third price a failure. Once Ops has set
+  every store, a PR deletes the superseded amounts. USD, GBP, CHF and the yearly-only
+  storefronts keep today's store figures; Ops sets their new prices without Peter, and a PR
+  records what the stores then report. No store, RevenueCat or console was touched.

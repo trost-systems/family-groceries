@@ -82,8 +82,8 @@ abstract final class Environment() {
   /// (Legal Review); on in e2e (`config/e2e.json`).
   static const householdArchive = bool.fromEnvironment('HOUSEHOLD_ARCHIVE');
 
-  /// Shows in the integration settings that Siri and AI assistants are part
-  /// of Snacklist Premium (Alexa stays free), for a household without it,
+  /// Shows in the integration settings that AI assistants are part of
+  /// Snacklist Premium (Siri and Alexa stay free), for a household without it,
   /// while the server's `integration_lock` switch is on (job 50). Off by
   /// default; on only after the switch, in the order docs/PURCHASES.md gives
   /// ("Integration lock"). Turn it on with
@@ -100,9 +100,9 @@ abstract final class Environment() {
   );
 
   /// Native Siri (job 51, with the German fix of PR #194) is live in this
-  /// build: the beta-end notice (N-55) then names Siri among Snacklist
-  /// Premium's features. Store builds pass it exactly when
-  /// `releases/flags.json` releases the `native-siri` hold (Fastfile).
+  /// build: the iPhone then gets the Siri hint (tips/hints.dart). Store
+  /// builds pass it exactly when `releases/flags.json` releases the
+  /// `native-siri` hold (Fastfile).
   static const nativeSiriLive = bool.fromEnvironment('NATIVE_SIRI_LIVE');
 
   /// This is the public Play production build: outside the iPhone (whose
