@@ -29,3 +29,13 @@ term.
 - Job 182 and PR #363 are untouched.
 - Open, as the brief asks: which Premium slice is required for the paid launch, the Lifetime allowance numbers, and `shared-views`. Also open: the last-price memory tier, which no decision re-tiered, and the grocery-log history boundary.
 - The t788u and t789u research notes are not on hz. The brief was the source.
+
+## Review 0 fixes (follow-up PR)
+
+- **Sources.** "Sources and method" no longer claims the living Page was checked. The map was written from the lead's brief only, and a cross-check against the Page is still to do.
+- **`validation-plan` row.** It now says F5 measures nothing today. `mcp_tool_call` capture is off under N-147 (#383), and `api_key_used` cannot fire while `public_api` is off. Both are server events in `_shared/telemetry.ts`, not app events in `events.dart`.
+- **Also.**
+  - The code-check sha is now `764265b0`.
+  - The Free tiers are marked as the tier each feature gets when built.
+  - Open decisions 7 and 10 are reframed to the 1 Dec paid launch.
+  - The root `DONE_SUMMARY.md` entry now matches its neighbours' style.
