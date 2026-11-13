@@ -991,7 +991,7 @@ void main() {
       );
     });
 
-    // Job 85 addendum: the Rechtliches label and its rows, sign-out and the
+    // Job 85 addendum: the legal rows, sign-out and the
     // version at the end of More, in a build that sends usage data.
     for (final (lang, device) in const [
       ('de', Locale('de', 'DE')),

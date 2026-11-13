@@ -986,9 +986,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get legal => 'Legal';
-
-  @override
   String get imprint => 'Imprint';
 
   @override

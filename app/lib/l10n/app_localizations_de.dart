@@ -997,9 +997,6 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String get legal => 'Rechtliches';
-
-  @override
   String get imprint => 'Impressum';
 
   @override

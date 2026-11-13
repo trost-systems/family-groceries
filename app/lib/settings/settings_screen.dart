@@ -15,7 +15,7 @@ import 'package:material_ui/material_ui.dart';
 /// control, System, Hell or Dunkel; and the language, a row that opens
 /// [LanguageScreen]. Both are kept on the device and apply at once.
 class const SettingsScreen({super.key}) extends StatelessWidget {
-  /// More's RECHTLICHES overline: over its group, at the group's inset.
+  /// A section overline over its group, at the group's inset.
   static const _labelPadding = EdgeInsets.fromLTRB(20, HlSpace.s5, 20, 0);
 
   @override

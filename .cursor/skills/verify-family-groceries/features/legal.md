@@ -1,6 +1,6 @@
 # Help page and legal links
 
-The help and contact page lives on the guides site (`site/`, snacklist.app): `/support` (German) and `/en/support`, from `site/content/legal/support.md` and `support-en.md`. Peter approved the text on 2026-10-30 (#126), so both pages are published in every build without a banner, and the site footer links them. The app opens them from More → "Hilfe & Kontakt" in every build. The privacy policy and its app links are job 33a/33b's (in the app: the row "Datenschutzerklärung" under the label "Rechtliches" on More); the imprint is `sm-imprint` in `shell-more.md`; the guides on the same site are `features/guides.md`.
+The help and contact page lives on the guides site (`site/`, snacklist.app): `/support` (German) and `/en/support`, from `site/content/legal/support.md` and `support-en.md`. Peter approved the text on 2026-10-30 (#126), so both pages are published in every build without a banner, and the site footer links them. The app opens them from More → "Hilfe & Kontakt" in every build. The privacy policy and its app links are job 33a/33b's (in the app: the row "Datenschutzerklärung" in the legal group on More); the imprint is `sm-imprint` in `shell-more.md`; the guides on the same site are `features/guides.md`.
 
 ## Sub-features
 
@@ -13,7 +13,7 @@ The help and contact page lives on the guides site (`site/`, snacklist.app): `/s
 
 - Tap "Mehr", scroll to "Feedback senden" and tap "Hilfe & Kontakt" below it.
 - Open https://snacklist.app/support, or follow the footer link on any page of the site.
-- Imprint and privacy also sit under the login form as "Impressum · Datenschutz" (`legal-imprint`, `legal-privacy`; web e2e `e2e/tests/legal.spec.ts`), and in the app as direct rows on More under the label "Rechtliches" (`more-imprint`, `more-privacy-policy`, `more-terms`, `more-licenses`; `features/shell-more.md`, `sm-legal`). The imprint is two taps from the list (Mehr, Impressum).
+- Imprint and privacy also sit under the login form as "Impressum · Datenschutz" (`legal-imprint`, `legal-privacy`; web e2e `e2e/tests/legal.spec.ts`), and in the app as direct rows on More, a group without a label (`more-imprint`, `more-privacy-policy`, `more-terms`, `more-licenses`; `features/shell-more.md`, `sm-legal`). The imprint is two taps from the list (Mehr, Impressum).
 
 ## Driving it with fg
 

@@ -361,8 +361,6 @@
   "@languageSystemNow": {"placeholders": {"language": {"type": "String"}}, "description": "Under the device option: the language the device gives now, in its own name"},
   "languageSystemPicked": "Device ({language})",
   "@languageSystemPicked": {"placeholders": {"language": {"type": "String"}}, "description": "Settings: the language row while it follows the device"},
-  "legal": "Legal",
-  "@legal": {"description": "More: label above the legal rows (imprint, privacy policy, terms, licenses)"},
   "imprint": "Imprint",
   "@imprint": {"description": "More: legal notice"},
   "privacy": "Privacy",

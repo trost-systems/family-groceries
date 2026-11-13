@@ -1640,12 +1640,6 @@ abstract class AppLocalizations {
   /// **'Wie Gerät ({language})'**
   String languageSystemPicked(String language);
 
-  /// More: label above the legal rows (imprint, privacy policy, terms, licenses)
-  ///
-  /// In de, this message translates to:
-  /// **'Rechtliches'**
-  String get legal;
-
   /// More: legal notice
   ///
   /// In de, this message translates to:
@@ -1664,7 +1658,7 @@ abstract class AppLocalizations {
   /// **'Lizenzen'**
   String get licenses;
 
-  /// More → Datenschutz and Rechtliches: the link to the privacy policy on the site
+  /// More, the legal rows: the link to the privacy policy on the site
   ///
   /// In de, this message translates to:
   /// **'Datenschutzerklärung'**

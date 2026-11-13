@@ -10,7 +10,6 @@ import 'package:family_groceries/app/shell.dart';
 import 'package:family_groceries/design/group_card.dart';
 import 'package:family_groceries/design/hex_switch.dart';
 import 'package:family_groceries/design/pointy_hex.dart';
-import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/feedback/feedback_sheet.dart';
@@ -218,16 +217,16 @@ enum _Item(final IconData icon, final String key, final _Tint tint) {
   signOut(Icons.logout, 'more-sign-out', _Tint.plain);
 
   /// The groups top to bottom; the legal pages are rows of their own
-  /// titled group, so the imprint is one tap from the tab (DDG §5);
-  /// sign-out stands alone at the end.
-  static const groups = <({bool legal, List<_Item> items})>[
-    (legal: false, items: [account, premium]),
-    (legal: false, items: [household, invite, join, archived]),
-    (legal: false, items: [access]),
-    (legal: false, items: [settings, usageData]),
-    (legal: false, items: [tips, feedback, rate, help]),
-    (legal: true, items: [imprint, privacyPolicy, terms, licenses]),
-    (legal: false, items: [signOut]),
+  /// group, so the imprint is one tap from the tab (DDG §5); sign-out
+  /// stands alone at the end.
+  static const groups = <List<_Item>>[
+    [account, premium],
+    [household, invite, join, archived],
+    [access],
+    [settings, usageData],
+    [tips, feedback, rate, help],
+    [imprint, privacyPolicy, terms, licenses],
+    [signOut],
   ];
 }
 
@@ -293,22 +292,15 @@ class _MoreListState() extends State<_MoreList> {
           ),
           children: [
             _UpdateSlot(widget.updates),
-            for (final (:legal, items: all) in _Item.groups)
+            for (final all in _Item.groups)
               if (all.where(shown).toList() case final items
-                  when items.isNotEmpty) ...[
-                if (legal)
-                  HlSectionLabel(
-                    l10n.legal,
-                    padding: const EdgeInsets.fromLTRB(20, HlSpace.s5, 20, 0),
-                  ),
+                  when items.isNotEmpty)
                 HlGroup(
-                  top: legal ? HlSpace.s2 : HlSpace.s5,
                   children: [
                     for (final item in items)
                       _row(context, l10n, item, household),
                   ],
                 ),
-              ],
             const _Version(),
           ],
         );

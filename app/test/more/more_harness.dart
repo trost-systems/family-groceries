@@ -350,7 +350,7 @@ const menuGroups = [
   ['more-sign-out'],
 ];
 
-/// The rows below the „Rechtliches“ label, right on More (DDG §5: the
+/// The legal rows, their own group right on More (DDG §5: the
 /// imprint one tap from the tab).
 const legalRows = [
   'more-imprint',
