@@ -710,3 +710,7 @@ Five interactive prototypes behind one switcher in `docs/design/grocery-log/`: `
 ## Job 196: planned vs bought, five prototypes (2026-11-12)
 
 Five interactive throwaway prototypes behind one switcher in `docs/design/planned-vs-bought/`; recommended `trip-review-unplanned`. No app change, no receipt scanning. Details: [docs/done/196-planned-vs-bought-prototypes.md](docs/done/196-planned-vs-bought-prototypes.md).
+
+## Job 189: five price-entry and trip-total prototypes (2026-11-12)
+
+Five sandbox prototypes for price entry and the trip total, on one comparison page, with a recommendation (`inline-row-price`). This is sandbox only: no production UI and no approval to implement. Details: [docs/done/189-prices-trip-prototypes.md](docs/done/189-prices-trip-prototypes.md).
