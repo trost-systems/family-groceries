@@ -106,9 +106,23 @@ region-based currency default. No store, console, flag rollout or sales change.
 - Screenshots: `docs/screenshots/190/` (list with chips and subtotals, editor, partner's live
   view, CHF).
 
+## Post-merge review fix (round 0, VERDICT FIX)
+
+The post-merge Opus review (`review.0.md`, 13:40) found one must-fix: the editor's stepper
+rebuilt a half-read quantity, so "2 x 500 g" stepped and saved as "3 500 g" (read by everyone as
+3,5 kg), "1,5" as "2 ,5", "6er" as "7 er". Fixed in a follow-up PR (`job/190-fix-stepper-quantity`):
+`measureOf` keeps the text after a leading count as typed and the stepper replaces only the
+number ("3 x 500 g", "7er"); "1,5", "1/2", "Bund" and a weight priced per Stück get no stepper and
+are never rewritten. Proof: `pricing_test` and `prices_screen_test` cases (the screen test fails on
+main with "3 500 g"), and a new e2e test in `prices.spec.ts` that sets "2 x 500 g", steps once and
+sees "Nudeln 3 x 500 g" with 2,97 € in the web build (6/6 passed). Also taken from the review's
+nice-to-haves: the limit message names the range ("Zwischen -9.999,00 € und 9.999,00 € pro
+Artikel."), a price in the earlier currency no longer counts as "offen", and the units (per g/ml)
+and the current-day rule are now questions for Peter in NEEDS_PETER "Job 190".
+
 ## Open
 
-- Peter: the PostHog condition for his install (NEEDS_PETER "Job 190"); LQ2/PW1 are locked.
+- Peter: the PostHog condition for his install, and two confirms (units per g/ml, today's-prices rule), in NEEDS_PETER "Job 190"; LQ2/PW1 are locked.
 - Before the flag goes on for everyone: the privacy policy's section 5 should name prices and
   the household currency (PRIVACY_DATA_MAP, differences to the policy), and
   FEATURES-FOR-WRITERS' "never claim price tracking" line changes.

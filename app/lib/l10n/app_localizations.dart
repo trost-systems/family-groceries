@@ -4604,11 +4604,11 @@ abstract class AppLocalizations {
   /// **'Gib einen Preis ein.'**
   String get priceErrorEmpty;
 
-  /// Job 190: price field error; amount is 9999,00 in the household currency
+  /// Job 190: price field error for a line beyond the limits; min and max are -9999,00 and 9999,00 in the household currency
   ///
   /// In de, this message translates to:
-  /// **'Höchstens {amount} pro Artikel.'**
-  String priceErrorTooLarge(String amount);
+  /// **'Zwischen {min} und {max} pro Artikel.'**
+  String priceErrorTooLarge(String min, String max);
 
   /// Job 190: weight field error
   ///

@@ -226,6 +226,12 @@ class _PricePanelState() extends State<PricePanel> with WidgetsBindingObserver {
 
   bool get _measured => _per != PricePer.piece;
 
+  /// The quantity is a count the stepper may change.
+  bool get _steppable => switch (_measure) {
+    Pieces(rest: _?) => true,
+    _ => false,
+  };
+
   /// Pieces, or g or ml for a price per kg or l; null for no valid amount.
   int? get _quantity => _measured
       ? switch (parseAmount(_amount.text)) {
@@ -307,11 +313,12 @@ class _PricePanelState() extends State<PricePanel> with WidgetsBindingObserver {
         ? measureQuantity(_per, quantity)
         : switch (_measure) {
             Pieces(:final count) when count == quantity => widget.item.quantity,
-            Pieces(:final word?) => '$quantity $word',
-            // "500 g" priced per piece is one piece; the stepper untouched,
-            // the quantity stays.
-            _ when quantity == 1 => widget.item.quantity,
-            _ => '$quantity',
+            // The stepper changes the number alone: "2 x 500 g" becomes
+            // "3 x 500 g".
+            Pieces(:final rest?) => '$quantity$rest',
+            // No count to change ("500 g" priced per piece, "1/2"): no
+            // stepper, and the quantity stays as written.
+            _ => widget.item.quantity,
           };
     widget.onSave(
       Price(
@@ -337,9 +344,12 @@ class _PricePanelState() extends State<PricePanel> with WidgetsBindingObserver {
     }
     return switch (parsePrice(_price.text)) {
       PriceEmpty() || PriceInvalid() => l10n.priceErrorEmpty,
-      PriceTooLarge() => l10n.priceErrorTooLarge(_money(maxPriceCents)),
+      PriceTooLarge() => l10n.priceErrorTooLarge(
+        _money(minPriceCents),
+        _money(maxPriceCents),
+      ),
       PriceOk() when _quantity != null && _split == null =>
-        l10n.priceErrorTooLarge(_money(maxPriceCents)),
+        l10n.priceErrorTooLarge(_money(minPriceCents), _money(maxPriceCents)),
       PriceOk() => null,
     };
   }
@@ -503,7 +513,7 @@ class _PricePanelState() extends State<PricePanel> with WidgetsBindingObserver {
                           signed: false,
                         ),
                       )
-                    else
+                    else if (_steppable)
                       _Stepper(
                         count: _count,
                         onChanged: (count) => setState(() {

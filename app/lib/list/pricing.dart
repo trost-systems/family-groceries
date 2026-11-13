@@ -221,9 +221,12 @@ class const DecimalInputFormatter({
 /// How much of an item the list asks for, as far as a price multiplies it.
 sealed class const Measure();
 
-/// [count] pieces; [word] is the unit typed after the number ("Stück",
-/// "Packungen"), if any.
-final class const Pieces(final int count, {final String? word}) extends Measure;
+/// [count] pieces. [rest] is the text after the count as typed ("" for
+/// "2", " Stück", " x 500 g", "er"), so a new count replaces the number
+/// alone; null when the quantity names no count to change ("1/2", "1,5",
+/// "Bund"): one piece, and the text stays as written.
+final class const Pieces(final int count, {final String? rest = ''})
+    extends Measure;
 
 final class const Grams(final int grams) extends Measure;
 
@@ -266,20 +269,13 @@ Measure measureOf(String? quantity) {
       case _:
     }
   }
-  final count = RegExp(r'^(\d{1,3})\s*[x×]?\s*(\D.*)?$').firstMatch(s);
-  if (count != null) {
-    final n = int.parse(count[1]!);
-    final word = count[2]?.trim();
-    if (n > 0) {
-      return Pieces(
-        n,
-        word: word == null || word.isEmpty
-            ? null
-            : original.substring(original.length - word.length),
-      );
-    }
+  // A leading count not followed by more of a number: "2 x 500 g" counts
+  // 2, "1,5" and "1/2" count nothing.
+  final count = RegExp(r'^(\d{1,3})(?![\d.,/])(.*)$').firstMatch(original);
+  if (count != null && int.parse(count[1]!) > 0) {
+    return Pieces(int.parse(count[1]!), rest: count[2]);
   }
-  return const Pieces(1);
+  return original.isEmpty ? const Pieces(1) : const Pieces(1, rest: null);
 }
 
 /// What a price for an item of [measure] is per: kg for a weight, l for a
@@ -376,7 +372,7 @@ extension ItemPrice on Item {
 }
 
 /// The shown list's running total in the household's currency: [cents]
-/// over [priced] items, [open] open items without a price that counts,
+/// over [priced] items, [open] open items without today's price,
 /// and the same sum per store id ([byStore], null for no store).
 @immutable
 class const TripTotal({
@@ -402,7 +398,9 @@ TripTotal tripTotal(
   for (final item in items) {
     final line = item.summedCents(currency, now);
     if (line == null) {
-      if (item.status == ItemStatus.active) {
+      // Priced today in the household's earlier currency: not summed, but
+      // not missing a price either.
+      if (item.status == ItemStatus.active && item.currentPrice(now) == null) {
         open++;
       }
       continue;
