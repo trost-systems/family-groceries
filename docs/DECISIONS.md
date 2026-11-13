@@ -11904,3 +11904,18 @@ entitlement, paywall or Premium check anywhere on the path. It ships behind the 
 - **Analytics.** `price_entered` (`confirmed: false`) on each saved price and
   `trip_total_viewed` (`final: false`) once per list and session, both allow-listed in job 195
   for this path. `shop_started` stays unsent: there is no trip-start step.
+
+### Job 190 post-merge review (round 0), 2026-11-13
+
+- **The stepper changes the count alone.** It used to rebuild the quantity as "<count> <word>"
+  from a half-read text, so "2 x 500 g" stepped to "3 500 g" (which reads as 3,5 kg) and "1,5"
+  to "2 ,5". `measureOf` now keeps the text after a leading count exactly as typed and replaces
+  only the number ("3 x 500 g", "7er"). A quantity whose digits go on ("1,5", "1/2"), has no
+  number ("Bund"), or is a weight priced per Stück shows no stepper and is never rewritten.
+- **The limit message names the range** ("Zwischen -9.999,00 € und 9.999,00 € pro Artikel."),
+  since a too-negative line showed "Höchstens …".
+- **A price in the household's earlier currency is not "offen".** After a currency change those
+  items are neither summed nor counted as missing a price.
+- Units per g/ml and the current-day rule stay as decided; both are now questions for Peter in
+  NEEDS_PETER "Job 190".
+

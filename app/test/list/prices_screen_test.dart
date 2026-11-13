@@ -268,21 +268,17 @@ void main() {
     await tester.enterText(find.byKey(const ValueKey('price-field')), '10000');
     await tester.tap(find.byKey(const ValueKey('price-done')));
     await tester.pump();
-    debugPrint(
-      [
-        for (final t in tester.widgetList<Text>(
-          find.descendant(
-            of: find.byType(PricePanel),
-            matching: find.byType(Text),
-          ),
-        ))
-          t.data,
-      ].join(' | '),
-    );
-    expect(
-      find.text(nbsp('Höchstens 9.999,00 € pro Artikel.')),
-      findsOneWidget,
-    );
+    String money(int cents) =>
+        formatMoney(cents, currency: 'EUR', locale: 'de');
+    final range =
+        'Zwischen ${money(minPriceCents)} und ${money(maxPriceCents)} '
+        'pro Artikel.';
+    expect(find.text(range), findsOneWidget);
+    expect(range, contains(nbsp('9.999,00 €')));
+    await tester.enterText(find.byKey(const ValueKey('price-field')), '-10000');
+    await tester.tap(find.byKey(const ValueKey('price-done')));
+    await tester.pump();
+    expect(find.text(range), findsOneWidget, reason: 'below the minimum too');
     expect(named('Milch').price, isNull);
   });
 
@@ -575,5 +571,42 @@ void main() {
     expect(named('Wasser').quantity, '3 Packungen');
     expect(named('Wasser').price?.unitMicros, 690000);
     expect(named('Wasser').lineCentsNow, 207);
+  });
+
+  testWidgets('the stepper changes only the count; other quantities stay', (
+    tester,
+  ) async {
+    await pumpList(
+      tester,
+      seed: (repo) => repo
+        ..remoteAdd('Nudeln', storeId: 'lidl', quantity: '2 x 500 g')
+        ..remoteAdd('Eier', storeId: 'lidl', quantity: '6er')
+        ..remoteAdd('Sahne', storeId: 'lidl', quantity: '1,5')
+        ..remoteAdd('Kuchen', storeId: 'lidl', quantity: '1/2'),
+    );
+    final more = find.byKey(const ValueKey('price-count-more'));
+    Future<void> price(String name, {bool step = true}) async {
+      await openPrice(tester, name);
+      if (step) {
+        await tester.tap(more);
+        await tester.pump();
+      } else {
+        expect(more, findsNothing, reason: '$name has no count to change');
+      }
+      await tester.enterText(find.byKey(const ValueKey('price-field')), '1');
+      await tester.tap(find.byKey(const ValueKey('price-done')));
+      await tester.pumpAndSettle();
+    }
+
+    await price('Nudeln');
+    expect(named('Nudeln').quantity, '3 x 500 g');
+    expect(named('Nudeln').lineCentsNow, 300);
+    await price('Eier');
+    expect(named('Eier').quantity, '7er');
+    await price('Sahne', step: false);
+    expect(named('Sahne').quantity, '1,5');
+    await price('Kuchen', step: false);
+    expect(named('Kuchen').quantity, '1/2');
+    expect(named('Kuchen').lineCentsNow, 100);
   });
 }

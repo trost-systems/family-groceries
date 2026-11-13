@@ -2843,8 +2843,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get priceErrorEmpty => 'Enter a price.';
 
   @override
-  String priceErrorTooLarge(String amount) {
-    return 'At most $amount per item.';
+  String priceErrorTooLarge(String min, String max) {
+    return 'Between $min and $max per item.';
   }
 
   @override

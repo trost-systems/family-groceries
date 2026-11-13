@@ -139,7 +139,7 @@ void main() {
         measureOf('2 Stück'),
         isA<Pieces>()
             .having((p) => p.count, 'n', 2)
-            .having((p) => p.word, 'word', 'Stück'),
+            .having((p) => p.rest, 'rest', ' Stück'),
       );
       expect(
         measureOf('2 Packungen'),
@@ -159,6 +159,21 @@ void main() {
         isA<Millilitres>().having((v) => v.ml, 'ml', 1500),
       );
       expect(measureOf('Bund'), isA<Pieces>().having((p) => p.count, 'n', 1));
+    });
+
+    test('only a leading count can change; the rest stays as typed', () {
+      Matcher pieces(int count, String? rest) => isA<Pieces>()
+          .having((p) => p.count, 'count', count)
+          .having((p) => p.rest, 'rest', rest);
+      expect(measureOf('2 x 500 g'), pieces(2, ' x 500 g'));
+      expect(measureOf('6er'), pieces(6, 'er'));
+      expect(measureOf('2'), pieces(2, ''));
+      expect(measureOf(null), pieces(1, ''));
+      // More of a number after the digits: no count the stepper may change.
+      expect(measureOf('1,5'), pieces(1, null));
+      expect(measureOf('1/2'), pieces(1, null));
+      expect(measureOf('Bund'), pieces(1, null));
+      expect(measureOf('0'), pieces(1, null));
     });
 
     test('g and kg are priced per kg, ml and l per l, the rest per piece', () {
@@ -301,7 +316,7 @@ void main() {
       expect(_price(1, at: DateTime(2026, 11, 13)).isCurrent(_now), isTrue);
     });
 
-    test('a price in another currency is not summed', () {
+    test('a price in another currency is neither summed nor open', () {
       final total = tripTotal(
         [
           _item('Milch', price: _price(119, currency: 'CHF')),
@@ -310,7 +325,7 @@ void main() {
         currency: 'EUR',
         now: _now,
       );
-      expect((total.cents, total.priced, total.open), (200, 1, 1));
+      expect((total.cents, total.priced, total.open), (200, 1, 0));
     });
 
     test('an item of a deleted store counts without a store', () {

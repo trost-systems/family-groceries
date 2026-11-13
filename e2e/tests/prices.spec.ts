@@ -195,3 +195,21 @@ test('a scale weight replaces the planned one; a typed total keeps its unit pric
   await expect(priceChip(page, 'Joghurt', '2,07 €'), 'the unit price stays, the line scales').toBeVisible();
   await expect(totalBar(page, '4,10 €', 2, 0)).toBeVisible();
 });
+
+test('the stepper changes only the count of a quantity like "2 x 500 g"', async ({ browser }) => {
+  const page = await member(browser, newEmail('prices-stepper'));
+  await createHousehold(page);
+  await skipInvite(page);
+  await addItem(page, 'Nudeln');
+  await openEdit(page, 'Nudeln');
+  await typeInto(editField(page, 'Menge'), '2 x 500 g');
+  await saveEdit(page);
+  await expect(itemRow(page, 'Nudeln 2 x 500 g')).toBeVisible();
+
+  await priceChip(page, 'Nudeln').click();
+  await page.getByRole('button', { name: 'Eins mehr', exact: true }).click();
+  await typeInto(priceField(page), '0,99');
+  await page.getByRole('button', { name: 'Fertig', exact: true }).click();
+  await expect(itemRow(page, 'Nudeln 3 x 500 g'), 'only the count changed, not "3 500 g"').toBeVisible();
+  await expect(priceChip(page, 'Nudeln', '2,97 €'), '0,99 € per pack times 3').toBeVisible();
+});

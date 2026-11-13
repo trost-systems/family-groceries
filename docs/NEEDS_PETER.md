@@ -1742,6 +1742,18 @@ your install only. Flags load only after the analytics yes, so:
 4. To turn it off again, remove the condition. Lea's phone stays off unless her install id is
    added the same way.
 
+Two calls to confirm while you try it (both are easy to change):
+
+- **Units.** You wrote "per g, per ml etc." The editor offers pro Stück, pro kg and pro l: an item
+  in g reads per kg and one in ml per litre, the Grundpreis units on shelf labels, because per
+  gram shows amounts like 0,002 €. "3 Packungen" is priced pro Stück. Say if you want per g,
+  per 100 g or pro Packung instead.
+- **Today's prices only.** A price counts for the total on the day it was saved. Example: you
+  price Milch at 1,19 € on Monday and leave it on the list; on Tuesday its row shows "+ Preis"
+  again, the total leaves it out, and the editor says "0,30 € teurer als zuletzt" when you type
+  1,49. A shop across midnight splits into two totals. The alternative is a total that keeps
+  every price on the list until the item is ticked and cleared. Say which you want.
+
 Before the flag goes on for everyone: the privacy policy's section 5 lists what an entry holds
 and does not name prices or the household currency yet (`docs/PRIVACY_DATA_MAP.md`, differences
 to the policy). That text needs your approval first.
