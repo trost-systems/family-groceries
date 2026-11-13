@@ -311,7 +311,7 @@ select is((select count(*)::int from public.purchases where transaction_id = '43
 select ok(exists (select from public.revenuecat_deletions d where d.app_user_id = (select id from ha)
   and d.due_at > now() + interval '29 days'), 'the deleted household''s RevenueCat customer is queued for in 30 days');
 select ok(exists (select from public.revenuecat_deletions d where d.app_user_id = (select id from hd2)),
-  'a deleted household without a purchase is queued too (opening the page creates the customer)');
+  'a deleted household with only a promotional grant is queued too');
 update public.revenuecat_deletions set due_at = now() - interval '1 minute' where app_user_id = (select id from ha);
 select is((select array_agg(x) from public.revenuecat_deletions_take(10) x), array[(select id from ha)],
   'the due one is taken');

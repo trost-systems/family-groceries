@@ -98,8 +98,9 @@ class PurchaseCubit(
   PremiumPlan _plan = PremiumPlan.yearly;
 
   static RevenueCatUserId? _userOf(Session session) => switch (session) {
-    InHousehold(:final userId) => RevenueCatUserId(userId),
-    _ => null,
+    InHousehold(:final userId) ||
+    NeedsHousehold(:final userId) => RevenueCatUserId(userId),
+    SessionLoading() || SignedOut() => null,
   };
 
   /// The rows show what [_plan] unlocks: any premium for the yearly plan,
@@ -111,9 +112,10 @@ class PurchaseCubit(
   };
 
   /// A flow follows the user, not the household: their purchase unlocks in
-  /// every household they are in (job 185), so switching households keeps a
-  /// pending unlock and with it Buy off, or they would pay twice. Another
-  /// account (or none) starts afresh.
+  /// every household they are in (job 185), so switching households, or
+  /// leaving the last one and starting another, keeps a pending unlock and
+  /// with it Buy off, or they would pay twice. Another account (or none)
+  /// starts afresh.
   void _onSession(Session session) {
     final user = _userOf(session);
     if (user == _user) {

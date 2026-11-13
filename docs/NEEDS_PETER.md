@@ -1772,3 +1772,16 @@ Nothing is needed for the gate to work. The site's build asks GitHub's public AP
 
 The dashboard's old Ignored Build Step can stay as it is: `site/vercel.json`'s `ignoreCommand`
 overrides it.
+
+## Job 211: RevenueCat household customers with an ended grant (2026-11-13)
+
+Since job 211 a deleted household's RevenueCat customer is deleted only if RevenueCat reported a
+purchase or a promotional grant under the household id (`revenuecat_households`). The migration
+noted every household with a purchase or a promotional row on the day it ran. A household whose
+promotional grant had already ended by then has no row, so it is not noted: if it is deleted later,
+its RevenueCat customer stays. Before sales go on, **Ops** (one look, no code):
+
+1. In RevenueCat → Customers, filter for customers with an expired promotional entitlement whose
+   App User ID is a household id (test and beta households from `scripts/iap/promotional.ts`).
+2. For each one, either grant again and revoke at once (the two events note the household), or
+   delete the customer in RevenueCat by hand if the household is gone.

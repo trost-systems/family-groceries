@@ -24,7 +24,8 @@ enum PremiumPlan(final String productId) {
 /// RevenueCat's App User ID: the signed-in Snacklist user's id
 /// (`auth.users.id`), never a household id. The purchase, its restore on a
 /// new device and its lapse follow the user into every household they are in
-/// (job 185). Built only from the session's user.
+/// (job 185). Built only from the session's user, in PurchaseCubit (lint
+/// `revenuecat-user-id-from-session`).
 extension type const RevenueCatUserId(String value);
 
 /// Why this build sells nothing, known without asking anyone.

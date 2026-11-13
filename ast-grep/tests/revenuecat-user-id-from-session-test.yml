@@ -1,0 +1,33 @@
+id: revenuecat-user-id-from-session
+valid:
+  - |
+    extension type const RevenueCatUserId(String value);
+  - |
+    Future<BuyOutcome> buy(RevenueCatUserId user, PremiumPlan plan) async => const Canceled();
+  - |
+    final RevenueCatUserId? user = null;
+  - |
+    bool f(Object o) => o is RevenueCatUserId;
+  - |
+    final users = <RevenueCatUserId>[];
+  - |
+    const state = PurchaseState(flow: FlowIdle(), users: <RevenueCatUserId>[]);
+  - |
+    /// RevenueCat knows the user by [RevenueCatUserId], never RevenueCatUserId(household.id).
+    void f() {}
+invalid:
+  # The household id as App User ID, as builds before job 185 had it.
+  - |
+    Future<void> f(Household household) => store.buy(RevenueCatUserId(household.id), plan);
+  - |
+    const peter = RevenueCatUserId('peter');
+  - |
+    final ids = households.map(RevenueCatUserId.new);
+  - |
+    const peter = const RevenueCatUserId('peter');
+  - |
+    final user = new RevenueCatUserId(household.id);
+  - |
+    final user = household.id as RevenueCatUserId;
+  - |
+    final users = ids as List<RevenueCatUserId>;
