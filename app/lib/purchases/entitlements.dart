@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show max;
 
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -41,7 +42,8 @@ enum PremiumSource(final String wire) {
       values.where((v) => v.wire == wire).firstOrNull;
 }
 
-/// One premium row of the household, as members may read it (H-55).
+/// One premium row, of the household as members may read it (H-55) or of
+/// the signed-in user as only they may (`user_entitlements`, job 185).
 @immutable
 class const PremiumRow({
   required final PremiumSource source,
@@ -61,8 +63,8 @@ class const PremiumRow({
   bool activeAt(DateTime now) => endless || (expiresAt?.isAfter(now) ?? false);
 }
 
-/// The household's premium at one moment: the server's rule
-/// (`household_premium`) applied to the rows.
+/// Premium in the shown household at one moment: the server's rule
+/// (`household_premium`, `user_premium`) applied to the rows.
 sealed class const Premium();
 
 final class const NoPremium() extends Premium;
@@ -88,35 +90,58 @@ final class const ActivePremium(
 /// (`testerGrantEnd` in scripts/iap/promotional.ts).
 final testerGrantEnd = DateTime.utc(2100);
 
-/// What the household has unlocked, as its rows say. Nothing is gated by it
-/// yet.
+/// What the signed-in user has unlocked in the shown household, as the rows
+/// say. Nothing is gated by it yet.
 sealed class const EntitlementsState();
 
-/// No household, or its rows could not be read yet (loading, offline).
+/// No household, or the rows could not be read yet (loading, offline).
 final class const EntitlementsUnknown() extends EntitlementsState;
 
 final class const EntitlementsKnown({
   required final String householdId,
-  required final HouseholdUnlocks unlocks,
+  required final Unlocks unlocks,
 }) extends EntitlementsState;
 
-/// A household's premium rows.
+/// The premium rows that count in one household for the signed-in user: the
+/// household's and the user's own (a purchase bound to the user unlocks
+/// premium in every household they are in; job 185). Other members never
+/// read the user's rows (RLS), so it is premium for the buyer only.
 @immutable
-class const HouseholdUnlocks({
+class const Unlocks({
   final List<PremiumRow> rows = const [],
 
   /// One of them is a RevenueCat promotional grant (testers, App and Play
-  /// Review; 20261101150000_testers_via_revenuecat.sql): the household's
-  /// events are internal, as the server's `household_internal` says.
+  /// Review; 20261101150000_testers_via_revenuecat.sql): the events are
+  /// internal, as the server's `household_internal` and `user_internal` say.
   final bool tester = false,
 
-  /// How many store purchases of Lifetime it has; two or more and the
-  /// household paid twice, which only Apple or Google can refund.
+  /// The most store purchases of Lifetime one owner (the household, the
+  /// user) has; two or more and that owner paid twice, which only Apple or
+  /// Google can refund.
   final int lifetimePurchases = 0,
+
+  /// Each owner's yearly plans: one owner's two running at once were bought
+  /// from two store accounts. The household's plan next to the user's is
+  /// not.
+  final List<List<PremiumRow>> yearlyByOwner = const [],
 }) {
+  /// The household's [Unlocks] and the user's [own]: premium over all rows,
+  /// paying twice per owner.
+  Unlocks merge(Unlocks own) => Unlocks(
+    rows: [...rows, ...own.rows],
+    tester: tester || own.tester,
+    lifetimePurchases: max(lifetimePurchases, own.lifetimePurchases),
+    yearlyByOwner: [...yearlyByOwner, ...own.yearlyByOwner],
+  );
+
+  /// One owner has two yearly plans running at [now].
+  bool twoYearlyAt(DateTime now) => yearlyByOwner.any(
+    (plans) => plans.where((r) => r.activeAt(now)).length >= 2,
+  );
+
   /// Lifetime or a promotional grant without end first (in that order); else
   /// the yearly plan or promotional grant that ends last, with its end; else
-  /// none. The server's `household_premium`, row by row.
+  /// none. The server's `household_premium` and `user_premium`, row by row.
   Premium premiumAt(DateTime now) {
     final endless = {
       for (final r in rows)
@@ -176,18 +201,29 @@ class const HouseholdUnlocks({
           .fold<DateTime?>(null, (a, b) => a == null || b.isBefore(a) ? b : a);
 }
 
-/// The household's `entitlements` rows. Only the server writes them.
+/// The household's `entitlements` rows and the user's own
+/// `user_entitlements` rows. Only the server writes them.
 abstract interface class EntitlementsSource() {
-  Future<HouseholdUnlocks> unlocks(String householdId);
+  /// Both kinds of rows, read together: premium shows only once both are
+  /// known.
+  Future<Unlocks> unlocks(String householdId, String userId);
 
-  /// Calls [onChange] when a row may have changed, also after every
-  /// (re)connect; returns the cancel.
-  Future<void> Function() watch(String householdId, void Function() onChange);
+  /// Calls [onChange] when a row of either may have changed, also after
+  /// every (re)connect; returns the cancel.
+  Future<void> Function() watch(
+    String householdId,
+    String userId,
+    void Function() onChange,
+  );
 }
 
-/// Follows the session's household, app-wide. Premium is computed at read
-/// time from the rows, like the server's check: a yearly plan's end turns it
-/// off without any event, so the state is read again when one passes.
+/// The household the session shows and its signed-in user.
+typedef _Scope = ({String household, String user});
+
+/// Follows the session's household and user, app-wide. Premium is computed
+/// at read time from the rows, like the server's check: a yearly plan's end
+/// turns it off without any event, so the state is read again when one
+/// passes.
 class Entitlements(
   final EntitlementsSource _source,
   final SessionCubit _session, {
@@ -199,10 +235,10 @@ class Entitlements(
   }
 
   late final StreamSubscription<Session> _sessions;
-  String? _householdId;
+  _Scope? _scope;
 
   /// The household whose rows these are: the one the session shows.
-  String? get householdId => _householdId;
+  String? get householdId => _scope?.household;
   Future<void> Function()? _unwatch;
   Timer? _nextEnd;
 
@@ -213,26 +249,27 @@ class Entitlements(
   /// The clock premium is computed with (a test's fake one).
   DateTime get clock => now();
 
-  /// The household's premium now; null while unknown.
+  /// Premium in the shown household now; null while unknown.
   Premium? get premium => switch (state) {
     EntitlementsKnown(:final unlocks) => unlocks.premiumAt(now()),
     EntitlementsUnknown() => null,
   };
 
-  /// The household has [entitlement] now; false while unknown.
+  /// [entitlement] is unlocked in the shown household now; false while
+  /// unknown.
   bool has(Entitlement entitlement) => premium is ActivePremium;
 
-  /// The household bought Lifetime more than once; false while unknown.
+  /// The household, or the user, bought Lifetime more than once; false
+  /// while unknown.
   bool get boughtLifetimeTwice => switch (state) {
     EntitlementsKnown(:final unlocks) => unlocks.lifetimePurchases >= 2,
     EntitlementsUnknown() => false,
   };
 
-  /// Two yearly plans run at once (bought from two store accounts); false
-  /// while unknown.
+  /// Two yearly plans of the household, or of the user, run at once (bought
+  /// from two store accounts); false while unknown.
   bool get twoYearlyPlans => switch (state) {
-    EntitlementsKnown(:final unlocks) =>
-      unlocks.activeYearly(now()).length >= 2,
+    EntitlementsKnown(:final unlocks) => unlocks.twoYearlyAt(now()),
     EntitlementsUnknown() => false,
   };
 
@@ -256,48 +293,54 @@ class Entitlements(
   };
 
   void _follow(Session session) {
-    final householdId = switch (session) {
-      InHousehold(:final household) => household.id,
+    final scope = switch (session) {
+      InHousehold(:final household, :final userId) => (
+        household: household.id,
+        user: userId,
+      ),
       _ => null,
     };
-    if (householdId == _householdId) {
+    if (scope == _scope) {
       return;
     }
-    _householdId = householdId;
+    _scope = scope;
     unawaited(_unwatch?.call());
     _unwatch = null;
     _nextEnd?.cancel();
     emit(const EntitlementsUnknown());
-    if (householdId != null) {
-      _unwatch = _source.watch(householdId, () => unawaited(refresh()));
+    if (scope != null) {
+      _unwatch = _source.watch(
+        scope.household,
+        scope.user,
+        () => unawaited(refresh()),
+      );
       unawaited(refresh());
     }
   }
 
-  /// Reads the household's rows again; offline it keeps what it knew, and
-  /// emits it again so that listeners compute premium at the new clock (a
-  /// plan may have ended since).
+  /// Reads the rows again; offline it keeps what it knew, and emits it again
+  /// so that listeners compute premium at the new clock (a plan may have
+  /// ended since).
   Future<void> refresh() async {
-    final householdId = _householdId;
-    if (householdId == null) {
+    final scope = _scope;
+    if (scope == null) {
       return;
     }
     final read = ++_reads;
-    HouseholdUnlocks unlocks;
+    Unlocks unlocks;
     try {
-      unlocks = await _source.unlocks(householdId);
+      unlocks = await _source.unlocks(scope.household, scope.user);
     } on Object {
-      // The next (re)connect reads again.
-      if (state
-          case EntitlementsKnown(householdId: final known, unlocks: final last)
-          when known == householdId) {
+      // The next (re)connect reads again. What is known is this scope's:
+      // following another one forgets it.
+      if (state case EntitlementsKnown(unlocks: final last)) {
         unlocks = last;
       } else {
         return;
       }
     }
-    if (!isClosed && read == _reads && householdId == _householdId) {
-      emit(EntitlementsKnown(householdId: householdId, unlocks: unlocks));
+    if (!isClosed && read == _reads && scope == _scope) {
+      emit(EntitlementsKnown(householdId: scope.household, unlocks: unlocks));
       _wakeAtNextEnd(unlocks);
     }
   }
@@ -305,7 +348,7 @@ class Entitlements(
   /// RevenueCat's EXPIRATION updates the row and Realtime reads it again;
   /// this covers one that never arrives, for an end within a day. Later ends
   /// are rescheduled by any read before them (every reconnect reads).
-  void _wakeAtNextEnd(HouseholdUnlocks unlocks) {
+  void _wakeAtNextEnd(Unlocks unlocks) {
     _nextEnd?.cancel();
     final at = now();
     final end = unlocks.nextEndAfter(at);
@@ -329,8 +372,9 @@ class Entitlements(
 /// The rows this build understands, whether one is a promotional grant, and
 /// how many are Lifetime purchases. A row without `premium_source` (a server
 /// before job 49) is Lifetime; one with a source this build does not know is
-/// dropped.
-HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
+/// dropped. One owner's rows: the household's and the user's share these
+/// columns, each read on its own and joined with [Unlocks.merge].
+Unlocks unlocksOf(List<Map<String, dynamic>> rows) {
   final premium = [
     for (final row in rows)
       if (Entitlement.parse(row['kind']) == Entitlement.premium) row,
@@ -369,8 +413,14 @@ HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
         null => null,
       },
   ];
-  return HouseholdUnlocks(
+  return Unlocks(
     rows: parsed,
+    yearlyByOwner: [
+      [
+        for (final r in parsed)
+          if (r.source == PremiumSource.yearly) r,
+      ],
+    ],
     tester: rows.any((row) => row['source'] == 'promotional'),
     lifetimePurchases: premium
         .where(
@@ -384,48 +434,65 @@ HouseholdUnlocks unlocksOf(List<Map<String, dynamic>> rows) {
 
 class const SupabaseEntitlementsSource(final SupabaseClient _client)
     implements EntitlementsSource {
+  static const _columns =
+      'kind, source, premium_source, expires_at, auto_renew';
+
   @override
-  Future<HouseholdUnlocks> unlocks(String householdId) async {
-    final rows = await _client.rest
-        .from('entitlements')
-        .select('kind, source, premium_source, expires_at, auto_renew')
-        .eq('household_id', householdId);
-    return unlocksOf(rows);
+  Future<Unlocks> unlocks(String householdId, String userId) async {
+    final (household, own) = await (
+      _client.rest
+          .from('entitlements')
+          .select(_columns)
+          .eq('household_id', householdId),
+      _client.rest
+          .from('user_entitlements')
+          .select(_columns)
+          .eq('user_id', userId),
+    ).wait;
+    return unlocksOf(household).merge(unlocksOf(own));
   }
 
   @override
-  Future<void> Function() watch(String householdId, void Function() onChange) {
-    final channel = _client.channel('entitlements:$householdId')
-      ..onPostgresChanges(
-        event: PostgresChangeEvent.insert,
-        schema: 'public',
-        table: 'entitlements',
-        filter: PostgresChangeFilter(
-          type: PostgresChangeFilterType.eq,
-          column: 'household_id',
-          value: householdId,
-        ),
-        callback: (_) => onChange(),
-      )
-      // A yearly plan's renewal, cancellation or expiry updates its row.
-      ..onPostgresChanges(
-        event: PostgresChangeEvent.update,
-        schema: 'public',
-        table: 'entitlements',
-        filter: PostgresChangeFilter(
-          type: PostgresChangeFilterType.eq,
-          column: 'household_id',
-          value: householdId,
-        ),
-        callback: (_) => onChange(),
-      )
-      // Delete events cannot be filtered; another household's costs a read.
-      ..onPostgresChanges(
-        event: PostgresChangeEvent.delete,
-        schema: 'public',
-        table: 'entitlements',
-        callback: (_) => onChange(),
-      )
+  Future<void> Function() watch(
+    String householdId,
+    String userId,
+    void Function() onChange,
+  ) {
+    final channel = _client.channel('entitlements:$householdId:$userId');
+    for (final (table, column, value) in [
+      ('entitlements', 'household_id', householdId),
+      ('user_entitlements', 'user_id', userId),
+    ]) {
+      final filter = PostgresChangeFilter(
+        type: PostgresChangeFilterType.eq,
+        column: column,
+        value: value,
+      );
+      channel
+        ..onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: table,
+          filter: filter,
+          callback: (_) => onChange(),
+        )
+        // A yearly plan's renewal, cancellation or expiry updates its row.
+        ..onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: table,
+          filter: filter,
+          callback: (_) => onChange(),
+        )
+        // Delete events cannot be filtered; another's costs a read.
+        ..onPostgresChanges(
+          event: PostgresChangeEvent.delete,
+          schema: 'public',
+          table: table,
+          callback: (_) => onChange(),
+        );
+    }
+    channel
       // The join is confirmed before the server's Postgres listener runs; a
       // row written in between arrives only through the read on "Subscribed
       // to PostgreSQL".

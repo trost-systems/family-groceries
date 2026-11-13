@@ -27,7 +27,7 @@ void main() {
       tester,
       location: location,
       size: const Size(390, 2600),
-      sdk: RevenueCatRepository(AppStore.apple, 'appl_public'),
+      sdk: RevenueCatRepository('appl_public', native.noteCustomer),
     );
   }
 
@@ -43,6 +43,7 @@ void main() {
       isTrue,
     );
     expect(native.calls, isEmpty);
+    expect(native.notes, isEmpty);
   });
 
   testWidgets('opening, rebuilding, leaving and coming back to the Lifetime '
@@ -61,6 +62,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(key('premium-buy-yearly'), findsOneWidget);
     expect(native.calls, isEmpty);
+    expect(native.notes, isEmpty, reason: 'nor a note of the account');
     expect(more.purchases.storePrices.reads, 2, reason: 'once per opening');
   });
 
@@ -72,6 +74,7 @@ void main() {
     expect(native.calls, isEmpty);
     await tester.tap(key('premium-buy-yearly'));
     await tester.pumpAndSettle();
+    expect(native.notes, [0], reason: 'the account is noted first');
     expect(native.methods, [
       'setupPurchases',
       'getProductInfo',
@@ -84,7 +87,7 @@ void main() {
     await tester.pump(unlockWait);
   });
 
-  testWidgets('Buy configures with the household, then loads the product, '
+  testWidgets('Buy configures with the user, then loads the product, '
       'then opens the purchase', (tester) async {
     await start(tester, location: premiumPath);
     await tester.pumpAndSettle();
@@ -98,12 +101,12 @@ void main() {
       'getProductInfo',
       'purchaseProduct',
     ]);
-    expect(native.calls.first.arguments, containsPair('appUserId', 'home'));
+    expect(native.calls.first.arguments, containsPair('appUserId', 'peter'));
     // "Unlocking" waits for an unlock that never comes here.
     await tester.pump(unlockWait);
   });
 
-  testWidgets('Restore configures with the household, then restores', (
+  testWidgets('Restore configures with the user, then restores', (
     tester,
   ) async {
     await start(tester, location: premiumPath);
@@ -111,8 +114,9 @@ void main() {
     await tester.ensureVisible(key('lifetime-restore'));
     await tester.tap(key('lifetime-restore'));
     await tester.pumpAndSettle();
+    expect(native.notes, [0], reason: 'the account is noted first');
     expect(native.methods, ['setupPurchases', 'restorePurchases']);
-    expect(native.calls.first.arguments, containsPair('appUserId', 'home'));
+    expect(native.calls.first.arguments, containsPair('appUserId', 'peter'));
   });
 
   testWidgets('an unlocked household never reaches the SDK', (tester) async {
@@ -120,7 +124,7 @@ void main() {
     await pumpMore(
       tester,
       location: premiumPath,
-      sdk: RevenueCatRepository(AppStore.apple, 'appl_public'),
+      sdk: RevenueCatRepository('appl_public', native.noteCustomer),
       entitlements: FakeEntitlementsSource(unlockedNow: true),
     );
     await tester.pumpAndSettle();

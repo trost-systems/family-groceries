@@ -1,33 +1,49 @@
-// The purchases function's database work, all through the service connection and the functions
-// in migrations 20261030190000_purchases.sql, 20261031123504_household_bound_lifetime.sql,
-// 20261031214500_premium_yearly.sql and 20261101143000_revenuecat_promotional.sql that no client
-// may call. A webhook event's writes take [Tx]: they commit with its id (firstDelivery).
+// The purchases function's database work, all through the service connection and the functions in
+// migrations 20261030190000_purchases.sql, 20261031123504_household_bound_lifetime.sql,
+// 20261031214500_premium_yearly.sql, 20261101143000_revenuecat_promotional.sql and
+// 20261112232617_per_user_premium.sql that no client may call. A webhook event's writes take [Tx]:
+// they commit with its id (firstDelivery).
 import type { Sql, Tx } from '../_shared/db.ts';
 import type { AppStore } from '../_shared/purchases.ts';
 import type { PromotionalPremium } from './promotional.ts';
 import type { Lifecycle } from './revenuecat.ts';
 import type { Plan, Refund, Sale, StoreEnvironment, StorePurchase } from './types.ts';
 
-/** purchase_record's outcome (see the migration). */
+/** purchase_record's and purchase_record_user's outcome (see the migrations). */
 export type Outcome =
   | 'granted'
   | 'restored'
   | 'used_elsewhere'
   | 'tombstoned'
   | 'no_household'
+  | 'no_user'
   | 'revoked';
+
+/** What an App User ID names (app_user_owner); null: neither, e.g. deleted. */
+type Owner = 'user' | 'household' | null;
+
+async function ownerOf(sql: Tx, appUserId: string): Promise<Owner> {
+  const [row] = await sql<{ owner: Owner }[]>`
+    select public.app_user_owner(${appUserId}::uuid) as owner`;
+  return row?.owner ?? null;
+}
 
 /** purchase_record's answer. */
 export interface Recorded {
   outcome: Outcome;
   /** Granted into a household that had this kind already: it was bought twice. */
   alreadyUnlocked: boolean;
-  /** used_elsewhere, and the household the purchase belongs to is deleted. */
+  /** used_elsewhere, and the household or user the purchase belongs to is deleted. */
   householdGone: boolean;
-  /** The household has a promotional grant (testers, reviewers): analytics marks it internal. */
+  /**
+   * The household (or, for a user's own purchase, the user) has a promotional grant (testers,
+   * reviewers): analytics marks it internal.
+   */
   internal: boolean;
-  /** The member who claimed it, if any. */
+  /** The buyer: the user it was bought for, else the member who claimed it, if any. */
   buyer: string | null;
+  /** The household the purchase unlocks; null for a user's own (analytics names the buyer's). */
+  householdId: string | null;
   /** purchase_completed is due now (for [buyer]). */
   sendCompleted: boolean;
   /** A new yearly plan in a household that had an active one: kept apart, logged (A2-3). */
@@ -42,13 +58,18 @@ export async function firstDelivery(sql: Tx, id: string, type: string): Promise<
   return rows.length === 1;
 }
 
-/** [hmac]: the transaction's tombstone key (purchase_tombstones). */
+/**
+ * [hmac]: the transaction's tombstone key (purchase_tombstones). A user's App User ID goes to
+ * purchase_record_user, anything else to the household path.
+ */
 export async function record(sql: Tx, p: StorePurchase, hmac: string): Promise<Recorded> {
+  const owner = await ownerOf(sql, p.appUserId);
+  const fn = owner === 'user' ? sql`public.purchase_record_user` : sql`public.purchase_record`;
   const [row] = await sql<{ r: Record<string, unknown> }[]>`
-    select public.purchase_record(
+    select ${fn}(
       ${p.store}, ${p.transactionId}, ${p.latestTransactionId}, ${hmac}, ${p.productId}, ${p.kind},
       ${p.plan}, ${p.environment}, ${p.purchasedAt.toISOString()}::timestamptz, ${p.price}::numeric,
-      ${p.currency}, ${p.country}, ${p.householdId}::uuid, ${p.eventAt.toISOString()}::timestamptz,
+      ${p.currency}, ${p.country}, ${p.appUserId}::uuid, ${p.eventAt.toISOString()}::timestamptz,
       ${p.subscription?.expiresAt?.toISOString() ?? null}::timestamptz,
       ${p.subscription?.autoRenew ?? null}::boolean, ${
     p.subscription?.billingIssue ?? null
@@ -63,6 +84,7 @@ export async function record(sql: Tx, p: StorePurchase, hmac: string): Promise<R
     buyer: typeof r.buyer === 'string' ? r.buyer : null,
     sendCompleted: r.send_completed === true,
     secondYearly: r.second_yearly === true,
+    householdId: owner === 'household' ? p.appUserId : null,
   };
 }
 
@@ -82,7 +104,7 @@ export async function lifecycle(sql: Tx, c: Lifecycle): Promise<LifecycleOutcome
 /** A purchase the store just took back, as purchase_refunded needs it. */
 export interface Revoked extends Sale {
   userId: string | null;
-  /** In a household with a promotional grant (household_internal). */
+  /** In a household, or of a user, with a promotional grant (household_internal, user_internal). */
   internal: boolean;
 }
 
@@ -169,25 +191,42 @@ export async function deletionDone(sql: Sql, id: string): Promise<void> {
   await sql`select public.revenuecat_deletion_done(${id}::uuid)`;
 }
 
-/** promotional_premium_sync's outcome (migration 20261101143000_revenuecat_promotional.sql). */
-export type PromotionalOutcome = 'granted' | 'updated' | 'unchanged' | 'removed' | 'no_household';
+/**
+ * promotional_premium_sync's and promotional_premium_sync_user's outcome (migrations
+ * 20261101143000_revenuecat_promotional.sql, 20261112232617_per_user_premium.sql).
+ */
+export type PromotionalOutcome =
+  | 'granted'
+  | 'updated'
+  | 'unchanged'
+  | 'removed'
+  | 'no_household'
+  | 'no_user';
 
 /**
- * Stores [householdId]'s promotional premium as [read] finds it at RevenueCat. The household is
- * locked first, so two deliveries for it read and write one after the other: the later read
- * wins, and it is never older than the later event.
+ * Stores [appUserId]'s promotional premium (a user's or a household's) as [read] finds it at
+ * RevenueCat. The owner is locked first, so two deliveries for it read and write one after the
+ * other: the later read wins, and it is never older than the later event.
  */
 export async function promotional(
   sql: Tx,
-  householdId: string,
+  appUserId: string,
   read: () => Promise<PromotionalPremium>,
 ): Promise<PromotionalOutcome> {
-  const held = await sql`
-    select 1 from public.households where id = ${householdId}::uuid for no key update`;
-  if (held.length === 0) return 'no_household';
+  const owner = await ownerOf(sql, appUserId);
+  if (owner === 'user') {
+    await sql`select public.purchase_user_lock(${appUserId}::uuid)`;
+  } else {
+    const held = await sql`
+      select 1 from public.households where id = ${appUserId}::uuid for no key update`;
+    if (held.length === 0) return 'no_household';
+  }
+  const fn = owner === 'user'
+    ? sql`public.promotional_premium_sync_user`
+    : sql`public.promotional_premium_sync`;
   const now = await read();
   const [row] = await sql<{ outcome: PromotionalOutcome }[]>`
-    select public.promotional_premium_sync(${householdId}::uuid, ${now.active}::boolean, ${
+    select ${fn}(${appUserId}::uuid, ${now.active}::boolean, ${
     now.active ? now.expiresAt?.toISOString() ?? null : null
   }::timestamptz) as outcome`;
   return row.outcome;

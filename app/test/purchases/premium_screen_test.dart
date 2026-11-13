@@ -3,7 +3,6 @@ import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/purchases/premium_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
-import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
@@ -61,7 +60,6 @@ void main() {
   Future<More> openLifetime(
     WidgetTester tester, {
     FakePurchaseRepository? store,
-    FakeClaimApi? api,
     FakeEntitlementsSource? entitlements,
     AppLanguage? language,
     FakePremiumServer? premium,
@@ -75,7 +73,6 @@ void main() {
     premium: premium,
     prices: prices,
     store: store,
-    api: api,
     entitlements: entitlements,
     language: language,
     flags: flags,
@@ -220,19 +217,16 @@ void main() {
     await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
-    expect(store.buys, ['home']);
+    expect(store.buys, ['peter']);
     expect(enabled(tester, 'premium-buy-lifetime'), isFalse);
     await tester.tap(key('premium-buy-lifetime'), warnIfMissed: false);
     expect(store.buys, hasLength(1), reason: 'no second purchase');
 
-    store.held.single.complete(
-      const Bought(StoreTransactionRef(AppStore.apple, '2000000123')),
-    );
+    store.held.single.complete(const Bought());
     await tester.pump();
     shows({'lifetime-unlocking'});
     expect(find.text('Wird freigeschaltet …'), findsOneWidget);
     expect(enabled(tester, 'premium-buy-lifetime'), isFalse);
-    expect(more.purchases.server.calls.single.id, '2000000123');
 
     more.purchases.unlock();
     await tester.pumpAndSettle();
@@ -257,7 +251,6 @@ void main() {
     expect(enabled(tester, 'lifetime-restore'), isTrue);
     await tester.tap(key('premium-buy-lifetime'));
     expect(more.purchases.repository.buys, hasLength(2));
-    expect(more.purchases.server.calls, isEmpty);
   });
 
   testWidgets('canceled quietly, buy again', (tester) async {
@@ -434,10 +427,10 @@ void main() {
     });
   }
 
-  testWidgets("the claim says the purchase is elsewhere's", (tester) async {
+  testWidgets("the store says the purchase is elsewhere's", (tester) async {
     await openLifetime(
       tester,
-      api: FakeClaimApi(answers: const [Claimed(ClaimStatus.elsewhere)]),
+      store: FakePurchaseRepository(bought: const BelongsElsewhere()),
     );
     await pickLifetime(tester);
     await tester.tap(key('premium-buy-lifetime'));
@@ -628,7 +621,7 @@ void main() {
     await tester.tap(key('lifetime-restore'));
     await tester.pump();
     shows({'lifetime-unlocking'});
-    expect(more.purchases.repository.restores, ['home']);
+    expect(more.purchases.repository.restores, ['peter']);
     more.purchases.unlock();
     await tester.pumpAndSettle();
     shows({'lifetime-unlocked'});
@@ -685,7 +678,7 @@ void main() {
     await pickLifetime(tester);
     expect(find.text('Buy Lifetime'), findsOneWidget);
     await tester.tap(key('premium-buy-lifetime'));
-    store.held.single.complete(const Bought(null));
+    store.held.single.complete(const Bought());
     await tester.pump();
     expect(find.text('Unlocking …'), findsOneWidget);
     await tester.pump(unlockWait);
@@ -746,8 +739,8 @@ void main() {
     await tester.tap(key('premium-buy-lifetime'));
     await tester.pump();
     expect(more.purchases.repository.calls, [
-      'restore home',
-      'buy home lifetime',
+      'restore peter',
+      'buy peter lifetime',
     ]);
     // "Unlocking" waits for an unlock that never comes here.
     await tester.pump(unlockWait);
@@ -934,7 +927,7 @@ void main() {
       expect(more.purchases.repository.calls, isEmpty);
       await tester.tap(key('premium-buy-yearly'));
       await tester.pump();
-      expect(more.purchases.repository.calls, ['buy home yearly']);
+      expect(more.purchases.repository.calls, ['buy peter yearly']);
       // "Unlocking" waits for an unlock that never comes here.
       await tester.pump(unlockWait);
     });
@@ -1088,7 +1081,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Trotzdem kaufen'));
       await tester.pumpAndSettle();
-      expect(more.purchases.repository.calls, ['buy home lifetime']);
+      expect(more.purchases.repository.calls, ['buy peter lifetime']);
     });
 
     testWidgets('the subscriber gets their own warning (EN)', (tester) async {
@@ -1129,7 +1122,7 @@ void main() {
       await tester.tap(key('premium-buy-lifetime'));
       await tester.pumpAndSettle();
       expect(key('premium-lifetime-warning'), findsNothing);
-      expect(more.purchases.repository.calls, ['buy home lifetime']);
+      expect(more.purchases.repository.calls, ['buy peter lifetime']);
     });
 
     testWidgets('after Lifetime the yearly plan still bills: the note and its '

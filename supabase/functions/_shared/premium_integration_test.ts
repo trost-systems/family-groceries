@@ -50,6 +50,7 @@ async function withHousehold(lock: boolean, work: (m: Member, sql: postgres.Sql)
     await sql`update public.app_switches set enabled = false where key = 'integration_lock'`;
     await sql`delete from public.purchases where bound_household in (
       select household_id from public.household_members where user_id = ${userId})`;
+    await sql`delete from public.purchases where bound_user = ${userId}`;
     await sql`delete from public.households where id in (
       select household_id from public.household_members where user_id = ${userId})`;
     await sql`delete from auth.users where id = ${userId}`;
@@ -165,6 +166,12 @@ const yearly = async (sql: postgres.Sql, m: Member, tx: string) =>
         'com.snacklist.app.yearly', 'premium', 'yearly', 'Production', now() - interval '1 minute',
         9.99, 'EUR', 'DE', ${m.householdId}::uuid, now(), now() + interval '365 days', true, false)`;
 
+/** Job 185: the user's own plan (App User ID = user id), in no household. */
+const ownYearly = async (sql: postgres.Sql, m: Member, tx: string) =>
+  await sql`select public.purchase_record_user('apple', ${tx}, ${tx}, ${await sha256Hex(tx)},
+        'com.snacklist.app.yearly', 'premium', 'yearly', 'Production', now() - interval '1 minute',
+        9.99, 'EUR', 'DE', ${m.userId}::uuid, now(), now() + interval '365 days', true, false)`;
+
 const test = (name: string, fn: () => Promise<void>) =>
   Deno.test({ name, ignore: !enabled, sanitizeResources: false, sanitizeOps: false, fn });
 
@@ -268,4 +275,32 @@ test('a yearly plan opens Siri and MCP with the same credentials; its lapse lock
                 now() + interval '365 days', true, false)`;
     assertEquals((await voice(m, t)('Brot')).body.speech, 'Hinzugefügt: Brot.');
     assert(!(await mcp(m, t)('list_items')).isError, 'renewed: open again, nothing to relink');
+  }));
+
+test("job 185: a user's own yearly plan opens Siri and MCP; its lapse locks them, Alexa and the list stay", () =>
+  withHousehold(true, async (m, sql) => {
+    const t = recorder();
+    const tx = `u185-${m.userId.slice(0, 8)}`;
+    await ownYearly(sql, m, tx);
+    assertEquals((await voice(m, t)('Milch')).body.speech, 'Hinzugefügt: Milch.');
+    assertFalse((await mcp(m, t)('list_items')).isError);
+
+    await sql`select public.purchase_lifecycle('apple', ${tx}, now() + interval '1 second',
+                now() - interval '1 minute', false, false)`;
+    assertEquals((await voice(m, t)('Brot')).body.error, 'premium_required');
+    assertEquals((await mcp(m, t)('list_items')).isError, true);
+    assertEquals(await alexa(m, t)('Eier'), 'Ich habe Eier auf die Snacklist gesetzt.');
+    await asUser(m.userId, (u) =>
+      u`update public.items set status = 'bought'
+         where household_id = ${m.householdId} and name = 'Milch'`);
+    assertEquals(
+      (await sql<{ status: string }[]>`select status::text from public.items
+         where household_id = ${m.householdId} and name = 'Milch'`)[0]?.status,
+      'bought',
+      'lapsed: the user still checks items off',
+    );
+
+    await sql`select public.purchase_lifecycle('apple', ${tx}, now() + interval '2 seconds',
+                now() + interval '365 days', true, false)`;
+    assertEquals((await voice(m, t)('Brot')).body.speech, 'Hinzugefügt: Brot.');
   }));

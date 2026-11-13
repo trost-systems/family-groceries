@@ -9,17 +9,38 @@ class FakeRevenueCat() {
   final calls = <MethodCall>[];
   var appUserId = '';
 
+  /// Per note of the account on the server (job 185), how many SDK calls
+  /// came before it.
+  final notes = <int>[];
+
+  /// The server refuses the next note (offline, signed out).
+  var noteFails = false;
+
+  /// The repository's `noteCustomer`.
+  Future<void> noteCustomer() async {
+    notes.add(calls.length);
+    if (noteFails) {
+      noteFails = false;
+      throw Exception('note_revenuecat_customer failed');
+    }
+  }
+
   /// Thrown by the next call to [failAt], as RevenueCat's error code.
   int? fail;
   var failAt = '';
   var transactionId = '2000000123';
 
-  /// Products the store account has now: active entitlements.
-  var owned = <String>[];
+  /// Per App User ID, the products it has now: active entitlements. A
+  /// purchase adds to the user the SDK is configured or logged in with; no
+  /// other user finds it ("Keep with original App User ID").
+  final owned = <String, List<String>>{};
 
-  /// Products bought once that are no longer active (a lapsed yearly plan):
-  /// RevenueCat still lists them among all purchased products.
-  var lapsed = <String>[];
+  /// Per App User ID, products bought once that are no longer active (a
+  /// lapsed yearly plan): RevenueCat still lists them among all purchased
+  /// products.
+  final lapsed = <String, List<String>>{};
+
+  List<String> get _owned => owned[appUserId] ?? const [];
 
   /// The products the store has in this storefront (a yearly-only one has
   /// no Lifetime), by the id the SDK reports: Play adds the base plan.
@@ -29,7 +50,7 @@ class FakeRevenueCat() {
     'entitlements': {'all': _entitlements, 'active': _entitlements},
     'allPurchaseDates': <String, Object?>{},
     'activeSubscriptions': <Object?>[],
-    'allPurchasedProductIdentifiers': [...owned, ...lapsed],
+    'allPurchasedProductIdentifiers': [..._owned, ...?lapsed[appUserId]],
     'nonSubscriptionTransactions': <Object?>[],
     'firstSeen': '2026-10-31T12:00:00Z',
     'originalAppUserId': appUserId,
@@ -38,7 +59,7 @@ class FakeRevenueCat() {
   };
 
   Map<String, Object?> get _entitlements => {
-    for (final (i, id) in owned.indexed)
+    for (final (i, id) in _owned.indexed)
       'premium$i': {
         'identifier': 'premium',
         'isActive': true,
@@ -108,11 +129,13 @@ class FakeRevenueCat() {
               },
         ];
       case 'purchaseProduct' || 'purchaseSubscriptionOption':
+        final product = args!['productIdentifier']! as String;
+        (owned[appUserId] ??= []).add(product);
         return {
           'customerInfo': customerInfo,
           'transaction': {
             'transactionIdentifier': transactionId,
-            'productIdentifier': args!['productIdentifier'],
+            'productIdentifier': product,
             'purchaseDate': '2026-10-31T12:00:00Z',
           },
         };

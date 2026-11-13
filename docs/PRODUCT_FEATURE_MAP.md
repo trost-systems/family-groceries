@@ -40,7 +40,7 @@ Unchanged by the evening's decisions: the UI prototype gate, beta first, the job
 
 | Decision | Slug | Status |
 | --- | --- | --- |
-| Per-user Premium. RevenueCat App User ID = Snacklist user id. | `per-user-premium` | Approved, not in code yet (still the household UUID). |
+| Per-user Premium. RevenueCat App User ID = Snacklist user id. | `per-user-premium` | **Implemented, dark** (job 185): new builds use the user id; sales switches off; privacy texts and copy pending (NEEDS_PETER "Job 185"). |
 | Shared views in every household the buyer belongs to, tighten only on heavy abuse. | `shared-views` | **Leaning, not a firm approval.** `household-limit` does not settle every shared-views detail. |
 | On lapse, prices and the last total stay read-only. Nothing is deleted. | `prices-remain-on-lapse` | Approved. Since 20:42 prices and trip totals are Free, so nothing about them likely lapses (?); kept for any later Premium price view. |
 | Product images: icons (already built) → Open Food Facts name and photo on a barcode scan → user photos. | `product-images` | Approved direction. |

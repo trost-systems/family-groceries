@@ -30,8 +30,67 @@ plan of the group for another household ("Cases").
 
 **RevenueCat (Peter, 2026-10-31 14:03; Legal Review's conditions, ADDENDUM 5).** RevenueCat
 verifies purchases with Apple and Google; our server no longer talks to either store. The
-RevenueCat customer is the **household**: the App User ID is the household's UUID, never a user
-id, never anonymous.
+RevenueCat customer was the **household** until job 185: the App User ID was the household's UUID,
+never anonymous. Since job 185 new app builds use the **Snacklist user id** ("Per-user Premium"
+below); a household id from an older build or an existing promotional grant still works.
+
+## Per-user Premium (job 185)
+
+Peter approved per-user Premium on 11 Nov 2026 (t774u): one person buys, and entitlement, restore
+and lapse follow that person. Nothing is sold yet, so nothing changes for users today; the
+sentences above and below that say "household" describe the household path, which stays for
+older builds and for promotional grants on household customers. DECISIONS "Job 185" has the
+reasons.
+
+- **App User ID = `auth.users.id`.** Buy and Restore configure `purchases_flutter` with the
+  signed-in user's id (`RevenueCatUserId` in `app/lib/purchases/purchase_repository.dart`, built
+  only from the session's user). Switching households never logs in again; signing in as another
+  account calls `logIn(<that user>)`. Before the SDK starts, the app calls
+  `note_revenuecat_customer()`, so the server knows the account id reached RevenueCat; if that
+  call fails, the tap ends as "offline" and RevenueCat is not contacted.
+- **No claim.** The webhook knows the buyer: the App User ID. `POST /purchases/claim` stays for
+  older builds; new builds never call it.
+- **Binding.** The webhook asks `app_user_owner(app_user_id)`: a user id goes to
+  `purchase_record_user`, which binds the purchase to that user (`purchases.bound_user`, set at
+  the first grant, never changed, not a foreign key); a household id goes to `purchase_record` as
+  before. A purchase has one owner (`purchases_one_owner`). A user-bound transaction reported
+  under a household id (an old build, a `TRANSFER`) is `used_elsewhere`; a yearly plan's newer
+  period still applies where it is bound. RevenueCat's "Keep with original App User ID" refuses
+  the receipt under another account first.
+- **What the buyer reads.** `user_entitlements`: one row per unlock, only the buyer's own rows
+  (RLS `user_id = auth.uid()`), on Realtime. The app merges them with the household's
+  `entitlements` rows under one rule (`Unlocks.premiumAt`, the server's `user_premium()` and
+  `household_premium()`), so the buyer has Premium in every household they are in, and other
+  members don't see it. Household-level answers stay household-only: the invite preview's
+  "unlocked", archiving on the last leave, `leaves_unlocked`. Whether the buyer's Premium should
+  also unlock shared views for their households is still open (`shared-views`).
+- **Restore on a new device.** `restorePurchases()` under the same user id; RevenueCat sends the
+  purchase again and `purchase_record_user` answers `restored`.
+- **Lapse.** A yearly plan ends at read time as before (`user_premium()` and the app's rule): the
+  row stays with its past end; the integrations pause through the gate while the lock is on. Free
+  features (the list, Alexa, and later price entry, trip totals and barcode scanning) never ask
+  for Premium: `integration_gate` knows only `siri`, `alexa`, `mcp` and `api`.
+- **Integration gate.** `integration_gate(household, integration, user)` opens for the
+  household's premium or the caller's own (`user_has_premium`); Siri, MCP and the API pass the
+  caller (`_shared/premium.ts`). The two-argument form stays for function deploys that still call
+  it.
+- **Billing notes follow the subscriber.** `my_yearly_plan()` counts the caller's own yearly plan
+  in every household, so the subscriber sees its status and billing problem wherever they are,
+  and the "your plan keeps billing" dialog also shows when they leave or join any household or
+  delete the account (its text stays true; the copy review in NEEDS_PETER covers whether it
+  should show on leaving).
+- **Promotional grants to a user customer** sync into `user_entitlements`
+  (`promotional_premium_sync_user`). `scripts/iap/promotional.ts` still grants households only:
+  the published privacy text describes household grants.
+- **Account deletion.** A trigger on `auth.users` marks the user's purchases (`user_deleted_at`;
+  purged into tombstones 30 days later like a deleted household's) and queues the RevenueCat
+  customer for deletion 30 days later, but only when `revenuecat_customers` says the account id
+  ever reached RevenueCat (a tap, a user-bound purchase or a user grant). Every other account id
+  is never sent to RevenueCat, unless Ops runs the reconcile route with it, which asks RevenueCat
+  about that id and therefore notes it too.
+- **Still dark.** All of it is behind `REVENUECAT_PURCHASES` and `premium_offer`, both off. Before
+  either goes on, the privacy texts and the Premium page copy must say what this does
+  (NEEDS_PETER "Job 185", PAYWALL_RELEASE.md step 4.5).
 
 ## How it works
 
@@ -395,12 +454,14 @@ RevenueCat retries, the app retries the claim.
 
 | Table | Who reads | Who writes | Rows |
 | --- | --- | --- | --- |
-| `purchases` | service connection | `purchase_record`, `purchase_lifecycle`, `purchase_claim`, `purchase_revoke`, `purchase_reinstate` | store, transaction id (the original), latest transaction id, its HMAC, product, kind (`premium`), plan (`yearly`/`lifetime`), environment, buyer (from the claim; null after their deletion), bound household (set at the first record, never changed), purchased/verified/revoked at, price, currency, country, when `purchase_completed` went out, when the household was deleted; yearly: end (`expires_at`), renews (`auto_renew`), billing problem open (`billing_issue`), newest event applied (`state_at`). No cancel or expiry reasons, no per-renewal rows (H-87) |
+| `purchases` | service connection | `purchase_record`, `purchase_lifecycle`, `purchase_claim`, `purchase_revoke`, `purchase_reinstate` | store, transaction id (the original), latest transaction id, its HMAC, product, kind (`premium`), plan (`yearly`/`lifetime`), environment, buyer (from the claim; null after their deletion), bound household or, since job 185, bound user (one of them, set at the first record, never changed), when the bound user's account was deleted, purchased/verified/revoked at, price, currency, country, when `purchase_completed` went out, when the household was deleted; yearly: end (`expires_at`), renews (`auto_renew`), billing problem open (`billing_issue`), newest event applied (`state_at`). No cancel or expiry reasons, no per-renewal rows (H-87) |
 | `entitlements` | household members (RLS, column grants: `id, purchase_id, household_id, kind, source, product_id, store, environment, granted_at, premium_source, expires_at, auto_renew`), Realtime (insert, update, delete) | `purchase_entitlement_sync` (from `purchase_record`, `purchase_lifecycle`, `purchase_reinstate`), `purchase_revoke` (delete), `promotional_premium_sync` (the webhook and the reconcile route: insert, update, delete) | one row per unlock: a purchase's (`source` purchase) or the household's RevenueCat promotional grant (`source` promotional, at most one per household, no store, product or environment; testers' too); kind; `premium_source` (`yearly`, `lifetime`, `promotional`); yearly and promotional: the end (promotional: null for none); yearly: whether it renews; granted by (not member-readable) |
+| `user_entitlements` | the user themselves (RLS `user_id = auth.uid()`, column grants: `id, user_id, kind, source, premium_source, expires_at, auto_renew, granted_at`), Realtime | `purchase_entitlement_sync` for user-bound purchases, `purchase_revoke` (delete), `promotional_premium_sync_user` | job 185: one row per unlock of a user (a user-bound purchase, or the user customer's promotional grant, at most one); the same kinds and sources as `entitlements` |
+| `revenuecat_customers` | service connection | `note_revenuecat_customer()` (the app, before Buy or Restore starts the SDK), `purchase_record_user`, `promotional_premium_sync_user` | job 185: account ids that reached RevenueCat; read and deleted by the account-deletion trigger |
 | `purchase_claims` | service connection | `purchase_claim`, `purchase_record` | a claim waiting for its webhook: store, transaction id, claimant, their household, when (30 days at most) |
 | `revenuecat_events` | service connection | the webhook | processed event ids and types, 90 days |
 | `purchase_tombstones` | service connection | `purge_purchases` | HMAC-SHA256 of purged store transaction ids under `REVENUECAT_TOMBSTONE_HMAC_KEY`, nothing else |
-| `revenuecat_deletions` | service connection | trigger on household deletion (every one: a tap on Buy or Restore creates the customer, also without a purchase), `revenuecat_deletions_take`/`_done` (the deletion route) | deleted households' ids (RevenueCat App User IDs), due 30 days later |
+| `revenuecat_deletions` | service connection | trigger on household deletion (every one: a tap on Buy or Restore creates the customer, also without a purchase), trigger on account deletion (only accounts in `revenuecat_customers`, job 185), `revenuecat_deletions_take`/`_done` (the deletion route) | deleted households' and accounts' ids (RevenueCat App User IDs), due 30 days later |
 | `households.archived_at`, `archived_by` | nobody but `archived_households()` for the archiving user (with `deletes_at`, 24 months later) | `leave_current_household(true)`, `accept_invite(code, true)`, `unarchive_household` (archiving only while `household_archive` is on) | when and by whom the last member archived it |
 | `app_switches` | service connection (`app_switch(key)` for the functions); members only through `premium_offer()` | the Lead, with the service role | server switches; `household_archive` (seeded off) allows archiving; `premium_offer` (seeded off, job 49) lets the app offer Snacklist Premium |
 | `household_departures` | service connection (`was_member_at`) | trigger on leaving a household | household, user, joined and left at; one hour, for the buyer's claim |
@@ -415,9 +476,9 @@ the switch).
 
 Migrations `20261030190000_purchases.sql`, `20261031123504_household_bound_lifetime.sql`,
 `20261031194500_purchase_legal_fixes.sql`, `20261031214500_premium_yearly.sql`,
-`20261101143000_revenuecat_promotional.sql` and `20261101150000_testers_via_revenuecat.sql`; pgTAP `supabase/tests/purchases.test.sql`,
+`20261101143000_revenuecat_promotional.sql`, `20261101150000_testers_via_revenuecat.sql` and `20261112232617_per_user_premium.sql` (job 185); pgTAP `supabase/tests/purchases.test.sql`,
 `household_bound.test.sql`, `purchase_legal_fixes.test.sql`, `premium_yearly.test.sql` and
-`revenuecat_promotional.test.sql`; the data map
+`revenuecat_promotional.test.sql`, `per_user_premium.test.sql`; the data map
 `docs/PRIVACY_DATA_MAP.md`. `export_my_data` has `purchases` (with `belongs_to_household`) and
 `archived_households` sections (the `lifetime_tester` section went with the tester list).
 
@@ -436,8 +497,11 @@ Migrations `20261030190000_purchases.sql`, `20261031123504_household_bound_lifet
   yearly (NEEDS_LEAD Job 43). One HMAC key for all of them (`REVENUECAT_TOMBSTONE_HMAC_KEY`):
   changing it would make the old tombstones useless.
 - **Buyer deletes their account:** the buyer link is nulled (`purchases.user_id`,
-  `entitlements.granted_by`); the household keeps its unlock. Nothing is deleted at RevenueCat:
-  it never had a user id.
+  `entitlements.granted_by`); the household keeps its unlock. For a user-bound purchase (job 185)
+  the user's `user_entitlements` rows go at once, the purchase rows 30 days later into tombstones,
+  and the RevenueCat customer (the user id) is deleted 30 days later if the id ever reached
+  RevenueCat (`revenuecat_customers`). An account whose id never reached RevenueCat is never sent
+  there.
 - **Promotional rows** live while RevenueCat grants premium: deleted when the grant ends or is
   revoked (its event), with the household (cascade), and treated as none at read time once their
   end has passed. A promo-only household's RevenueCat customer is deleted 30 days after the

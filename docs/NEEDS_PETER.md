@@ -1615,3 +1615,35 @@ onboarding and notice mails. Nothing is live, nothing was sent, the hosted proje
 3. **Set the pass bars** for F2, F3 and F5. The events are in the catalog; `mcp_tool_call` and
    `api_key_used` are sent from the next functions deploy on, the F2 and F3 events once the prices
    and scanner UIs ship behind their flags.
+
+## Job 185: per-user Premium, before sales go on (2026-11-13)
+
+Per-user Premium is in the code and dark: the app would send the Snacklist user id to RevenueCat
+as the App User ID, but only after a tap that needs `REVENUECAT_PURCHASES` and `premium_offer`,
+both off. Before either goes on:
+
+1. **Legal: the purchase privacy texts.** `site/content/legal/datenschutz-kaeufe.md`,
+   `privacy-purchases.md` and `privacy.md` (§5, §12, §14) say RevenueCat receives the household's
+   id, "nicht deine Konto-ID", and that the store links the purchase to the household. With
+   per-user Premium RevenueCat receives the account id (and Apple gets it as `appAccountToken`,
+   Google a hash of it), the purchase belongs to the account, and an account deletion deletes the
+   RevenueCat customer 30 days later if the id ever reached RevenueCat. Job 185 changed no legal
+   text (brief). The App Store privacy label and Play Data safety form (PAYWALL_RELEASE 4.4) need
+   the same change.
+2. **Peter and Legal: a deleted account's Lifetime.** Like a deleted household's, a deleted
+   account's purchases are purged to tombstones after 30 days, so a person who deletes their
+   account and signs up again cannot restore Lifetime onto the new account. Say if that should
+   change.
+3. **Copy, through the prototype gate (t777u).** These strings promise the household, not the
+   buyer: `premiumHeroBody` („Snacklist Premium gilt für euren ganzen Haushalt, auch für alle, die
+   später dazukommen.“, on screen today), `premiumHeroTitle` („Einer kauft. Alle haben es.“),
+   `lifetimeWeb`, `premiumHousehold`, `lifetimeUnlockedBody`, `accountDeletePremium`,
+   `accountDeletePremiumLastMember`, `premiumChecking`, `premiumLifetimeWhileYearly`,
+   `premiumLifetimeWhileYearlySubscriber` („Euer Haushalt hat schon ein Jahresabo …“, now also for
+   the buyer's own plan) and `lifetimeUsedElsewhere` („Dieser Kauf gehört zu einem
+   anderen, früheren Haushalt …“). The Premium page also draws three members and a plus in a one-person
+   household. The subscriber of their own yearly plan now also gets the "your plan keeps billing"
+   dialog when leaving or joining any household (the text stays true); say whether it should show
+   there. Rewrite them once `shared-views` is decided.
+4. **Ops: nothing in RevenueCat changes.** Keep "Keep with original App User ID". Testers keep
+   household grants (`scripts/iap/promotional.ts`) until the privacy text describes user grants.

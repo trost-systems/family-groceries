@@ -150,13 +150,12 @@ Future<More> pumpMore(
   /// The list's server before the list loads.
   void Function(FakeRepository repo)? seed,
 
-  /// The store, the purchases function's claim and the household's entitlement
-  /// rows; a store that sells and a household without Lifetime by default.
+  /// The store and the entitlement rows; a store that sells and a household
+  /// without Lifetime by default.
   FakePurchaseRepository? store,
 
   /// The real store over a mocked channel, instead of `store`.
   PurchaseRepository? sdk,
-  FakeClaimApi? api,
   FakeEntitlementsSource? entitlements,
 
   /// The premium_offer switch and the caller's yearly plan.
@@ -214,7 +213,6 @@ Future<More> pumpMore(
     session: session,
     store: store,
     sdk: sdk,
-    api: api,
     source: entitlements,
     premiumServer: premium,
     prices: prices,

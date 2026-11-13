@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
-import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -15,11 +14,15 @@ const home = InHousehold('peter', Household(id: 'home', name: 'Zuhause'), [
   Household(id: 'home', name: 'Zuhause'),
 ]);
 
+/// Another account on the same device, in the same household.
+const leaHome = InHousehold('lea', Household(id: 'home', name: 'Zuhause'), [
+  Household(id: 'home', name: 'Zuhause'),
+]);
+
 /// The cubit as the app has it, answers settled.
 Future<TestPurchases> started({
   Session session = home,
   FakePurchaseRepository? store,
-  FakeClaimApi? api,
   FakeEntitlementsSource? rows,
 }) async {
   final testSession = TestSession(session);
@@ -27,7 +30,6 @@ Future<TestPurchases> started({
   final purchases = TestPurchases(
     session: testSession,
     store: store,
-    api: api,
     source: rows,
   );
   addTearDown(purchases.close);
@@ -46,9 +48,9 @@ void main() {
       await pumpEventQueue();
       expect(p.repository.calls, isEmpty);
       await p.purchases.buy(PremiumPlan.lifetime);
-      expect(p.repository.calls, ['buy home lifetime']);
+      expect(p.repository.calls, ['buy peter lifetime']);
       await p.purchases.restore();
-      expect(p.repository.calls, ['buy home lifetime', 'restore home']);
+      expect(p.repository.calls, ['buy peter lifetime', 'restore peter']);
     });
 
     test('never for an unlocked household', () async {
@@ -70,16 +72,19 @@ void main() {
       await pumpEventQueue();
       expect(p.repository.calls, isEmpty, reason: 'knowing it asks nothing');
       await p.purchases.buy(PremiumPlan.lifetime);
-      expect(p.repository.calls, ['buy home lifetime']);
+      expect(p.repository.calls, ['buy peter lifetime']);
     });
 
-    test('for the household of the moment of the tap', () async {
-      final p = await started();
+    test('for the signed-in user, never a household id (job 185)', () async {
+      final p = await started(
+        store: FakePurchaseRepository(bought: const Canceled()),
+      );
+      await p.purchases.buy(PremiumPlan.lifetime);
       await (p.session as TestSession).join('ABCD2345');
       await pumpEventQueue();
-      expect(p.repository.calls, isEmpty);
-      await p.purchases.buy(PremiumPlan.lifetime);
-      expect(p.repository.calls, ['buy other lifetime']);
+      expect(p.repository.calls, ['buy peter lifetime']);
+      await p.purchases.restore();
+      expect(p.repository.calls, ['buy peter lifetime', 'restore peter']);
     });
 
     test('signing out calls no store: no logOut, nothing to buy', () async {
@@ -91,7 +96,7 @@ void main() {
       await pumpEventQueue();
       await p.purchases.buy(PremiumPlan.lifetime);
       await p.purchases.restore();
-      expect(p.repository.calls, ['buy home lifetime']);
+      expect(p.repository.calls, ['buy peter lifetime']);
       expect(p.purchases.state.flow, isA<FlowIdle>());
     });
 
@@ -110,7 +115,7 @@ void main() {
     test('bought: unlocking until Supabase has the unlock', () async {
       final p = await started();
       await p.purchases.buy(PremiumPlan.lifetime);
-      expect(p.repository.buys, ['home']);
+      expect(p.repository.buys, ['peter']);
       expect(p.purchases.state.flow, isA<FlowUnlocking>());
       p.unlock();
       await pumpEventQueue();
@@ -118,99 +123,17 @@ void main() {
       expect(p.purchases.state.flow, isA<FlowIdle>());
     });
 
-    test(
-      'the claim is sent once, with the household, store and transaction',
-      () async {
-        final api = FakeClaimApi();
-        final p = await started(
-          api: api,
-          store: FakePurchaseRepository(
-            bought: const Bought(
-              StoreTransactionRef(AppStore.google, 'GPA.3312-5'),
-            ),
-          ),
-        );
-        await p.purchases.buy(PremiumPlan.lifetime);
-        await pumpEventQueue();
-        expect(api.calls, hasLength(1));
-        expect(api.calls.single.store, AppStore.google);
-        expect(api.calls.single.id, 'GPA.3312-5');
-        expect(api.households, ['home'], reason: 'the household bought for');
-      },
-    );
-
-    test('a purchase without a transaction id claims nothing', () async {
-      final api = FakeClaimApi();
-      final p = await started(
-        api: api,
-        store: FakePurchaseRepository(bought: const Bought(null)),
-      );
-      await p.purchases.buy(PremiumPlan.lifetime);
-      await pumpEventQueue();
-      expect(api.calls, isEmpty);
+    test("bought: the unlock arrives as the user's own row", () async {
+      final p = await started();
+      await p.purchases.buy(PremiumPlan.yearly);
       expect(p.purchases.state.flow, isA<FlowUnlocking>());
+      p.rows
+        ..userRows['peter'] = [yearlyRow(from: DateTime.now())]
+        ..change();
+      await pumpEventQueue();
+      expect(p.purchases.state.flow, isA<FlowIdle>());
+      expect(p.entitlements.has(Entitlement.premium), isTrue);
     });
-
-    test('a claim without answer is tried again, then given up', () {
-      fakeAsync((async) {
-        final api = FakeClaimApi(
-          answers: const [ClaimFailed(ClaimProblem.offline, 'offline')],
-        );
-        late TestPurchases p;
-        unawaited(started(api: api).then((value) => p = value));
-        async.elapse(Duration.zero);
-        unawaited(p.purchases.buy(PremiumPlan.lifetime));
-        async.flushMicrotasks();
-        expect(api.calls, hasLength(1));
-        async.elapse(const Duration(seconds: 2));
-        expect(api.calls, hasLength(2));
-        async.elapse(const Duration(minutes: 5));
-        expect(api.calls, hasLength(1 + claimBackoff.length));
-      });
-    });
-
-    test('a refused claim is not sent again', () {
-      fakeAsync((async) {
-        final api = FakeClaimApi(
-          answers: const [ClaimFailed(ClaimProblem.refused, 'no_household')],
-        );
-        late TestPurchases p;
-        unawaited(started(api: api).then((value) => p = value));
-        async.elapse(Duration.zero);
-        unawaited(p.purchases.buy(PremiumPlan.lifetime));
-        async.elapse(const Duration(minutes: 5));
-        expect(api.calls, hasLength(1));
-      });
-    });
-
-    test('a claim retried until the server answers, once more', () {
-      fakeAsync((async) {
-        final api = FakeClaimApi(
-          answers: const [
-            ClaimFailed(ClaimProblem.server, '502'),
-            Claimed(ClaimStatus.waiting),
-          ],
-        );
-        late TestPurchases p;
-        unawaited(started(api: api).then((value) => p = value));
-        async.elapse(Duration.zero);
-        unawaited(p.purchases.buy(PremiumPlan.lifetime));
-        async.elapse(const Duration(minutes: 5));
-        expect(api.calls, hasLength(2));
-      });
-    });
-
-    test(
-      "the server says the transaction is elsewhere's: used elsewhere",
-      () async {
-        final p = await started(
-          api: FakeClaimApi(answers: const [Claimed(ClaimStatus.elsewhere)]),
-        );
-        await p.purchases.buy(PremiumPlan.lifetime);
-        await pumpEventQueue();
-        expect(p.purchases.state.flow, isA<FlowUsedElsewhere>());
-      },
-    );
 
     test('no unlock in time: idle again', () {
       fakeAsync((async) {
@@ -289,37 +212,61 @@ void main() {
       },
     );
 
-    test('the claim names the household bought for, after a switch', () async {
+    test('a purchase that ends after a household switch waits for its '
+        'unlock there: no second purchase', () async {
       final store = FakePurchaseRepository()..hold = true;
       final p = await started(store: store);
       unawaited(p.purchases.buy(PremiumPlan.lifetime));
       await pumpEventQueue();
       await (p.session as TestSession).join('ABCD2345');
       await pumpEventQueue();
-      store.held.single.complete(
-        const Bought(StoreTransactionRef(AppStore.apple, 'tx-9')),
-      );
+      store.held.single.complete(const Bought());
       await pumpEventQueue();
-      expect(p.server.households, ['home']);
-      expect(
-        p.purchases.state.flow,
-        isA<FlowIdle>(),
-        reason: "the new household's page shows nothing of it",
-      );
-      expect(p.purchases.state.busy, isFalse);
+      expect(p.purchases.state.flow, isA<FlowUnlocking>());
       store.hold = false;
       await p.purchases.buy(PremiumPlan.lifetime);
-      expect(store.calls.last, 'buy other lifetime', reason: 'Buy available');
+      expect(store.buys, hasLength(1), reason: 'Buy stays off');
+      p.rows
+        ..userRows['peter'] = [
+          {
+            'kind': 'premium',
+            'source': 'purchase',
+            'premium_source': 'lifetime',
+          },
+        ]
+        ..change();
+      await pumpEventQueue();
+      expect(p.purchases.state.flow, isA<FlowIdle>());
+    });
+
+    test("a pending unlock stays Peter's: Lea signed in next starts idle", () {
+      fakeAsync((async) {
+        late TestPurchases p;
+        unawaited(started().then((value) => p = value));
+        async.elapse(Duration.zero);
+        unawaited(p.purchases.buy(PremiumPlan.lifetime));
+        async
+          ..flushMicrotasks()
+          ..elapse(unlockWait);
+        expect(p.purchases.state.flow, isA<FlowUnlockDelayed>());
+        (p.session as TestSession).emit(leaHome);
+        async.flushMicrotasks();
+        expect(p.purchases.state.flow, isA<FlowIdle>());
+        expect(p.purchases.state.busy, isFalse);
+        unawaited(p.purchases.buy(PremiumPlan.lifetime));
+        async.flushMicrotasks();
+        expect(p.repository.calls.last, 'buy lea lifetime');
+      });
     });
 
     test(
-      'a restore that ends after a switch leaves the new household idle',
+      'a restore that ends after an account switch leaves Lea idle',
       () async {
         final store = FakePurchaseRepository()..hold = true;
         final p = await started(store: store);
         unawaited(p.purchases.restore());
         await pumpEventQueue();
-        await (p.session as TestSession).join('ABCD2345');
+        (p.session as TestSession).emit(leaHome);
         await pumpEventQueue();
         store.heldRestores.single.complete(const Restored());
         await pumpEventQueue();
@@ -335,18 +282,13 @@ void main() {
       StoreOffline(): FailureKind.offline,
     };
     for (final MapEntry(key: outcome, value: shown) in outcomes.entries) {
-      test('$outcome shows $shown, claims nothing', () async {
-        final api = FakeClaimApi();
-        final p = await started(
-          api: api,
-          store: FakePurchaseRepository(bought: outcome),
-        );
+      test('$outcome shows $shown', () async {
+        final p = await started(store: FakePurchaseRepository(bought: outcome));
         await p.purchases.buy(PremiumPlan.lifetime);
         expect(switch (p.purchases.state.flow) {
           FlowFailed(:final kind) => kind,
           final other => other.runtimeType,
         }, shown);
-        expect(api.calls, isEmpty);
         await p.purchases.buy(PremiumPlan.lifetime);
         expect(p.repository.buys, hasLength(2), reason: 'buy again lifetime');
       });
@@ -370,12 +312,11 @@ void main() {
         store: FakePurchaseRepository(restored: const Restored()),
       );
       await p.purchases.restore();
-      expect(p.repository.restores, ['home']);
+      expect(p.repository.restores, ['peter']);
       expect(p.purchases.state.flow, isA<FlowUnlocking>());
       p.unlock();
       await pumpEventQueue();
       expect(p.purchases.state.flow, isA<FlowIdle>());
-      expect(p.server.calls, isEmpty, reason: 'a restore claims nothing');
     });
 
     const outcomes = <RestoreOutcome, Object>{
@@ -445,7 +386,7 @@ void main() {
         async.flushMicrotasks();
         p.purchases.pageOpened();
         expect(p.purchases.state.flow, isA<FlowAwaitingApproval>());
-        p.repository.bought = const Bought(null);
+        p.repository.bought = const Bought();
         unawaited(p.purchases.buy(PremiumPlan.lifetime));
         async.flushMicrotasks();
         p.purchases.pageOpened();
@@ -458,22 +399,22 @@ void main() {
     });
   });
 
-  test('another household clears what the last one showed', () async {
+  test('another account clears what the last one showed', () async {
     final p = await started(
       store: FakePurchaseRepository(bought: const BelongsElsewhere()),
     );
     await p.purchases.buy(PremiumPlan.lifetime);
     expect(p.purchases.state.flow, isA<FlowUsedElsewhere>());
-    await (p.session as TestSession).join('ABCD2345');
+    (p.session as TestSession).emit(leaHome);
     await pumpEventQueue();
     expect(p.purchases.state.flow, isA<FlowIdle>());
   });
 
   group('the yearly plan and Lifetime (job 49)', () {
-    test('yearly: bought for the household, unlocked by its row', () async {
+    test('yearly: bought for the user, unlocked by its row', () async {
       final p = await started();
       await p.purchases.buy(PremiumPlan.yearly);
-      expect(p.repository.calls, ['buy home yearly']);
+      expect(p.repository.calls, ['buy peter yearly']);
       expect(p.purchases.state.flow, isA<FlowUnlocking>());
       p.rows
         ..rowsNow = [yearlyRow(from: DateTime.now())]
@@ -489,7 +430,7 @@ void main() {
       await p.purchases.buy(PremiumPlan.yearly);
       expect(p.repository.calls, isEmpty);
       await p.purchases.buy(PremiumPlan.lifetime);
-      expect(p.repository.calls, ['buy home lifetime']);
+      expect(p.repository.calls, ['buy peter lifetime']);
       // The running yearly plan is no Lifetime: it waits for that row.
       expect(p.purchases.state.flow, isA<FlowUnlocking>());
       rows
@@ -515,7 +456,7 @@ void main() {
       );
       await p.purchases.buy(PremiumPlan.yearly);
       await p.purchases.buy(PremiumPlan.lifetime);
-      expect(p.repository.calls, ['buy home yearly', 'buy home lifetime']);
+      expect(p.repository.calls, ['buy peter yearly', 'buy peter lifetime']);
     });
 
     test(

@@ -1,8 +1,9 @@
-// A household's promotional Snacklist Premium as RevenueCat has it now (docs/PURCHASES.md,
+// A customer's promotional Snacklist Premium as RevenueCat has it now (docs/PURCHASES.md,
 // "Free premium: RevenueCat promotional grants"). A grant from the RevenueCat dashboard or from API v2
-// grant_entitlement is a promotional subscription of the customer (App User ID = household id):
+// grant_entitlement is a promotional subscription of the customer (App User ID = a household id,
+// or a user id since job 185):
 // store "promotional", gives_access while it runs, ends_at its end. We read
-// GET /v2/projects/{project}/customers/{household}/subscriptions (permission
+// GET /v2/projects/{project}/customers/{app user id}/subscriptions (permission
 // customer_information:customers:read) and keep only what decides premium: whether a promotional
 // subscription with the premium entitlement gives access now, and until when.
 import { type Fetch, type RevenueCatKey, revenueCatTimeoutMs, within } from './deletions.ts';
@@ -10,7 +11,7 @@ import { type Fetch, type RevenueCatKey, revenueCatTimeoutMs, within } from './d
 /** The entitlement's identifier (lookup key) in RevenueCat; entl654efcfce4 in project proj9cb4a72e. */
 export const premiumEntitlement = 'premium';
 
-/** The household's promotional premium: none, or active until [expiresAt] (null: no end). */
+/** The customer's promotional premium: none, or active until [expiresAt] (null: no end). */
 export type PromotionalPremium = { active: false } | { active: true; expiresAt: Date | null };
 
 /** RevenueCat did not answer usably; the webhook fails so RevenueCat delivers again. */
@@ -55,23 +56,23 @@ export function promotionalOf(subscriptions: Subscription[], now: Date): Promoti
 }
 
 /**
- * Reads [householdId]'s promotional premium from RevenueCat. A customer RevenueCat doesn't know
+ * Reads [appUserId]'s promotional premium from RevenueCat. A customer RevenueCat doesn't know
  * (404, e.g. deleted) has none. Throws [RevenueCatUnavailable] for anything else that isn't 200,
  * and when RevenueCat takes longer than [timeoutMs].
  */
 export async function fetchPromotional(
   key: RevenueCatKey,
-  householdId: string,
+  appUserId: string,
   untimed: Fetch,
   now: Date,
   timeoutMs = revenueCatTimeoutMs,
 ): Promise<PromotionalPremium> {
-  if (!uuid.test(householdId)) throw new Error('not a household id');
+  if (!uuid.test(appUserId)) throw new Error('not an App User ID');
   const fetch = within(untimed, timeoutMs);
   const headers = { authorization: `Bearer ${key.secretKey}`, accept: 'application/json' };
   const items: Subscription[] = [];
   let url: string | null = `${base}/v2/projects/${encodeURIComponent(key.projectId)}/customers/${
-    encodeURIComponent(householdId)
+    encodeURIComponent(appUserId)
   }/subscriptions?limit=100`;
   for (let page = 0; url && page < maxPages; page++) {
     const res: Response | null = await fetch(url, { headers }).catch(() => null);

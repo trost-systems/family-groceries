@@ -11625,3 +11625,75 @@ name plus hint) and V3 A (no referrer) on 10 November, 20:21.
   but renames main.dart.wasm and main.dart.js, which the e2e build watchers, boot.spec's failure
   routes, the web-prod gate and `e2e/web-smoke.mjs` name, and the canvaskit files stay unhashed
   with `--no-web-resources-cdn`.
+
+## Job 185: per-user Premium, RevenueCat App User ID = the Snacklist user, 2026-11-13
+
+Peter approved per-user Premium on 11 Nov 2026, 07:54 Europe/Berlin (t774u); t788u, t791u and
+t796u limit this job to paid Premium's entitlement, restore and lapse on the existing RevenueCat
+project. Migration `20261112232617_per_user_premium.sql`; docs/PURCHASES.md "Per-user Premium".
+
+1. **The App User ID is `auth.users.id`, typed.** `RevenueCatUserId` (an extension type) is built
+   only from the session's user, so a household id cannot reach `buy` or `restore` by mistake.
+   The SDK logs in again only on an account switch, never on a household switch. A dedicated
+   hashed id was not used: the brief names the user id, and RevenueCat's "Keep with original App
+   User ID" needs a stable id per person.
+2. **The household path stays, as input only.** Older TestFlight builds and existing promotional
+   grants use household customers. `app_user_owner()` tells the two kinds apart in SQL (auth user
+   first, then household); the webhook calls `purchase_record_user` or `purchase_record`. Removing
+   the household path would strand those grants and old builds' sandbox renewals; keeping it
+   costs no new code.
+3. **One owner per purchase, for good.** `purchases.bound_user` (no foreign key, like
+   `bound_household`) is set at the first grant and never changed; a check forbids both. A
+   user-bound transaction reported under a household id is `used_elsewhere`, and a yearly
+   plan's newer period still applies where it is bound (job 67's rule). This is the "a second
+   membership never rebinds to a household UUID" case, tested in pgTAP, the function tests and
+   the app tests.
+4. **A separate table for the buyer's rows.** `user_entitlements` (own rows only, Realtime) rather
+   than nullable `household_id` on `entitlements`: the household table's RLS, column grants and
+   the old builds' queries stay as they are. Its primary key is its own id, since Realtime sends
+   a delete's key to every subscriber. `user_id` is granted to `authenticated` because PostgREST
+   and Realtime refuse a filter on a column the role can't read; RLS limits it to the caller's own
+   id.
+5. **The buyer's Premium counts in every household they open, for them only.** The app merges the
+   user's rows with the household's under one rule (`Unlocks`); other members don't read them.
+   Household answers (invite preview, archiving on the last leave, `leaves_unlocked`,
+   `my_households`) stay household-only: whether a buyer's Premium unlocks shared views for their
+   households is undecided (`shared-views`), so nothing here assumes it.
+6. **The integration gate takes the caller.** A three-argument `integration_gate` opens for the
+   household's premium or the caller's own; Siri, MCP and the API pass the caller. The
+   two-argument form delegates to it for function deploys that still call it. The integration
+   list stays `siri`, `alexa`, `mcp`, `api`, so price entry, trip totals and barcode scanning can't
+   be gated by it (t788u, t791u).
+7. **No claim from new builds.** The App User ID is the buyer, so `purchase_record_user` sets
+   `user_id` itself and `purchase_completed` goes out at the first grant. The app's claim client,
+   `StoreTransactionRef` and `AppStore` went with it; the server route stays for older builds.
+8. **Account ids reach RevenueCat only after a tap.** Account deletion queues a RevenueCat
+   customer deletion only for ids in `revenuecat_customers`, which the app fills
+   (`note_revenuecat_customer()`) before it starts the SDK, and the webhook fills for a user
+   purchase or user grant. Queuing every deleted account, as the household trigger does, would
+   have sent account ids of people who never touched RevenueCat to RevenueCat's API daily, which
+   the published privacy text rules out. If noting fails, the tap ends as offline and RevenueCat
+   is not contacted.
+9. **A deleted account's purchases follow the household rule.** Marked `user_deleted_at`, purged
+   to tombstones after 30 days, so the same store purchase never binds to a new account. Whether
+   a person who deletes their account and signs up again should get a Lifetime back is a product
+   and legal call (NEEDS_PETER "Job 185").
+10. **The purge no longer deletes user-bound refunds early.** `purge_purchases` deleted every
+    refunded row without `bound_household` after 30 days, meant for refunds never granted; it now
+    also requires `bound_user is null`.
+11. **The flag is the sales switch pair.** Every path that sends the user id to RevenueCat starts
+    with a tap that exists only with `REVENUECAT_PURCHASES` in a store build and `premium_offer`
+    on; both stay off (brief). A third switch for household-versus-user ids would keep two app
+    paths alive for no user. The privacy texts and the Premium copy still say "household"; turning
+    either switch on now waits for them (PAYWALL_RELEASE.md 4.5).
+12. **No UI or copy change** (Peter's prototype gate, t777u). The Premium page still says
+    "für euren ganzen Haushalt"; the strings that now read wrong are listed in NEEDS_PETER
+    "Job 185".
+13. **Review round (Opus).** Kept, with reasons: a user-bound sale is internal when the buyer is
+    in a tester household (`user_internal`), as every event of such a household already is; the
+    subscriber of their own yearly plan gets the billing dialog on any leave or join (the text is
+    true; the copy question is in NEEDS_PETER). Fixed: "bought twice" and "two yearly plans" count
+    per owner, not across the household's and the user's rows; the purchase flow resets on an
+    account switch and no longer on a household switch (the pending unlock follows the user, and
+    a reset would offer Buy again while it is on its way); the fake RevenueCat keeps purchases per App User ID. Documented: rolling
+    `purchases` back past this job loses new builds' purchases once sales are on (DEPLOY.md).

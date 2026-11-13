@@ -1,5 +1,5 @@
 // RevenueCat's webhook (https://www.revenuecat.com/docs/integrations/webhooks): its signature, and
-// its events as what they mean for a household's unlock. Unknown types and fields are ignored, so a
+// its events as what they mean for an unlock. Unknown types and fields are ignored, so a
 // newer RevenueCat payload never fails.
 import type { AppStore } from '../_shared/purchases.ts';
 import { premiumEntitlement } from './promotional.ts';
@@ -41,10 +41,10 @@ export type Action =
   | { do: 'reinstate'; store: AppStore; transactionId: string }
   /**
    * A promotional grant of premium changed (store PROMOTIONAL: granted, extended, revoked or
-   * expired). The event is only the trigger: the household's promotional premium is read from
+   * expired). The event is only the trigger: the customer's promotional premium is read from
    * RevenueCat's API and stored as it is now (promotional.ts).
    */
-  | { do: 'promotional'; householdId: string }
+  | { do: 'promotional'; appUserId: string }
   /** No write. [refused] is logged; TRANSFER and PRODUCT_CHANGE are logged by type. */
   | { do: 'ignore'; refused?: Refusal };
 
@@ -132,8 +132,11 @@ const isRefund = (f: Record<string, unknown>, plan: Plan) =>
   (typeof f.price === 'number' && f.price < 0) ||
   (typeof f.price_in_purchased_currency === 'number' && f.price_in_purchased_currency < 0);
 
-/** The household id, or null for RevenueCat's own ids ($RCAnonymousID:…) and anything else. */
-const householdOf = (f: Record<string, unknown>) =>
+/**
+ * The App User ID when it is one of ours (a user id, or a household id from older builds), null
+ * for RevenueCat's own ids ($RCAnonymousID:…) and anything else. The database tells the two apart.
+ */
+const appUserIdOf = (f: Record<string, unknown>) =>
   typeof f.app_user_id === 'string' && uuid.test(f.app_user_id)
     ? f.app_user_id.toLowerCase()
     : null;
@@ -141,7 +144,7 @@ const householdOf = (f: Record<string, unknown>) =>
 /**
  * Grants from the RevenueCat dashboard or API v2 grant_entitlement: NON_RENEWING_PURCHASE when
  * granted or extended, CANCELLATION (DEVELOPER_INITIATED) when revoked, EXPIRATION when it ends.
- * Every one of them, whatever its type, makes us read the household's current state: deliveries
+ * Every one of them, whatever its type, makes us read the customer's current state: deliveries
  * may come late, twice or out of order, and the API answers what is true now.
  */
 function promotionalAction(type: string, f: Record<string, unknown>): Action {
@@ -153,9 +156,9 @@ function promotionalAction(type: string, f: Record<string, unknown>): Action {
     : null;
   // Another entitlement's grant: nothing of ours changed. Without ids we look anyway.
   if (ids && !ids.includes(premiumEntitlement)) return { do: 'ignore', refused: 'entitlement' };
-  const householdId = householdOf(f);
-  if (!householdId) return { do: 'ignore', refused: 'app_user_id' };
-  return { do: 'promotional', householdId };
+  const appUserId = appUserIdOf(f);
+  if (!appUserId) return { do: 'ignore', refused: 'app_user_id' };
+  return { do: 'promotional', appUserId };
 }
 
 function actionOf(type: string, f: Record<string, unknown>, now: Date): Action {
@@ -220,9 +223,9 @@ function actionOf(type: string, f: Record<string, unknown>, now: Date): Action {
   }
   // Family Sharing is off for both products (scripts/iap/product.ts); a shared copy is no sale.
   if (f.is_family_share === true) return { do: 'ignore', refused: 'family_share' };
-  // The household id, or RevenueCat's own ($RCAnonymousID:…) when the app never logged in.
-  const householdId = householdOf(f);
-  if (!householdId) return { do: 'ignore', refused: 'app_user_id' };
+  // RevenueCat's own id ($RCAnonymousID:…) when the app never logged in.
+  const appUserId = appUserIdOf(f);
+  if (!appUserId) return { do: 'ignore', refused: 'app_user_id' };
   // A yearly plan without its end is no state we could keep.
   if (product.plan === 'yearly' && !fields.expiresAt) return { do: 'ignore', refused: 'malformed' };
   const price = typeof f.price_in_purchased_currency === 'number' &&
@@ -248,7 +251,7 @@ function actionOf(type: string, f: Record<string, unknown>, now: Date): Action {
       price,
       currency: code(f.currency, /^[A-Z]{3}$/),
       country: code(f.country_code, /^[A-Z]{2}$/),
-      householdId,
+      appUserId,
     },
   };
 }

@@ -124,6 +124,10 @@ select public.purchase_record('apple', '2000000999000001', '2000000999000001', r
   'com.hummlist.app.lifetime', 'premium', 'lifetime', 'Sandbox', now(), 9.99, 'EUR', 'DE', (select id from fx where key = 'home'));
 select public.purchase_take_call((select id from auth.users where email = 'peter@backup.test'));
 select public.promotional_premium_sync((select id from fx where key = 'other'), true, '2100-01-01T00:00:00Z');
+-- Job 185: Lea bought a yearly plan for herself (App User ID = her user id).
+select public.purchase_record_user('apple', '2000000999000185', '2000000999000185', repeat('d', 64),
+  'com.snacklist.app.yearly', 'premium', 'yearly', 'Sandbox', now(), 24.99, 'EUR', 'DE',
+  (select id from auth.users where email = 'lea@backup.test'), now(), now() + interval '365 days', true, false);
 insert into public.revenuecat_events (id, type) values ('backup-drill-event', 'NON_RENEWING_PURCHASE');
 insert into public.purchase_tombstones (transaction_hmac) values (repeat('c', 64));
 insert into public.revenuecat_deletions (app_user_id, due_at) values (gen_random_uuid(), now() + interval '30 days');

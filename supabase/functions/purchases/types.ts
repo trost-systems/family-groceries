@@ -84,9 +84,12 @@ export interface Sale {
   householdId: string | null;
 }
 
-/** A purchase RevenueCat reports for a household (its App User ID). */
-export interface StorePurchase extends Sale {
-  householdId: string;
+/**
+ * A purchase RevenueCat reports for its App User ID: the buyer's user id (job 185), or a household
+ * id from builds before it. The household analytics names comes from the record (Recorded).
+ */
+export interface StorePurchase extends Omit<Sale, 'householdId'> {
+  appUserId: string;
   /** The event's own transaction; the app's claim may name it instead of the original. */
   latestTransactionId: string;
   kind: EntitlementKind;

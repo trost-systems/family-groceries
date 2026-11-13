@@ -1,9 +1,10 @@
-// Deletes RevenueCat customers of deleted households (job 43, ADDENDUM 5 and 6; docs/PURCHASES.md
-// "Retention"). The App User ID is the household id; 30 days after a household is deleted it is
-// due in public.revenuecat_deletions. For each due one: DELETE the customer (RevenueCat API v2;
-// 200 queues the deletion, 404 means there is none), then GET it; only a 404 counts as deleted and
-// the queue row goes. Anything else is tried again an hour later at the earliest
-// (revenuecat_deletions_take). The only call we make to RevenueCat.
+// Deletes RevenueCat customers of deleted households and accounts (job 43, ADDENDUM 5 and 6; job
+// 185; docs/PURCHASES.md "Retention"). The App User ID is the household's or the user's id (an
+// account only if its id ever went to RevenueCat, public.revenuecat_customers); 30 days after the
+// deletion it is due in public.revenuecat_deletions. For each due one: DELETE the customer
+// (RevenueCat API v2; 200 queues the deletion, 404 means there is none), then GET it; only a 404
+// counts as deleted and the queue row goes. Anything else is tried again an hour later at the
+// earliest (revenuecat_deletions_take). The only call we make to RevenueCat.
 
 export type Fetch = (url: string, init?: RequestInit) => Promise<Response>;
 

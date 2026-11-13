@@ -1,16 +1,18 @@
 // The purchases function (docs/PURCHASES.md): RevenueCat tells it about Snacklist Premium purchases
 // (yearly and Lifetime), a yearly plan's renewals, cancellations and expiry, and refunds; it
-// unlocks the household (RevenueCat's App User ID), keeps the plan's state, or takes the unlock
-// away. It never talks to Apple or Google itself.
+// unlocks premium for RevenueCat's App User ID (the buyer's user id, job 185; a household id from
+// older builds), keeps the plan's state, or takes the unlock away. It never talks to Apple or
+// Google itself.
 //   GET  /purchases                       whether the webhook is configured (smoke checks)
 //   POST /purchases/revenuecat/webhook    RevenueCat's webhook (Authorization:
 //                                         REVENUECAT_WEBHOOK_AUTH, compared whole)
 //   POST /purchases/revenuecat/deletions  deletes due RevenueCat customers (deletions.ts); the
 //                                         daily workflow, with x-deletions-secret:
 //                                         REVENUECAT_DELETIONS_SECRET (compared whole; 503 unset)
-//   POST /purchases/revenuecat/reconcile  Ops: stores a household's promotional premium as
-//                                         RevenueCat has it now (body {"householdId"}), with the
-//                                         same x-deletions-secret (scripts/iap/promotional.ts)
+//   POST /purchases/revenuecat/reconcile  Ops: stores a customer's promotional premium as
+//                                         RevenueCat has it now (body {"householdId"}: an App
+//                                         User ID, scripts/iap/promotional.ts sends households),
+//                                         with the same x-deletions-secret
 //   POST /purchases/claim       the app, signed in (its own session, not a PAT or OAuth app): "I
 //                               bought this transaction for this household" (H-55)
 // Routes match exactly, after the gateway's /functions/v1 prefix.
@@ -33,8 +35,8 @@ export interface Ledger {
   lifecycle(c: Lifecycle): Promise<LifecycleOutcome>;
   revoke(r: Refund): Promise<Revoked | null>;
   reinstate(store: AppStore, transactionId: string): Promise<boolean>;
-  /** Reads the household's promotional premium from RevenueCat and stores it. */
-  promotional(householdId: string): Promise<PromotionalOutcome>;
+  /** Reads the customer's promotional premium from RevenueCat and stores it. */
+  promotional(appUserId: string): Promise<PromotionalOutcome>;
 }
 
 export interface Deps {
@@ -68,11 +70,11 @@ export interface Deps {
     transactionId: string,
   ): Promise<Claim>;
   /**
-   * Stores [householdId]'s promotional premium as RevenueCat has it now, outside any event. Null
+   * Stores [appUserId]'s promotional premium as RevenueCat has it now, outside any event. Null
    * without REVENUECAT_SECRET_KEY and REVENUECAT_PROJECT_ID: promotional events answer 503 (and
    * RevenueCat retries), the reconcile route 503.
    */
-  reconcile: ((householdId: string) => Promise<PromotionalOutcome>) | null;
+  reconcile: ((appUserId: string) => Promise<PromotionalOutcome>) | null;
   /** Null without REVENUECAT_SECRET_KEY and REVENUECAT_PROJECT_ID: the route skips. */
   deleteDueCustomers: (() => Promise<DeletionOutcome>) | null;
   /** Whom analytics events for [userId] go to: null unless their latest answer in the app was yes. */
@@ -186,7 +188,7 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
             const due = r.sendCompleted && r.buyer
               ? {
                 name: 'purchase_completed' as const,
-                sale: p,
+                sale: { ...p, householdId: r.householdId },
                 userId: r.buyer,
                 internal: r.internal,
               }
@@ -225,8 +227,10 @@ export function createHandler(deps: Deps): (req: Request) => Promise<Response> {
             };
           case 'promotional': {
             // No purchases row and no analytics event: a grant is no sale.
-            const outcome = await ledger.promotional(action.householdId);
-            if (outcome === 'no_household') log({ event: e.type, refused: outcome });
+            const outcome = await ledger.promotional(action.appUserId);
+            if (outcome === 'no_household' || outcome === 'no_user') {
+              log({ event: e.type, refused: outcome });
+            }
             return { status: outcome, due: null };
           }
         }
