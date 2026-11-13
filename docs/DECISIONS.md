@@ -11435,3 +11435,34 @@ name plus hint) and V3 A (no referrer) on 10 November, 20:21.
 - **Rebase.** Only `docs/DECISIONS.md` conflicted (job 180's entry and job 178's appended at the
   same place); both are kept. No legal text changed in the rebase, and the three new migrations
   still sort after main's newest.
+
+## Job 189: five price-entry and trip-total prototypes, 2026-11-12
+
+- **Sandbox only, next to the earlier design rounds.** `docs/design/prices-trip/` holds the
+  React sandbox (`sandbox/`), its built preview (`dist/`) and `RECOMMENDATION.md`, like
+  `docs/design/h-satz-final/`. Nothing under `app/` or `supabase/` changed. The approaches are
+  `inline-row-price`, `item-sheet-price`, `trip-review-list`, `focused-price-keypad` and
+  `last-price-confirm`, one folder each under `sandbox/src/prototypes/`. This is not approval
+  to implement. Job 190 is Peter's choice, and job 186 waits on it.
+- **Tokens copied, not retyped.** `sandbox/scripts/sync-tokens.mjs` copies `site/public/tokens.css`
+  (generated from `design/tokens/snacklist.tokens.json`), the self-hosted fonts and the hex masks
+  into the sandbox on every `dev` and `build`. `scripts/icons.py` writes the app's real Material
+  icon paths from Flutter's font. The only literal colour is the sheet barrier, which
+  `theme.dart` also keeps as a constant (`sheetBarrier`).
+- **One model, five surfaces.** `sandbox/src/shared/pricing.ts` holds the price model used by all
+  five. A typed price is per unit or for the whole line, and the other value is derived. Items
+  are sold by the piece, by the pack (with a per-piece price) or by weight (per kg). It also
+  holds the parse rules and the trip total, with 30 vitest cases. The parse rules are a comma or
+  a point, at most two decimals, 0,01 to 999,99 €, and weight up to 20 kg. Each approach differs
+  only in where and when the price is asked, so the scenarios stay the same.
+- **Same scenario, checked.** `sandbox/e2e/scenario.spec.ts` drives every approach to the same
+  end state (13,62 €, 4 priced, 3 open) through enter, edit, the four errors, a quantity change,
+  weight and multipack. It saves the screenshots in `docs/screenshots/189/`. It ran under
+  `/tmp/fg-e2e.lock` on its own port (4190) with no Supabase stack.
+- **Free, no paywall.** Per t788u, no approach checks entitlement or shows Premium.
+- **Recommendation.** Use `inline-row-price` as the base, and add last-price prefill on its chip
+  once last-price memory exists. The reasons and the open questions (price vs tick, what a trip
+  is, line price after a quantity change, limits, who sees it) are in `RECOMMENDATION.md`.
+- **No hosted preview.** The Vercel connector isn't available on the Hetzner runner, and project
+  settings must not change. Peter can run `python3 -m http.server --directory
+  docs/design/prices-trip/dist` or `npm run dev` in `sandbox/`.

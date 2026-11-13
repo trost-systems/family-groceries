@@ -1,0 +1,271 @@
+/* The comparison page around the phones, and the parts only one approach uses. */
+
+.page {
+  min-height: 100vh;
+}
+
+.switcher {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hl-space-2);
+  padding: var(--hl-space-3) var(--hl-space-5);
+  background: var(--hl-color-surface-raised);
+  border-bottom: var(--hl-border-width) solid var(--hl-color-border);
+}
+
+.switcher .brand {
+  margin-right: var(--hl-space-3);
+  font-family: var(--hl-font-family-display);
+  font-weight: var(--hl-font-weight-heavy);
+  font-size: 18px;
+}
+
+.switcher a {
+  padding: var(--hl-space-1) var(--hl-space-3);
+  border-radius: var(--hl-radius-full);
+  color: var(--hl-color-text);
+  font-weight: var(--hl-font-weight-medium);
+  text-decoration: none;
+}
+
+.switcher a[aria-current='true'] {
+  background: var(--hl-color-honey);
+  color: var(--hl-color-on-honey);
+  font-weight: var(--hl-font-weight-bold);
+}
+
+main {
+  padding: var(--hl-space-5);
+}
+
+.row-of-phones {
+  display: flex;
+  gap: var(--hl-space-5);
+  overflow-x: auto;
+  padding-bottom: var(--hl-space-5);
+}
+
+.slot {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hl-space-3);
+}
+
+.slot figcaption {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: var(--hl-space-3);
+  width: 390px;
+}
+
+.slot figcaption > span:nth-child(2) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.slot figcaption code {
+  font-size: 12px;
+  color: var(--hl-color-text-muted);
+}
+
+.slot .hxp {
+  font-family: var(--hl-font-family-display);
+  font-weight: var(--hl-font-weight-heavy);
+}
+
+.single {
+  display: flex;
+  gap: var(--hl-space-6);
+  align-items: flex-start;
+}
+
+.notes {
+  max-width: 640px;
+  line-height: var(--hl-type-body-line);
+}
+
+.notes h1,
+.notes h2 {
+  font-family: var(--hl-font-family-display);
+  letter-spacing: var(--hl-type-title-tracking);
+  margin: var(--hl-space-5) 0 var(--hl-space-2);
+}
+
+.notes h2:first-child {
+  margin-top: 0;
+}
+
+.notes h3 {
+  margin: var(--hl-space-4) 0 var(--hl-space-1);
+  font-size: var(--hl-type-label-size);
+}
+
+.doc {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.steps {
+  max-width: 900px;
+  margin-bottom: var(--hl-space-5);
+  padding: var(--hl-space-3) var(--hl-space-4);
+  background: var(--hl-color-surface-raised);
+  border: var(--hl-border-width) solid var(--hl-color-border);
+  border-radius: var(--hl-radius-m);
+}
+
+.steps h3 {
+  margin: 0 0 var(--hl-space-1);
+  font-size: var(--hl-type-label-size);
+}
+
+.steps ol {
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+/* 3 · trip-review-list */
+
+.review-sum {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: var(--hl-space-3) var(--hl-space-4);
+  background: var(--hl-color-honey);
+  color: var(--hl-color-on-honey);
+  border: var(--hl-border-width) solid var(--hl-color-ink);
+  border-radius: var(--hl-radius-m);
+  box-shadow: var(--sticker);
+  font-weight: var(--hl-font-weight-bold);
+}
+
+.review-sum b {
+  font-family: var(--hl-font-family-display);
+  font-size: 30px;
+  font-weight: var(--hl-font-weight-heavy);
+}
+
+.review-sum--end b {
+  font-size: 40px;
+}
+
+.progress {
+  display: flex;
+  justify-content: center;
+  gap: var(--hl-space-2);
+  margin: var(--hl-space-4) 0;
+}
+
+.progress [aria-current='true'] {
+  --line: var(--hl-color-ink);
+  --b: 3px;
+}
+
+.review-card {
+  padding: var(--hl-space-4);
+  background: var(--hl-color-surface-raised);
+  border: var(--hl-border-width) solid var(--hl-color-border);
+  border-radius: var(--hl-radius-l);
+}
+
+/* 4 · focused-price-keypad */
+
+.pad {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--hl-space-2);
+  padding: var(--hl-space-3) var(--hl-space-4) var(--hl-space-4);
+  background: var(--hl-color-surface-raised);
+  border-top: var(--hl-border-width) solid var(--hl-color-border);
+  border-radius: var(--hl-radius-l) var(--hl-radius-l) 0 0;
+  animation: rise var(--hl-motion-duration-medium) var(--hl-motion-easing-standard);
+}
+
+.pad > .between {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+
+.amount {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--hl-space-2);
+  font-family: var(--hl-font-family-display);
+  font-size: 56px;
+  font-weight: var(--hl-font-weight-heavy);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.amount--fresh .num {
+  color: var(--hl-color-text-muted);
+}
+
+.amount .unit {
+  font-size: 30px;
+  color: var(--hl-color-text-muted);
+}
+
+.amount-meta {
+  min-height: 20px;
+  display: flex;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--hl-color-text-muted);
+}
+
+.amount-meta .err {
+  margin: 0;
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--hl-space-2);
+}
+
+.key {
+  display: grid;
+  place-items: center;
+  height: 46px;
+  border: var(--hl-border-width) solid var(--hl-color-border);
+  border-radius: var(--hl-radius-s);
+  background: var(--hl-color-surface);
+  box-shadow: var(--sticker-s);
+  font-family: var(--hl-font-family-display);
+  font-size: 24px;
+  font-weight: var(--hl-font-weight-bold);
+}
+
+.key:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.ok {
+  width: 100%;
+}
+
+/* 5 · last-price-confirm */
+
+.suggest {
+  --line: var(--hl-color-text-muted);
+  font-style: italic;
+}
+
+.name small .icon {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+  fill: var(--hl-color-text-muted);
+}
