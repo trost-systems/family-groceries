@@ -2151,3 +2151,16 @@ in the dashboard), keep `nexus.env` mode 600 and outside every checkout, and rev
 hz is ever shared beyond these jobs. A separate free Hobby team just for nexus would contain it
 fully but is not needed at €0 either way; the lead's call.
    Send Peter `https://nexus.snacklist.app`; he signs in with his Vercel account.
+
+## Job 214: store frame proposals FR1 to FR5 (redo for Snacklist)
+
+- PR: https://github.com/trost-systems/snacklist/pull/425 (draft, **not for merge**).
+- Preview: `https://family-groceries-design-nltnskaru-peter-trost.vercel.app/internal/store-frames`
+  (project `family-groceries-design`, `dpl_39yvAgtcXG2T5Dk9861sYZuQGurj`, READY, target preview;
+  the root `/` shows the same page). SSO blocks the bare URL: please mint the 23-hour share link
+  with the Vercel connector (`get_access_to_vercel_url`) and send it to Peter.
+- Option labels: FR1 Wabenband (panorama band), FR2 Großschrift (oversized captions; Peter's
+  earlier pick, job 84's P2, marked on the page), FR3 Schwebend (tilted device), FR4 Lupe
+  (frameless with callouts), FR5 Ein Einkauf (six-step story).
+- Peter answers with one label, e.g. „FR2“. Job 215 builds the final set from it.
+- The site's own PR preview no longer builds for branches (#404's gate), hence the design project.
