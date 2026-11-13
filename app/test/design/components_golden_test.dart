@@ -226,7 +226,7 @@ Widget _grid(Brightness brightness) {
                     ])
                       Container(
                         width: 150,
-                        height: 110,
+                        height: 120,
                         padding: const EdgeInsets.symmetric(
                           horizontal: HlSpace.s3,
                           vertical: HlSpace.s2,
