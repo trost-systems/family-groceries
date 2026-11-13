@@ -1962,7 +1962,8 @@ Two follow-ups outside job 124's scope:
 - The e2e report action's "Edge runtime log" step prints only `tail -n 300`. For #265 the
   `connection aborted` line had scrolled out. Grepping the whole log for `connection
   aborted|already retired|soft limit` as well would keep the evidence. That is a workflow file,
-  and #249 owns it now.
+  and #249 owns it now. Done by job 219 (#423): a failed e2e job keeps every container's log
+  (the newest 50 MB of each), with timestamps, in its artifact (`docs/CI.md`, On-demand e2e).
 - `timedFetch` in `e2e/tests/mcp-helpers.ts` retries every empty 502/503/504/546 once, POSTs
   included. Job 124 shows an empty 503 can come after the handler ran, so a retried MCP
   `tools/call` can write twice. Narrow the retry to bodiless calls once job 121's

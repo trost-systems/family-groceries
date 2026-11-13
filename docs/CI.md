@@ -134,7 +134,8 @@ scripts/ci-e2e.sh --ref job/42-foo --shards 2 --sync-smoke
 - One run per branch and spec: a second dispatch with the same spec cancels
   the first (`concurrency`). Different specs run side by side.
 - Artifacts, per shard and attempt: `playwright-<shard>-attempt<n>` (HTML
-  report, test results with traces, screenshots, sync evidence) and
+  report, test results with traces, screenshots, sync evidence, and after a
+  failed job `stack-logs/`, below) and
   `e2e-results-<shard>-attempt<n>` (only `playwright-results.json`, what the
   script reads). Each e2e job writes a summary of passed, failed and flaky
   tests per spec file onto the run page (`scripts/e2e-summary.sh`); ci.yml's
@@ -151,6 +152,20 @@ started in the background, Flutter, Node and Playwright, Deno, ffmpeg),
 the job summary) and `.github/actions/db-setup`. Between them each job runs
 its own `scripts/gates/<gate>.sh`, which calls `supabase_up` with the repo's
 migrations and seed, the job-18 fixtures and `e2e/playwright.config.ts`.
+
+When an e2e job fails, in ci.yml or e2e.yml, its `playwright-<shard>` artifact
+also holds `stack-logs/<container>.log`: the log of every container of the
+stack with UTC timestamps, at most the newest 50 MB of each
+(`scripts/ci/stack-logs.sh`; the job log prints the end of the edge
+runtime's). A test's start time in the Playwright report finds the lines of
+that moment: Kong writes one per request when it answers it, with the status
+(499 when the client gave up first), and the edge runtime and auth log their
+requests too. Realtime logs a tenant's start and errors, not each socket or
+join: its sockets are the `/realtime/v1/websocket` lines in Kong's log, each
+written when the socket closes. The database logs errors and the migrations'
+DDL statements, not each query. Read them before a rerun: the rerun's stack
+is another one.
+
 The pins (`FLUTTER_VERSION`, `SUPABASE_CLI_VERSION`,
 `SUPABASE_INTERNAL_IMAGE_REGISTRY`) are written in both workflows, because a
 composite action can't read a workflow's `env`. `scripts/check-gates.sh` fails
@@ -314,8 +329,9 @@ Renovate app installed on Peter's account.
 
 `scripts/ci-timings.sh` prints per-job end times of recent successful runs,
 counted from the run's start, and their median and range. With
-`--steps <job>` it adds the median step durations of one job. Use it before
-and after a CI change.
+`--steps <job>` it adds the median step durations of one job (`e2e` takes
+both shards' steps, `e2e (1)` one shard's). Use it before and after a CI
+change.
 `scripts/ci-ios-phases.sh <run-id>...` splits each ios job of those runs
 (every attempt) into the phases of `scripts/gates/ios.sh`: config, build,
 checks, boot, tests (DECISIONS, Job 118).
