@@ -239,6 +239,53 @@ void main() {
       expect(p.purchases.state.flow, isA<FlowIdle>());
     });
 
+    test('a pending unlock survives leaving the last household and '
+        'founding a new one: no second purchase', () async {
+      final store = FakePurchaseRepository()..hold = true;
+      final p = await started(store: store);
+      final session = p.session as TestSession;
+      unawaited(p.purchases.buy(PremiumPlan.lifetime));
+      await pumpEventQueue();
+      await session.leave('home');
+      await pumpEventQueue();
+      expect(session.state, isA<NeedsHousehold>());
+      store.held.single.complete(const Bought());
+      await pumpEventQueue();
+      expect(p.purchases.state.flow, isA<FlowUnlocking>());
+      session.emit(
+        const InHousehold('peter', Household(id: 'flat', name: 'WG'), [
+          Household(id: 'flat', name: 'WG'),
+        ]),
+      );
+      await pumpEventQueue();
+      expect(p.purchases.state.busy, isTrue);
+      store.hold = false;
+      await p.purchases.buy(PremiumPlan.lifetime);
+      expect(store.buys, hasLength(1), reason: 'Buy stays off');
+    });
+
+    test('a delayed unlock keeps Buy off after leaving the last household', () {
+      fakeAsync((async) {
+        late TestPurchases p;
+        unawaited(started().then((value) => p = value));
+        async.elapse(Duration.zero);
+        unawaited(p.purchases.buy(PremiumPlan.lifetime));
+        async
+          ..flushMicrotasks()
+          ..elapse(unlockWait);
+        expect(p.purchases.state.flow, isA<FlowUnlockDelayed>());
+        final session = p.session as TestSession
+          ..emit(const NeedsHousehold('peter'));
+        async.flushMicrotasks();
+        session.emit(home);
+        async.flushMicrotasks();
+        expect(p.purchases.state.flow, isA<FlowUnlockDelayed>());
+        unawaited(p.purchases.buy(PremiumPlan.lifetime));
+        async.flushMicrotasks();
+        expect(p.repository.buys, hasLength(1), reason: 'Buy stays off');
+      });
+    });
+
     test("a pending unlock stays Peter's: Lea signed in next starts idle", () {
       fakeAsync((async) {
         late TestPurchases p;

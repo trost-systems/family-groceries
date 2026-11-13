@@ -1,0 +1,40 @@
+# RevenueCat's App User ID is the signed-in user's id (job 185): PurchaseCubit builds it from the
+# session, the one place that knows which id is the user's. A RevenueCatUserId built anywhere else
+# could wrap a household id, and RevenueCat would sell to the household again (job 211, review of
+# job 185 item 5). The extension type's constructor is public, so this rule keeps it in the cubit.
+#
+# Matched on any call, const or new expression or tear-off of RevenueCatUserId in app/lib, and on
+# any `as` cast to a type naming it (an extension type erases to its String, so a cast compiles).
+id: revenuecat-user-id-from-session
+language: dart
+severity: error
+files:
+  - app/lib/**
+ignores:
+  - app/lib/purchases/purchase_cubit.dart
+rule:
+  any:
+    - kind: identifier
+      regex: '^RevenueCatUserId$'
+      inside:
+        kind: call_expression
+        field: function
+    - kind: constructor_tearoff
+      has:
+        kind: type_identifier
+        regex: '^RevenueCatUserId$'
+    - kind: type_identifier
+      regex: '^RevenueCatUserId$'
+      inside:
+        kind: type
+        inside:
+          field: type
+          any:
+            - kind: const_object_expression
+            - kind: new_expression
+    - kind: type_identifier
+      regex: '^RevenueCatUserId$'
+      inside:
+        kind: type_cast
+        stopBy: end
+message: 'RevenueCatUserId is built outside PurchaseCubit: take the user from the session there (_userOf), never a household id'

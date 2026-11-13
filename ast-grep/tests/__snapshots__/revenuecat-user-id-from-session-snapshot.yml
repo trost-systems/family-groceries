@@ -1,0 +1,80 @@
+id: revenuecat-user-id-from-session
+snapshots:
+  "Future<void> f(Household household) => store.buy(RevenueCatUserId(household.id), plan);\n":
+    labels:
+    - source: RevenueCatUserId
+      style: primary
+      start: 49
+      end: 65
+    - source: RevenueCatUserId(household.id)
+      style: secondary
+      start: 49
+      end: 79
+  "const peter = RevenueCatUserId('peter');\n":
+    labels:
+    - source: RevenueCatUserId
+      style: primary
+      start: 14
+      end: 30
+    - source: RevenueCatUserId('peter')
+      style: secondary
+      start: 14
+      end: 39
+  "const peter = const RevenueCatUserId('peter');\n":
+    labels:
+    - source: RevenueCatUserId
+      style: primary
+      start: 20
+      end: 36
+    - source: const RevenueCatUserId('peter')
+      style: secondary
+      start: 14
+      end: 45
+    - source: RevenueCatUserId
+      style: secondary
+      start: 20
+      end: 36
+  "final ids = households.map(RevenueCatUserId.new);\n":
+    labels:
+    - source: RevenueCatUserId.new
+      style: primary
+      start: 27
+      end: 47
+    - source: RevenueCatUserId
+      style: secondary
+      start: 27
+      end: 43
+  "final user = household.id as RevenueCatUserId;\n":
+    labels:
+    - source: RevenueCatUserId
+      style: primary
+      start: 29
+      end: 45
+    - source: as RevenueCatUserId
+      style: secondary
+      start: 26
+      end: 45
+  "final user = new RevenueCatUserId(household.id);\n":
+    labels:
+    - source: RevenueCatUserId
+      style: primary
+      start: 17
+      end: 33
+    - source: new RevenueCatUserId(household.id)
+      style: secondary
+      start: 13
+      end: 47
+    - source: RevenueCatUserId
+      style: secondary
+      start: 17
+      end: 33
+  "final users = ids as List<RevenueCatUserId>;\n":
+    labels:
+    - source: RevenueCatUserId
+      style: primary
+      start: 26
+      end: 42
+    - source: as List<RevenueCatUserId>
+      style: secondary
+      start: 18
+      end: 43

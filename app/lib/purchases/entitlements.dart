@@ -273,16 +273,17 @@ class Entitlements(
     EntitlementsUnknown() => false,
   };
 
-  /// A yearly plan of the household is still billed; false while unknown.
+  /// A yearly plan of the household, or of the user, is still billed; false
+  /// while unknown.
   bool get yearlyBilled => switch (state) {
     EntitlementsKnown(:final unlocks) => unlocks.yearlyBilledAt(now()),
     EntitlementsUnknown() => false,
   };
 
-  /// Whether to offer [plan] of [entitlement] for sale: only when the
-  /// household is known not to have it. Without premium both plans; with an
-  /// active yearly plan only Lifetime (the upgrade; never a second yearly
-  /// plan, H-84); with Lifetime or a promotional grant (testers' too)
+  /// Whether to offer [plan] of [entitlement] for sale: only when neither the
+  /// household nor the user is known to have it. Without premium both plans;
+  /// with an active yearly plan only Lifetime (the upgrade; never a second
+  /// yearly plan, H-84); with Lifetime or a promotional grant (testers' too)
   /// nothing. While unknown (loading, offline) the answer is no, so no member
   /// pays twice. Every paywall entry point asks this, never [has].
   bool canOffer(Entitlement entitlement, PremiumPlan plan) => switch (premium) {

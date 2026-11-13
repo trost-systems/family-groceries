@@ -9,7 +9,12 @@ import type { PromotionalPremium } from './promotional.ts';
 import type { Lifecycle } from './revenuecat.ts';
 import type { Plan, Refund, Sale, StoreEnvironment, StorePurchase } from './types.ts';
 
-/** purchase_record's and purchase_record_user's outcome (see the migrations). */
+/**
+ * purchase_record's and purchase_record_user's outcome (see the migrations). An App User ID that
+ * names neither a household nor a user (unknown, or deleted: app_user_owner can't tell which it
+ * was) goes the household path and answers no_household; no_user only for a user deleted between
+ * app_user_owner and purchase_record_user.
+ */
 export type Outcome =
   | 'granted'
   | 'restored'
@@ -193,7 +198,8 @@ export async function deletionDone(sql: Sql, id: string): Promise<void> {
 
 /**
  * promotional_premium_sync's and promotional_premium_sync_user's outcome (migrations
- * 20261101143000_revenuecat_promotional.sql, 20261112232617_per_user_premium.sql).
+ * 20261101143000_revenuecat_promotional.sql, 20261112232617_per_user_premium.sql). As for
+ * [Outcome], an id that names nothing (a deleted user's too) answers no_household.
  */
 export type PromotionalOutcome =
   | 'granted'

@@ -12020,3 +12020,66 @@ build of `hummlist-site` waits for the push-triggered **Supabase deploy** run th
   A waiting build holds a concurrent build slot for a few minutes. A push of several commits
   whose deploy-touching commit is not the head is matched by the run of any commit in range, and
   without one the gate builds after 90 s, as it does for `[skip ci]`.
+
+## Job 211: Premium pre-sales fixes from job 185's review, 2026-11-13
+
+- **A pending unlock survives leaving the last household.** `PurchaseCubit` took the RevenueCat
+  user only from `InHousehold`, so `NeedsHousehold` read as "another account" and reset an
+  unlocking or delayed flow: a buyer who left their only household and started a new one before
+  the webhook landed got Buy back and could pay twice. The user now comes from `NeedsHousehold`
+  too; only another account or signing out starts afresh. Two cubit tests (leave, then a new
+  household; leave while the unlock is late) failed before.
+- **Households are queued at RevenueCat only if RevenueCat reported them.** Job 43 queued every
+  deleted household because opening the purchase page created the customer. Since job 185 the app
+  gives RevenueCat the user id, and no store build ever set `REVENUECAT_PURCHASES` (checked on
+  13 Nov: the `release` environment and the repository have no such variable). So RevenueCat
+  knows a household id only from what it reports to the webhook: a purchase or a promotional grant
+  under that id (older test builds, Ops). `purchase_record` and `promotional_premium_sync` note
+  the household in `revenuecat_households` while they hold its row lock, and
+  `household_deleted_purchases` queues noted households only. The migration notes the households
+  of today's purchases and promotional rows. Already queued deletions stay: a household deleted
+  before this migration with only a promotional grant has no other trace, and a 404 from
+  RevenueCat for an unknown one is harmless.
+- **Noted in SQL, not in the webhook.** The pgTAP tests and the reconcile route call the two
+  functions directly; noting inside them keeps one rule for every caller. Their bodies are copied
+  from the latest definitions with only the note added.
+- **The account race is closed with a lock, not a re-check job.** A `revenuecat_customers` note
+  (the webhook's early returns, `note_revenuecat_customer()` before Buy) could commit after the
+  account deletion's trigger looked for it, leaving the customer at RevenueCat forever. A
+  before-insert trigger now takes a key share lock on the `auth.users` row: the deletion waits
+  for the note and then finds it, or the note waits for the deletion, finds the account gone and
+  queues the customer itself (its id did reach RevenueCat, or is about to). The deno test
+  `purchases/revenuecat_customers_integration_test.ts` holds both transactions open in either
+  order, for the webhook and the app; all four cases failed before.
+- **The webhook's user paths hold the account too.** The in-job review found a second way to
+  lose the queue entry. `promotional_premium_sync_user` with an active grant, and a first
+  `purchase_record_user`, write rows with a foreign key to the account after the note. If the
+  deletion committed while they waited, the foreign key failed, the whole transaction (the queued
+  deletion with it) rolled back, and RevenueCat's retry answered `no_user` with nothing to queue.
+  Both functions now call `revenuecat_account_hold` right after `purchase_user_lock`: the same key
+  share lock, and for an account gone by then they queue its customer and answer `no_user`. A
+  later event for an existing purchase of a deleted account keeps its old answer (`used_elsewhere`,
+  `household_gone`) and also queues the customer. The deno race test has these two paths in both
+  orders; on the trigger-only version both deletion-first cases failed with the foreign key error.
+- **The account's deletion takes the per-user purchase lock first.** Review round 1 found a
+  deadlock the hold introduced. An event under the user's id for their household's purchase (a
+  plan from before job 185, the user its last member) held the account and waited for the
+  purchase row; `delete_account` held that row (`household_deleted_purchases` stamps it) and
+  waited for the account. Postgres aborted the deletion. Every webhook user path takes
+  `purchase_user_lock` before any row lock, so `delete_account` now takes it first too (one added
+  line) and the two run one after the other. The race test holds `delete_account` between the
+  household and the account (a row lock on a household the user archived) and failed with
+  "deadlock detected" before.
+- **`RevenueCatUserId` is lint-backed.** The extension type's constructor stays public (tests
+  need it). The ast-grep rule `revenuecat-user-id-from-session` keeps calls, `const` and `new`
+  expressions and tear-offs of it, and `as` casts to a type naming it, in `purchase_cubit.dart`
+  within `app/lib`. Job 185's "a household id cannot reach `buy`" holds by that rule and the
+  cubit's tests, not by the type: other ways around a lint (an `ignore`, code outside `app/lib`)
+  stay possible.
+- **Known gap, for Ops.** A household whose promotional grant ended before this migration has no
+  trace to note, so its RevenueCat customer stays if it is deleted later (before this job it was
+  queued). NEEDS_PETER "Job 211" has the one-time check.
+- **Wording.** `canOffer` and `yearlyBilled` say household or user. A promotional or purchase
+  event for an id that names nothing still answers `no_household`, also for a deleted user:
+  `app_user_owner` cannot tell a deleted user from an unknown id, so `store.ts` documents the label
+  instead of guessing.

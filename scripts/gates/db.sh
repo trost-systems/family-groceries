@@ -39,6 +39,7 @@ supabase/bench/suggest_latency.sh
 # W3: two approvals racing for a group link's last use count one join; an approval racing the same
 # user's second tap or direct join leaves one membership and no open request; Siri and Alexa use the first list.
 # Job 94: Client ID Metadata Documents through the mcp function and this stack's Supabase Auth.
+# Job 211: a RevenueCat customer note racing the account's deletion leaves the customer queued.
 db_port="$(sed -n '/^\[db\]/,/^\[/ s/^port = \([0-9]*\)$/\1/p' supabase/config.toml)"
 stack_env="$(supabase status -o env 2>/dev/null)"
 stack_value() { sed -n "s/^$1=\"\(.*\)\"$/\1/p" <<<"$stack_env"; }
@@ -46,7 +47,7 @@ stack_value() { sed -n "s/^$1=\"\(.*\)\"$/\1/p" <<<"$stack_env"; }
   SUPABASE_URL="$(stack_value API_URL)" SUPABASE_ANON_KEY="$(stack_value PUBLISHABLE_KEY)" \
   SUPABASE_SERVICE_ROLE_KEY="$(stack_value SERVICE_ROLE_KEY)" \
   deno test --allow-env --allow-net --allow-read _shared/add_paths_integration_test.ts alexa/store_integration_test.ts \
-  _shared/dedupe_integration_test.ts purchases/store_integration_test.ts _shared/premium_integration_test.ts \
+  _shared/dedupe_integration_test.ts purchases/store_integration_test.ts purchases/revenuecat_customers_integration_test.ts _shared/premium_integration_test.ts \
   _shared/zero_stores_integration_test.ts _shared/list_integration_test.ts \
   _shared/one_open_item_integration_test.ts _shared/read_open_only_integration_test.ts api/api_integration_test.ts _shared/number_words_integration_test.ts \
   voice/split_integration_test.ts _shared/voice_variants_integration_test.ts waitlist/waitlist_integration_test.ts \
