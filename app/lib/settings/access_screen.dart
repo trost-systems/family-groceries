@@ -158,7 +158,6 @@ class const _Access({required final bool onIphone}) extends StatelessWidget {
                 label: token.id == state.siriHere
                     ? l10n.siriThisIphone
                     : l10n.siriOtherIphone,
-                paused: paused,
               ),
             HlSectionLabel(
               l10n.accessTokens,
@@ -789,7 +788,7 @@ class const _Subtitle(final String details, {required final bool paused})
   }
 }
 
-/// Job 50: Siri and AI assistants are part of Snacklist Premium (Alexa stays
+/// Job 50: AI assistants are part of Snacklist Premium (Siri and Alexa stay
 /// free), for a household known to have none while the server enforces the
 /// lock. Nothing is removed; [offer] says how to unlock it.
 class const _PremiumCard({required final LockOffer offer})

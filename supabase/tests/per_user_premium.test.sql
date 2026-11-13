@@ -182,9 +182,9 @@ select is(pg_temp.premium('00000000-0000-0000-0000-0000000185a1'), 'yearly', 'wi
 -- Lapse -------------------------------------------------------------------------------------------
 
 update public.app_switches set enabled = true where key = 'integration_lock';
-select is(pg_temp.gate((select id from hc), 'siri', '00000000-0000-0000-0000-0000000185a1'), 'open',
-  'lock on: Uma''s premium opens Siri in household C');
-select is(pg_temp.gate((select id from hc), 'siri', '00000000-0000-0000-0000-0000000185d1'), 'locked',
+select is(pg_temp.gate((select id from hc), 'mcp', '00000000-0000-0000-0000-0000000185a1'), 'open',
+  'lock on: Uma''s premium opens MCP in household C');
+select is(pg_temp.gate((select id from hc), 'mcp', '00000000-0000-0000-0000-0000000185d1'), 'locked',
   'but not for Cy, in the same household');
 select is(public.purchase_lifecycle('apple', '185-y1', now() + interval '2 seconds', now() - interval '1 minute',
             false, false)->>'outcome', 'updated', 'the plan expires (EXPIRATION)');

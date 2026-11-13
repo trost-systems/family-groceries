@@ -4,8 +4,9 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// What Snacklist Premium holds, as one sticker card: a [title], a [body], the
-/// three connections it unlocks and what comes later. Zugänge shows it for a
-/// household without Premium, the Premium page on top of its status; a
+/// AI assistants it unlocks (Siri and Alexa are free) and what comes later.
+/// Zugänge shows it for a household without Premium, the Premium page on top
+/// of its status; a
 /// [footer] (the buy button) goes at the bottom. [later] is the line about
 /// what is planned, which the Premium page's [body] already says.
 class const PremiumFeaturesCard({
@@ -36,20 +37,20 @@ class const PremiumFeaturesCard({
             const SizedBox(height: HlSpace.s2),
             Text(body),
             const SizedBox(height: HlSpace.s2),
-            for (final (icon, included) in [
-              (Icons.mic_none, l10n.integrationPremiumSiri),
-              (Icons.smart_toy_outlined, l10n.integrationPremiumAi),
-            ])
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Icon(icon, size: 20, color: theme.colorScheme.primary),
-                    const SizedBox(width: HlSpace.s2),
-                    Expanded(child: Text(included)),
-                  ],
-                ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.smart_toy_outlined,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: HlSpace.s2),
+                  Expanded(child: Text(l10n.integrationPremiumAi)),
+                ],
               ),
+            ),
             if (later)
               Padding(
                 padding: const EdgeInsets.only(top: HlSpace.s1),

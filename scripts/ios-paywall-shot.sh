@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Job 86: the App Store in-app purchase review screenshot. The Premium page as the integration lock
 # opens it (PW-P4, test_driver/paywall_review.dart, debug build) with the yearly plan and Lifetime at
-# the German storefront's prices (9,99 EUR a year, 29,99 EUR once), once with each plan picked and its
+# the German storefront's prices (24,99 EUR a year, 149,99 EUR once), once with each plan picked and its
 # Buy button (out.png and out-lifetime.png). German, light,
 # on a 6.7" iPhone simulator (1290x2796), status bar at 9:41. The page asks StoreKit through its
 # real channel; the script prints that answer and fails unless StoreKit returned both products.

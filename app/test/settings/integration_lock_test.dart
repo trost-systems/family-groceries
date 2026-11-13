@@ -80,13 +80,40 @@ void main() {
     expect(paused('Amazon Alexa'), findsNothing);
   });
 
+  testWidgets(
+    'locked: a Siri credential is never paused, a token is (job 184)',
+    (tester) async {
+      serverTokens.add({
+        'id': 's1',
+        'name': 'Siri',
+        'kind': 'siri',
+        'token_hint': '4321',
+        'created_at': '2026-10-03T10:00:00Z',
+        'last_used_at': null,
+      });
+      await access(tester);
+      expect(key('integration-premium'), findsOneWidget);
+      Finder paused(String tile) => find.descendant(
+        of: find.widgetWithText(ListTile, tile),
+        matching: key('access-paused'),
+      );
+      expect(find.text('Siri (anderes iPhone)'), findsOneWidget);
+      expect(paused('Siri (anderes iPhone)'), findsNothing);
+      expect(paused('Kurzbefehl'), findsOneWidget);
+    },
+  );
+
   testWidgets('locked: what is included, Buy, and the token paused, not gone', (
     tester,
   ) async {
     final more = await access(tester);
     expect(key('integration-premium'), findsOneWidget);
     expect(find.text('Teil von Snacklist Premium'), findsOneWidget);
-    expect(find.text('Siri auf dem iPhone'), findsOneWidget);
+    expect(
+      find.textContaining('Siri'),
+      findsNothing,
+      reason: 'Siri stays free (job 184)',
+    );
     expect(
       find.textContaining('Alexa'),
       findsNothing,

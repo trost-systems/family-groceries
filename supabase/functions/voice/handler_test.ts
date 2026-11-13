@@ -20,8 +20,6 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
     },
     // u1 is in h1 (the default) and h2.
     isMember: (_caller, household) => Promise.resolve(['h1', 'h2'].includes(household)),
-    // The lock is off (or the household has premium): everything as before job 50.
-    requirePremium: () => Promise.resolve('open'),
     splitItems: (_caller, items) =>
       Promise.resolve(
         items.map((item) => ({

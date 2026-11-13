@@ -13,7 +13,7 @@ export const lifetime = {
   /** App Store Connect's reference name (never shown to buyers). */
   referenceName: 'Snacklist Lifetime',
   /** Base price in the base territory; the stores equalize every other territory from it. */
-  basePrice: { territory: 'DEU', region: 'DE', currency: 'EUR', amount: '29.99' },
+  basePrice: { territory: 'DEU', region: 'DE', currency: 'EUR', amount: '149.99' },
   /** Apple Family Sharing stays off: Apple doesn't let it be turned off again (decision 3). */
   familySharable: false,
   listings: [
@@ -38,7 +38,7 @@ export const yearly = {
   /** Play names it `<id>:<base plan id>` (supabase/functions/purchases/types.ts). */
   playBasePlanId: 'yearly',
   referenceName: 'Snacklist Premium Yearly',
-  basePrice: { territory: 'DEU', region: 'DE', currency: 'EUR', amount: '9.99' },
+  basePrice: { territory: 'DEU', region: 'DE', currency: 'EUR', amount: '24.99' },
   /** ISO 8601, as App Store Connect and StoreKit write it. No trial, no introductory offer. */
   period: 'P1Y',
   familySharable: false,
@@ -73,13 +73,20 @@ export interface Storefront {
   currency: string;
   yearly: ExpectedPrice;
   lifetime: ExpectedPrice;
+  /**
+   * The amounts the store charged before the approved ones above, while Ops has not moved the
+   * store yet: a store still at exactly these is a note, not drift. Delete once the store moved.
+   */
+  superseded?: Readonly<Record<Plan, string>>;
 }
 
+/** Approved by Peter (SP1, t788u, 11 Nov 2026); the stores still sell the launch prices. */
 const euro = (apple: string): Storefront => ({
   apple,
   currency: 'EUR',
-  yearly: '9.99',
-  lifetime: '29.99',
+  yearly: '24.99',
+  lifetime: '149.99',
+  superseded: { yearly: '9.99', lifetime: '29.99' },
 });
 /** Sold, at whatever the store set: record what the store reports on the first run. */
 const yearlyOnly = (apple: string, currency: string): Storefront => ({
@@ -91,7 +98,8 @@ const yearlyOnly = (apple: string, currency: string): Storefront => ({
 
 /**
  * The prices price_drift.ts expects the stores to charge, keyed by ISO 3166-1 alpha-2. Drift-check
- * constants only, not a display source: the app shows the store's own price string.
+ * constants only, not a display source: the app shows the store's own price string. USD, GBP and
+ * CHF are what the stores charge today; Ops sets new amounts there and a PR records them after.
  */
 export const expectedPrices: Readonly<Record<string, Storefront>> = {
   AT: euro('AUT'),

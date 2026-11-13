@@ -2,7 +2,8 @@
 // Snacklist Premium yearly and Lifetime in every listed storefront (job 49). Read-only: it only
 // GETs. Fails (exit 1) on a price that drifted, a storefront that stopped selling a plan, or
 // Lifetime on sale where it must not be; prints the yearly prices of storefronts whose amount is
-// not recorded yet, and the storefronts sold in but not listed.
+// not recorded yet, storefronts still at a superseded amount, and the storefronts sold in but not
+// listed.
 //
 //   ASC_KEY_ID=<key id> ASC_ISSUER_ID=<issuer> ASC_KEY_PATH=<AuthKey .p8> \
 //   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON="$(cat <key file>)" \
@@ -71,7 +72,13 @@ export function compare(
         } else if (e === null) {
           notes.push(`${what}: ${got} (record what the store reports in expectedPrices)`);
         } else if (Number(offer.amount) !== Number(e)) {
-          failures.push(`${what}: expected ${e} ${want.currency}, found ${got}`);
+          if (Number(offer.amount) === Number(want.superseded?.[plan])) {
+            notes.push(
+              `${what}: still at superseded ${got}; Ops moves it to ${e} ${want.currency}`,
+            );
+          } else {
+            failures.push(`${what}: expected ${e} ${want.currency}, found ${got}`);
+          }
         }
       }
       if (byStorefront.size) {

@@ -1,7 +1,6 @@
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/app/router.dart';
-import 'package:family_groceries/purchases/premium_screen.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
@@ -153,10 +152,7 @@ void main() {
     expect(key('premium-buy-yearly'), findsNothing);
     expect(enabled(tester, 'premium-buy-lifetime'), isTrue);
     expect(find.text('Lifetime kaufen'), findsOneWidget);
-    expect(
-      find.text('Einmal zahlen, für immer: so viel wie drei Jahre.'),
-      findsOneWidget,
-    );
+    expect(find.text('Einmal zahlen, für immer.'), findsOneWidget);
     expect(key('premium-terms-yearly'), findsNothing);
     expect(
       tester.getSemantics(key('premium-card-lifetime')),
@@ -352,7 +348,7 @@ void main() {
       expect(key('premium-buy-${plan.name}'), findsNothing);
       expect(key('premium-card-${plan.name}'), findsNothing);
     }
-    for (final price in ['€', '9,99', '29,99']) {
+    for (final price in ['€', '24,99', '149,99']) {
       expect(
         find.textContaining(price, findRichText: true),
         findsNothing,
@@ -846,11 +842,11 @@ void main() {
       await openLifetime(tester);
       expect(
         priceOf(tester, PremiumPlan.yearly),
-        '9,99 € pro Jahr, inkl. MwSt.',
+        '24,99 € pro Jahr, inkl. MwSt.',
       );
       expect(
         priceOf(tester, PremiumPlan.lifetime),
-        '29,99 € einmalig, inkl. MwSt.',
+        '149,99 € einmalig, inkl. MwSt.',
       );
 
       expect(
@@ -866,10 +862,7 @@ void main() {
       );
       expect(find.textContaining('kann abweichen'), findsNothing);
       await pickLifetime(tester);
-      expect(
-        find.text('Einmal zahlen, für immer: so viel wie drei Jahre.'),
-        findsOneWidget,
-      );
+      expect(find.text('Einmal zahlen, für immer.'), findsOneWidget);
       expect(
         tester.widget<LegalLink>(key('premium-privacy')).url,
         Uri.parse('https://snacklist.app/datenschutz'),
@@ -1429,26 +1422,10 @@ void main() {
     });
   });
 
-  group('Legal Review N-71: the Siri line only where native Siri is live', () {
+  group('job 184: Siri is free, so the page never names it', () {
     const siri = 'Per Siri auf die Liste, ohne die App zu öffnen';
 
-    test('NATIVE_SIRI_LIVE and the iPhone app, nothing else', () {
-      for (final (define, web, platform, shown) in [
-        (false, false, TargetPlatform.iOS, false),
-        (true, false, TargetPlatform.iOS, true),
-        (true, false, TargetPlatform.android, false),
-        (true, true, TargetPlatform.iOS, false),
-        (true, true, TargetPlatform.android, false),
-      ]) {
-        expect(
-          siriBenefitShown(define: define, web: web, platform: platform),
-          shown,
-          reason: '$define $web $platform',
-        );
-      }
-    });
-
-    testWidgets('this build (NATIVE_SIRI_LIVE off): hidden on the iPhone', (
+    testWidgets('no Siri line on the iPhone, the AI line stays', (
       tester,
     ) async {
       debugDefaultTargetPlatformOverride = TargetPlatform.iOS;

@@ -15,7 +15,6 @@ function world(overrides: Partial<Deps> = {}) {
         ? Promise.resolve({ userId: 'user-1', householdId: 'house-1', via })
         : Promise.reject(new AuthError('invalid_token', 'test'));
     },
-    requirePremium: () => Promise.resolve('open'),
     isMember: () => Promise.resolve(false),
     splitItems: (_caller, items) =>
       Promise.resolve(

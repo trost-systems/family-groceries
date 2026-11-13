@@ -86,7 +86,6 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
       'nothing_understood',
       'server',
       'no_household',
-      'premium_required',
     ),
     language: oneOf('en', 'de'),
     source: oneOf('native', 'shortcut'),
@@ -94,15 +93,15 @@ export const serverEventCatalog: Record<string, Record<string, Rule>> = {
   },
   'siri_read': {
     result: oneOf('success', 'fail'),
-    reason: oneOf('read', 'server', 'no_household', 'premium_required'),
+    reason: oneOf('read', 'server', 'no_household'),
     language: oneOf('en', 'de'),
     source: oneOf('native', 'shortcut'),
     count: intIn(0, 10_000),
   },
   // Job 50: a household without Snacklist Premium used an integration while the lock is on (at
   // most once an hour per household and integration, _shared/premium.ts). Never what was said.
-  // Alexa stays free (job 72), so it is never blocked; the API (job 73) is.
-  'integration_blocked': { integration: oneOf('siri', 'mcp', 'api') },
+  // Siri (job 184) and Alexa (job 72) stay free, so they are never blocked; the API (job 73) is.
+  'integration_blocked': { integration: oneOf('mcp', 'api') },
   // Job 195 (F5): one per MCP tools/call, for a caller whose newest consent answer is yes. The tool
   // is one of mcpTools; never its arguments, an item, a store or a household name.
   'mcp_tool_call': {

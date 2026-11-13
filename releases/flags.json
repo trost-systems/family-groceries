@@ -35,7 +35,7 @@
     },
     "integration-lock": {
       "released": false,
-      "note": "Siri, Alexa and AI assistants need Snacklist Premium only once Peter turns the integration lock on (server switch, then the INTEGRATION_LOCK define)"
+      "note": "AI assistants and the API need Snacklist Premium only once Peter turns the integration lock on (server switch, then the INTEGRATION_LOCK define); Siri and Alexa stay free"
     }
   }
 }

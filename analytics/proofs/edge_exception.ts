@@ -30,8 +30,6 @@ const caught = withTelemetry(
   'voice',
   createHandler({
     authenticate: () => Promise.resolve({ userId: 'u', householdId: 'h' }),
-    // Open, so the failure is the add itself.
-    requirePremium: () => Promise.resolve('open'),
     isMember: () => Promise.resolve(false),
     addItems: () =>
       Promise.reject(

@@ -71,8 +71,8 @@ Authorization: Bearer fgp_…
   account is deleted. Ended keys are deleted 30 days later (`purge_access_tokens`, Legal N-4).
 - **Other credentials do not work here.** MCP tokens, Siri credentials, OAuth access tokens and
   app sessions get `401 invalid_token`; API keys do not work on the MCP server or Siri.
-- **Snacklist Premium**: the API is a Premium integration like Siri and the MCP server. While the
-  server switch `integration_lock` is on, a household without Premium gets
+- **Snacklist Premium**: the API is a Premium integration like the MCP server (Siri and Alexa
+  stay free). While the server switch `integration_lock` is on, a household without Premium gets
   `402 premium_required`; nothing is read or changed, the key keeps working once the household
   unlocks. While the switch is off (until the paywall release) every household may use it.
 

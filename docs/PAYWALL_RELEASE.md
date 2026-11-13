@@ -1,8 +1,9 @@
 # Paywall release: the go-live checklist
 
 This is the ordered list of switches that put Snacklist Premium on sale and,
-after that, lock Siri and AI assistants behind it. The Alexa skill stays free
-(Peter Q39, Legal Review N-27, job 72): the lock never covers it. Every step names its
+after that, lock AI assistants and the API behind it. Siri (job 184) and the
+Alexa skill (Peter Q39, Legal Review N-27, job 72) stay free: the lock never
+covers them. Every step names its
 owner. A step marked **Peter's yes** waits for Peter to say yes in his own
 words. Nothing here has been flipped yet (job 67, 2026-11-02). The behaviour
 behind the switches is in [`PURCHASES.md`](PURCHASES.md). The old per-job
@@ -45,8 +46,9 @@ status are in [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md).
   the paywall and the terms do not name it yet (job 187).
 - **Prices: yearly EUR 24.99 and Lifetime EUR 149.99**, both at the paid
   launch, no monthly or weekly plan (`yearly-plan`, `lifetime-plan`, 20:42).
-  Approved, not shipped: the stores, `expectedPrices` and step 2.3 below
-  still hold EUR 9.99 / EUR 29.99. Ops sets the stores, other currencies
+  Approved, not in the stores yet: they still charge EUR 9.99 / EUR 29.99.
+  `expectedPrices` holds the approved euro amounts and accepts the
+  superseded ones with a note until then (job 184, step 2.3). Ops sets the stores, other currencies
   included, without a further yes from Peter; engineering does not touch the
   stores (`store-prices-ops`). Paywall and store copy read the price from
   StoreKit / Play Billing and never hardcode an amount. Superseded:
@@ -57,8 +59,8 @@ status are in [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md).
 - **Per-user Premium** is in the code since job 185 (RevenueCat App User
   ID = the Snacklist user id; docs/PURCHASES.md "Per-user Premium"). Step
   4.5 has to be done before 5.1 or 5.4.
-- **Also approved and not yet in this checklist**: Siri free under the
-  lock.
+- **Siri free under the lock** is built (job 184): the gate answers Siri
+  open, as it does Alexa.
 
 ## The switches
 
@@ -136,12 +138,14 @@ change, which keeps the shown price the charged price (Legal Review A2-5).
 
 2.3 **Ops**: the prices. Peter approved EUR 24.99 a year and EUR 149.99
 Lifetime (11 Nov 2026); Ops sets the other currencies accordingly without a
-further yes (`store-prices-ops` in the map). Not set yet. Today the stores
-and `expectedPrices` in `scripts/iap/product.ts` hold the superseded
-amounts: euro storefronts EUR 9.99 / EUR 29.99, US $9.99 / $29.99, UK
-£8.99 / £24.99, CH CHF 10 / CHF 30, and Brazil, Mexico and India yearly
-only. Once Ops has set the stores, a PR updates `expectedPrices` to the
-stores' amounts so the drift check in 2.4 guards them.
+further yes (`store-prices-ops` in the map). Not set yet: the stores still
+charge the superseded amounts. `expectedPrices` in `scripts/iap/product.ts`
+holds the approved euro amounts (job 184), and the drift check in 2.4
+accepts the superseded EUR 9.99 / 29.99 with a note until Ops moves the
+stores; a PR then deletes the superseded amounts. US $9.99 / $29.99, UK
+£8.99 / £24.99 and CH CHF 10 / CHF 30 are today's store prices, recorded
+anew once Ops sets them. Brazil, Mexico and India get yearly only.
+EUR 9.99 / 29.99 / 39.99 are historical.
 
 2.4 **Lead**: the price drift check. Set the repository secrets `ASC_KEY_ID`,
 `ASC_ISSUER_ID`, `ASC_KEY_P8` and `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`. Then
@@ -227,8 +231,8 @@ published, a one-line PR points `termsUrl` at `/nutzungsbedingungen` and
 terms page can replace it there too (Legal decides).
 
 4.3 **Legal**: privacy section 9 names `paywall_viewed` and
-`integration_blocked` (and the Siri events), and section 7 says that Siri
-and AI assistants need Snacklist Premium (not Alexa, which stays free). This is needed before 6.4,
+`integration_blocked` (and the Siri events), and section 7 says that AI
+assistants need Snacklist Premium (not Siri or Alexa, which stay free). This is needed before 6.4,
 not before the sale.
 
 4.4 **Ops, after Legal**: the App Store privacy label and the Play Data
@@ -341,21 +345,23 @@ Premium that uses an integration now. Peter sees the numbers before 6.4.
 update public.app_switches set enabled = true, changed_at = now() where key = 'integration_lock';
 ```
 
-From this moment Siri (Shortcut and native), Alexa (add, read, launch),
-MCP tool calls and the Snacklist API (job 73, `docs/API.md`) refuse
-households without Premium: Siri, Alexa and MCP with the Premium sentence,
-the API with `402 premium_required`. Nothing is deleted or disconnected.
-The API's keys keep working once the household unlocks; the API section
-under Mehr › Zugänge shows a Premium line while the lock is shown. Job 72
-takes Alexa out of the lock; whatever it leaves in, the API stays in.
+From this moment MCP tool calls and the Snacklist API (job 73,
+`docs/API.md`) refuse households without Premium: MCP with the Premium
+sentence, the API with `402 premium_required`. Siri (Shortcut and native,
+job 184) and Alexa (add, read, launch, job 72) stay open. Nothing is deleted
+or disconnected. The API's keys keep working once the household unlocks;
+the API section under Mehr › Zugänge shows a Premium line while the lock is
+shown.
 
 6.5 **Lead**: the app side. Set the variable `INTEGRATION_LOCK=true` in the
 `release` environment and in the Vercel project's environment (production
 and preview). The next store builds and the next web deploy then show the
 Premium card under Mehr › Zugänge. A PR sets `"released": true` for
-`integration-lock` in `releases/flags.json`. The held item "Sprachbefehle
-über Siri und der Zugang für KI-Assistenten gehören jetzt zu Snacklist
-Premium." then reaches the next release.
+`integration-lock` in `releases/flags.json`. The held item then reaches
+the next release. Its old text "Sprachbefehle über Siri und der Zugang für
+KI-Assistenten gehören jetzt zu Snacklist Premium." names Siri, which stays
+free (job 184): reword it to the AI assistants only before releasing the
+hold.
 
 ## 7. After each step: what to watch
 

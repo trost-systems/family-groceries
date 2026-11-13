@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/analytics/flags.dart';
-import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/design/pointy_hex.dart';
@@ -18,7 +17,6 @@ import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/purchases/refund_help.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
@@ -431,18 +429,9 @@ TextStyle _display(BuildContext context, double size, {Color? color}) {
   );
 }
 
-/// Whether the Premium page names Siri (Legal Review N-71): native Siri is
-/// live in this build ([define], the `native-siri` hold's
-/// `NATIVE_SIRI_LIVE`) and this is the iPhone app.
-bool siriBenefitShown({
-  required bool web,
-  required TargetPlatform platform,
-  bool define = Environment.nativeSiriLive,
-}) => define && siriChannelFor(web: web, platform: platform) != null;
-
 /// One buys, everyone has it: the household's members as hexes, what
-/// Premium is for the household, and what it unlocks. No Alexa (it stays
-/// free, Legal Review N-27).
+/// Premium is for the household, and what it unlocks. No Siri or Alexa
+/// (both stay free, job 184 and Legal Review N-27).
 class const _Hero({
   /// This build sells and sales started: only then the buying slogan
   /// (Legal Review N-68).
@@ -510,8 +499,6 @@ class const _Hero({
             ),
           ),
           const SizedBox(height: HlSpace.s4),
-          if (siriBenefitShown(web: kIsWeb, platform: defaultTargetPlatform))
-            _Benefit(Icons.mic_none, l10n.premiumBenefitSiri),
           _Benefit(Icons.smart_toy_outlined, l10n.premiumBenefitAi),
           if (api) _Benefit(Icons.terminal, l10n.premiumBenefitApi),
         ],

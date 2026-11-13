@@ -2,9 +2,9 @@
 -- household with a yearly plan, Jo has none, Tess is a tester. integration_gate() opens every
 -- household while the switch is off; with it on only premium ones. A lapse locks at read time and
 -- deletes nothing; renewing opens again with the same tokens and links. Alexa is never locked
--- (20261102120000_alexa_free.sql).
+-- (20261102120000_alexa_free.sql), nor Siri (20261113034530_siri_free.sql, job 184).
 begin;
-select plan(36);
+select plan(37);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -85,16 +85,18 @@ select pg_temp.as_postgres();
 
 -- Locked, and the report once an hour ------------------------------------------------------------
 
-select is(pg_temp.gate((select id from hj), 'siri'), 'locked, report', 'switch on: no premium, Siri is locked and reported');
-select is(pg_temp.gate((select id from hj), 'siri'), 'locked', 'the second refusal within the hour is not reported');
+select is(pg_temp.gate((select id from hj), 'siri'), 'open', 'switch on, no premium: Siri stays open (free, job 184)');
+select ok(not exists (select from public.integration_blocks where household_id = (select id from hj) and integration = 'siri'),
+  'and is never noted as blocked');
 select is(pg_temp.gate((select id from hj), 'alexa'), 'open', 'switch on, no premium: Alexa stays open (free, job 72)');
 select ok(not exists (select from public.integration_blocks where household_id = (select id from hj) and integration = 'alexa'),
   'and is never noted as blocked');
-select is(pg_temp.gate((select id from hj), 'mcp'), 'locked, report', 'and MCP');
+select is(pg_temp.gate((select id from hj), 'mcp'), 'locked, report', 'switch on: no premium, MCP is locked and reported');
+select is(pg_temp.gate((select id from hj), 'mcp'), 'locked', 'the second refusal within the hour is not reported');
 select is(pg_temp.gate((select id from hi), 'mcp'), 'locked, report', 'Ida''s household is its own pair');
 update public.integration_blocks set reported_at = now() - interval '61 minutes'
-where household_id = (select id from hj) and integration = 'siri';
-select is(pg_temp.gate((select id from hj), 'siri'), 'locked, report', 'an hour later it is reported again');
+where household_id = (select id from hj) and integration = 'mcp';
+select is(pg_temp.gate((select id from hj), 'mcp'), 'locked, report', 'an hour later it is reported again');
 select throws_ok($$ select * from public.integration_gate((select id from hj), 'google') $$, '22023', null,
   'an unknown integration is refused');
 
@@ -146,7 +148,7 @@ create temp table ht as select id from public.create_household('Tess');
 select pg_temp.as_postgres();
 select is(public.promotional_premium_sync((select id from ht), true, '2100-01-01T00:00:00Z'), 'granted',
   'Tess''s household has a promotional grant');
-select is(pg_temp.gate((select id from ht), 'siri'), 'open', 'and uses Siri with the switch on');
+select is(pg_temp.gate((select id from ht), 'mcp'), 'open', 'and uses MCP with the switch on');
 
 update public.app_switches set enabled = false where key = 'integration_lock';
 select is(pg_temp.gate((select id from hi), 'siri') || ', ' || pg_temp.gate((select id from hj), 'mcp'), 'open, open',

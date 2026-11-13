@@ -12,7 +12,6 @@
 // in their credential's household.
 import { AuthError, type Via } from '../_shared/auth.ts';
 import { corsHeaders, json, preflight } from '../_shared/http.ts';
-import type { RequirePremium } from '../_shared/premium.ts';
 import { scrubMessage } from '../_shared/telemetry.ts';
 import { copy, type FailureCode, type Lang, readLimit } from './copy.ts';
 import { maxItems, type ParsedItem, parseSentence } from './parse.ts';
@@ -59,11 +58,6 @@ export interface Added extends Omit<SplitItem, 'storeId' | 'categoryId'> {
 export interface Deps<C extends Caller = Caller> {
   /** Resolves the bearer token; throws an AuthError when it can't. */
   authenticate(req: Request): Promise<C>;
-  /**
-   * Job 50: whether the caller's household may use Siri (_shared/premium.ts). Asked for every
-   * caller but the app's own session (in-app dictation is part of the free app).
-   */
-  requirePremium: RequirePremium;
   /** Whether the caller is a member of the household a session request names (job 169b). */
   isMember(caller: C, householdId: string): Promise<boolean>;
   /** `addVariants`: the yes to a question, held items are added as said (items.ts). */
@@ -90,8 +84,6 @@ const statuses: Record<FailureCode, number> = {
   too_long: 413,
   nothing_understood: 422,
   server: 500,
-  // The Shortcut speaks only a 200's answer; job 50 returns it with that status.
-  premium_required: 200,
 };
 
 /** What the native Siri client branches on; the failure codes are also `error`. */
@@ -355,24 +347,6 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
         console.error('voice: event not recorded', errorShape(e));
       }
     };
-
-    if (caller.via !== 'session') {
-      const event = ({ add: 'siri_add', read: 'siri_read', parse: null } as const)[body.mode];
-      const refuse = async (error: FailureCode) => {
-        if (event) await track(event, error, 0);
-        return fail(error);
-      };
-      try {
-        // Locked: nothing is read or added, and the answer says so (Spec #4 AC2).
-        if (await deps.requirePremium(caller, 'siri') === 'locked') {
-          return await refuse('premium_required');
-        }
-      } catch (e) {
-        console.error('voice: the premium check failed', errorShape(e));
-        deps.report?.(e);
-        return await refuse('server');
-      }
-    }
 
     if (body.mode === 'read') {
       try {

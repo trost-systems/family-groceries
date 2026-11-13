@@ -265,11 +265,56 @@ Deno.test('drift in yearly DE, lifetime GB and CH fails naming plan, storefront 
   const { code, out } = await check(world);
   assertEquals(code, 1);
   assertEquals(fails(out), [
-    'FAIL: yearly DE (App Store): expected 9.99 EUR, found 10.99 EUR',
+    'FAIL: yearly DE (App Store): expected 24.99 EUR, found 10.99 EUR',
     'FAIL: lifetime CH (App Store): expected 30 CHF, found 31 CHF',
     'FAIL: lifetime GB (Google Play): expected 24.99 GBP, found 26.99 GBP',
     'FAIL: lifetime CH (Google Play): expected 30 CHF, found not sold',
   ]);
+});
+
+Deno.test('a euro store still at the superseded launch price is a note until Ops moves it', async () => {
+  const world = matching();
+  world.apple.yearly.set('DE', ['EUR', '9.99']);
+  world.google.lifetime.set('AT', ['EUR', '29.99']);
+  const { code, out } = await check(world, secrets, ['--require']);
+  assertEquals(fails(out), []);
+  assertEquals(code, 0);
+  assertStringIncludes(
+    out,
+    'note: yearly DE (App Store): still at superseded 9.99 EUR; Ops moves it to 24.99 EUR',
+  );
+  assertStringIncludes(
+    out,
+    'note: lifetime AT (Google Play): still at superseded 29.99 EUR; Ops moves it to 149.99 EUR',
+  );
+});
+
+Deno.test('a euro store at the approved price is clean, at a third price drift', () => {
+  const offer = (amount: string) => ({
+    'App Store': [
+      { plan: 'yearly' as const, storefront: 'FR', currency: 'EUR', amount },
+      { plan: 'lifetime' as const, storefront: 'FR', currency: 'EUR', amount: '149.99' },
+    ],
+  });
+  const storefront = expectedPrices.FR;
+  assert(storefront, 'FR is a euro storefront');
+  const fr = { FR: storefront };
+  assertEquals(compare(fr, offer('24.99')), { failures: [], notes: [] });
+  assertEquals(compare(fr, offer('19.99')).failures, [
+    'yearly FR (App Store): expected 24.99 EUR, found 19.99 EUR',
+  ]);
+  assertEquals(compare(fr, offer('19.99')).notes, []);
+});
+
+Deno.test('a superseded amount is a note only where the storefront records one', () => {
+  const { failures, notes } = compare(expectedPrices, {
+    'Google Play': [{ plan: 'yearly', storefront: 'US', currency: 'USD', amount: '24.99' }],
+  });
+  assertEquals(notes, []);
+  assertStringIncludes(
+    failures.join('\n'),
+    'yearly US (Google Play): expected 9.99 USD, found 24.99 USD',
+  );
 });
 
 Deno.test('a price in the wrong currency is drift', () => {

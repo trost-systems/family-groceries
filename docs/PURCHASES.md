@@ -1,12 +1,14 @@
 # Purchases: Snacklist Premium
 
 Snacklist sells **Snacklist Premium** for the whole household, in two ways (Peter, Spec #4,
-2026-10-31): **yearly**, an auto-renewing subscription `com.snacklist.app.yearly` (EUR 9.99 a
-year in Germany), and **Lifetime**, a one-time purchase `com.snacklist.app.lifetime` (EUR 29.99).
+2026-10-31): **yearly**, an auto-renewing subscription `com.snacklist.app.yearly`, and
+**Lifetime**, a one-time purchase `com.snacklist.app.lifetime`. Approved prices: EUR 24.99 a year
+and EUR 149.99 Lifetime (11 Nov 2026); the stores charge EUR 9.99 / 29.99 until Ops moves them
+("Expected prices" below).
 Hummlist builds sell the same two as `com.hummlist.app.yearly` and `com.hummlist.app.lifetime`
 until Hummlist retires (job 174); the server records both.
-Both grant one entitlement, `premium`, which unlocks the integrations (Siri, MCP/AI
-assistants; the Alexa skill stays free, job 72) once the integration lock is on ("Integration lock" below, job 50; off). Nothing is
+Both grant one entitlement, `premium`, which unlocks the integrations (MCP/AI assistants and the
+API; Siri, job 184, and the Alexa skill, job 72, stay free) once the integration lock is on ("Integration lock" below, job 50; off). Nothing is
 gated by it yet, and nothing is sold: the
 purchase screen is behind the build define `REVENUECAT_PURCHASES` and the server switch
 `premium_offer`, both off, until Peter turns them on. Built in job 25 (sandbox, our own store
@@ -180,7 +182,7 @@ reasons.
 | Buyer switches households between buying and claiming | The claim names the household the purchase was made for (job 47), not the one the buyer is in now. `purchase_claim` records the buyer if they were a member of it at the purchase time: a member now who joined before it, or one who left it in the last hour (`household_departures`, kept one hour) after joining before it. Otherwise (left more than an hour ago, joined after the purchase, never a member, or the household is gone) it answers 403 `no_household` and the buyer stays unknown (no `purchase_completed`); the unlock stands where it was bought |
 | Ask to Buy, Play pending payment | "Wartet auf Bestätigung"; RevenueCat's webhook records it when the store completes it, and the note goes once the unlock arrives |
 | A purchase or restore ends after the member switched households | The claim names the household bought for; the new household's page shows nothing of it (job 67) |
-| The plan ends while the app is open, also offline | The end-of-plan timer, and every return to the foreground, compute premium again from the last rows: the page offers the plans again, Siri and the others lock at the server (job 67) |
+| The plan ends while the app is open, also offline | The end-of-plan timer, and every return to the foreground, compute premium again from the last rows: the page offers the plans again, MCP and the API lock at the server (job 67) |
 | Products not loadable, offline, store down | Before the tap (no price read): no Buy, "Snacklist Premium ist gerade nicht verfügbar.". After the tap: the same line or the offline note; Buy stays and tries again; no crash |
 | Yearly-only storefront (BR, MX, IN) | The store returns no Lifetime: no Lifetime card and no Lifetime entry (warning, upgrade); the yearly card as usual. Lifetime holders and granted households there keep Premium |
 | The same Apple ID already pays the yearly plan for household A, and the person tries to buy or restore it in household B (iOS) | Apple allows one subscription per Apple ID per group, and RevenueCat (Keep with original App User ID) keeps the receipt with A: the store or RevenueCat refuses (`receiptAlreadyInUse`), the app says "Dieser Kauf gehört zu einem anderen, früheren Haushalt und bleibt dort." and "Dein Apple- bzw. Google-Konto zahlt schon ein Jahresabo für einen anderen Haushalt. Jemand anderes aus diesem Haushalt kann Snacklist Premium abschließen." The restore setting stays |
@@ -585,14 +587,14 @@ premium:
 
 ## Integration lock
 
-Job 50 (Spec #4; DECISIONS "Job 50"). Siri, Alexa and MCP / AI assistants are part of Snacklist
-Premium; the list, sync, categories, the app and the web app stay free. Two switches, both off
+Job 50 (Spec #4; DECISIONS "Job 50"). MCP / AI assistants and the API (job 73) are part of
+Snacklist Premium; the list, sync, categories, the app, the web app, Siri (job 184) and Alexa
+(job 72) stay free. Two switches, both off
 until Peter says go:
 
 - **Server:** `app_switches.integration_lock` (seeded off). Off, every integration works as it did
-  before job 50, for every household. On, the voice function (Shortcut and native Siri), the
-  alexa function (add, read, launch) and the mcp function (tool calls) refuse a household without
-  premium, as `public.integration_gate(household, integration)` decides with job 49's
+  before job 50, for every household. On, the mcp function (tool calls) and the api function
+  refuse a household without premium, as `public.integration_gate(household, integration)` decides with job 49's
   `household_has_premium` (yearly not ended, Lifetime or a running promotional grant, testers'
   included; read at request time).
 - **App:** the build define `INTEGRATION_LOCK` (off). On, the integration settings (More ›
@@ -601,13 +603,15 @@ until Peter says go:
   sells (else "Bald verfügbar", on the web job 49's "buy it in the app" note). On in e2e
   (`app/config/e2e.json`).
 
-What a locked household gets: Siri says "Sprachbefehle sind Teil von Snacklist Premium. Du kannst es
-in der App freischalten. Ich habe nichts hinzugefügt." (HTTP 200, `premium_required`); an MCP tool call a
-tool result with `isError: true` and HTTP 200 (German, or English for a client that prefers it).
-Nothing is added, queued or kept. OAuth discovery, initialize and tools/list stay free. Alexa is
-not locked at all (job 72, Legal Review N-27): `integration_gate` answers `alexa` open
-(`20261102120000_alexa_free.sql`), the alexa function no longer asks, and its Zugänge tile never
-shows as paused. All copy is a placeholder until Snacklist Launch.
+What a locked household gets: an MCP tool call a tool result with `isError: true` and HTTP 200
+(German, or English for a client that prefers it). Nothing is added, queued or kept. OAuth
+discovery, initialize and tools/list stay free. Alexa is not locked at all (job 72, Legal Review
+N-27): `integration_gate` answers `alexa` open (`20261102120000_alexa_free.sql`), the alexa
+function no longer asks, and its Zugänge tile never shows as paused. Siri is free the same way
+(job 184, `20261113034530_siri_free.sql`): `integration_gate` answers `siri` open, so a voice
+function deployed before it never refuses, the voice function no longer asks, and the Siri
+credential's tile never shows as paused. A Shortcut's personal access token still shows as paused,
+since the same token also signs in MCP. All copy is a placeholder until Snacklist Launch.
 
 What it never does: delete, revoke or disconnect anything. A lapsed yearly plan (or a refund)
 locks again at read time; tokens, the Siri credential, the Alexa link, OAuth connections and the
@@ -615,7 +619,7 @@ list stay, and buying or renewing opens everything at once, for every member, wi
 Connecting while locked is allowed. A failing check answers with the endpoint's normal "try again"
 error, never with the premium answer and never by adding.
 
-`integration_blocked` (`integration`: `siri`, `mcp`) goes to PostHog at most once an hour
+`integration_blocked` (`integration`: `mcp`, `api`) goes to PostHog at most once an hour
 per household and integration (`integration_blocks`), only with the caller's analytics yes;
 `paywall_viewed` (`entry_point`: `more`, `integrations`) when the Premium page offers a plan with
 its price (docs/ANALYTICS.md).
@@ -638,7 +642,7 @@ its price (docs/ANALYTICS.md).
 Rolling back: the server switch off opens every integration at once and hides the app's card in
 every build (the app reads the switch). Testing locally: `update public.app_switches set enabled =
 true where key = 'integration_lock'` on the local stack, a household with or without a fake
-purchase (`e2e/tests/iap.ts`), then the Shortcut, Alexa or MCP; `e2e/tests/integration-lock.spec.ts`
+purchase (`e2e/tests/iap.ts`), then MCP or the API (Siri and Alexa stay open); `e2e/tests/integration-lock.spec.ts`
 does all of it.
 
 ## Configuration
@@ -669,18 +673,21 @@ setup"). Without
 | `REVENUECAT_DELETIONS_SECRET` | What the daily deletion workflow and `scripts/iap/promotional.ts reconcile --apply` send as `x-deletions-secret`; also a repository secret of the same name (NEEDS_LEAD "Job 47"). Unset: the deletion and reconcile routes refuse every call |
 
 Expected prices (the drift check's constants, `expectedPrices` in `scripts/iap/product.ts`; never
-shown in the app, which shows only what the store returns). These are the amounts set in the
-stores today. Peter approved EUR 24.99 a year and EUR 149.99 Lifetime on 11 Nov 2026; they are not
-shipped. Ops sets them in the stores, then a PR updates this table and `expectedPrices`
-(`store-prices-ops` in [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md)):
+shown in the app, which shows only what the store returns; `store-prices-ops` in
+[`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md)):
 
 | Storefront | Yearly | Lifetime |
 | --- | --- | --- |
-| Euro storefronts (EUR) | €9.99 | €29.99 |
+| Euro storefronts (EUR) | €24.99 | €149.99 |
 | United States (USD) | $9.99 | $29.99 |
 | United Kingdom (GBP) | £8.99 | £24.99 |
 | Switzerland (CHF) | CHF 10 | CHF 30 |
 | Brazil, Mexico, India | as the store sets it (recorded on the first run) | not sold |
+
+The euro amounts are the approved ones (Peter, 11 Nov 2026). Ops moves the stores to them; until
+then the drift check accepts the superseded €9.99 / €29.99 with a note. The USD, GBP, CHF, BR, MX
+and IN figures are what the stores charge today: Ops sets new amounts there and a PR records them
+after. €9.99 / €29.99 (and the €39.99 Lifetime once planned) are historical.
 
 App build defines (public SDK keys, from the build environment, never committed):
 `REVENUECAT_APPLE_API_KEY` (`appl_…`), `REVENUECAT_GOOGLE_API_KEY` (`goog_…`), and
@@ -729,11 +736,13 @@ Gone with job 43 (the Lead deletes them from the hosted secrets and the reposito
 Scripted where the APIs allow it, never submitted for review:
 
 - `scripts/iap/apple_product.ts`: App Store Connect API, dry run by default, `--apply` to create
-  the non-consumable, DE+EN localizations, the EUR 9.99 price in Germany (others equalized),
+  the non-consumable, DE+EN localizations, the EUR 149.99 price in Germany (others equalized),
   availability in all territories; prints the equalized AT and CH prices. Needs the ASC API key,
   which is on the box only.
 - `scripts/iap/google_product.ts`: Play Developer API `monetization.onetimeproducts`, dry run by
-  default; prints Play's converted AT and CH prices. Needs the payments profile first.
+  default; prints Play's converted AT and CH prices. Needs the payments profile first. On a
+  product that exists, `--apply` overwrites its price with `basePrice` (EUR 149.99 since job 184),
+  so it changes the live Lifetime price on Play: an Ops step, never run from engineering.
 - `scripts/iap/product.ts` holds both products (ids, Apple IDs, names, base prices, period,
   subscription group, Play base plan) and the expected prices; `product_test.ts` pins the
   StoreKit file and the function's product map to it. `apple_product.ts` and `google_product.ts`

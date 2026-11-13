@@ -52,7 +52,7 @@ Preconditions:
 ## Gotchas
 
 - German device (job 71: build 1097 only opened the app for every German phrase): the checks are `docs/NEEDS_LEAD.md` "Job 71". Turn on Always Show Speech to see the words Siri heard for the app name, and type the phrase with Type to Siri to test the phrase without speech recognition. Without a device, `deno run --allow-read scripts/siri-phrases.ts` (lint gate) proves the tables, and the ios gate's log shows the German training (`Training '…' for de`, `Application name … for de`).
-- SiriKit Lists failures (signed out, no household, the integration lock, any error) answer `failure` since job 97: Siri says its own sentence and the app stays closed. Only „Zeig meine Snacklist“ / "Show my Snacklist" opens the app.
+- SiriKit Lists failures (signed out, no household, any error) answer `failure` since job 97: Siri says its own sentence and the app stays closed. Only „Zeig meine Snacklist“ / "Show my Snacklist" opens the app.
 - Server side of the German spellings: `ask(token, { text: 'Füge Milch zur Snackliste hinzu', mode: 'add', lang: 'de' })` adds „Milch“, not „Milch zur Snackliste“.
 - Native Siri and the „Siri“ card on Zugänge exist only in the iOS app (a method channel to the iPhone). On web and Android Zugänge shows no Siri header and card (a Siri key made on an iPhone still shows as „Siri (anderes iPhone)“ there). There is no way to drive Siri voice or the Shortcuts app on this harness. unverified (needs a real iPhone; Peter's device test is pending, per the native-siri hold).
 - The native-siri hold: the code is on main and ships in iOS test builds, but the changelog and site announcement wait for Snacklist Launch. Describe native Siri only as "coming", never as released.
