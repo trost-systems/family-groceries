@@ -88,19 +88,44 @@ export function apply(state, step) {
   if (step.type === 'log') logBought(state, step.item);
 }
 
+// The first tick starts the trip, so a list item ticked before "Einkauf
+// starten" is still on the snapshot.
 export function toggle(state, id) {
   const item = state.items.find((i) => i.id === id);
-  if (item) item.bought = !item.bought;
+  if (!item) return;
+  if (state.phase === 'before' && !item.bought) start(state);
+  item.bought = !item.bought;
 }
 
+// Same name, case and spaces ignored: a stand-in for items.canonical_key.
+const openNamed = (state, name) => {
+  const key = name.trim().toLowerCase();
+  return state.items.find((i) => !i.bought && i.name.trim().toLowerCase() === key);
+};
+
 export function addDuring(state, item, by = ME) {
+  if (openNamed(state, item.name)) return;
   const origin = state.phase === 'before' ? 'list' : 'during';
   state.items.push({ price: null, ...item, origin, by, bought: false });
 }
 
 export function logBought(state, item) {
   if (state.phase === 'before') start(state);
-  state.items.push({ price: null, ...item, origin: 'logged', by: ME, bought: true });
+  const open = openNamed(state, item.name);
+  if (open) open.bought = true;
+  else state.items.push({ price: null, ...item, origin: 'logged', by: ME, bought: true });
+}
+
+// After the review: what was not bought (and not removed) is the next list.
+export function nextTrip(state) {
+  state.items = state.items
+    .filter((i) => !i.bought && !state.removed.has(i.id))
+    .map((i) => ({ ...i, origin: 'list' }));
+  state.phase = 'before';
+  state.snapshot = new Set();
+  state.reclassified = new Set();
+  state.removed = new Set();
+  state.step = scenarios[state.scenarioId].steps.length;
 }
 
 let seq = 0;

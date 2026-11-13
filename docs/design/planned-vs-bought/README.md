@@ -20,7 +20,10 @@ The left panel switches approach, scenario and prices. "Von vorn" goes back to b
 shop; "Nächster Schritt" replays the scenario one event at a time; "Ben schreibt etwas dazu"
 adds an item from another phone mid-trip. In the phone you tick rows, start and end the trip,
 write an item onto the list ("Dazuschreiben") or log one that is already in the basket
-("Schon gekauft").
+("Schon gekauft"). The first tick or logged item starts the trip if you did not press
+"Einkauf starten". "Schon gekauft" with the name of an open list item (case and spaces
+ignored) ticks that item instead of adding an extra one. "Fertig" after the review leaves the
+next list: what was not bought, minus what you removed.
 
 Deep links: `#a=<slug>&s=<scenario>&prices=1`, plus `played=0` (start before the shop) and
 `done=1&review=1` (trip ended, review open).

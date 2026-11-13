@@ -24,3 +24,11 @@ non-zero if a count or empty state is wrong.
 
 - No app, database or function change; no receipt scanning, no spend charts, no grocery log.
 - No shareable preview URL: no Vercel project or setting was created or changed.
+
+## Fix round 1 (review.0, 2026-11-13)
+
+Follow-up PR on main. A logged item now ticks a matching open list item. The first tick starts
+the trip, so it no longer turns a planned item into an extra. The review's "Fertig" leaves the
+next list. Plus smaller fixes (see DECISIONS). `shoot.mjs` checks the reviewer's repros; it
+fails on the merged first version and passes now. Screenshots refreshed in
+`docs/screenshots/196/` (36).
