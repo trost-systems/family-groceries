@@ -718,10 +718,11 @@ class const _AddBar({
           Expanded(
             child: Focus(
               focusNode: barFocus,
-              // Hardware Enter (web, desktop) is handled here,
-              // because Flutter web's text-input action path
-              // blurs the field and leaves it dead for the next
-              // Enter. Soft keyboards still submit below.
+              // Enter is handled here on web and desktop, also a
+              // web soft keyboard's, because Flutter web's
+              // text-input action path blurs the field and leaves
+              // it dead for the next Enter. Native soft keyboards
+              // still submit below.
               onKeyEvent: (_, event) {
                 final key = event.logicalKey;
                 final enter =
@@ -780,7 +781,12 @@ class const _AddBar({
                       onChanged: cubit.type,
                       // Keeps the soft keyboard up after submitting.
                       onEditingComplete: () {},
-                      onSubmitted: (_) => onSubmit(),
+                      // On web every Enter, soft keyboards' too, reaches
+                      // the key handler above first. An onSubmitted here
+                      // would also make EditableText restart the input
+                      // connection, whose deferred engine blur can land
+                      // after the refocus: Firefox lost the field (job 210).
+                      onSubmitted: kIsWeb ? null : (_) => onSubmit(),
                       onTapOutside: (_) {
                         if (!open) {
                           onLeave();
