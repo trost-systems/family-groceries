@@ -719,3 +719,7 @@ Five interactive throwaway prototypes behind one switcher in `docs/design/planne
 ## Job 194: pricing and tiers alignment in the planning docs (2026-11-12)
 
 Peter's 11 Nov evening pricing and tier decisions are in the product feature map, `PAYWALL_RELEASE.md` and `PURCHASES.md`: €24.99 / €149.99 approved, not shipped; price entry, trip totals and unlimited barcode scanning Free; `grocery-log` considering. Docs only. Details: docs/done/194-docs-t788u-pricing-alignment.md.
+
+## Job 184: Siri free, and the approved prices as a drift-check transition (2026-11-13)
+
+Siri is free like Alexa in the integration gate (per-user form from job 185) and in the paywall copy, and the voice function no longer asks the gate. `expectedPrices` holds the approved €24.99 / €149.99 for euro storefronts, and the drift check accepts the old €9.99 / €29.99 with a note until Ops moves the stores. No store or console was touched; the lock stays off. Merged as 13d2391e (#388). Details: [docs/done/184-siri-free-price-prep.md](docs/done/184-siri-free-price-prep.md).
