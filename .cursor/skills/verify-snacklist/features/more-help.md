@@ -68,7 +68,7 @@ Preconditions:
 - More is reachable only in a household (a user without one lands on the welcome screen), so „Partner einladen“ always shows there.
 - The Premium row has no hint any more (job 85): neither „Freigeschaltet“ nor „Siri und KI-Assistenten“.
 - The household's name is a row of its own (job 169b), not a hint: job 85 dropped the hint under „Partner einladen“. On the seeded household the second row reads „Familie Brandt“ (driven 2026-11-09: Konto, Familie Brandt, Partner einladen, Anderem Haushalt beitreten, Zugänge, Einstellungen, Nutzungsdaten, Tipps, Feedback senden, Hilfe & Kontakt, Rechtliches with its four rows, Abmelden).
-- On the phone the tab is role `tab`; on the rail it is role `button` named "Mehr Tab …". Use `openTab`.
+- The tabs are role `tab` on the phone's bar and on the rail alike (driven 2026-11-13 at 390 and 1366 px). Use `openTab`.
 - Pages open by deep link: back goes to the More list, not out of the app.
 - Opening snacklist.app pages stays external everywhere; never an in-app browser. Real site pages are not reachable offline; stub them.
 - Long-press on the version line (touch only in practice) toggles „Interne Installation“ and shows „Testfehler senden“; internal testers only, not for copy.

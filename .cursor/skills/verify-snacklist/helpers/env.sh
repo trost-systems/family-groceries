@@ -41,9 +41,18 @@ vh_defines() {
 JSON
 }
 
-# The source the web build comes from: app/'s tree at HEAD plus any uncommitted change under app/.
+# The source the web build comes from: app/'s tree at HEAD plus any uncommitted change under app/,
+# and the Flutter version CI builds with (launch.sh refuses any other).
 vh_build_stamp() {
-  { git -C "$REPO_ROOT" rev-parse HEAD:app; git -C "$REPO_ROOT" diff HEAD -- app; vh_defines; } | sha256sum | cut -c1-16
+  { git -C "$REPO_ROOT" rev-parse HEAD:app; git -C "$REPO_ROOT" diff HEAD -- app; vh_defines; vh_flutter_version; } | sha256sum | cut -c1-16
+}
+
+vh_flutter_version() { sed -n 's/^ *FLUTTER_VERSION: *//p' "$REPO_ROOT/.github/workflows/ci.yml" | head -1; }
+
+# The Flutter on PATH, or "unknown" when there is none or it prints no version.
+vh_flutter_have() {
+  { flutter --version --machine 2>/dev/null || true; } |
+    node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s.slice(s.indexOf("{"))).frameworkVersion)}catch{console.log("unknown")}})'
 }
 
 vh_json() { node -e 'const s=require(process.argv[1]);console.log(process.argv[2].split(".").reduce((o,k)=>o?.[k],s)??"")' "$VH_INSTANCE" "$1"; }
