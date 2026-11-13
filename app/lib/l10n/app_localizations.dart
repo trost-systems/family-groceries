@@ -1880,6 +1880,12 @@ abstract class AppLocalizations {
   /// **'Interne Installation'**
   String get internalInstall;
 
+  /// More, internal installs only: copies the analytics install id, so a PostHog feature flag can be turned on for this one install (job 190)
+  ///
+  /// In de, this message translates to:
+  /// **'Installations-ID kopieren: {id}'**
+  String copyInstallId(String id);
+
   /// More, internal installs only: raises a test exception for error tracking
   ///
   /// In de, this message translates to:
@@ -4429,6 +4435,246 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Einkauf eingetragen'**
   String get tripLogged;
+
+  /// Job 190: ghost chip on a row without today's price, after a plus icon
+  ///
+  /// In de, this message translates to:
+  /// **'Preis'**
+  String get priceAdd;
+
+  /// Job 190: screen reader label of the chip that opens the price of an item without one
+  ///
+  /// In de, this message translates to:
+  /// **'Preis für {name}'**
+  String priceChipEmpty(String name);
+
+  /// Job 190: screen reader label of a row's price chip; amount is the formatted line total
+  ///
+  /// In de, this message translates to:
+  /// **'Preis für {name}: {amount}, ändern'**
+  String priceChipSet(String name, String amount);
+
+  /// Job 190: price field in the open row, its screen reader name
+  ///
+  /// In de, this message translates to:
+  /// **'Preis'**
+  String get priceField;
+
+  /// Job 190: weight field for prices per kg, its screen reader name
+  ///
+  /// In de, this message translates to:
+  /// **'Gewicht in kg'**
+  String get weightField;
+
+  /// Job 190: basis toggle, the typed price is per piece
+  ///
+  /// In de, this message translates to:
+  /// **'pro Stück'**
+  String get pricePerPiece;
+
+  /// Job 190: basis toggle, the typed price is per kg
+  ///
+  /// In de, this message translates to:
+  /// **'pro kg'**
+  String get pricePerKg;
+
+  /// Job 190: basis toggle and hint, the price is per litre
+  ///
+  /// In de, this message translates to:
+  /// **'pro l'**
+  String get pricePerLitre;
+
+  /// Job 190: unit choice, litre
+  ///
+  /// In de, this message translates to:
+  /// **'l'**
+  String get priceUnitLitre;
+
+  /// Job 190: volume field for prices per litre, its screen reader name
+  ///
+  /// In de, this message translates to:
+  /// **'Menge in l'**
+  String get volumeField;
+
+  /// Job 190: volume field error
+  ///
+  /// In de, this message translates to:
+  /// **'Gib die Menge ein.'**
+  String get volumeErrorEmpty;
+
+  /// Job 190: volume field error
+  ///
+  /// In de, this message translates to:
+  /// **'Die Menge muss über 0 ml liegen.'**
+  String get volumeErrorZero;
+
+  /// Job 190: volume field error
+  ///
+  /// In de, this message translates to:
+  /// **'Höchstens 50 l.'**
+  String get volumeErrorTooLarge;
+
+  /// Job 190: basis toggle, the typed price is the line's total
+  ///
+  /// In de, this message translates to:
+  /// **'Gesamt'**
+  String get priceLine;
+
+  /// Job 190: screen reader name of the basis toggle
+  ///
+  /// In de, this message translates to:
+  /// **'Preis gilt'**
+  String get priceBasisLabel;
+
+  /// Job 190: unit choice
+  ///
+  /// In de, this message translates to:
+  /// **'Stück'**
+  String get priceUnitPiece;
+
+  /// Job 190: unit choice
+  ///
+  /// In de, this message translates to:
+  /// **'kg'**
+  String get priceUnitKg;
+
+  /// Job 190: screen reader name of the unit choice
+  ///
+  /// In de, this message translates to:
+  /// **'Einheit'**
+  String get priceUnitLabel;
+
+  /// Job 190: quantity stepper, minus button
+  ///
+  /// In de, this message translates to:
+  /// **'Eins weniger'**
+  String get priceCountLess;
+
+  /// Job 190: quantity stepper, plus button
+  ///
+  /// In de, this message translates to:
+  /// **'Eins mehr'**
+  String get priceCountMore;
+
+  /// Job 190: quantity stepper value for screen readers
+  ///
+  /// In de, this message translates to:
+  /// **'Menge {count}'**
+  String priceCount(int count);
+
+  /// Job 190: hint under the price field when a unit price is typed
+  ///
+  /// In de, this message translates to:
+  /// **'Zusammen {amount}'**
+  String priceTogether(String amount);
+
+  /// Job 190: hint under the price field when a total is typed; per is pro Stück, pro Pack or pro kg
+  ///
+  /// In de, this message translates to:
+  /// **'Das sind {amount} {per}'**
+  String priceUnitIs(String amount, String per);
+
+  /// Job 190: hint, the list's total once this price is saved
+  ///
+  /// In de, this message translates to:
+  /// **'Summe danach {amount}'**
+  String priceTotalAfter(String amount);
+
+  /// Job 190: hint, unit price compared with last time's
+  ///
+  /// In de, this message translates to:
+  /// **'{amount} teurer als zuletzt'**
+  String priceDearer(String amount);
+
+  /// Job 190: hint, unit price compared with last time's
+  ///
+  /// In de, this message translates to:
+  /// **'{amount} billiger als zuletzt'**
+  String priceCheaper(String amount);
+
+  /// Job 190: hint, unit price the same as last time
+  ///
+  /// In de, this message translates to:
+  /// **'Wie zuletzt'**
+  String get priceSame;
+
+  /// Job 190: price field error
+  ///
+  /// In de, this message translates to:
+  /// **'Gib einen Preis ein.'**
+  String get priceErrorEmpty;
+
+  /// Job 190: price field error; amount is 9999,00 in the household currency
+  ///
+  /// In de, this message translates to:
+  /// **'Höchstens {amount} pro Artikel.'**
+  String priceErrorTooLarge(String amount);
+
+  /// Job 190: weight field error
+  ///
+  /// In de, this message translates to:
+  /// **'Gib das Gewicht ein.'**
+  String get weightErrorEmpty;
+
+  /// Job 190: weight field error
+  ///
+  /// In de, this message translates to:
+  /// **'Das Gewicht muss über 0 g liegen.'**
+  String get weightErrorZero;
+
+  /// Job 190: weight field error
+  ///
+  /// In de, this message translates to:
+  /// **'Höchstens 50 kg.'**
+  String get weightErrorTooLarge;
+
+  /// Job 190: button in the open row that clears the item's price
+  ///
+  /// In de, this message translates to:
+  /// **'Preis entfernen'**
+  String get priceRemove;
+
+  /// Job 190: total bar title
+  ///
+  /// In de, this message translates to:
+  /// **'Einkaufssumme'**
+  String get tripTotal;
+
+  /// Job 190: total bar, items with a price and open items without one
+  ///
+  /// In de, this message translates to:
+  /// **'{priced} mit Preis · {open} offen'**
+  String tripCounts(int priced, int open);
+
+  /// Job 190: total bar for screen readers
+  ///
+  /// In de, this message translates to:
+  /// **'Einkaufssumme {amount}, {priced} mit Preis, {open} offen'**
+  String tripTotalLabel(String amount, int priced, int open);
+
+  /// Job 190: line at the end of a store section
+  ///
+  /// In de, this message translates to:
+  /// **'Summe {store} {amount}'**
+  String storeSubtotal(String store, String amount);
+
+  /// Job 190: household page section and row
+  ///
+  /// In de, this message translates to:
+  /// **'Währung'**
+  String get currencyTitle;
+
+  /// Job 190: household page, under the currency
+  ///
+  /// In de, this message translates to:
+  /// **'Für Preise und die Einkaufssumme, für alle im Haushalt'**
+  String get currencyHint;
+
+  /// Job 190: title of the currency picker
+  ///
+  /// In de, this message translates to:
+  /// **'Währung wählen'**
+  String get currencyPick;
 }
 
 class _AppLocalizationsDelegate

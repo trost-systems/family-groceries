@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -12,6 +13,7 @@ import 'package:family_groceries/list/list_view/dividers.dart';
 import 'package:family_groceries/list/list_view/explainer.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/list_view/leaving_rows.dart';
+import 'package:family_groceries/list/list_view/price_views.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/log/trip_prompt_card.dart';
@@ -41,6 +43,10 @@ class const ShoppingListView({
   /// it, and a row brought into view (focus, a screen reader) stops below
   /// it: the viewport counts a pinned sliver as covering the rows.
   final PreferredSizeWidget? header,
+
+  /// The item whose price editor is open (job 190), one at a time; the
+  /// screen hides the add bar meanwhile.
+  final ValueNotifier<String?>? pricing,
   super.key,
 }) extends StatefulWidget {
   /// From this width the sections go in two columns, and in three from
@@ -102,6 +108,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
   final _seenTimers = <String, Timer>{};
   var _onScreen = _shows(WidgetsBinding.instance.lifecycleState);
   ListLinks? _links;
+  late final _pricing = widget.pricing ?? ValueNotifier<String?>(null);
 
   /// Inactive still shows the app: a web tab whose window lost focus, or an
   /// iOS app under the control center.
@@ -123,13 +130,20 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
         }
       },
     );
+    _pricing.addListener(_pricingChanged);
     _links = context.read<ListLinks?>()?..changes.addListener(_linked);
     // A cold start's link came before this list was built.
     _linked();
   }
 
+  void _pricingChanged() => setState(() {});
+
   @override
   void dispose() {
+    _pricing.removeListener(_pricingChanged);
+    if (widget.pricing == null) {
+      _pricing.dispose();
+    }
     _links?.changes.removeListener(_linked);
     _cancelSeenTimers();
     _lifecycle.dispose();
@@ -311,7 +325,36 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
   /// tick (job 29b).
   void _tick(Item item) {
     widget.onInteract?.call();
+    if (_pricing.value == item.id) {
+      _pricing.value = null;
+    }
     _cubit.tick(item.id);
+  }
+
+  /// Opens the price editor of [item], or closes it when it is open.
+  void _togglePrice(Item item) {
+    widget.onInteract?.call();
+    _pricing.value = _pricing.value == item.id ? null : item.id;
+  }
+
+  void _closePrice() => _pricing.value = null;
+
+  /// Whether the last build placed the open price editor's row.
+  var _panelPlaced = false;
+
+  /// Closes an editor whose row is gone: ticked or deleted by a partner,
+  /// moved, on another list or in a folded section, or the flag went off.
+  /// Otherwise the add bar would stay hidden for an editor no one sees.
+  void _closeOrphanedPrice() {
+    final id = _pricing.value;
+    if (id == null || _panelPlaced) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _pricing.value == id) {
+        _pricing.value = null;
+      }
+    });
   }
 
   void _delete(Item item) {
@@ -399,6 +442,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
   }
 
   Widget _scrollView(BuildContext context, ListState state, double width) {
+    _panelPlaced = false;
     final used = recentlyUsed(state.items.values);
     // Never more columns than sections: one store with items reads as one
     // centred column.
@@ -414,8 +458,18 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
     final userId = context.read<ListCubit>().userId;
     String? claimsOf(Item item) =>
         claimLine(l10n, claims[item.id] ?? const [], state.catalog, userId);
+    final prices = context.select<Flags?, bool>(
+      (flags) => flags?.isOn(pricesFlag) ?? false,
+    );
     SliverList column(List<StoreSection> run) {
-      final entries = _entries(run, state, folded, fresh, claimsOf);
+      final entries = _entries(
+        run,
+        state,
+        folded,
+        fresh,
+        claimsOf,
+        prices: prices,
+      );
       final index = {for (final (i, e) in entries.indexed) e.key: i};
       return SliverList.builder(
         itemCount: entries.length,
@@ -471,6 +525,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
               ],
             ],
           );
+    _closeOrphanedPrice();
     return CustomScrollView(
       key: _viewport,
       controller: _scroll,
@@ -562,14 +617,23 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
     );
   }
 
+  Widget _placed(Widget panel) {
+    _panelPlaced = true;
+    return panel;
+  }
+
   /// The dividers and rows of [run], top to bottom.
   List<Widget> _entries(
     List<StoreSection> run,
     ListState state,
     bool Function(StoreSection) folded,
     Set<String> fresh,
-    String? Function(Item item) claimsOf,
-  ) {
+    String? Function(Item item) claimsOf, {
+    required bool prices,
+  }) {
+    final cubit = context.read<ListCubit>();
+    final now = cubit.now;
+    final trip = prices ? cubit.trip : null;
     final entries = <Widget>[];
     for (final (i, section) in run.indexed) {
       final isFolded = folded(section);
@@ -617,9 +681,46 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
               onTick: _tick,
               onEdit: (item) => unawaited(_edit(item)),
               onDelete: _delete,
+              priceChip: prices
+                  ? PriceChip(
+                      item: item,
+                      now: now,
+                      onTap: () => _togglePrice(item),
+                    )
+                  : null,
+              pricePanel: trip != null && _pricing.value == item.id
+                  ? _placed(
+                      PricePanel(
+                        item: item,
+                        currency: state.catalog.currency,
+                        now: now,
+                        trip: trip,
+                        household: state.allItems.values,
+                        onSave: (price, quantity) {
+                          cubit.setPrice(
+                            item.id,
+                            price: price,
+                            quantity: quantity,
+                          );
+                          _closePrice();
+                        },
+                        onClose: _closePrice,
+                      ),
+                    )
+                  : null,
             ),
           );
         }
+      }
+      if (trip?.byStore[section.store?.id] case final cents?) {
+        entries.add(
+          StoreSubtotal(
+            key: ValueKey('subtotal-${section.key}'),
+            store: section.store?.name ?? AppLocalizations.of(context).noStore,
+            cents: cents,
+            currency: state.catalog.currency,
+          ),
+        );
       }
     }
     return entries;

@@ -175,6 +175,11 @@ class Analytics(
     testerHousehold: testerHousehold,
   );
 
+  /// The install id PostHog evaluates flags for, while the consent is yes:
+  /// a flag can target this one install (`distinct_id`, job 190), e.g.
+  /// Peter's TestFlight phone.
+  String? get flagInstallId => state.consent == true ? _installId : null;
+
   /// Set by the household's entitlements: the household, if it has a
   /// RevenueCat promotional grant (testers, App and Play Review).
   String? get testerHousehold => _testerHousehold;

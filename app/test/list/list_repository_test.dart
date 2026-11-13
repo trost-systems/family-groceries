@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/pricing.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -593,10 +594,22 @@ void main() {
                 {'id': 'l2', 'name': 'Baumarkt', 'position': 1},
               ],
             ),
+            'households' => (
+              200,
+              [
+                {'currency': 'CHF'},
+              ],
+            ),
             _ => (404, null),
           },
         );
         final catalog = await repo.fetchCatalog();
+        expect(catalog.currency, 'CHF');
+        final household = sent.singleWhere(
+          (r) => r.url.pathSegments.last == 'households',
+        );
+        expect(household.url.queryParameters['id'], 'eq.household');
+        expect(household.url.queryParameters['select'], 'currency');
         expect(catalog.lists.map((l) => l.name), ['Einkaufsliste', 'Baumarkt']);
         expect(catalog.lists.map((l) => l.seedKey), ['main', null]);
         expect(
@@ -954,6 +967,41 @@ void main() {
         expect(sent.single.url.queryParameters['id'], 'eq.i1');
         expect(params(sent.single), {'list_id': 'l2'});
         expect(rows['i1']!.listId, 'l2');
+      });
+
+      test('a price writes all five columns and the quantity, never the '
+          'status (job 190)', () async {
+        final price = Price(
+          unitMicros: 1985815,
+          basis: PriceBasis.line,
+          per: PricePer.kg,
+          currency: 'EUR',
+          pricedAt: DateTime.utc(2026, 11, 13, 17),
+        );
+        final repo = server(
+          (_) => (200, [row('i1')..addAll(price.toColumns())]),
+        );
+        final rows = await repo.send(
+          SetPrice('i1', price: price, quantity: const SetTo('846 g')),
+        );
+        expect(route(sent.single), 'PATCH /rest/v1/items');
+        expect(sent.single.url.queryParameters['id'], 'eq.i1');
+        expect(params(sent.single), {
+          'price_unit_micros': 1985815,
+          'price_basis': 'line',
+          'price_per': 'kg',
+          'price_currency': 'EUR',
+          'priced_at': '2026-11-13T17:00:00.000Z',
+          'quantity': '846 g',
+        });
+        expect(
+          sent.single.url.queryParameters['select'],
+          contains('price_unit_micros'),
+        );
+        expect(rows['i1']!.price, price);
+
+        await repo.send(const SetPrice('i1', price: null));
+        expect(params(sent.last), Price.noColumns);
       });
 
       test('a claim and its undo call their function, then read the item '

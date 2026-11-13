@@ -1,5 +1,5 @@
 begin;
-select plan(110);
+select plan(113);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -350,6 +350,20 @@ select throws_ok($$ select public.set_join_approval((select id from ha), true) $
 select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
 select is((select count(*)::int from public.join_requests), 2, 'the owner sees her household''s requests');
 set local role postgres;
+
+-- Job 190: Bob neither changes Alice's household currency nor prices her items.
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+select is_empty($$ update public.households set currency = 'CHF' where id = (select id from ha) returning id $$,
+  'households.currency: another household''s currency is not updated');
+select is_empty($$ update public.items set price_unit_micros = 1, price_basis = 'unit', price_per = 'piece',
+  price_currency = 'EUR', priced_at = now() where id = (select id from alice_item) returning id $$,
+  'items price: another household''s item is not priced');
+set local role postgres;
+select results_eq(
+  $$ select h.currency, i.price_unit_micros from public.households h join public.items i on i.household_id = h.id
+     where i.id = (select id from alice_item) $$,
+  $$ values ('EUR', null::bigint) $$,
+  'Alice''s currency and item price are unchanged');
 
 -- Job 185: a user's own premium is theirs alone (per_user_premium.test.sql: also within a household).
 select public.promotional_premium_sync_user('00000000-0000-0000-0000-0000000000a1', true, null);

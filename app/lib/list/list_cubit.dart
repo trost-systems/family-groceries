@@ -9,6 +9,7 @@ import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_cache.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/pricing.dart';
 import 'package:family_groceries/list/quantity.dart';
 import 'package:flutter/foundation.dart' show immutable, listEquals, setEquals;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -929,6 +930,43 @@ class ListCubit(
 
   void delete(String id) => _enqueue(DeleteItem(id));
 
+  /// The device's clock, which decides whose prices count today.
+  DateTime get now => _clock();
+
+  /// Sets or clears an item's price (job 190), and its quantity with it
+  /// when [quantity] is set. Never ticks it.
+  void setPrice(String id, {required Price? price, SetTo<String?>? quantity}) {
+    _enqueue(SetPrice(id, price: price, quantity: quantity));
+    if (price != null) {
+      _track('price_entered', {'confirmed': false});
+    }
+  }
+
+  /// The shown list's running total in the household's currency.
+  TripTotal get trip => tripTotal(
+    state.items.values,
+    currency: state.catalog.currency,
+    now: _clock(),
+    stores: {for (final s in state.catalog.stores) s.id},
+  );
+
+  /// The lists whose total this cubit reported shown.
+  final _totalsViewed = <String?>{};
+
+  /// The total bar showed a total with a price in it: told once per list.
+  void totalViewed() {
+    if (_totalsViewed.add(state.shownList?.id)) {
+      _track('trip_total_viewed', {'final': false});
+    }
+  }
+
+  /// The household's currency for everyone in it (job 190). Whether the
+  /// server took it.
+  Future<bool> setCurrency(String code) => _changeCatalog(
+    state.catalog.withCurrency(code),
+    () => _repo.setCurrency(code),
+  );
+
   /// The UI showed [DedupeHint]s once.
   void hintShown() => _track('dedupe_hint_shown', _actor());
 
@@ -995,13 +1033,19 @@ class ListCubit(
   );
 
   /// Puts a deleted item back, keeping its id, category and place.
-  void restore(Item item) => _enqueue(
-    AddItem(
-      item.copyWith(status: ItemStatus.active, boughtAt: () => null),
-      restored: true,
-      noStore: item.storeId == null,
-    ),
-  );
+  void restore(Item item) {
+    _enqueue(
+      AddItem(
+        item.copyWith(status: ItemStatus.active, boughtAt: () => null),
+        restored: true,
+        noStore: item.storeId == null,
+      ),
+    );
+    // `put_item` takes no price; the undo puts it back as its own write.
+    if (item.price case final price?) {
+      _enqueue(SetPrice(item.id, price: price, restored: true));
+    }
+  }
 
   /// Moves the item to the household's list [listId] (job 169b K). An item
   /// open there already under the same name, brand and details does not

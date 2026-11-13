@@ -6,6 +6,7 @@ import 'package:family_groceries/list/list_view/hold.dart';
 import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:flutter/rendering.dart' show OverflowBoxFit;
 import 'package:flutter/semantics.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -43,6 +44,13 @@ class const ItemRow({
   /// Who brings it (job 169b L), "Mia bringt 2 · Du bringst"; null for no
   /// one. A line of its own under the details.
   final String? claims,
+
+  /// The price chip at the row's end (job 190), its own button for
+  /// screen readers; null without the prices flag.
+  final Widget? priceChip,
+
+  /// The open price editor under the row, outside its tap and semantics.
+  final Widget? pricePanel,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -118,7 +126,14 @@ class _ItemRowState()
             child: tile,
           )
         : tile;
-    return Hold(onHold: () => widget.onEdit(item), child: watched);
+    final row = Hold(onHold: () => widget.onEdit(item), child: watched);
+    final panel = widget.pricePanel;
+    return panel == null || _leave != null
+        ? row
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [row, panel],
+          );
   }
 
   Widget _semantics(BuildContext context, Widget child) {
@@ -134,6 +149,8 @@ class _ItemRowState()
       ?widget.claims,
       if (widget.fresh) l10n.newItem,
     ].join('\n');
+    // With a price chip the row keeps its child nodes, so the chip stays
+    // a button of its own; the tile leaves its text and ink out.
     return Semantics(
       container: true,
       button: true,
@@ -145,7 +162,7 @@ class _ItemRowState()
         CustomSemanticsAction(label: l10n.editSheet): () => widget.onEdit(item),
         CustomSemanticsAction(label: l10n.delete): () => widget.onDelete(item),
       },
-      excludeSemantics: true,
+      excludeSemantics: widget.priceChip == null,
       child: child,
     );
   }
@@ -237,9 +254,11 @@ class const _Tile({
       ),
     );
     final scaler = MediaQuery.textScalerOf(context);
+    final chip = row.priceChip;
     return Material(
       color: Color.lerp(base, hl.mintSoft, drawn),
       child: InkWell(
+        excludeFromSemantics: chip != null,
         onTap: onTap,
         onSecondaryTap: () => row.onEdit(item),
         splashFactory: NoSplash.splashFactory,
@@ -266,64 +285,95 @@ class const _Tile({
                   children: [
                     SizedBox(
                       width: _iconColumn,
-                      child: ItemIcon(
-                        item.name,
-                        size: _iconSize,
-                        height: _nameLine,
+                      child: ExcludeSemantics(
+                        excluding: chip != null,
+                        child: ItemIcon(
+                          item.name,
+                          size: _iconSize,
+                          height: _nameLine,
+                        ),
                       ),
                     ),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 1,
-                        children: [
-                          CustomPaint(
-                            foregroundPainter: drawn == 0
-                                ? null
-                                : StrikePainter(
-                                    text: name,
-                                    textScaler: scaler,
-                                    textDirection: Directionality.of(context),
-                                    progress: drawn,
-                                    color: hl.textMuted,
+                      child: ExcludeSemantics(
+                        excluding: chip != null,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 1,
+                          children: [
+                            CustomPaint(
+                              foregroundPainter: drawn == 0
+                                  ? null
+                                  : StrikePainter(
+                                      text: name,
+                                      textScaler: scaler,
+                                      textDirection: Directionality.of(context),
+                                      progress: drawn,
+                                      color: hl.textMuted,
+                                    ),
+                              child: Text.rich(name, textScaler: scaler),
+                            ),
+                            if (details.isNotEmpty)
+                              Text(
+                                details,
+                                style: TextStyle(
+                                  fontSize: _detailSize,
+                                  height: 1.3,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color.lerp(
+                                    scheme.onSurfaceVariant,
+                                    hl.textMuted,
+                                    drawn,
                                   ),
-                            child: Text.rich(name, textScaler: scaler),
-                          ),
-                          if (details.isNotEmpty)
-                            Text(
-                              details,
-                              style: TextStyle(
-                                fontSize: _detailSize,
-                                height: 1.3,
-                                fontWeight: FontWeight.w500,
-                                color: Color.lerp(
-                                  scheme.onSurfaceVariant,
-                                  hl.textMuted,
-                                  drawn,
                                 ),
                               ),
-                            ),
-                          if (row.claims case final claims?)
-                            Text(
-                              claims,
-                              key: ValueKey('claims-${item.id}'),
-                              style: TextStyle(
-                                fontSize: _detailSize,
-                                height: 1.3,
-                                fontWeight: FontWeight.w700,
-                                color: Color.lerp(
-                                  scheme.primary,
-                                  hl.textMuted,
-                                  drawn,
+                            if (row.claims case final claims?)
+                              Text(
+                                claims,
+                                key: ValueKey('claims-${item.id}'),
+                                style: TextStyle(
+                                  fontSize: _detailSize,
+                                  height: 1.3,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color.lerp(
+                                    scheme.primary,
+                                    hl.textMuted,
+                                    drawn,
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
+                    // Holds the chip's width, not its height; the chip
+                    // itself sits over the row's full height below, a
+                    // bigger target.
+                    if (chip != null)
+                      SizedBox(
+                        height: 0,
+                        child: OverflowBox(
+                          fit: OverflowBoxFit.deferToChild,
+                          maxHeight: double.infinity,
+                          child: Visibility(
+                            visible: false,
+                            maintainSize: true,
+                            maintainAnimation: true,
+                            maintainState: true,
+                            child: chip,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
+              if (chip != null)
+                PositionedDirectional(
+                  end: HlSpace.s4,
+                  top: 0,
+                  bottom: row.last ? 0 : _hairline,
+                  child: chip,
+                ),
               // Between rows of a section, a hairline from the name's start
               // to the content's end, like the category dividers' rules.
               if (!row.last)

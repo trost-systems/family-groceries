@@ -1,6 +1,7 @@
 import 'dart:ui' show Tristate;
 
 import 'package:family_groceries/analytics/analytics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -98,5 +99,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(analytics.state.internalInstall, isFalse);
     expect(find.text('Interne Installation'), findsNothing);
+  });
+
+  testWidgets('an internal install copies the install id flags target', (
+    tester,
+  ) async {
+    final clipboard = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          clipboard.add((call.arguments as Map)['text'] as String);
+        }
+        return null;
+      },
+    );
+    final (analytics, _) = await consented();
+    await pumpMore(tester, analytics: analytics, size: const Size(390, 2000));
+    final copy = find.byKey(const ValueKey('more-install-id'));
+    expect(copy, findsNothing, reason: 'only on an internal install');
+    await tester.longPress(version);
+    await tester.pumpAndSettle();
+    expect(find.textContaining(store.id!), findsOneWidget);
+    await tester.tap(copy);
+    await tester.pumpAndSettle();
+    expect(clipboard, [store.id], reason: 'the distinct id PostHog sees');
   });
 }

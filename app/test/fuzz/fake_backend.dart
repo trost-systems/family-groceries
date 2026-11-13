@@ -387,6 +387,13 @@ final class FakeBackend(
         // A household from before lists and claims (job 169b): none.
         ('GET', 'lists') => (200, const <Object?>[]),
         ('GET', 'item_claims') => (200, const <Object?>[]),
+        // Job 190: the household's currency.
+        ('GET', 'households') => (
+          200,
+          [
+            {'currency': 'EUR'},
+          ],
+        ),
         ('POST', 'rpc/household_members_of') => (
           200,
           [

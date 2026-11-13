@@ -5,6 +5,7 @@ import 'package:family_groceries/list/add_sheet/suggestion.dart';
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/model.dart';
+import 'package:family_groceries/list/pricing.dart';
 import 'package:family_groceries/list/quantity.dart';
 
 /// An in-memory server. [online] false makes every call fail like a dropped
@@ -151,6 +152,7 @@ class FakeRepository() implements ListRepository {
       layout: layout,
       members: members,
       lists: lists,
+      currency: currency,
     );
   }
 
@@ -235,6 +237,15 @@ class FakeRepository() implements ListRepository {
   Future<void> reorderCategories(List<String> ids) async {
     _writeCatalog('reorder(${ids.join(', ')})');
     categories = Catalog(categories: categories).withRouteOrder(ids).categories;
+  }
+
+  /// The household's currency (job 190).
+  var currency = defaultCurrency;
+
+  @override
+  Future<void> setCurrency(String code) async {
+    _writeCatalog('setCurrency($code)');
+    currency = code;
   }
 
   @override
@@ -546,6 +557,7 @@ class FakeRepository() implements ListRepository {
     categorizedVia: item.categorizedVia,
     canonicalKey: item.canonicalKey,
     listId: item.listId,
+    price: item.price,
   );
 
   /// What the items trigger sets as `canonical_key` for a name: here the
@@ -620,6 +632,7 @@ class FakeRepository() implements ListRepository {
           ? next.canonicalKey
           : canonicalOf(next.name),
       listId: next.listId,
+      price: next.price,
     );
     rows[op.itemId] = stamped;
     if (loseNextAnswer) {
@@ -744,6 +757,8 @@ class FakeRepository() implements ListRepository {
     String? properties,
     String? quantity,
     String? listId,
+    Price? price,
+    ItemStatus status = ItemStatus.active,
   }) {
     final item = Item(
       id: 'remote-${rows.length}',
@@ -753,12 +768,13 @@ class FakeRepository() implements ListRepository {
       properties: properties,
       categoryId: categoryId ?? classify(name),
       storeId: storeId,
-      status: ItemStatus.active,
+      status: status,
       createdAt: _tick(),
       updatedAt: _clock,
       addedBy: addedBy,
       canonicalKey: canonicalOf(name),
       listId: listId ?? firstList,
+      price: price,
     );
     return rows[item.id] = item.copyWith(sortKey: () => _endOf(item));
   }

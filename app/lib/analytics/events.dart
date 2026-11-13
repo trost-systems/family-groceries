@@ -193,8 +193,8 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
   },
   'checklist_dismissed': const {'open_steps': IntIn(0, 3)},
   // Job 195 (F2): a shopping trip began, a price was entered or a remembered
-  // one confirmed, the running or final trip total was shown. Listed before
-  // the prices UI exists. Never a store name, a price or a total.
+  // one confirmed, the running or final trip total was shown. Job 190's
+  // flagged prices send the last two. Never a store name, a price or a total.
   'shop_started': const {},
   'price_entered': const {'confirmed': IsBool()},
   'trip_total_viewed': const {'final': IsBool()},

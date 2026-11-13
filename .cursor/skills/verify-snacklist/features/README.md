@@ -71,6 +71,7 @@ The list
 - [classifier](./classifier.md): the automatic category for every new item, learning from moves, spelling variants and synonyms.
 - [categories](./categories.md): Liste → „Anpassen“ → „Ohne Laden“ (and every store's details): add, rename, delete, reorder; the 11 seeded categories.
 - [stores-walk-order](./stores-walk-order.md): store sections and category dividers in walk order, nothing on the list drags, a tap on a store divider folds it (a hold does nothing), the stores screen under Liste → „Anpassen“ and a store's details (add, rename, delete, reorder), adding a store from the store chip, item→store memory.
+- [prices](./prices.md): behind the flag `prices-and-trip-total` (off): a price chip on each row and its editor (Gesamt or pro Stück/kg/l, the scale weight), „Summe <Laden>“ per store section, „Einkaufssumme“ under the list, the household's „Währung“; Free, live for the household.
 - [live-sync](./live-sync.md): members see each other's changes live; „N neu von <Name>“ and the sync icon.
 - [offline](./offline.md): what works without a connection, what waits, and the messages.
 - [grocery-log](./grocery-log.md): behind the flag `grocery-log` (not public): the „Verlauf“ tab with trips by date under a month calendar with store dots, or by store, one toggle; „Einkauf eintragen“ by hand; the list's card after a store's section is ticked off; Free sees 4 weeks.
