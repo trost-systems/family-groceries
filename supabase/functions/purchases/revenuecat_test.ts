@@ -232,12 +232,12 @@ Deno.test('every PROMOTIONAL event of premium for a household is a promotional r
     app_id: undefined,
   };
   for (const type of ['NON_RENEWING_PURCHASE', 'CANCELLATION', 'EXPIRATION', 'RENEWAL']) {
-    assertEquals(action(type, promo), { do: 'promotional', householdId: HOME }, type);
+    assertEquals(action(type, promo), { do: 'promotional', appUserId: HOME }, type);
   }
   // Upper case ids are the same household.
   assertEquals(action('EXPIRATION', { ...promo, app_user_id: HOME.toUpperCase() }), {
     do: 'promotional',
-    householdId: HOME,
+    appUserId: HOME,
   });
   // Without entitlement ids we read anyway: the API decides.
   assertEquals(action('EXPIRATION', { ...promo, entitlement_ids: null }).do, 'promotional');

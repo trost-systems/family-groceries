@@ -20,7 +20,6 @@ import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/onboarding/onboarding_cubit.dart';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
-import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/setup.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
@@ -180,7 +179,6 @@ Future<void> _main(WidgetsBinding Function() binding) async {
       // Asks no store until a tap on Buy or Restore (Legal Review H-67).
       purchases: PurchaseCubit(
         purchaseRepository(client),
-        SupabaseClaimApi(client),
         entitlements,
         session,
       ),

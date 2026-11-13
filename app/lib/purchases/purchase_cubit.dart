@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:family_groceries/purchases/entitlements.dart';
-import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:flutter/foundation.dart' show immutable;
@@ -38,7 +37,7 @@ final class const FlowNotAvailable() extends PurchaseFlow;
 final class const FlowFailed(final FailureKind kind, final String code)
     extends PurchaseFlow;
 
-/// The store purchase belongs to another household, for good (H-56).
+/// The store purchase belongs to another account, for good (H-56).
 final class const FlowUsedElsewhere() extends PurchaseFlow;
 
 /// A restore found no purchase.
@@ -72,41 +71,34 @@ class const PurchaseState({
 /// How long "unlocking" waits for Supabase's unlock after a purchase.
 const unlockWait = Duration(seconds: 60);
 
-/// The claim's waits between tries when it got no answer.
-const claimBackoff = [
-  Duration(seconds: 2),
-  Duration(seconds: 5),
-  Duration(seconds: 15),
-];
-
 /// Snacklist Premium's purchase (yearly or Lifetime) and restore. It talks to
 /// RevenueCat only when the user taps Buy or Restore ([buy], [restore]) for
 /// a plan the server's rows allow ([Entitlements.canOffer]): building it, app
 /// start and opening the Premium page reach not RevenueCat (Legal Review
-/// H-67, K.9.9). The unlock it shows comes only from Supabase
-/// ([Entitlements]).
+/// H-67, K.9.9). The purchase is the signed-in user's: RevenueCat knows them
+/// by their user id ([RevenueCatUserId]), and its webhook records them as
+/// the buyer. The unlock it shows comes only from Supabase ([Entitlements]).
 class PurchaseCubit(
   final PurchaseRepository _store,
-  final ClaimApi _claims,
   final Entitlements _entitlements,
   final SessionCubit _session,
 ) extends Cubit<PurchaseState> {
   this : super(PurchaseState(noSale: _store.withoutStore)) {
-    _household = _householdOf(_session.state);
+    _user = _userOf(_session.state);
     _sessions = _session.stream.listen(_onSession);
     _unlocks = _entitlements.stream.listen((_) => _onEntitlements());
   }
 
   late final StreamSubscription<Session> _sessions;
   late final StreamSubscription<EntitlementsState> _unlocks;
-  String? _household;
+  RevenueCatUserId? _user;
   Timer? _unlockTimeout;
 
   /// The plan bought or restored last: the unlock it waits for.
   PremiumPlan _plan = PremiumPlan.yearly;
 
-  static String? _householdOf(Session session) => switch (session) {
-    InHousehold(:final household) => household.id,
+  static RevenueCatUserId? _userOf(Session session) => switch (session) {
+    InHousehold(:final userId) => RevenueCatUserId(userId),
     _ => null,
   };
 
@@ -118,12 +110,16 @@ class PurchaseCubit(
     _ => false,
   };
 
+  /// A flow follows the user, not the household: their purchase unlocks in
+  /// every household they are in (job 185), so switching households keeps a
+  /// pending unlock and with it Buy off, or they would pay twice. Another
+  /// account (or none) starts afresh.
   void _onSession(Session session) {
-    final household = _householdOf(session);
-    if (household == _household) {
+    final user = _userOf(session);
+    if (user == _user) {
       return;
     }
-    _household = household;
+    _user = user;
     _unlockTimeout?.cancel();
     emit(PurchaseState(noSale: _store.withoutStore));
   }
@@ -138,35 +134,26 @@ class PurchaseCubit(
     }
   }
 
-  /// Buy [plan], for the session's household at the time of the tap, and
-  /// only while it may be offered there.
+  /// Buy [plan] for the signed-in user at the time of the tap, only while it
+  /// may be offered in the household the session shows.
   Future<void> buy(PremiumPlan plan) async {
-    final household = _household;
+    final user = _user;
     if (state.busy ||
         state.noSale != null ||
         !_entitlements.canOffer(Entitlement.premium, plan) ||
-        household == null) {
+        user == null) {
       return;
     }
     _plan = plan;
     _emit(flow: const FlowBuying());
-    final outcome = await _store.buy(household, plan);
-    if (isClosed) {
-      return;
-    }
-    if (household != _household) {
-      // The session moved on: the new household's page shows nothing of it.
-      if (outcome case Bought(:final transaction?)) {
-        unawaited(_claim(household, transaction));
-      }
+    final outcome = await _store.buy(user, plan);
+    if (isClosed || user != _user) {
+      // Another account: its page shows nothing of it.
       return;
     }
     switch (outcome) {
-      case Bought(:final transaction):
+      case Bought():
         _unlocking();
-        if (transaction != null) {
-          unawaited(_claim(household, transaction));
-        }
       case Canceled():
         _emit(flow: const FlowCanceled());
       case Pending():
@@ -178,22 +165,22 @@ class PurchaseCubit(
     }
   }
 
-  /// Restore, while any plan may be offered: it finds the household's own
-  /// purchases of either plan.
+  /// Restore, while any plan may be offered: it finds the signed-in user's
+  /// own purchases of either plan, on any device.
   Future<void> restore() async {
-    final household = _household;
+    final user = _user;
     if (state.busy ||
         state.noSale != null ||
         !PremiumPlan.values.any(
           (plan) => _entitlements.canOffer(Entitlement.premium, plan),
         ) ||
-        household == null) {
+        user == null) {
       return;
     }
     _plan = PremiumPlan.yearly;
     _emit(flow: const FlowRestoring());
-    final outcome = await _store.restore(household);
-    if (isClosed || household != _household) {
+    final outcome = await _store.restore(user);
+    if (isClosed || user != _user) {
       return;
     }
     switch (outcome) {
@@ -246,35 +233,6 @@ class PurchaseCubit(
         _emit(flow: const FlowUnlockDelayed());
       }
     });
-  }
-
-  /// Records this member as the buyer (H-55) of [transaction], bought for
-  /// [household], once, trying again while there is no answer. Without a
-  /// claim the unlock still comes; only the buyer stays unknown.
-  Future<void> _claim(String household, StoreTransactionRef transaction) async {
-    for (var attempt = 0; ; attempt++) {
-      final result = await _claims.claim(household, transaction);
-      if (isClosed) {
-        return;
-      }
-      switch (result) {
-        case Claimed(status: ClaimStatus.elsewhere):
-          if (household == _household &&
-              (state.flow is FlowUnlocking ||
-                  state.flow is FlowUnlockDelayed)) {
-            _unlockTimeout?.cancel();
-            _emit(flow: const FlowUsedElsewhere());
-          }
-          return;
-        case Claimed():
-          return;
-        case ClaimFailed(:final problem):
-          if (!problem.transient || attempt >= claimBackoff.length) {
-            return;
-          }
-          await Future<void>.delayed(claimBackoff[attempt]);
-      }
-    }
   }
 
   void _emit({required PurchaseFlow flow}) {

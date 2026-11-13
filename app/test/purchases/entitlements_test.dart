@@ -230,6 +230,64 @@ void main() {
     },
   );
 
+  group("paying twice is one owner's: the household's or the user's", () {
+    const lifetime = {
+      'kind': 'premium',
+      'source': 'purchase',
+      'premium_source': 'lifetime',
+    };
+
+    test(
+      "the household's Lifetime next to the user's own: not twice",
+      () async {
+        final rows = FakeEntitlementsSource()
+          ..rowsNow = [lifetime]
+          ..userRows['peter'] = [lifetime];
+        final (entitlements, _) = await follow(rows);
+        expect(entitlements.has(Entitlement.premium), isTrue);
+        expect(entitlements.boughtLifetimeTwice, isFalse);
+      },
+    );
+
+    test('two Lifetime purchases of one owner: twice', () async {
+      final rows = FakeEntitlementsSource()..rowsNow = [lifetime, lifetime];
+      final (household, _) = await follow(rows);
+      expect(household.boughtLifetimeTwice, isTrue);
+      final own = FakeEntitlementsSource()
+        ..rowsNow = []
+        ..userRows['peter'] = [lifetime, lifetime];
+      final (user, _) = await follow(own);
+      expect(user.boughtLifetimeTwice, isTrue);
+    });
+
+    test("the household's yearly plan next to the user's own: not two "
+        'plans', () async {
+      final now = DateTime.now();
+      final rows = FakeEntitlementsSource()
+        ..rowsNow = [yearlyRow(from: now)]
+        ..userRows['peter'] = [yearlyRow(from: now)];
+      final (entitlements, _) = await follow(rows);
+      expect(entitlements.twoYearlyPlans, isFalse);
+      expect(entitlements.yearlyBilled, isTrue);
+    });
+
+    test('two running yearly plans of one owner: two plans', () async {
+      final now = DateTime.now();
+      final rows = FakeEntitlementsSource()
+        ..rowsNow = [yearlyRow(from: now), yearlyRow(from: now, days: 100)];
+      final (household, _) = await follow(rows);
+      expect(household.twoYearlyPlans, isTrue);
+      final own = FakeEntitlementsSource()
+        ..rowsNow = []
+        ..userRows['peter'] = [
+          yearlyRow(from: now),
+          yearlyRow(from: now, days: 100),
+        ];
+      final (user, _) = await follow(own);
+      expect(user.twoYearlyPlans, isTrue);
+    });
+  });
+
   test('signing out forgets and stops watching', () async {
     final rows = FakeEntitlementsSource(unlockedNow: true);
     final (entitlements, session) = await follow(rows);
@@ -592,4 +650,164 @@ void main() {
       async.flushMicrotasks();
     });
   });
+
+  group("the user's own purchase (user_entitlements, job 185)", () {
+    const lifetime = {
+      'kind': 'premium',
+      'source': 'purchase',
+      'premium_source': 'lifetime',
+    };
+
+    test('unlocks premium in a household without rows of its own, and in '
+        'every other household the user is in', () async {
+      final rows = FakeEntitlementsSource()
+        ..userRows['peter'] = [yearlyRow(from: DateTime.now())];
+      final (entitlements, session) = await follow(rows);
+      expect(
+        entitlements.premium,
+        isA<ActivePremium>().having(
+          (p) => p.source,
+          'source',
+          PremiumSource.yearly,
+        ),
+      );
+      expect(
+        entitlements.canOffer(Entitlement.premium, PremiumPlan.yearly),
+        isFalse,
+        reason: 'never a second yearly plan',
+      );
+      expect(
+        entitlements.canOffer(Entitlement.premium, PremiumPlan.lifetime),
+        isTrue,
+      );
+      await session.join('ABCD2345');
+      await pumpEventQueue();
+      expect(entitlements.householdId, 'other');
+      expect(entitlements.has(Entitlement.premium), isTrue);
+    });
+
+    test('another member of the household does not get it', () async {
+      final rows = FakeEntitlementsSource()..userRows['peter'] = [lifetime];
+      final (entitlements, _) = await follow(
+        rows,
+        session: const InHousehold(
+          'lea',
+          Household(id: 'home', name: 'Zuhause'),
+          [Household(id: 'home', name: 'Zuhause')],
+        ),
+      );
+      expect(entitlements.state, isA<EntitlementsKnown>());
+      expect(entitlements.has(Entitlement.premium), isFalse);
+      expect(
+        entitlements.canOffer(Entitlement.premium, PremiumPlan.lifetime),
+        isTrue,
+      );
+    });
+
+    test('another account signing in on this device reads its own rows, '
+        'in the same household', () async {
+      final rows = FakeEntitlementsSource()..userRows['peter'] = [lifetime];
+      final session = _AccountSwitch(inPeterHome);
+      addTearDown(session.close);
+      final entitlements = Entitlements(rows, session);
+      addTearDown(entitlements.close);
+      await pumpEventQueue();
+      expect(entitlements.has(Entitlement.premium), isTrue);
+      session.become(
+        const InHousehold('lea', Household(id: 'home', name: 'Zuhause'), [
+          Household(id: 'home', name: 'Zuhause'),
+        ]),
+      );
+      await pumpEventQueue();
+      expect(entitlements.state, isA<EntitlementsKnown>());
+      expect(entitlements.has(Entitlement.premium), isFalse);
+    });
+
+    test('a row written later arrives through the watch', () async {
+      final rows = FakeEntitlementsSource();
+      final (entitlements, _) = await follow(rows);
+      expect(entitlements.has(Entitlement.premium), isFalse);
+      rows
+        ..userRows['peter'] = [lifetime]
+        ..change();
+      await pumpEventQueue();
+      expect(entitlements.has(Entitlement.premium), isTrue);
+    });
+
+    test('lapse: the yearly plan ends, premium goes off and both plans are '
+        'offered again', () {
+      fakeAsync((async) {
+        var clock = DateTime.utc(2026, 11, 1, 12);
+        final session = TestSession(inPeterHome);
+        final rows = FakeEntitlementsSource()
+          ..userRows['peter'] = [yearlyRow(from: clock, days: 1)];
+        final entitlements = Entitlements(rows, session, now: () => clock);
+        async.flushMicrotasks();
+        expect(entitlements.has(Entitlement.premium), isTrue);
+        expect(
+          entitlements.canOffer(Entitlement.premium, PremiumPlan.yearly),
+          isFalse,
+        );
+        clock = clock.add(const Duration(days: 1, seconds: 2));
+        async
+          ..elapse(const Duration(days: 1, seconds: 2))
+          ..flushMicrotasks();
+        expect(entitlements.premium, isA<NoPremium>());
+        for (final plan in PremiumPlan.values) {
+          expect(
+            entitlements.canOffer(Entitlement.premium, plan),
+            isTrue,
+            reason: plan.name,
+          );
+        }
+        unawaited(entitlements.close());
+        unawaited(session.close());
+        async.flushMicrotasks();
+      });
+    });
+
+    test("the user's lapse leaves the household's own premium alone", () async {
+      final now = DateTime.now();
+      final rows = FakeEntitlementsSource()
+        ..rowsNow = [promotionalRow(from: now)]
+        ..userRows['peter'] = [yearlyRow(from: now, days: -1)];
+      final (entitlements, _) = await follow(rows);
+      expect(
+        entitlements.premium,
+        isA<ActivePremium>().having(
+          (p) => p.source,
+          'source',
+          PremiumSource.promotional,
+        ),
+      );
+    });
+
+    test(
+      "a promotional grant of the user's marks the events internal",
+      () async {
+        final rows = FakeEntitlementsSource()
+          ..userRows['peter'] = [promotionalRow()];
+        final (entitlements, _) = await follow(rows);
+        expect(
+          entitlements.state,
+          isA<EntitlementsKnown>().having(
+            (s) => s.unlocks.tester,
+            'tester',
+            isTrue,
+          ),
+        );
+      },
+    );
+  });
+}
+
+const inPeterHome = InHousehold(
+  'peter',
+  Household(id: 'home', name: 'Zuhause'),
+  [Household(id: 'home', name: 'Zuhause')],
+);
+
+/// A session that another account signs in to, on the same device.
+class _AccountSwitch(super.initialState) extends TestSession {
+  void become(Session session) => emit(session);
 }

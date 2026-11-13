@@ -5,25 +5,42 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 /// The App Store and Play Store through RevenueCat (`purchases_flutter`),
 /// the only file that may use it (ast-grep rule
 /// `purchases-flutter-only-in-revenuecat-repository`). RevenueCat's customer
-/// is the household. Nothing here runs before the user taps Buy or Restore
-/// (Legal Review H-67): not at app start, not when the Premium page opens.
-/// The tap configures the SDK with the household id, or switches to it with
-/// `logIn` when it was configured for another one. It never learns a user
-/// id, an e-mail or a device identifier (Legal Review K.9.9 C3, rule
+/// is the Snacklist user (job 185). Nothing here runs before the user taps
+/// Buy or Restore (Legal Review H-67): not at app start, not when the Premium
+/// page opens. The tap first stores, through [_noteCustomer], that this
+/// account's id goes to RevenueCat, so deleting the account deletes its
+/// customer there and no other account's id is ever sent. Then it configures
+/// the SDK with the user's id, or switches to it with `logIn` when another
+/// account signed in on this device since.
+/// Switching households changes nothing here. It never learns an e-mail, a
+/// name or a device identifier (Legal Review K.9.9 C3, rule
 /// `no-revenuecat-customer-data`).
-class RevenueCatRepository(final AppStore _store, final String _apiKey)
-    implements PurchaseRepository {
+class RevenueCatRepository(
+  final String _apiKey,
+  final Future<void> Function() _noteCustomer,
+) implements PurchaseRepository {
   /// The one configure call; two taps at once share it.
   Future<void>? _configuring;
 
   @override
   NoSale? get withoutStore => null;
 
-  Future<void> _as(String householdId) async {
+  /// Whether the server noted the account; without it RevenueCat must not
+  /// get its id.
+  Future<bool> _noted() async {
+    try {
+      await _noteCustomer();
+      return true;
+    } on Exception {
+      return false;
+    }
+  }
+
+  Future<void> _as(RevenueCatUserId user) async {
     final first = _configuring == null;
     final configuring = _configuring ??= Purchases.configure(
       PurchasesConfiguration(_apiKey)
-        ..appUserID = householdId
+        ..appUserID = user.value
         ..automaticDeviceIdentifierCollectionEnabled = false
         ..shouldShowInAppMessagesAutomatically = false,
     );
@@ -33,8 +50,8 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
       _configuring = null;
       rethrow;
     }
-    if (!first && await Purchases.appUserID != householdId) {
-      await Purchases.logIn(householdId);
+    if (!first && await Purchases.appUserID != user.value) {
+      await Purchases.logIn(user.value);
     }
   }
 
@@ -42,10 +59,13 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
   /// offers is decided before the tap (store prices, Supabase), and a
   /// storefront without Lifetime simply returns nothing for it.
   @override
-  Future<BuyOutcome> buy(String householdId, PremiumPlan plan) async {
+  Future<BuyOutcome> buy(RevenueCatUserId user, PremiumPlan plan) async {
+    if (!await _noted()) {
+      return const StoreOffline();
+    }
     final StoreProduct? product;
     try {
-      await _as(householdId);
+      await _as(user);
       final found = await Purchases.getProducts(
         [plan.productId],
         productCategory: switch (plan) {
@@ -68,9 +88,8 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
       return const ProductMissing();
     }
     try {
-      final result = await Purchases.purchase(_paramsFor(product));
-      final id = result.storeTransaction.transactionIdentifier;
-      return Bought(id.isEmpty ? null : StoreTransactionRef(_store, id));
+      await Purchases.purchase(_paramsFor(product));
+      return const Bought();
     } on PlatformException catch (e) {
       return switch (_codeOf(e)) {
         PurchasesErrorCode.purchaseCancelledError => const Canceled(),
@@ -81,9 +100,12 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
   }
 
   @override
-  Future<RestoreOutcome> restore(String householdId) async {
+  Future<RestoreOutcome> restore(RevenueCatUserId user) async {
+    if (!await _noted()) {
+      return const StoreOffline();
+    }
     try {
-      await _as(householdId);
+      await _as(user);
       final info = await Purchases.restorePurchases();
       // Only what is active now: allPurchasedProductIdentifiers also lists
       // lapsed yearly plans, and their unlock would never come. By product,
@@ -118,7 +140,8 @@ class RevenueCatRepository(final AppStore _store, final String _apiKey)
       : PurchasesErrorHelper.getErrorCode(e);
 
   /// "Keep with original App User ID" (an Ops setting) makes RevenueCat
-  /// refuse a store purchase that another household has.
+  /// refuse a store purchase that another account (or, from before job 185,
+  /// a household) has.
   static StoreProblem _failure(PurchasesErrorCode code) => switch (code) {
     PurchasesErrorCode.receiptAlreadyInUseError ||
     PurchasesErrorCode.receiptInUseByOtherSubscriberError =>

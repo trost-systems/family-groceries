@@ -1,13 +1,18 @@
+import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/purchases/revenuecat_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../household/harness.dart' show TestSession, inHome;
 import 'fake_revenuecat.dart';
+import 'fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late FakeRevenueCat native;
+  const peter = RevenueCatUserId('peter');
+  const lea = RevenueCatUserId('lea');
 
   setUp(() {
     native = FakeRevenueCat();
@@ -27,16 +32,39 @@ void main() {
   );
 
   RevenueCatRepository repository() =>
-      RevenueCatRepository(AppStore.apple, 'appl_public');
+      RevenueCatRepository('appl_public', native.noteCustomer);
 
   test('built, it talks to no one', () {
     repository();
     expect(native.calls, isEmpty);
+    expect(native.notes, isEmpty);
   });
 
-  test('Buy: configured with the household and no device identifiers, then '
+  test('Buy and Restore note the account on the server before any SDK '
+      'call', () async {
+    final store = repository();
+    await store.buy(peter, PremiumPlan.lifetime);
+    expect(native.notes, [0]);
+    native.calls.clear();
+    await store.restore(peter);
+    expect(native.notes, [0, 0]);
+  });
+
+  test('without the note, RevenueCat never hears of the account', () async {
+    final store = repository();
+    native.noteFails = true;
+    expect(await store.buy(peter, PremiumPlan.yearly), isA<StoreOffline>());
+    native.noteFails = true;
+    expect(await store.restore(peter), isA<StoreOffline>());
+    expect(native.notes, [0, 0]);
+    expect(native.calls, isEmpty);
+    expect(await store.restore(peter), isA<NothingToRestore>());
+    expect(native.methods, ['setupPurchases', 'restorePurchases']);
+  });
+
+  test('Buy: configured with the user and no device identifiers, then '
       'the product, then the purchase', () async {
-    final bought = await repository().buy('home', PremiumPlan.lifetime);
+    final bought = await repository().buy(peter, PremiumPlan.lifetime);
     expect(bought, isA<Bought>());
     expect(native.methods, [
       'setupPurchases',
@@ -45,7 +73,7 @@ void main() {
     ]);
     final setup = native.calls.first;
     expect(setup.arguments, containsPair('apiKey', 'appl_public'));
-    expect(setup.arguments, containsPair('appUserId', 'home'));
+    expect(setup.arguments, containsPair('appUserId', 'peter'));
     expect(
       setup.arguments,
       containsPair('automaticDeviceIdentifierCollectionEnabled', false),
@@ -58,24 +86,39 @@ void main() {
     );
   });
 
-  test('Restore: configured with the household, then the restore', () async {
-    await repository().restore('home');
+  test('Restore: configured with the user, then the restore', () async {
+    await repository().restore(peter);
     expect(native.methods, ['setupPurchases', 'restorePurchases']);
-    expect(native.calls.first.arguments, containsPair('appUserId', 'home'));
+    expect(native.calls.first.arguments, containsPair('appUserId', 'peter'));
   });
 
-  test('another household logs in as that household first', () async {
+  test('restore on a new device: the same user finds their purchase', () async {
+    await repository().buy(peter, PremiumPlan.yearly);
+    native.calls.clear();
+    // A new phone: a fresh app, the SDK configured anew, the same account.
+    final newDevice = repository();
+    expect(await newDevice.restore(peter), isA<Restored>());
+    expect(native.methods, ['setupPurchases', 'restorePurchases']);
+    expect(native.calls.first.arguments, containsPair('appUserId', 'peter'));
+    expect(
+      await repository().restore(lea),
+      isA<NothingToRestore>(),
+      reason: "Lea's phone finds nothing of Peter's purchase",
+    );
+  });
+
+  test('another account on this device logs in as that user first', () async {
     final store = repository();
-    await store.buy('home', PremiumPlan.lifetime);
-    await store.buy('home', PremiumPlan.lifetime);
+    await store.buy(peter, PremiumPlan.lifetime);
+    await store.buy(peter, PremiumPlan.lifetime);
     expect(native.methods.where((m) => m == 'setupPurchases'), hasLength(1));
     expect(native.methods, isNot(contains('logIn')));
     native.calls.clear();
-    await store.restore('other');
+    await store.restore(lea);
     expect(native.methods, ['getAppUserID', 'logIn', 'restorePurchases']);
-    expect(native.calls[1].arguments, {'appUserID': 'other'});
+    expect(native.calls[1].arguments, {'appUserID': 'lea'});
     native.calls.clear();
-    await store.buy('home', PremiumPlan.lifetime);
+    await store.buy(peter, PremiumPlan.lifetime);
     expect(native.methods, [
       'getAppUserID',
       'logIn',
@@ -86,7 +129,7 @@ void main() {
 
   test('two taps at once configure once', () async {
     final store = repository();
-    await Future.wait([store.restore('home'), store.restore('home')]);
+    await Future.wait([store.restore(peter), store.restore(peter)]);
     expect(native.methods.where((m) => m == 'setupPurchases'), hasLength(1));
     expect(native.methods, isNot(contains('logIn')));
   });
@@ -96,26 +139,9 @@ void main() {
     native
       ..fail = 10
       ..failAt = 'setupPurchases';
-    expect(await store.buy('home', PremiumPlan.lifetime), isA<StoreOffline>());
-    expect(await store.buy('home', PremiumPlan.lifetime), isA<Bought>());
+    expect(await store.buy(peter, PremiumPlan.lifetime), isA<StoreOffline>());
+    expect(await store.buy(peter, PremiumPlan.lifetime), isA<Bought>());
     expect(native.methods.where((m) => m == 'setupPurchases'), hasLength(2));
-  });
-
-  test('bought: the store transaction the webhook names', () async {
-    expect(
-      await repository().buy('home', PremiumPlan.lifetime),
-      isA<Bought>()
-          .having((b) => b.transaction?.store, 'store', AppStore.apple)
-          .having((b) => b.transaction?.id, 'id', '2000000123'),
-    );
-  });
-
-  test('bought without a transaction id: nothing to claim', () async {
-    native.transactionId = '';
-    expect(
-      await repository().buy('home', PremiumPlan.lifetime),
-      isA<Bought>().having((b) => b.transaction, 'transaction', isNull),
-    );
   });
 
   const buyErrors = <int, Matcher>{
@@ -131,7 +157,7 @@ void main() {
       native
         ..fail = code
         ..failAt = 'purchaseProduct';
-      expect(await repository().buy('home', PremiumPlan.lifetime), outcome);
+      expect(await repository().buy(peter, PremiumPlan.lifetime), outcome);
     });
   }
 
@@ -140,20 +166,20 @@ void main() {
       ..fail = 2
       ..failAt = 'purchaseProduct';
     expect(
-      await repository().buy('home', PremiumPlan.lifetime),
+      await repository().buy(peter, PremiumPlan.lifetime),
       isA<StoreFailed>().having((f) => f.code, 'code', 'storeProblemError'),
     );
   });
 
-  test('restore: the household has the purchase, or not', () async {
+  test('restore: the user has the purchase, or not', () async {
     final store = repository();
-    expect(await store.restore('home'), isA<NothingToRestore>());
-    native.owned = [lifetimeProductId];
-    expect(await store.restore('home'), isA<Restored>());
+    expect(await store.restore(peter), isA<NothingToRestore>());
+    native.owned['peter'] = [lifetimeProductId];
+    expect(await store.restore(peter), isA<Restored>());
     native
       ..fail = 7
       ..failAt = 'restorePurchases';
-    expect(await store.restore('home'), isA<BelongsElsewhere>());
+    expect(await store.restore(peter), isA<BelongsElsewhere>());
   });
 
   test('the product offline or missing: no purchase sheet', () async {
@@ -161,14 +187,14 @@ void main() {
       ..fail = 10
       ..failAt = 'getProductInfo';
     expect(
-      await repository().buy('home', PremiumPlan.lifetime),
+      await repository().buy(peter, PremiumPlan.lifetime),
       isA<StoreOffline>(),
     );
     native
       ..fail = 23
       ..failAt = 'getProductInfo';
     expect(
-      await repository().buy('home', PremiumPlan.lifetime),
+      await repository().buy(peter, PremiumPlan.lifetime),
       isA<ProductMissing>(),
     );
     expect(native.methods, isNot(contains('purchaseProduct')));
@@ -178,8 +204,8 @@ void main() {
     'only these calls, never attributes, identifiers, logOut or sync',
     () async {
       final store = repository();
-      await store.buy('home', PremiumPlan.lifetime);
-      await store.restore('other');
+      await store.buy(peter, PremiumPlan.lifetime);
+      await store.restore(lea);
       expect(native.methods.toSet(), {
         'setupPurchases',
         'getAppUserID',
@@ -193,7 +219,7 @@ void main() {
 
   group('the yearly plan (job 49)', () {
     test('loaded by id as a subscription, then bought', () async {
-      expect(await repository().buy('home', PremiumPlan.yearly), isA<Bought>());
+      expect(await repository().buy(peter, PremiumPlan.yearly), isA<Bought>());
       expect(native.methods, [
         'setupPurchases',
         'getProductInfo',
@@ -214,9 +240,9 @@ void main() {
       native.products = {'$yearlyProductId:$playBasePlanId'};
       expect(
         await RevenueCatRepository(
-          AppStore.google,
           'goog_public',
-        ).buy('home', PremiumPlan.yearly),
+          native.noteCustomer,
+        ).buy(peter, PremiumPlan.yearly),
         isA<Bought>(),
       );
       expect(native.calls.last.method, 'purchaseSubscriptionOption');
@@ -233,9 +259,9 @@ void main() {
         ..trialOffer = true;
       expect(
         await RevenueCatRepository(
-          AppStore.google,
           'goog_public',
-        ).buy('home', PremiumPlan.yearly),
+          native.noteCustomer,
+        ).buy(peter, PremiumPlan.yearly),
         isA<Bought>(),
       );
       expect(native.calls.last.method, 'purchaseSubscriptionOption');
@@ -253,38 +279,73 @@ void main() {
       native.products = {yearlyProductId};
       final store = repository();
       expect(
-        await store.buy('home', PremiumPlan.lifetime),
+        await store.buy(peter, PremiumPlan.lifetime),
         isA<ProductMissing>(),
       );
-      expect(await store.buy('home', PremiumPlan.yearly), isA<Bought>());
+      expect(await store.buy(peter, PremiumPlan.yearly), isA<Bought>());
     });
 
     test('restore finds a yearly plan too', () async {
-      native.owned = ['$yearlyProductId:$playBasePlanId'];
-      expect(await repository().restore('home'), isA<Restored>());
+      native.owned['peter'] = ['$yearlyProductId:$playBasePlanId'];
+      expect(await repository().restore(peter), isA<Restored>());
     });
 
     test(
       'a lapsed yearly plan restores nothing: no unlock to wait for',
       () async {
-        native.lapsed = ['$yearlyProductId:$playBasePlanId', yearlyProductId];
-        expect(await repository().restore('home'), isA<NothingToRestore>());
-        native.owned = [yearlyProductId];
-        expect(await repository().restore('home'), isA<Restored>());
+        native.lapsed['peter'] = [
+          '$yearlyProductId:$playBasePlanId',
+          yearlyProductId,
+        ];
+        expect(await repository().restore(peter), isA<NothingToRestore>());
+        native.owned['peter'] = [yearlyProductId];
+        expect(await repository().restore(peter), isA<Restored>());
       },
     );
 
     test(
-      'a yearly plan another household has (receipt in use): elsewhere',
+      'a yearly plan another account has (receipt in use): elsewhere',
       () async {
         native
           ..fail = 7
           ..failAt = 'purchaseProduct';
         expect(
-          await repository().buy('home', PremiumPlan.yearly),
+          await repository().buy(peter, PremiumPlan.yearly),
           isA<BelongsElsewhere>(),
         );
       },
     );
+  });
+
+  test('one user in two households: Buy in one, Restore in the other, and '
+      'RevenueCat knows only the user, configured once', () async {
+    final session = TestSession(inHome);
+    addTearDown(session.close);
+    final p = TestPurchases(session: session, sdk: repository());
+    addTearDown(p.close);
+    expect(p.purchases.state.flow, isA<FlowIdle>());
+    await pumpEventQueue();
+    native
+      ..fail = 1
+      ..failAt = 'purchaseProduct';
+    await p.purchases.buy(PremiumPlan.yearly);
+    expect(
+      p.purchases.state.flow,
+      isA<FlowCanceled>(),
+      reason: 'a purchase still unlocking would keep Restore off',
+    );
+    await session.join('ABCD2345');
+    await pumpEventQueue();
+    expect(p.entitlements.householdId, 'other');
+    await p.purchases.restore();
+    expect(native.methods, [
+      'setupPurchases',
+      'getProductInfo',
+      'purchaseProduct',
+      'getAppUserID',
+      'restorePurchases',
+    ], reason: 'no logIn: switching households is no account switch');
+    expect(native.calls.first.arguments, containsPair('appUserId', 'peter'));
+    expect(native.appUserId, 'peter');
   });
 }

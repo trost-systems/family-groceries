@@ -54,9 +54,11 @@ status are in [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md).
 - **Lifetime** has the same features as yearly, with explicit allowances
   for costly processing and API use, not unlimited (`lifetime-allowances`;
   the numbers wait for a cost check).
-- **Also approved and not yet in this checklist**: per-user Premium and
-  Siri free under the lock. The steps below still describe the household
-  model.
+- **Per-user Premium** is in the code since job 185 (RevenueCat App User
+  ID = the Snacklist user id; docs/PURCHASES.md "Per-user Premium"). Step
+  4.5 has to be done before 5.1 or 5.4.
+- **Also approved and not yet in this checklist**: Siri free under the
+  lock.
 
 ## The switches
 
@@ -230,8 +232,15 @@ and AI assistants need Snacklist Premium (not Alexa, which stays free). This is 
 not before the sale.
 
 4.4 **Ops, after Legal**: the App Store privacy label and the Play Data
-safety form list purchases (RevenueCat as processor, household id as user
-id).
+safety form list purchases (RevenueCat as processor, the account id as
+user id since job 185).
+
+4.5 **Legal, Peter's yes**: the purchase privacy texts describe per-user
+Premium (job 185): RevenueCat and through it Apple and Google receive the
+account id, the purchase belongs to the account, and the RevenueCat
+customer is deleted 30 days after the account. The Premium page copy that
+promises the household changes through the prototype gate. Both lists are
+in NEEDS_PETER "Job 185".
 
 ## 5. The sale
 

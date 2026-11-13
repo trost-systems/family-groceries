@@ -326,12 +326,13 @@ void main() {
       size: const Size(390, 1600),
       integrationLock: true,
       premium: FakePremiumServer(lock: true),
-      sdk: RevenueCatRepository(AppStore.apple, 'appl_public'),
+      sdk: RevenueCatRepository('appl_public', native.noteCustomer),
     );
     expect(key('integration-buy'), findsOneWidget);
     await tester.tap(key('integration-buy'));
     await tester.pumpAndSettle();
     expect(native.calls, isEmpty);
+    expect(native.notes, isEmpty);
   });
 
   /// Anything of the lock or a paywall a free screen must never show.

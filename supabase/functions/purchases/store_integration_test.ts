@@ -65,8 +65,10 @@ async function withHouseholds(
     );
   } finally {
     await sql`delete from public.purchases where bound_household = any(${households}::uuid[])`;
+    await sql`delete from public.purchases where bound_user = any(${ids}::uuid[])`;
     await sql`delete from public.households where id = any(${households}::uuid[])`;
-    await sql`delete from public.revenuecat_deletions where app_user_id = any(${households}::uuid[])`;
+    await sql`delete from public.revenuecat_deletions
+              where app_user_id = any(${[...households, ...ids]}::uuid[])`;
     await sql`delete from auth.users where id = any(${ids}::uuid[])`;
     await sql.end();
   }
@@ -622,6 +624,121 @@ Deno.test({
         );
         assertEquals(await res.json(), { status: 'granted' });
         assertEquals(await premium(peter.householdId), true);
+      } finally {
+        await sql`delete from public.revenuecat_events where id = any(${eventIds})`;
+      }
+    });
+  },
+});
+
+Deno.test({
+  name: "Job 185: a purchase for a user id is the user's, in every household, restored and lapsing",
+  ignore: !enabled,
+  sanitizeResources: false,
+  sanitizeOps: false,
+  async fn() {
+    await withHouseholds(async (sql, peter, lea, max) => {
+      const telemetry = telemetryFor('purchases', {
+        get: (k) =>
+          ({
+            POSTHOG_PROJECT_API_KEY: 'phc_testprojectkey0123456789',
+            POSTHOG_HOST: 'https://eu.i.posthog.com',
+          })[k],
+      });
+      const handler = createHandler(productionDeps(
+        {
+          webhook: { authorization: AUTH, signingSecret: null, tombstoneKey: TOMBSTONE_KEY },
+          local: true,
+          region: null,
+          revenueCat: null,
+          deletionsSecret: null,
+        },
+        telemetry,
+        { authenticate: () => Promise.resolve(peter) },
+      ));
+      const eventIds: string[] = [];
+      const tx = `185${Date.now()}`;
+      const deliver = async (
+        type: string,
+        appUserId: string,
+        more: Record<string, unknown> = {},
+      ) => {
+        const e = testEvent(
+          { type, appUserId, transactionId: tx, productId: 'com.snacklist.app.yearly', ...more },
+          new Date(),
+        );
+        if (!e) throw new Error('no test event');
+        eventIds.push((e.event as { id: string }).id);
+        const res = await handler(
+          new Request('http://local/functions/v1/purchases/revenuecat/webhook', {
+            method: 'POST',
+            headers: { authorization: AUTH },
+            body: JSON.stringify(e),
+          }),
+        );
+        return (await res.json()).status;
+      };
+      const own = (who: Member) =>
+        asUser(
+          who.userId,
+          (t) =>
+            t<{ premium_source: string }[]>`select premium_source from public.user_entitlements`,
+        ).then((rows) => rows.map((r) => r.premium_source));
+      const premium = async (who: Member) => {
+        const [r] = await sql<{ has: boolean }[]>`
+          select public.user_has_premium(${who.userId}::uuid) as has`;
+        return r?.has;
+      };
+      const bound = async () => {
+        const [r] = await sql<{ bound_user: string | null; bound_household: string | null }[]>`
+          select bound_user, bound_household from public.purchases where transaction_id = ${tx}`;
+        return r;
+      };
+
+      try {
+        assertEquals(await deliver('INITIAL_PURCHASE', peter.userId), 'granted');
+        assertEquals(await premium(peter), true);
+        assertEquals(await own(peter), ['yearly']);
+        assertEquals(await own(lea), [], "Lea, in Peter's household, does not read his premium");
+        assertEquals(
+          (await sql`select from public.entitlements where household_id = ${peter.householdId}`)
+            .length,
+          0,
+          'no household is unlocked',
+        );
+        assertEquals(telemetry.queued.map((e) => e.event), ['purchase_completed']);
+        const completed = telemetry.queued[0]?.properties as Record<string, unknown>;
+        assertEquals(completed.household_id, peter.householdId, "the buyer's household");
+
+        // Restore on a new device: RevenueCat reports the same transaction for the same user again.
+        assertEquals(await deliver('RENEWAL', peter.userId), 'restored');
+        assertEquals(await premium(peter), true);
+        assertEquals(telemetry.queued.length, 1, 'purchase_completed went out once');
+
+        // Peter in a second household; the transaction reported under a household id never rebinds.
+        const code = await asUser(max.userId, async (t) => {
+          const [i] = await t<{ code: string }[]>`
+            select code from public.create_invite(${max.householdId}::uuid)`;
+          return i?.code;
+        });
+        await asUser(
+          peter.userId,
+          (t) => t`select public.accept_invite(${code ?? ''}, p_mode => 'add')`,
+        );
+        assertEquals(await deliver('RENEWAL', peter.householdId), 'used_elsewhere');
+        assertEquals(await deliver('RENEWAL', max.householdId), 'used_elsewhere');
+        assertEquals(await bound(), { bound_user: peter.userId, bound_household: null });
+        assertEquals((await own(peter)).length, 1, 'one unlock, in both his households');
+
+        // Lapse, and the renewal that brings it back.
+        assertEquals(await deliver('EXPIRATION', peter.userId, { expiresInDays: -1 }), 'updated');
+        assertEquals(await premium(peter), false);
+        assertEquals((await own(peter)).length, 1, 'the expired row stays');
+        assertEquals(
+          await deliver('RENEWAL', peter.userId, { expiresInDays: 365, eventAgoMs: -1_000 }),
+          'restored',
+        );
+        assertEquals(await premium(peter), true);
       } finally {
         await sql`delete from public.revenuecat_events where id = any(${eventIds})`;
       }

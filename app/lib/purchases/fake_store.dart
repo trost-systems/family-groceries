@@ -29,8 +29,8 @@ enum FakeStoreMode() {
   offline,
 }
 
-/// Plays RevenueCat's webhook for a purchase of the household
-/// [appUserId]: the local stack's `/purchases/test/event` route.
+/// Plays RevenueCat's webhook for a purchase of the user [appUserId]: the
+/// local stack's `/purchases/test/event` route.
 typedef SendTestEvent = Future<void> Function({
   required String appUserId,
   required String transactionId,
@@ -49,8 +49,8 @@ FakeLedgerStore fileLedger() => platform.fileLedger();
 /// The App Store and RevenueCat as debug builds and fg play them, where no
 /// store exists (Linux desktop). A purchase sends the webhook event
 /// RevenueCat would send, through the local stack, so the server grants it
-/// like a real one. Its ledger remembers which household each transaction
-/// was bought for, as RevenueCat's "Keep with original App User ID" does.
+/// like a real one. Its ledger remembers which user each transaction was
+/// bought by, as RevenueCat's "Keep with original App User ID" does.
 class FakeStore(
   final FakeStoreMode _mode, {
   required final SendTestEvent send,
@@ -59,7 +59,7 @@ class FakeStore(
 }) implements PurchaseRepository {
   Future<Map<String, String>>? _loaded;
 
-  /// Transaction id to the household it was bought for.
+  /// Transaction id to the App User ID it was bought by.
   Future<Map<String, String>> get _owned => _loaded ??= _read(ledger);
 
   /// The plan of each transaction this run sold; restored ones count as
@@ -70,7 +70,7 @@ class FakeStore(
   NoSale? get withoutStore => null;
 
   @override
-  Future<BuyOutcome> buy(String householdId, PremiumPlan plan) async {
+  Future<BuyOutcome> buy(RevenueCatUserId user, PremiumPlan plan) async {
     switch (_mode) {
       case FakeStoreMode.cancel:
         return const Canceled();
@@ -81,37 +81,37 @@ class FakeStore(
       case FakeStoreMode.unavailable:
         return const ProductMissing();
       case FakeStoreMode.pending:
-        Timer(approval, () => unawaited(_sell(householdId, plan)));
+        Timer(approval, () => unawaited(_sell(user, plan)));
         return const Pending();
       case FakeStoreMode.ok:
-        return await _sell(householdId, plan);
+        return await _sell(user, plan);
     }
   }
 
-  Future<BuyOutcome> _sell(String householdId, PremiumPlan plan) async {
+  Future<BuyOutcome> _sell(RevenueCatUserId user, PremiumPlan plan) async {
     final id = 'fake-${const Uuid().v4()}';
     final owned = await _owned;
-    owned[id] = householdId;
+    owned[id] = user.value;
     _plans[id] = plan;
     await ledger.write(jsonEncode({'owned': owned}));
     try {
-      await send(appUserId: householdId, transactionId: id, plan: plan);
+      await send(appUserId: user.value, transactionId: id, plan: plan);
     } on Object {
       // Sold; a restore sends the event again, as RevenueCat retries.
       return const StoreFailed('fake_event_failed');
     }
-    return Bought(StoreTransactionRef(AppStore.apple, id));
+    return const Bought();
   }
 
   @override
-  Future<RestoreOutcome> restore(String householdId) async {
+  Future<RestoreOutcome> restore(RevenueCatUserId user) async {
     if (_mode == FakeStoreMode.offline) {
       return const StoreOffline();
     }
     final owned = await _owned;
     final mine = [
       for (final MapEntry(:key, :value) in owned.entries)
-        if (value == householdId) key,
+        if (value == user.value) key,
     ];
     if (mine.isEmpty) {
       return owned.isEmpty
@@ -121,7 +121,7 @@ class FakeStore(
     try {
       for (final id in mine) {
         await send(
-          appUserId: householdId,
+          appUserId: user.value,
           transactionId: id,
           plan: _plans[id] ?? PremiumPlan.lifetime,
         );

@@ -1,10 +1,10 @@
 id: no-revenuecat-customer-data
 valid:
-  # What RevenueCatRepository does: the household id, then the purchase.
+  # What RevenueCatRepository does: the user id, then the purchase.
   - |
-    Future<void> as(String householdId) async {
-      await Purchases.configure(PurchasesConfiguration(key)..appUserID = householdId);
-      await Purchases.logIn(householdId);
+    Future<void> as(RevenueCatUserId user) async {
+      await Purchases.configure(PurchasesConfiguration(key)..appUserID = user.value);
+      await Purchases.logIn(user.value);
       await Purchases.restorePurchases();
     }
   # Our own setters are not RevenueCat's.
@@ -14,7 +14,8 @@ valid:
       cache.syncAll();
     }
 invalid:
-  # The buyer's e-mail as a customer attribute (H-55: RevenueCat never learns who paid).
+  # The buyer's e-mail as a customer attribute (H-55: RevenueCat knows the buyer by
+  # their user id only).
   - |
     Future<void> f() async {
       await Purchases.setEmail(user.email);

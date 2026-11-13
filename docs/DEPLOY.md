@@ -200,6 +200,11 @@ What a rollback does not change:
 - A function that did not exist at that commit. It keeps its current
   version.
 
+Once Snacklist Premium is on sale, do not roll `purchases` back past job
+185 (`20261112232617_per_user_premium.sql`). An older `purchases` treats
+every App User ID as a household: a purchase from a new build (a user id)
+gets `no_household`, answers 200, and RevenueCat never sends it again.
+
 The next push to `main` that touches `supabase/**` deploys `main` again.
 So land the fix on `main`, or the rollback lasts only until the next
 deploy.

@@ -26,15 +26,11 @@ void main() {
   test('iOS sells through the App Store, Android through Play', () {
     expect(
       choose(),
-      isA<RevenueCatStore>()
-          .having((s) => s.store, 'store', AppStore.apple)
-          .having((s) => s.apiKey, 'key', 'appl_test'),
+      isA<RevenueCatStore>().having((s) => s.apiKey, 'key', 'appl_test'),
     );
     expect(
       choose(platform: TargetPlatform.android),
-      isA<RevenueCatStore>()
-          .having((s) => s.store, 'store', AppStore.google)
-          .having((s) => s.apiKey, 'key', 'goog_test'),
+      isA<RevenueCatStore>().having((s) => s.apiKey, 'key', 'goog_test'),
     );
   });
 

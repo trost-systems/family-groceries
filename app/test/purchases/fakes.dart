@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:family_groceries/purchases/fake_store.dart';
 import 'package:family_groceries/purchases/premium_server.dart';
-import 'package:family_groceries/purchases/purchase_api.dart';
 import 'package:family_groceries/purchases/purchase_cubit.dart';
 import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:family_groceries/purchases/store_prices.dart';
@@ -14,9 +13,7 @@ import 'package:family_groceries/session/session_cubit.dart';
 /// call, in order: the page and app start must make none (H-67).
 class FakePurchaseRepository({
   @override final NoSale? withoutStore,
-  var BuyOutcome bought = const Bought(
-    StoreTransactionRef(AppStore.apple, 'tx-1'),
-  ),
+  var BuyOutcome bought = const Bought(),
   var RestoreOutcome restored = const NothingToRestore(),
 }) implements PurchaseRepository {
   final buys = <String>[];
@@ -25,7 +22,8 @@ class FakePurchaseRepository({
   final held = <Completer<BuyOutcome>>[];
   final heldRestores = <Completer<RestoreOutcome>>[];
 
-  /// `buy <household> <plan>` and `restore <household>`, in order.
+  /// `buy <user> <plan>` and `restore <user>`, in order: the App User ID
+  /// RevenueCat would get.
   List<String> get calls => _calls;
   final _calls = <String>[];
 
@@ -33,10 +31,10 @@ class FakePurchaseRepository({
   final plans = <PremiumPlan>[];
 
   @override
-  Future<BuyOutcome> buy(String householdId, PremiumPlan plan) async {
-    buys.add(householdId);
+  Future<BuyOutcome> buy(RevenueCatUserId user, PremiumPlan plan) async {
+    buys.add(user.value);
     plans.add(plan);
-    _calls.add('buy $householdId ${plan.name}');
+    _calls.add('buy ${user.value} ${plan.name}');
     if (!hold) {
       return bought;
     }
@@ -46,36 +44,15 @@ class FakePurchaseRepository({
   }
 
   @override
-  Future<RestoreOutcome> restore(String householdId) async {
-    restores.add(householdId);
-    _calls.add('restore $householdId');
+  Future<RestoreOutcome> restore(RevenueCatUserId user) async {
+    restores.add(user.value);
+    _calls.add('restore ${user.value}');
     if (!hold) {
       return restored;
     }
     final answer = Completer<RestoreOutcome>();
     heldRestores.add(answer);
     return await answer.future;
-  }
-}
-
-/// A purchases function whose claim answers [answers] in turn, the last one
-/// for good.
-class FakeClaimApi({
-  var List<ClaimResult> answers = const [Claimed(ClaimStatus.recorded)],
-}) implements ClaimApi {
-  final calls = <StoreTransactionRef>[];
-
-  /// The household each claim named.
-  final households = <String>[];
-
-  @override
-  Future<ClaimResult> claim(
-    String householdId,
-    StoreTransactionRef transaction,
-  ) async {
-    calls.add(transaction);
-    households.add(householdId);
-    return answers[(calls.length - 1).clamp(0, answers.length - 1)];
   }
 }
 
@@ -91,7 +68,10 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
   /// Reads wait in [heldReads] while set, for the test to answer in any
   /// order.
   var holdReads = false;
-  final heldReads = <Completer<HouseholdUnlocks>>[];
+  final heldReads = <Completer<Unlocks>>[];
+
+  /// Each user's own `user_entitlements` rows, as only they read them.
+  final userRows = <String, List<Map<String, dynamic>>>{};
   final watching = <String>{};
   void Function()? _onChange;
 
@@ -99,12 +79,12 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
   void change() => _onChange?.call();
 
   @override
-  Future<HouseholdUnlocks> unlocks(String householdId) async {
+  Future<Unlocks> unlocks(String householdId, String userId) async {
     if (offline) {
       throw Exception('offline');
     }
     if (holdReads) {
-      final answer = Completer<HouseholdUnlocks>();
+      final answer = Completer<Unlocks>();
       heldReads.add(answer);
       return await answer.future;
     }
@@ -118,11 +98,15 @@ class FakeEntitlementsSource({var bool unlockedNow = false})
                 'premium_source': 'lifetime',
               },
           ],
-    );
+    ).merge(unlocksOf(userRows[userId] ?? []));
   }
 
   @override
-  Future<void> Function() watch(String householdId, void Function() onChange) {
+  Future<void> Function() watch(
+    String householdId,
+    String userId,
+    void Function() onChange,
+  ) {
     watching.add(householdId);
     _onChange = onChange;
     return () async {
@@ -204,7 +188,6 @@ class TestPurchases({
   required final SessionCubit session,
   final FakePurchaseRepository? store,
   final PurchaseRepository? sdk,
-  final FakeClaimApi? api,
   final FakeEntitlementsSource? source,
   final FakePremiumServer? premiumServer,
   final FakeStorePrices? prices,
@@ -212,7 +195,6 @@ class TestPurchases({
 }) {
   late final FakePurchaseRepository repository =
       store ?? FakePurchaseRepository();
-  late final FakeClaimApi server = api ?? FakeClaimApi();
   late final FakeEntitlementsSource rows = source ?? FakeEntitlementsSource();
   late final entitlements = Entitlements(
     rows,
@@ -224,7 +206,6 @@ class TestPurchases({
       prices ?? FakeStorePrices(fakeStorePrices);
   late final purchases = PurchaseCubit(
     sdk ?? repository,
-    server,
     entitlements,
     session,
   );

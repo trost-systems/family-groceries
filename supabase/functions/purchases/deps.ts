@@ -37,9 +37,9 @@ export function productionDeps(
   const fetchApi: Fetch = options.fetch ?? fetch;
   const webhook = config.webhook;
   const revenueCat = config.revenueCat;
-  /** The household's promotional premium, read now (null without the API key). */
+  /** The customer's promotional premium, read now (null without the API key). */
   const readPromotional = revenueCat
-    ? (householdId: string) => () => fetchPromotional(revenueCat, householdId, fetchApi, new Date())
+    ? (appUserId: string) => () => fetchPromotional(revenueCat, appUserId, fetchApi, new Date())
     : null;
   return {
     webhook,
@@ -56,10 +56,10 @@ export function productionDeps(
           lifecycle: (c) => lifecycle(tx, c),
           revoke: (r) => revoke(tx, r),
           reinstate: (store, transactionId) => reinstate(tx, store, transactionId),
-          promotional: (householdId) => {
+          promotional: (appUserId) => {
             // The handler answers 503 before this without the key.
             if (!readPromotional) throw new Error('REVENUECAT_SECRET_KEY is not set');
-            return promotional(tx, householdId, readPromotional(householdId));
+            return promotional(tx, appUserId, readPromotional(appUserId));
           },
         };
         return { first: true as const, value: await work(ledger) };
@@ -98,8 +98,8 @@ export function productionDeps(
       }, subject);
     },
     reconcile: readPromotional
-      ? (householdId) =>
-        serviceDb().begin((tx) => promotional(tx, householdId, readPromotional(householdId)))
+      ? (appUserId) =>
+        serviceDb().begin((tx) => promotional(tx, appUserId, readPromotional(appUserId)))
       : null,
     deleteDueCustomers: config.revenueCat
       ? () =>

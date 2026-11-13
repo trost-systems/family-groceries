@@ -60,15 +60,16 @@ class Books implements Ledger {
       buyer: null,
       sendCompleted: false,
       secondYearly: false,
+      householdId: row.purchase.appUserId,
       ...more,
     });
     if (row.revoked) return Promise.resolve(answer('revoked'));
-    if (row.purchase.householdId !== p.householdId) {
+    if (row.purchase.appUserId !== p.appUserId) {
       return Promise.resolve(answer('used_elsewhere'));
     }
     for (const id of [p.transactionId, p.latestTransactionId]) {
       const c = this.claims.get(`${p.store}:${id}`);
-      if (!row.user && c?.household === p.householdId) {
+      if (!row.user && c?.household === p.appUserId) {
         row.user = c.user;
         this.claims.delete(`${p.store}:${id}`);
       }
@@ -98,6 +99,7 @@ class Books implements Ledger {
     row.revoked = true;
     return Promise.resolve({
       ...row.purchase,
+      householdId: row.purchase.appUserId,
       userId: row.user,
       internal: row.user !== null && this.testers.has(row.user),
     });
@@ -145,14 +147,18 @@ class Books implements Ledger {
       }
       return { status: 'waiting', completed: null };
     }
-    if (row.purchase.householdId !== household) return { status: 'elsewhere', completed: null };
+    if (row.purchase.appUserId !== household) return { status: 'elsewhere', completed: null };
     if (row.user && row.user !== user) return { status: 'taken', completed: null };
     row.user = user;
     if (row.sent || row.revoked) return { status: 'recorded', completed: null };
     row.sent = true;
     return {
       status: 'recorded',
-      completed: { ...row.purchase, internal: this.testers.has(user) },
+      completed: {
+        ...row.purchase,
+        householdId: row.purchase.appUserId,
+        internal: this.testers.has(user),
+      },
     };
   }
 }
@@ -418,7 +424,7 @@ Deno.test('a lifetime purchase is recorded for the household, with what RevenueC
     price: 9.99,
     currency: 'EUR',
     country: 'DE',
-    householdId: HOME,
+    appUserId: HOME,
   });
   assertEquals(logs, [JSON.stringify({ fn: 'purchases', region: 'eu-central-1' })]);
 });
@@ -522,7 +528,7 @@ Deno.test('TRANSFER never moves an unlock; it is logged by type alone', async ()
   });
   assertEquals(logs.slice(1), [JSON.stringify({ fn: 'purchases', event: 'TRANSFER' })]);
   assertEquals(w.books.writes, 1);
-  assertEquals([...w.books.rows.values()][0].purchase.householdId, HOME);
+  assertEquals([...w.books.rows.values()][0].purchase.appUserId, HOME);
 });
 
 Deno.test('other event types are acknowledged and ignored', async () => {
@@ -806,7 +812,7 @@ Deno.test('test events exist only inside a local stack', async () => {
     { status: 'granted' },
   );
   const play = w.books.rows.get('google:fake-2')!.purchase;
-  assertEquals([play.environment, play.householdId, play.price], ['Production', OTHER, 29.99]);
+  assertEquals([play.environment, play.appUserId, play.price], ['Production', OTHER, 29.99]);
   await expect(
     await w.handle('/test/event', { ...body, isFamilyShare: true, transactionId: 'f3' }),
     200,
@@ -1088,6 +1094,7 @@ Deno.test('a second yearly plan in a household is recorded and flagged in the lo
       buyer: null,
       sendCompleted: false,
       secondYearly: p.plan === 'yearly',
+      householdId: p.appUserId,
     });
   const logs = await logsOf(async () => {
     await expect(await w.deliver(yearly('INITIAL_PURCHASE')), 200, { status: 'granted' });

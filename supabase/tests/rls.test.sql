@@ -1,5 +1,5 @@
 begin;
-select plan(100);
+select plan(102);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -349,6 +349,14 @@ select throws_ok($$ select public.set_join_approval((select id from ha), true) $
   '42501', 'not_member', 'switching another household''s approval is refused');
 select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
 select is((select count(*)::int from public.join_requests), 2, 'the owner sees her household''s requests');
+set local role postgres;
+
+-- Job 185: a user's own premium is theirs alone (per_user_premium.test.sql: also within a household).
+select public.promotional_premium_sync_user('00000000-0000-0000-0000-0000000000a1', true, null);
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+select is((select count(*)::int from public.user_entitlements), 0, 'user_entitlements: Bob does not read Alice''s premium');
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+select is((select count(*)::int from public.user_entitlements), 1, 'user_entitlements: Alice reads her own');
 set local role postgres;
 
 -- Realtime sends a delete's replica identity (the primary key) to every subscriber of the table,

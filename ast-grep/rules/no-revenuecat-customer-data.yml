@@ -1,5 +1,5 @@
-# RevenueCat learns the household id and the store purchase, nothing else (Legal Review
-# K.9.9 C3, job 43): no customer attributes (setAttributes, setEmail, setPhoneNumber,
+# RevenueCat learns the Snacklist user id (its App User ID since job 185) and the store
+# purchase, nothing else (Legal Review K.9.9 C3, job 43): no customer attributes (setAttributes, setEmail, setPhoneNumber,
 # setDisplayName, the set*ID integrations, setAd*, setCampaign, setMediaSource, ...), no
 # device or ad identifiers (collectDeviceIdentifiers, enableAdServices*), never logOut
 # (it makes an anonymous id), and no sync* (it would bind store purchases to whatever
@@ -23,4 +23,4 @@ rule:
     - has:
         field: object
         regex: '^(?:\w+\s*\.\s*)?Purchases$'
-message: '"$E" sends RevenueCat customer or device data, or changes its customer: RevenueCat gets the household id and the purchase only (Legal Review K.9.9 C3); configure with appUserID = household id, switch households with logIn'
+message: '"$E" sends RevenueCat customer or device data, or changes its customer: RevenueCat gets the Snacklist user id and the purchase only (Legal Review K.9.9 C3); configure with appUserID = the signed-in user id, switch accounts with logIn'
