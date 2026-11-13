@@ -12087,3 +12087,48 @@ build of `hummlist-site` waits for the push-triggered **Supabase deploy** run th
   event for an id that names nothing still answers `no_household`, also for a deleted user:
   `app_user_owner` cannot tell a deleted user from an unknown id, so `store.ts` documents the label
   instead of guessing.
+## Job 210: Firefox keeps the add field after an add by Enter, 2026-11-13
+
+- **Root cause, traced.** Flutter web delivers each Enter twice. The engine's `KeyboardBinding`
+  (a window capture listener) hands it to the framework, where the bar's `Focus.onKeyEvent`
+  submits. Then the input's own keydown listener sends `performAction(send)`, which ran the
+  field's `onSubmitted` too (`takeFirst` drops the second call). A non-null `onSubmitted` makes
+  `EditableText._finalizeEditing` schedule `_restartConnectionIfNeeded`: `TextInput.clearClient`,
+  then `setClient` and `show` (flutter/flutter#84240, meant for mobile soft keyboards). On web
+  `clearClient` disables the semantics text strategy, which blurs the input through
+  `FlutterViewManager.safeBlur`, a `Timer.run`. The next frame's semantics update re-enables the
+  same `<input>` and focuses it. When that frame runs before the zero-delay timer, the stale blur
+  moves the focus to `<flutter-view>` after the refocus and nothing gives it back. The next typed
+  item goes nowhere. Firefox shows it. Chromium and WebKit showed no focusout of the input at all
+  in any run here, before the fix too; why they differ was not traced, so their runs guard adding
+  by Enter, not this race.
+- **Evidence.** A focus timeline (Playwright init script hooking focus/blur calls, focusin and
+  focusout, and the app's flutter/textinput messages through a spy `BinaryMessenger`, built with
+  `--no-strip-wasm`; not committed). Locally, Firefox wasm and JS: 18 of 20 Enters blurred the
+  input and the frame gave it back each time. Forcing the order (zero-delay timeouts during the
+  Enter held back 100 ms) lost the field: refocus at +22 ms, blur at +112 ms from
+  `safeBlur` → `_transferFocusToViewRoot`. On CI without forcing (probe branch, e2e run
+  43458368794), Firefox JS lost it once in 80 Enters: `clearClient` at +5 ms, the frame's focus
+  on the input at +51 ms, the timer's focus on `<flutter-view>` at +78 ms. That is the "~80 ms"
+  focusout of job 201.
+- **Fix: on web the add field has no `onSubmitted`** (`list_screen.dart`). Every Enter there,
+  soft keyboards' included, is a DOM keydown that the engine's window capture listener hands to
+  the bar's key handler before the input sees it, so the handler submits all of them. Without
+  `onSubmitted`, `EditableText` keeps its connection, nothing blurs. Native platforms keep
+  `onSubmitted` for soft keyboards, which send no key events. No timing workaround. The stale
+  `safeBlur` is an engine race in its own right (it does not check whether the element was
+  re-enabled since); our code no longer triggers it. No upstream issue was filed from this
+  runner. The engine source is `lib/web_ui/lib/src/engine/view_embedder/flutter_view_manager.dart`
+  `safeBlur` and `semantics/text_field.dart` `SemanticsTextEditingStrategy.disable`.
+- **The guided start's „Noch etwas?“ field stays as it is.** It has the same `onSubmitted`, but
+  `_add` unfocuses and refocuses 50 ms later with a `Timer`. The engine's blur is a zero-delay
+  timer queued earlier, and browsers run timers in deadline order, so it always lands first. Only
+  the forced 100 ms delay above broke it (1 of 8), which a browser does not do. Firefox, normal
+  timing: 0 of 32 on CI, 0 of 8 locally.
+- **e2e: `wasm-boot.spec.ts` adds two items in a row by Enter again** (chromium, webkit, firefox;
+  wasm, JS fallback, JS off the allow list). The second item is typed without a click and must
+  reach the field, and the field's input must have no focusout from the first Enter to after the
+  second. Before the fix all three Firefox tests failed on the focusout count locally; after it,
+  90 of 90 locally (each test 10 times in each engine) and the CI runs in the PR. All three tests
+  are now `test.slow` in WebKit, not only the wasm one: on CI the JS fallback ran out of its 60 s in
+  5 of 10 runs (53 s on main already).
