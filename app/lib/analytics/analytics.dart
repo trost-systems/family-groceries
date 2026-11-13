@@ -139,6 +139,9 @@ class Analytics(
   /// The SDK is set up and not stopped.
   var _running = false;
 
+  /// The `is_internal` PostHog has for flag targeting, null until sent.
+  bool? _flagsInternal;
+
   /// SDK set-ups and stops, one after the other.
   Future<void> _lifecycle = Future.value();
 
@@ -331,6 +334,7 @@ class Analytics(
       return;
     }
     _running = false;
+    _flagsInternal = null;
     flags.clear();
     try {
       await _posthog?.stop();
@@ -474,6 +478,20 @@ class Analytics(
             debugPrint('analytics: context not registered: ${e.runtimeType}');
           }),
     );
+    // Flags may be released to internal installs only (docs/ANALYTICS.md).
+    final internal = internalNow;
+    if (internal != _flagsInternal) {
+      _flagsInternal = internal;
+      unawaited(
+        posthog
+            .flagProperties({'is_internal': internal})
+            .then((_) => _refreshFlags())
+            .catchError((Object e) {
+              _flagsInternal = null;
+              debugPrint('analytics: flag targeting not set: ${e.runtimeType}');
+            }),
+      );
+    }
   }
 
   /// Hands what the SDK holds to PostHog now.

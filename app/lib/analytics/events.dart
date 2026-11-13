@@ -14,6 +14,7 @@ import 'package:family_groceries/household/invite_repository.dart'
     show InviteKind;
 import 'package:family_groceries/household/invite_share.dart'
     show InviteChannel, InviteContext;
+import 'package:family_groceries/log/model.dart' show TripSource;
 import 'package:family_groceries/session/session_cubit.dart'
     show HouseholdOrigin;
 import 'package:family_groceries/tips/checklist.dart';
@@ -152,9 +153,10 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
     'household_size': _householdSize,
   },
   // Job 50 (Spec #4 AC7): the Premium page offered a plan with its price,
-  // once per visit, from More or the integration settings. Never a price.
+  // once per visit, from More, the integration settings or the history's
+  // locked row (job 199). Never a price.
   'paywall_viewed': const {
-    'entry_point': OneOf({'more', 'integrations'}),
+    'entry_point': OneOf({'more', 'integrations', 'history'}),
   },
   // Job 155: the app asked the store for its rating prompt (the store may
   // not show it and never says). Nothing else: no gate, no counts.
@@ -201,6 +203,10 @@ final eventCatalog = <String, Map<String, PropertyRule>>{
   // EAN or a product name.
   'scan_started': const {},
   'off_miss': const {},
+  // Job 199: a new trip was saved in the grocery log, from the history's
+  // "Einkauf eintragen" or the list's card after a store's section was
+  // ticked off. Never the store, the day or the items.
+  'trip_logged': {'source': _namesOf(TripSource.values)},
   // Job 21: after the server took a note, once per note. Never its text.
   'feedback_submitted': {
     'category': const OneOf({'bug', 'idea', 'other', 'none'}),

@@ -1,5 +1,5 @@
 begin;
-select plan(102);
+select plan(110);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -358,6 +358,31 @@ select is((select count(*)::int from public.user_entitlements), 0, 'user_entitle
 select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
 select is((select count(*)::int from public.user_entitlements), 1, 'user_entitlements: Alice reads her own');
 set local role postgres;
+
+-- Job 199: the grocery log's trips stay inside the household.
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+select public.save_trip((select id from ha), 'f1990000-0000-4000-8000-0000000000a1', (select id from alice_store),
+  current_date, '[{"name": "Milch"}]');
+select pg_temp.login('00000000-0000-0000-0000-0000000000b1');
+select throws_ok($$ select public.trip_history((select id from ha), current_date) $$,
+  '42501', 'not_a_member', 'trips of another household are invisible');
+select throws_ok($$ select from public.trips $$, '42501', null, 'trips are read through trip_history only');
+select throws_ok($$ select public.save_trip((select id from ha), gen_random_uuid(), null, current_date, '[{"name": "X"}]') $$,
+  '42501', 'not_a_member', 'logging a trip in another household is refused');
+select throws_ok($$ select public.save_trip((select id from hb), 'f1990000-0000-4000-8000-0000000000a1', null,
+  current_date, '[{"name": "X"}]') $$,
+  '22023', 'other_household', 'saving over another household''s trip id is refused');
+select throws_ok($$ select public.save_trip((select id from hb), gen_random_uuid(), (select id from alice_store),
+  current_date, '[{"name": "X"}]') $$,
+  'P0002', 'store_not_found', 'a trip at another household''s store is refused');
+select throws_ok($$ select public.delete_trip('f1990000-0000-4000-8000-0000000000a1') $$,
+  '42501', 'not_a_member', 'deleting another household''s trip is refused');
+select throws_ok($$ insert into public.trips (id, household_id, shopped_on, items)
+  select gen_random_uuid(), id, current_date, '[{"name": "X"}]' from hb $$,
+  '42501', null, 'trips are written by save_trip only, even in the own household');
+set local role postgres;
+select is((select items #>> '{0,name}' from public.trips where id = 'f1990000-0000-4000-8000-0000000000a1'), 'Milch',
+  'Alice''s trip is untouched');
 
 -- Realtime sends a delete's replica identity (the primary key) to every subscriber of the table,
 -- without RLS or filters. No published table may key its rows by a person.

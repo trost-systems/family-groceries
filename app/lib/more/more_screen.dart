@@ -248,10 +248,9 @@ class const _MoreList({
 }
 
 class _MoreListState() extends State<_MoreList> {
-  late final Future<bool> _offerOpen = context
+  late final Future<OfferSwitch> _offer = context
       .read<PremiumServer>()
-      .offerSwitch()
-      .then((s) => s == OfferSwitch.on);
+      .offerSwitch();
 
   @override
   Widget build(BuildContext context) {
@@ -261,18 +260,18 @@ class _MoreListState() extends State<_MoreList> {
     final unlocked = context.select<Entitlements, bool>(
       (e) => e.has(Entitlement.premium),
     );
-    final notYet = context.select<PurchaseCubit, bool>(
-      (c) => c.state.noSale is PurchasesNotYet,
+    final noSale = context.select<PurchaseCubit, NoSale?>(
+      (c) => c.state.noSale,
     );
     return FutureBuilder(
-      future: _offerOpen,
+      future: _offer,
       builder: (context, offer) {
-        // Snacklist Premium is listed only once it may be offered (the
-        // server's `premium_offer` and, in the iPhone and Android apps,
-        // `REVENUECAT_PURCHASES`), or for a household that has it. Before
-        // the launch nobody sees it (job 64); the page stays reachable from
-        // the integration settings.
-        final premium = unlocked || (offer.data == true && !notYet);
+        // The page stays reachable from the integration settings.
+        final premium = premiumListed(
+          held: unlocked,
+          offer: offer.data,
+          noSale: noSale,
+        );
         bool shown(_Item item) => switch (item) {
           _Item.premium => premium,
           _Item.household || _Item.invite => household != null,

@@ -1,4 +1,5 @@
 import 'package:family_groceries/app/guides.dart';
+import 'package:family_groceries/purchases/purchase_repository.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, immutable;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -128,3 +129,14 @@ final appleEulaUrl = Uri.parse(
 /// (NEEDS_LEAD Job 49 lists it).
 Uri termsUrl(TargetPlatform platform, String language) =>
     platform == TargetPlatform.iOS ? appleEulaUrl : supportUrl(language);
+
+/// Whether Snacklist Premium is offered to this user: More lists it and the
+/// history's locked row opens it (job 199). Before the launch nobody sees it
+/// (job 64): it needs the server's `premium_offer` and, in the iPhone and
+/// Android apps, `REVENUECAT_PURCHASES` ([PurchasesNotYet]). A household
+/// that [held] it always sees it.
+bool premiumListed({
+  required bool held,
+  required OfferSwitch? offer,
+  required NoSale? noSale,
+}) => held || (offer == OfferSwitch.on && noSale is! PurchasesNotYet);

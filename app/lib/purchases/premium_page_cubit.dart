@@ -27,14 +27,16 @@ final class const OfferUnavailable() extends Offer;
 final class const OfferPrices(final Map<PremiumPlan, StorePrice> prices)
     extends Offer;
 
-/// Where the Premium page was opened from: More's row, or the integration
-/// settings' card (job 50, `?from=integrations`).
+/// Where the Premium page was opened from: More's row, the integration
+/// settings' card (job 50, `?from=integrations`) or the history's locked
+/// row (job 199, `?from=history`).
 enum PaywallEntry() {
   more,
-  integrations;
+  integrations,
+  history;
 
   static PaywallEntry parse(String? from) =>
-      from == integrations.name ? integrations : more;
+      values.where((v) => v.name == from).firstOrNull ?? more;
 }
 
 @immutable

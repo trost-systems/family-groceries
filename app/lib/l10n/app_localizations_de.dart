@@ -2577,4 +2577,179 @@ class AppLocalizationsDe extends AppLocalizations {
   String checklistDone(String step) {
     return '$step, erledigt';
   }
+
+  @override
+  String get tabHistory => 'Verlauf';
+
+  @override
+  String get historyShowByStore => 'Nach Laden anzeigen';
+
+  @override
+  String get historyShowByDate => 'Nach Datum anzeigen';
+
+  @override
+  String get tripAdd => 'Einkauf eintragen';
+
+  @override
+  String get tripAddShort => 'Eintragen';
+
+  @override
+  String get tripEdit => 'Einkauf bearbeiten';
+
+  @override
+  String tripAddAt(String store) {
+    return 'Einkauf bei $store eintragen';
+  }
+
+  @override
+  String get historyEmptyTitle => 'Noch keine Einkäufe';
+
+  @override
+  String get historyEmptyBody =>
+      'Trag nach dem Einkauf ein, was du gekauft hast. So findet ihr später, wann ihr wo was geholt habt.';
+
+  @override
+  String get historyLoadFailed => 'Der Verlauf konnte nicht geladen werden.';
+
+  @override
+  String get historyThisWeek => 'Diese Woche';
+
+  @override
+  String get historyLastWeek => 'Letzte Woche';
+
+  @override
+  String historyDayFilter(DateTime day) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMMd(localeName);
+    final String dayString = dayDateFormat.format(day);
+
+    return 'Einkäufe am $dayString';
+  }
+
+  @override
+  String get historyDayClear => 'Alle Einkäufe zeigen';
+
+  @override
+  String get historyDayEmpty => 'Keine Einkäufe an diesem Tag';
+
+  @override
+  String historyDayLabel(String date, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Einkäufe',
+      one: '1 Einkauf',
+    );
+    return '$date, $_temp0';
+  }
+
+  @override
+  String get historyStoreEmpty => 'Noch kein Einkauf';
+
+  @override
+  String get historyLockedTitle =>
+      'Ältere Einkäufe siehst du mit Snacklist Premium';
+
+  @override
+  String historyLockedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ältere Einkäufe',
+      one: '1 älterer Einkauf',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String historyDayLocked(String date) {
+    return '$date, ältere Einkäufe mit Snacklist Premium';
+  }
+
+  @override
+  String get tripStoreMissing => 'Wähle einen Laden.';
+
+  @override
+  String get tripStoreGone => 'Dieser Laden wurde gelöscht.';
+
+  @override
+  String get previousMonth => 'Vorheriger Monat';
+
+  @override
+  String get nextMonth => 'Nächster Monat';
+
+  @override
+  String get dayToday => 'Heute';
+
+  @override
+  String get dayYesterday => 'Gestern';
+
+  @override
+  String get tripStore => 'Laden';
+
+  @override
+  String get tripDay => 'Wann';
+
+  @override
+  String get tripOtherDay => 'Anderer Tag';
+
+  @override
+  String get tripItems => 'Gekauft';
+
+  @override
+  String get tripItemName => 'Artikel';
+
+  @override
+  String get tripAddItem => 'Artikel hinzufügen';
+
+  @override
+  String tripRemoveItem(String name) {
+    return '$name entfernen';
+  }
+
+  @override
+  String get tripDelete => 'Einkauf löschen';
+
+  @override
+  String get tripDeleteTitle => 'Einkauf löschen?';
+
+  @override
+  String get tripDeleteBody =>
+      'Der Einkauf verschwindet für alle im Haushalt aus dem Verlauf.';
+
+  @override
+  String get tripDeleteFailed =>
+      'Der Einkauf konnte nicht gelöscht werden. Versuch es noch mal.';
+
+  @override
+  String get tripSaveFailed =>
+      'Der Einkauf konnte nicht gespeichert werden. Versuch es noch mal.';
+
+  @override
+  String tripItemCount(int count) {
+    return '$count Artikel';
+  }
+
+  @override
+  String tripSummaryMore(String names, int count) {
+    return '$names und $count mehr';
+  }
+
+  @override
+  String tripPromptAt(String store) {
+    return 'Einkauf bei $store eintragen?';
+  }
+
+  @override
+  String get tripPrompt => 'Einkauf eintragen?';
+
+  @override
+  String tripPromptTicked(int count, String names) {
+    return '$count Artikel abgehakt: $names';
+  }
+
+  @override
+  String get tripPromptLog => 'Eintragen';
+
+  @override
+  String get tripLogged => 'Einkauf eingetragen';
 }

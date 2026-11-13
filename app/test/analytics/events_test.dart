@@ -38,6 +38,7 @@ void main() {
       'trip_total_viewed',
       'scan_started',
       'off_miss',
+      'trip_logged',
     });
   });
 
@@ -99,6 +100,7 @@ void main() {
     ('review_prompt_requested', {}),
     ('paywall_viewed', {'entry_point': 'more'}),
     ('paywall_viewed', {'entry_point': 'integrations'}),
+    ('paywall_viewed', {'entry_point': 'history'}),
     (
       'feedback_submitted',
       {
@@ -140,6 +142,8 @@ void main() {
     ('trip_total_viewed', {'final': true}),
     ('scan_started', {}),
     ('off_miss', {}),
+    ('trip_logged', {'source': 'manual'}),
+    ('trip_logged', {'source': 'prompt'}),
     ('item_added', {'source': 'scan'}),
     (
       'item_added',
@@ -237,6 +241,9 @@ void main() {
     ('scan_started', {'ean': '4006381333931'}, 'the EAN'),
     ('off_miss', {'ean': '4006381333931'}, 'the EAN'),
     ('off_miss', {'product': 'Hafermilch'}, 'a product name'),
+    ('trip_logged', {'source': 'receipt'}, 'a source the app has not'),
+    ('trip_logged', {'store': 'Lidl'}, 'the store'),
+    ('trip_logged', {'items': 'Milch'}, 'the items'),
     ('item_added', {'source': 'barcode'}, 'the other word for scan'),
     ('item_added', {'ean': '4006381333931'}, 'the EAN of a scanned add'),
   ];

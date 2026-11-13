@@ -9,6 +9,7 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_names.dart';
 import 'package:family_groceries/list/list_repository.dart';
+import 'package:family_groceries/log/trip_repository.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/siri/siri_channel.dart';
 import 'package:family_groceries/siri/siri_suggestions.dart';
@@ -17,9 +18,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
-/// The household's list above both tabs: the List tab shows it and its
+/// The household's list above the tabs: the List tab shows it and its
 /// Anpassen pages manage its categories and stores; it keeps syncing while
-/// More is open. A new household gets a new list.
+/// More is open. A new household gets a new list. Next to it, the
+/// household's logged trips ([TripRepository], job 199).
 ///
 /// Job 169b: a household switched away from keeps its list open until the
 /// changes queued in it reached the server, and a start opens the list of
@@ -31,6 +33,9 @@ class const ListScope({
 
   /// Overrides the Supabase repository per household, for tests.
   final ListRepository Function(String householdId)? repositories,
+
+  /// Overrides the Supabase trips per household, for tests.
+  final TripRepository Function(String householdId)? trips,
 }) extends StatefulWidget {
   @override
   State<ListScope> createState() => _ListScopeState();
@@ -163,7 +168,12 @@ class _ListScopeState() extends State<ListScope> {
     return BlocProvider.value(
       key: ValueKey(household.id),
       value: _lists[household.id]!,
-      child: _Scope(householdId: household.id, child: widget.child),
+      child: RepositoryProvider<TripRepository>(
+        create: (_) =>
+            widget.trips?.call(household.id) ??
+            SupabaseTripRepository(Supabase.instance.client, household.id),
+        child: _Scope(householdId: household.id, child: widget.child),
+      ),
     );
   }
 }

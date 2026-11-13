@@ -19,6 +19,14 @@ class NativePostHog() {
   /// The flags PostHog would serve.
   var served = <String, bool>{};
 
+  /// The person properties the next flag request carries
+  /// (`setPersonPropertiesForFlags`).
+  final flagProperties = <String, Object?>{};
+
+  /// Flags PostHog serves on top of [served] for [flagProperties], as a
+  /// release condition on a person property would.
+  Map<String, bool> Function(Map<String, Object?> properties)? targeting;
+
   /// The project tokens MainActivity was asked to forget the SDK's state
   /// for (`familygroceries/posthog`).
   final forgotten = <String>[];
@@ -50,9 +58,18 @@ class NativePostHog() {
         storedId = const Uuid().v7();
       case 'distinctId':
         return storedId;
+      case 'setPersonPropertiesForFlags':
+        flagProperties.addAll(
+          Map<String, Object?>.from(
+            (arguments as Map)['userProperties'] as Map,
+          ),
+        );
+      case 'resetPersonPropertiesForFlags':
+        flagProperties.clear();
       case 'getAllFeatureFlags':
+        final flags = {...served, ...?targeting?.call(flagProperties)};
         return [
-          for (final MapEntry(:key, :value) in served.entries)
+          for (final MapEntry(:key, :value) in flags.entries)
             {'key': key, 'enabled': value},
         ];
     }

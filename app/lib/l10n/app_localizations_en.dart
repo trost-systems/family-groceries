@@ -2551,4 +2551,189 @@ class AppLocalizationsEn extends AppLocalizations {
   String checklistDone(String step) {
     return '$step, done';
   }
+
+  @override
+  String get tabHistory => 'History';
+
+  @override
+  String get historyShowByStore => 'Show by store';
+
+  @override
+  String get historyShowByDate => 'Show by date';
+
+  @override
+  String get tripAdd => 'Log a trip';
+
+  @override
+  String get tripAddShort => 'Log';
+
+  @override
+  String get tripEdit => 'Edit trip';
+
+  @override
+  String tripAddAt(String store) {
+    return 'Log a trip to $store';
+  }
+
+  @override
+  String get historyEmptyTitle => 'No trips yet';
+
+  @override
+  String get historyEmptyBody =>
+      'After shopping, log what you bought. Later you can look up what you got where, and when.';
+
+  @override
+  String get historyLoadFailed => 'The history couldn\'t be loaded.';
+
+  @override
+  String get historyThisWeek => 'This week';
+
+  @override
+  String get historyLastWeek => 'Last week';
+
+  @override
+  String historyDayFilter(DateTime day) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMMd(localeName);
+    final String dayString = dayDateFormat.format(day);
+
+    return 'Trips on $dayString';
+  }
+
+  @override
+  String get historyDayClear => 'Show all trips';
+
+  @override
+  String get historyDayEmpty => 'No trips on this day';
+
+  @override
+  String historyDayLabel(String date, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count trips',
+      one: '1 trip',
+    );
+    return '$date, $_temp0';
+  }
+
+  @override
+  String get historyStoreEmpty => 'No trips yet';
+
+  @override
+  String get historyLockedTitle => 'See older trips with Snacklist Premium';
+
+  @override
+  String historyLockedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count older trips',
+      one: '1 older trip',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String historyDayLocked(String date) {
+    return '$date, older trips with Snacklist Premium';
+  }
+
+  @override
+  String get tripStoreMissing => 'Pick a store.';
+
+  @override
+  String get tripStoreGone => 'This store was deleted.';
+
+  @override
+  String get previousMonth => 'Previous month';
+
+  @override
+  String get nextMonth => 'Next month';
+
+  @override
+  String get dayToday => 'Today';
+
+  @override
+  String get dayYesterday => 'Yesterday';
+
+  @override
+  String get tripStore => 'Store';
+
+  @override
+  String get tripDay => 'When';
+
+  @override
+  String get tripOtherDay => 'Other day';
+
+  @override
+  String get tripItems => 'Bought';
+
+  @override
+  String get tripItemName => 'Item';
+
+  @override
+  String get tripAddItem => 'Add item';
+
+  @override
+  String tripRemoveItem(String name) {
+    return 'Remove $name';
+  }
+
+  @override
+  String get tripDelete => 'Delete trip';
+
+  @override
+  String get tripDeleteTitle => 'Delete this trip?';
+
+  @override
+  String get tripDeleteBody =>
+      'The trip disappears from everyone\'s history in the household.';
+
+  @override
+  String get tripDeleteFailed =>
+      'The trip couldn\'t be deleted. Please try again.';
+
+  @override
+  String get tripSaveFailed => 'The trip couldn\'t be saved. Please try again.';
+
+  @override
+  String tripItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripSummaryMore(String names, int count) {
+    return '$names and $count more';
+  }
+
+  @override
+  String tripPromptAt(String store) {
+    return 'Log your trip to $store?';
+  }
+
+  @override
+  String get tripPrompt => 'Log your trip?';
+
+  @override
+  String tripPromptTicked(int count, String names) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0 ticked off: $names';
+  }
+
+  @override
+  String get tripPromptLog => 'Log';
+
+  @override
+  String get tripLogged => 'Trip logged';
 }

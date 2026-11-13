@@ -4159,6 +4159,276 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'{step}, erledigt'**
   String checklistDone(String step);
+
+  /// The History tab (job 199, flag grocery-log): the household's logged shopping trips; also the screen's title
+  ///
+  /// In de, this message translates to:
+  /// **'Verlauf'**
+  String get tabHistory;
+
+  /// History header: tooltip of the button that switches the journal by date to the view by store
+  ///
+  /// In de, this message translates to:
+  /// **'Nach Laden anzeigen'**
+  String get historyShowByStore;
+
+  /// History header: tooltip of the button that switches the view by store back to the journal by date
+  ///
+  /// In de, this message translates to:
+  /// **'Nach Datum anzeigen'**
+  String get historyShowByDate;
+
+  /// History: title of the sheet for a new trip and the buttons that open it; also the header button's screen reader label
+  ///
+  /// In de, this message translates to:
+  /// **'Einkauf eintragen'**
+  String get tripAdd;
+
+  /// History header: the short label of the button that opens Einkauf eintragen
+  ///
+  /// In de, this message translates to:
+  /// **'Eintragen'**
+  String get tripAddShort;
+
+  /// History: title of the sheet for an existing trip
+  ///
+  /// In de, this message translates to:
+  /// **'Einkauf bearbeiten'**
+  String get tripEdit;
+
+  /// History by store: tooltip of a store's + button, which opens the sheet with that store picked
+  ///
+  /// In de, this message translates to:
+  /// **'Einkauf bei {store} eintragen'**
+  String tripAddAt(String store);
+
+  /// History without any trip: the title. Never promise that it is free
+  ///
+  /// In de, this message translates to:
+  /// **'Noch keine Einkäufe'**
+  String get historyEmptyTitle;
+
+  /// History without any trip: the line under the title
+  ///
+  /// In de, this message translates to:
+  /// **'Trag nach dem Einkauf ein, was du gekauft hast. So findet ihr später, wann ihr wo was geholt habt.'**
+  String get historyEmptyBody;
+
+  /// History: the trips could not be loaded; a retry button follows
+  ///
+  /// In de, this message translates to:
+  /// **'Der Verlauf konnte nicht geladen werden.'**
+  String get historyLoadFailed;
+
+  /// History journal: section of the trips since Monday
+  ///
+  /// In de, this message translates to:
+  /// **'Diese Woche'**
+  String get historyThisWeek;
+
+  /// History journal: section of last Monday-to-Sunday week's trips
+  ///
+  /// In de, this message translates to:
+  /// **'Letzte Woche'**
+  String get historyLastWeek;
+
+  /// History journal: above the trips of the calendar day the user tapped
+  ///
+  /// In de, this message translates to:
+  /// **'Einkäufe am {day}'**
+  String historyDayFilter(DateTime day);
+
+  /// History journal: tooltip of the X that ends showing one day's trips
+  ///
+  /// In de, this message translates to:
+  /// **'Alle Einkäufe zeigen'**
+  String get historyDayClear;
+
+  /// History journal: the tapped calendar day has no trip
+  ///
+  /// In de, this message translates to:
+  /// **'Keine Einkäufe an diesem Tag'**
+  String get historyDayEmpty;
+
+  /// History calendar: screen reader label of a day with trips; date is like Donnerstag, 12. November
+  ///
+  /// In de, this message translates to:
+  /// **'{date}, {count, plural, =1{1 Einkauf} other{{count} Einkäufe}}'**
+  String historyDayLabel(String date, int count);
+
+  /// History by store: a store without any trip
+  ///
+  /// In de, this message translates to:
+  /// **'Noch kein Einkauf'**
+  String get historyStoreEmpty;
+
+  /// History, Free with trips older than 4 weeks: the quiet locked row at the end of the journal and the store view, and under the calendar. Opens the Premium page where it is sold. No prices; never say the history is free
+  ///
+  /// In de, this message translates to:
+  /// **'Ältere Einkäufe siehst du mit Snacklist Premium'**
+  String get historyLockedTitle;
+
+  /// History, locked row: how many older trips are kept but not shown
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 älterer Einkauf} other{{count} ältere Einkäufe}}'**
+  String historyLockedCount(int count);
+
+  /// History calendar: screen reader label of a day before the 4-week window (Free); date is like Donnerstag, 12. Oktober
+  ///
+  /// In de, this message translates to:
+  /// **'{date}, ältere Einkäufe mit Snacklist Premium'**
+  String historyDayLocked(String date);
+
+  /// Trip sheet: under the store chips after Speichern while no store is picked, not even Ohne Laden
+  ///
+  /// In de, this message translates to:
+  /// **'Wähle einen Laden.'**
+  String get tripStoreMissing;
+
+  /// Trip sheet: under the store chips when the trip's store was deleted from the household; its chip keeps the saved name
+  ///
+  /// In de, this message translates to:
+  /// **'Dieser Laden wurde gelöscht.'**
+  String get tripStoreGone;
+
+  /// History calendar: tooltip of the button to the month before
+  ///
+  /// In de, this message translates to:
+  /// **'Vorheriger Monat'**
+  String get previousMonth;
+
+  /// History calendar: tooltip of the button to the month after; off at the current month
+  ///
+  /// In de, this message translates to:
+  /// **'Nächster Monat'**
+  String get nextMonth;
+
+  /// A trip's day when it is today
+  ///
+  /// In de, this message translates to:
+  /// **'Heute'**
+  String get dayToday;
+
+  /// A trip's day when it was yesterday
+  ///
+  /// In de, this message translates to:
+  /// **'Gestern'**
+  String get dayYesterday;
+
+  /// Trip sheet: label above the store choice
+  ///
+  /// In de, this message translates to:
+  /// **'Laden'**
+  String get tripStore;
+
+  /// Trip sheet: label above the day choice
+  ///
+  /// In de, this message translates to:
+  /// **'Wann'**
+  String get tripDay;
+
+  /// Trip sheet: the day choice that opens a date picker
+  ///
+  /// In de, this message translates to:
+  /// **'Anderer Tag'**
+  String get tripOtherDay;
+
+  /// Trip sheet: label above the bought items
+  ///
+  /// In de, this message translates to:
+  /// **'Gekauft'**
+  String get tripItems;
+
+  /// Trip sheet: placeholder of an item's name field
+  ///
+  /// In de, this message translates to:
+  /// **'Artikel'**
+  String get tripItemName;
+
+  /// Trip sheet: button that adds an item row
+  ///
+  /// In de, this message translates to:
+  /// **'Artikel hinzufügen'**
+  String get tripAddItem;
+
+  /// Trip sheet: screen reader label of the X that removes an item row
+  ///
+  /// In de, this message translates to:
+  /// **'{name} entfernen'**
+  String tripRemoveItem(String name);
+
+  /// Trip sheet, editing: button that deletes the trip after a confirmation
+  ///
+  /// In de, this message translates to:
+  /// **'Einkauf löschen'**
+  String get tripDelete;
+
+  /// Trip delete confirmation: title
+  ///
+  /// In de, this message translates to:
+  /// **'Einkauf löschen?'**
+  String get tripDeleteTitle;
+
+  /// Trip delete confirmation: body
+  ///
+  /// In de, this message translates to:
+  /// **'Der Einkauf verschwindet für alle im Haushalt aus dem Verlauf.'**
+  String get tripDeleteBody;
+
+  /// Trip sheet, above its buttons: deleting a trip failed; the sheet stays open
+  ///
+  /// In de, this message translates to:
+  /// **'Der Einkauf konnte nicht gelöscht werden. Versuch es noch mal.'**
+  String get tripDeleteFailed;
+
+  /// Trip sheet, above its buttons: saving a trip failed; the sheet stays open with what was typed
+  ///
+  /// In de, this message translates to:
+  /// **'Der Einkauf konnte nicht gespeichert werden. Versuch es noch mal.'**
+  String get tripSaveFailed;
+
+  /// History: how many items a trip has
+  ///
+  /// In de, this message translates to:
+  /// **'{count} Artikel'**
+  String tripItemCount(int count);
+
+  /// History: a trip's first three item names and how many more
+  ///
+  /// In de, this message translates to:
+  /// **'{names} und {count} mehr'**
+  String tripSummaryMore(String names, int count);
+
+  /// List: the card offered once all of a store's items are ticked off; opens the trip sheet with them
+  ///
+  /// In de, this message translates to:
+  /// **'Einkauf bei {store} eintragen?'**
+  String tripPromptAt(String store);
+
+  /// List: the card offered once all items without a store are ticked off
+  ///
+  /// In de, this message translates to:
+  /// **'Einkauf eintragen?'**
+  String get tripPrompt;
+
+  /// List, trip card: how many items this device ticked off at the store, then their names (up to three, then and N more)
+  ///
+  /// In de, this message translates to:
+  /// **'{count} Artikel abgehakt: {names}'**
+  String tripPromptTicked(int count, String names);
+
+  /// List, trip card: the button that opens the trip sheet with the ticked items
+  ///
+  /// In de, this message translates to:
+  /// **'Eintragen'**
+  String get tripPromptLog;
+
+  /// Snackbar: the trip from the list's card was saved to the history
+  ///
+  /// In de, this message translates to:
+  /// **'Einkauf eingetragen'**
+  String get tripLogged;
 }
 
 class _AppLocalizationsDelegate

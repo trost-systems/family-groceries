@@ -93,6 +93,12 @@ Future<void> fakeSupabase() async {
         jsonEncode(switch (request.url.path) {
           final p when p.endsWith('personal_access_tokens') => serverTokens,
           final p when p.endsWith('/user/oauth/grants') => serverGrants,
+          final p when p.endsWith('/rpc/trip_history') => const {
+            'trips': <Object>[],
+            'premium': true,
+            'since': null,
+            'locked': 0,
+          },
           _ => const <Object>[],
         }),
         200,

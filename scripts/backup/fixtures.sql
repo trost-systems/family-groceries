@@ -198,6 +198,13 @@ reset role;
 insert into public.household_removals (household_id, user_id)
 select (select id from fx where key = 'home'), id from auth.users where email = 'carl@backup.test';
 
+-- Job 199: Lea logged a trip to the Supermarkt.
+select pg_temp.login('lea@backup.test');
+select public.save_trip((select id from fx where key = 'home'), gen_random_uuid(),
+  (select id from public.stores where name = 'Supermarkt'), current_date,
+  '[{"name": "Milch", "quantity": "2"}, {"name": "Brot"}]');
+reset role;
+
 -- Job 94: an MCP client known by its Client ID Metadata Document URL.
 insert into public.oauth_cimd_clients (client_id, auth_client_id, client_name, redirect_uris, fresh_until)
 values ('https://client.backup.test/mcp.json', '00000000-0000-4000-8000-0000000b0094', 'Backup Client',
