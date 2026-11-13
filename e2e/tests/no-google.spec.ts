@@ -17,7 +17,7 @@ import { householdWithItems } from './web-build';
 
 // Job 33c (legal review H-02): the web app sends nothing to Google. The engine (CanvasKit or
 // skwasm) and every font, the fallback fonts for emoji and non-Latin scripts included, come
-// from our own origin. Runs in Chromium (wasm), Firefox and WebKit (JS and CanvasKit), under
+// from our own origin. Runs in Chromium, Firefox and WebKit (wasm and skwasm in each since job 201), under
 // the production Content-Security-Policy (e2e/serve.mjs --csp).
 
 const items = ['🍎 Äpfel', 'Brötchen für Grüße', '牛奶', 'خبز', 'Молоко', '🧀 Käse'];
@@ -25,6 +25,8 @@ const posthog = 'posthog.invalid';
 const google = /(^|\.)(gstatic\.com|googleapis\.com|google\.com|google\.[a-z.]+)$/;
 
 test('no request leaves for Google: login, sign-in, a list in many scripts, the add sheet', async ({ page, context, browserName, baseURL }) => {
+  // A CI runner's WebKit draws in software, a frame every 200 ms or so: each step takes a second.
+  test.slow(browserName === 'webkit');
   const email = newEmail('no-google');
   await householdWithItems(email, items);
   await fakeCollector(context);

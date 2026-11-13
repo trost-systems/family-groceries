@@ -1,6 +1,6 @@
 import 'package:family_groceries/app/notices.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Snackbars over an open dialog or sheet (job 116): a page's Scaffold sits
 /// under the popup's barrier, so they show above it while one is open.

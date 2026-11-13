@@ -1,10 +1,11 @@
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/name_dialog.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The name dialog sizes to its content (job 152): title, label, field and
 /// counter, then the buttons, with no empty space above them, keyboard open
@@ -25,7 +26,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: appTheme(Brightness.light),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        localizationsDelegates: appLocalizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         locale: locale,
         builder: (context, child) => MediaQuery.withClampedTextScaling(

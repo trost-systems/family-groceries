@@ -59,12 +59,20 @@ export default defineConfig({
     // Job 28: Safari's engine. As an iPhone for the tap focus, as a desktop for the timings
     // (the mouse wheel does not scroll a mobile WebKit page).
     { name: 'iphone', testMatch: /iphone\.spec\.ts/, use: { ...devices['iPhone 15'] } },
-    // Job 33c: no request to Google in every engine (Firefox and WebKit run the JS build).
-    { name: 'webkit', testMatch: /(perf|no-google)\.spec\.ts/, use: { ...devices['Desktop Safari'] } },
+    // Job 33c: no request to Google in every engine. Job 201: each engine runs the wasm app.
+    { name: 'webkit', testMatch: /(perf|no-google|wasm-boot)\.spec\.ts/, use: { ...devices['Desktop Safari'] } },
     {
       name: 'firefox',
-      testMatch: /no-google\.spec\.ts/,
-      use: { ...devices['Desktop Firefox'], viewport: { width: 480, height: 900 } },
+      testMatch: /(perf|no-google|wasm-boot)\.spec\.ts/,
+      use: {
+        ...devices['Desktop Firefox'],
+        viewport: { width: 480, height: 900 },
+        // Headless Firefox has no WebGL, so no skwasm: it would run the JS app. Headed on a display
+        // (scripts/gates/e2e.sh runs Playwright under xvfb-run), it renders with Mesa's llvmpipe.
+        headless: !process.env.DISPLAY,
+      },
+      // A precaution, not a measured fix: one headed window at a time on the shared display.
+      workers: 1,
     },
   ],
   webServer: [

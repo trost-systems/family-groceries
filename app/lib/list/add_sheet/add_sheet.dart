@@ -16,8 +16,8 @@ import 'package:family_groceries/list/list_view/item_row.dart'
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The add bar's height above the tabs; the input never leaves it.
 const addBarHeight = 72.0;

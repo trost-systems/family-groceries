@@ -2,7 +2,7 @@ import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/household/household_kind.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/tips/usage_log.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A hint's id: stored once shown or dismissed, sent as `hint_id`. Never
 /// change or reuse a [wire] (job 80's tips kept theirs).

@@ -5,6 +5,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/language.dart';
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/app/shell.dart';
@@ -22,12 +23,12 @@ import 'package:family_groceries/review/review_gates.dart';
 import 'package:family_groceries/review/review_prompt.dart';
 import 'package:family_groceries/review/review_prompt_trigger.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -132,7 +133,7 @@ Future<void> pumpShell(
           BlocProvider.value(value: purchases.purchases),
         ],
         child: MaterialApp.router(
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           theme: appTheme(Brightness.light),
           locale: locale,
@@ -510,11 +511,9 @@ void main() {
       tester,
     ) async {
       await finishTrip(tester);
-      unawaited(
-        showDialog<void>(
-          context: tester.element(find.byType(ListScreen)),
-          builder: (_) => const AlertDialog(),
-        ),
+      showDialog<void>(
+        context: tester.element(find.byType(ListScreen)),
+        builder: (_) => const AlertDialog(),
       );
       await tester.pump();
       await tester.pump(ReviewPromptTrigger.idle);

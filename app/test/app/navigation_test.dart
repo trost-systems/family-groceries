@@ -1,8 +1,8 @@
 import 'dart:ui' show Tristate;
 
 import 'package:family_groceries/app/router.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../more/more_harness.dart';
 

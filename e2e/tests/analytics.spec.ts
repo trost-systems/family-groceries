@@ -313,7 +313,7 @@ test('in English: the consent text links the English policy; the switch under Mo
   await expect(page.getByRole('textbox', { name: 'What do you need?' })).toBeVisible();
   await expect.poll(() => storedInstallId(page), { message: 'a yes stores an install id' }).toMatch(/^[0-9a-f-]{36}$/);
 
-  await page.getByRole('tab', { name: 'More', exact: true }).or(page.getByRole('button', { name: /^More Tab / })).click();
+  await page.getByRole('tab', { name: 'More', exact: true }).click();
   await expect(page).toHaveURL(/\/more$/);
   await page.getByRole('button', { name: 'Usage data', exact: true }).click();
   await expect(page).toHaveURL(/\/more\/usage-data$/);

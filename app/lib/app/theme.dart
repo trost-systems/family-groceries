@@ -6,8 +6,8 @@ import 'package:family_groceries/design/fonts.dart';
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/tactile.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The dim over the page behind a sheet: the add sheet's scrim and every
 /// modal bottom sheet's barrier.

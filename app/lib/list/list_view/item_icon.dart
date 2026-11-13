@@ -5,8 +5,8 @@ import 'package:family_groceries/list/category_names.dart';
 import 'package:family_groceries/list/list_view/item_icon_fallback.dart';
 import 'package:family_groceries/list/list_view/item_icons.g.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The item icon table: folded forms as `tool/item_icons/build.mjs` writes
 /// them to emoji, `''` for a stop, a leading `=` for whole words only.

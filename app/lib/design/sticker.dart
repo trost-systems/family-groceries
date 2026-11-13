@@ -1,5 +1,5 @@
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// How far a sticker stands off the page: its hard shadow's depth.
 enum StickerDepth() {

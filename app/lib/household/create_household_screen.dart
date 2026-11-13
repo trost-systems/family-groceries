@@ -10,9 +10,9 @@ import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_name_field.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The longest household name, in characters (code points, as Postgres'
 /// char_length counts them).
@@ -156,6 +156,7 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
           field: Semantics(
             hint: nameError ?? '',
             child: TextField(
+              autofillHints: null,
               key: const ValueKey('household-name'),
               controller: _name,
               focusNode: _nameFocus,

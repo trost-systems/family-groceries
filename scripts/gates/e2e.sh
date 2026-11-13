@@ -41,6 +41,10 @@ flutter build web --release --no-web-resources-cdn --wasm $(flutter_defines) --d
 log "playwright"
 cd "$REPO_ROOT/e2e"
 [[ -d node_modules ]] || npm ci
+# Job 201: headless Firefox has no WebGL, so no skwasm, and would run the JS app. On a display it
+# runs the wasm app like any Firefox; playwright.config.ts runs it headed when DISPLAY is set.
+display=()
+if [[ -z ${DISPLAY:-} ]] && command -v xvfb-run >/dev/null; then display=(xvfb-run -a); fi
 # Job 50: integration-lock.spec.ts turns the server's integration_lock switch on, which every Siri,
 # Alexa and MCP spec relies on being off, so it runs alone after the suite: on a full run (CI's
 # first shard, or locally without a subset), or with the arguments when they name it (name it on
@@ -48,10 +52,10 @@ cd "$REPO_ROOT/e2e"
 case " $* " in
   *integration-lock*)
     log "playwright: integration-lock.spec.ts alone, with the arguments"
-    FG_E2E_INTEGRATION_LOCK=1 npx playwright test "$@"
+    FG_E2E_INTEGRATION_LOCK=1 ${display[@]+"${display[@]}"} npx playwright test "$@"
     ;;
   *)
-    npx playwright test "$@"
+    ${display[@]+"${display[@]}"} npx playwright test "$@"
     if [[ $# -eq 0 || "$*" == --shard=1/* ]]; then
       log "playwright: integration-lock.spec.ts alone"
       FG_E2E_INTEGRATION_LOCK=1 npx playwright test tests/integration-lock.spec.ts

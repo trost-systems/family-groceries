@@ -10,7 +10,7 @@ import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/list_view/sections.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/store_badge.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A section's divider: the store's badge (its name), a brand-coloured
 /// rule, the count and a caret. A tap folds or unfolds the section and does

@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:marionette_flutter/marionette_flutter.dart';
 import 'package:speech_to_text_platform_interface/speech_to_text_platform_interface.dart';
 
+import 'marionette_material.dart';
 import 'scripted_speech.dart';
 
 /// Debug entrypoint for agents: the real app plus the Marionette binding,
@@ -31,5 +32,7 @@ Future<void> main() async {
   // A binding started outside the app's zone fails the launch instead of
   // logging an EXCEPTION block.
   BindingBase.debugZoneErrorsAreFatal = true;
-  await app.bootstrap(MarionetteBinding.ensureInitialized);
+  await app.bootstrap(
+    () => MarionetteBinding.ensureInitialized(materialUiConfiguration),
+  );
 }

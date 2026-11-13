@@ -1,0 +1,22 @@
+id: localizations-through-app-list
+valid:
+  - |
+    final app = MaterialApp(
+      localizationsDelegates: appLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+    );
+  - |
+    const delegates = [AppLocalizations.delegate];
+  # Named in a comment or a string only.
+  - |
+    /// Not AppLocalizations.localizationsDelegates.
+    const name = 'AppLocalizations.localizationsDelegates';
+invalid:
+  # A test harness copied from before Flutter 3.50.
+  - |
+    final app = MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      home: child,
+    );
+  - |
+    final delegates = [...AppLocalizations.localizationsDelegates];

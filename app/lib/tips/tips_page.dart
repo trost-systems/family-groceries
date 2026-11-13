@@ -3,8 +3,8 @@ import 'package:family_groceries/tips/hint_host.dart';
 import 'package:family_groceries/tips/hint_views.dart';
 import 'package:family_groceries/tips/hints.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// More → Tipps (job 168b): every hint this device can show, to read again,
 /// shown or not, hidden or not, each with its button.

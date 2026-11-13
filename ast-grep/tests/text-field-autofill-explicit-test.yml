@@ -1,0 +1,23 @@
+id: text-field-autofill-explicit
+valid:
+  - |
+    final field = TextField(autofillHints: null, controller: controller);
+  - |
+    final field = TextFormField(
+      autofillHints: const [AutofillHints.email],
+      decoration: InputDecoration(hintText: hint),
+    );
+  # Our own widget that only ends in the same word.
+  - |
+    final field = HexTextField(controller: controller);
+invalid:
+  # The add field before job 201.
+  - |
+    final field = TextField(
+      controller: controller,
+      decoration: InputDecoration(hintText: l10n.addHint),
+    );
+  - |
+    final field = TextFormField();
+  - |
+    final field = CupertinoTextField(placeholder: hint);

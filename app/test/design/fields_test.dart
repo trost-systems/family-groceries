@@ -1,12 +1,13 @@
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../list/fake_repository.dart';
 import '../list/memory_cache.dart';
@@ -160,7 +161,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: theme,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: const Locale('de'),
           home: BlocProvider(

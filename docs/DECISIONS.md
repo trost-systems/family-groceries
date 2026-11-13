@@ -11509,3 +11509,119 @@ name plus hint) and V3 A (no referrer) on 10 November, 20:21.
   guessing.
 - **Sources.** The lead's research notes for t788u and t789u are not on the Hetzner runner (research
   syncs from hz to the box only), so the brief's text is the source here.
+
+## Job 201: Flutter 3.50, wasm in Safari and Firefox, 2026-11-12
+
+- **Flutter 3.50.0 (Dart 3.14.0)**, pinned in `ci.yml`, `e2e.yml`, `release.yml`, `widgetbook.yml`
+  and `paywall-shot.yml`; `scripts/vercel.sh` reads `ci.yml`'s pin. The Android build needs
+  Flutter 3.50's minimums: Android Gradle Plugin 9.1.0 to 9.1.1, Kotlin 2.4.0 to 2.4.10. Nothing
+  more: compile, min and target SDK (36, 24, 36) and the NDK are unchanged, so the store builds
+  are the same apart from the engine. The build now warns that AGP 9.3.1, Gradle 9.5.0 and Kotlin
+  2.4.20 will be the next minimums and that home_widget, in_app_review and posthog_flutter still
+  apply the Kotlin Gradle plugin; that waits for a Flutter release that makes it an error.
+- **Material and Cupertino come from `material_ui` 1.11 and `cupertino_ui` 1.1.6.** 3.50
+  deprecates `package:flutter/material.dart` and `cupertino.dart`, and our lints make every
+  deprecation an error, so the migration was required, not optional. `dart fix
+  --code=migrate_design_widgets` rewrote 171 imports (app and widgetbook) and
+  `design/tokens/build.mjs`'s template. A blanket `dart fix --apply` also broke five
+  `unawaited(showDialog(...))` calls into invalid code (material_ui's `showDialog` is
+  `@awaitNotRequired`); they were fixed by hand. go_router already uses material_ui. The
+  dependencies that still import the old library (posthog_flutter, marionette_flutter,
+  sign_in_with_apple and others) only use widgets-layer types or none the app passes in; no
+  `MaterialUiCompatibilityBridge` was needed, and all 2699 app and 340 widgetbook tests pass with
+  unchanged goldens.
+- **The app's localization delegates are `appLocalizationsDelegates`**
+  (`app/lib/app/localizations.dart`): `AppLocalizations.delegate` plus material_ui's
+  `GlobalMaterialLocalizations.delegates`. gen-l10n in 3.50 still writes flutter_localizations'
+  in-framework Material delegate into `AppLocalizations.localizationsDelegates`, and a material_ui
+  widget does not find MaterialLocalizations through it: 833 tests failed with "No
+  MaterialLocalizations found". The lint `localizations-through-app-list` keeps the generated list
+  out of `app/`.
+- **flutter_agent_lints 1.1.0 names three diagnostics Dart 3.14 removed**; `included_file_warning`
+  is ignored in both `analysis_options.yaml` until the pack drops them. No lint rule changed.
+- **Every text field says whether it takes autofill** (`autofillHints:`, lint
+  `text-field-autofill-explicit`). Flutter 3.50's web engine, in semantics mode, leaves a hidden
+  copy of every autofill field the user has left in an off-screen form, so the browser can still
+  save credentials (flutter/flutter#180652). Autofill is on by default, so after the add field
+  lost focus the page had two textboxes named „Was brauchst du?“: 54 strict-mode errors on that
+  name among the 76 e2e failures of the first CI run, and a phantom field for screen readers. Only
+  the login's email and password want autofill; the other 15 fields pass `autofillHints: null`.
+  Tab does not reach the copies (checked in Chromium).
+- **A hint-only field is named by its hint while it holds text too** (`HintNamed`,
+  `app/lib/design/field_border.dart`): the add field, a new store's name and the store search.
+  Flutter takes a hint out of the field's name once text comes in; on the web the name lived on
+  only in the placeholder that autofill wrote, which `autofillHints: null` removes. HintNamed adds
+  the hint as the label only while the field is not empty, since both together would read it
+  twice; its Semantics stays in the tree either way, because a Semantics that comes and goes
+  around a field makes the web engine replace the field's input and lose its text. The household
+  rename dialog's field has no name, as before.
+- **Web fonts follow the 3.50 engine** (`scripts/web-fonts.sh`): it names new versions of almost
+  every Noto file (727 of 728), so the mirror was rewritten, 20.8 MB to 34.4 MB, the larger CJK
+  subsets making most of it. A browser loads only the subsets a page needs. The web-prod gate
+  failed on the missing files, as designed.
+- **The NavigationRail's destinations are tabs** (material_ui 1.11 gives them
+  `SemanticsRole.tab`): on wide screens the rail is a tab list like the phone's bar, so specs and
+  the verify-snacklist helpers find „Liste“ and „Mehr“ as tabs everywhere.
+- **`flutter-first-frame` now fires after the first frame is drawn.** 3.47 sent it when the
+  framework had built the frame, before the engine drew it; 3.50 waits for the render and one
+  animation frame. index.html's splash therefore stays until the app is on screen. It also makes
+  "first frame" numbers of the two versions incomparable; the time to the drawn list is measured
+  the same way in both.
+- **Wasm on Safari and Firefox: `wasmAllowList` blink, webkit and gecko on**
+  (`app/web/flutter_bootstrap.js`, one `const` with a key per engine, so one word sends it to JS;
+  the web-prod gate checks the config carries it). Job 28 kept WebKit off because 3.47's loader
+  checked only WasmGC. 3.50's checks every feature dart2wasm needs (WasmGC, SIMD, JS string
+  builtins, exception references) and Firefox ≥ 147, so Safari before 26.2 and older Firefox still
+  get the JS app from the same build. `wasm-boot.spec.ts` runs in the chromium, webkit and firefox
+  projects: each boots main.dart.wasm with skwasm, signs up, adds, ticks and reloads without a
+  console error, and falls back to JS without the Wasm features and off the allow list.
+- **Firefox runs headed under Xvfb in e2e** (`scripts/gates/e2e.sh`, `playwright.config.ts`):
+  headless Firefox has no WebGL in any configuration tried (EGL, surfaceless, software GL,
+  `webgl.force-enabled`), so no skwasm, and would test the JS app; real Firefox has WebGL. The
+  firefox project runs one worker, a precaution only.
+- **Found, not fixed here: in Firefox the add field often loses its focus after an add by
+  Enter.** A focus timeline from CI (run 43342867908, a probe branch on 3.50, JS build): the keydown
+  of Enter on the input, about 80 ms later a focusout to `<flutter-view>`, which keeps the focus
+  (`document.hasFocus()` stays true, so it is not the window). The next typed item goes nowhere until a click. It is not this upgrade's: main
+  on 3.47.8, headless Firefox, JS build, failed the same way in 7 of 12 CI runs (43339849965); Chromium and
+  WebKit never did. No spec added by Enter in Firefox before, so nothing caught it. wasm-boot now
+  adds with a tap on the row and closes with Schließen; the Enter path in Firefox is a follow-up
+  job (BOARD).
+- **WebKit specs that draw a lot get `test.slow`** (wasm-boot, no-google): a CI runner's WebKit
+  draws in software, a frame every 200 ms or so, and both ran out of 60 s there, with or without
+  wasm. iphone.spec now expects main.dart.wasm on the iPhone, and its tap-focus checks pass on
+  it. Its swipe test read the row's box while the row still slid in (3.50 shows the list sooner
+  after sign-in): `settledBox` waits for two equal reads.
+- **The guided start's „Noch etwas?“ field takes a fresh focus after each add on web**
+  (`app/lib/onboarding/steps.dart`). The add button's tap and Enter both blur the field's input
+  while Flutter keeps the field focused, so `requestFocus` did nothing, and on 3.50 the input then
+  stopped reaching the app: the second typed item was never added (guided-start.spec, both CI
+  runs). It now unfocuses and focuses again 50 ms later, as `ListScreen._refocusAfterTap` does;
+  three adds by tap, Enter and tap all land.
+- **`fg` sees material_ui widgets** (`app/test_driver/marionette_material.dart`): Marionette's
+  list of interactive widgets names the in-framework Material classes, so after the migration
+  `fg find` and every `--row` command saw no button, field or checkbox. The debug entrypoint
+  passes the same list from material_ui; a test shows the built-in list finds none of them and
+  ours finds all.
+- **Measured** (`tests/perf.spec.ts`, median of three signed-in reloads; "before" is main on
+  3.47.8, measured on hz in the same session; transfer is Brotli q5 of the engine and app files,
+  roughly what Vercel serves):
+
+  | Engine | Before → after | List drawn on hz | Transfer |
+  | --- | --- | --- | --- |
+  | Chromium | wasm → wasm | 772 → 767 ms | 2.96 → 2.96 MB |
+  | WebKit | JS → wasm | 1191 → 1059-1099 ms | 3.99 → 3.67 MB |
+  | Firefox | JS → wasm | 1086 → 736 ms | 3.99 → 3.67 MB |
+
+  On a GitHub runner (no GPU, CI run 43301800473), 3.50 wasm against 3.50 JS: list drawn 663 vs
+  1474 ms (Chromium), 1152 vs 2957 ms (WebKit), 1173 vs 2164 ms (Firefox); scrolling equal in
+  each (WebKit 197-222 against 228-285 ms frames). On hz, scrolling is equal in Chromium and
+  Firefox (17 ms frames) but slower with wasm in WebKit (54-58 against 44-46 ms mean, three
+  runs). Both WebKits are Playwright's Linux builds drawing in software, not Safari on a Mac or an
+  iPhone, which neither box can run; boot is faster everywhere, so Safari goes on wasm, and
+  `webkit: false` is the one word to flip if Safari users report jank.
+- **`--web-content-hash` is a follow-up, not done here.** Every file is served `max-age=0,
+  must-revalidate` (vercel.json), so nothing goes stale today; hashing would save revalidations
+  but renames main.dart.wasm and main.dart.js, which the e2e build watchers, boot.spec's failure
+  routes, the web-prod gate and `e2e/web-smoke.mjs` name, and the canvaskit files stay unhashed
+  with `--no-web-resources-cdn`.

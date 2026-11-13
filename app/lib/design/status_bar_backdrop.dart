@@ -1,5 +1,5 @@
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Lays [child] out as usual and, once a vertical scroll view in it has
 /// scrolled, covers the top safe area over it with the page's surface,

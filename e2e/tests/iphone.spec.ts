@@ -1,6 +1,6 @@
 import { expect, test, type Page } from './fixtures';
 import {
-  addField, addSheet, boxOf, editField, editSheet, expectFieldValue, finger, itemRow, newEmail, nextFrames, screenshot, swipeLeft,
+  addField, addSheet, editField, editSheet, expectFieldValue, finger, itemRow, newEmail, nextFrames, screenshot, settledBox, swipeLeft,
 } from './helpers';
 import { householdWithItems, signIn, watchBuild } from './web-build';
 
@@ -97,8 +97,8 @@ test('one tap on the add field opens the sheet with the field focused for the ke
   await page.goto('/login');
   await signIn(page, email);
   expect(await page.evaluate(() => navigator.platform)).toBe('iPhone');
-  // Flutter keeps WebKit (Safari, every iOS browser) on the JS build by default (DECISIONS job 28).
-  expect(loaded()).toEqual(['js']);
+  // Job 201: WebKit (Safari, every iOS browser) is on the wasm allow list.
+  expect(loaded()).toEqual(['wasm']);
   await expect(addField(page), 'phones get the keyboard only when asked').not.toBeFocused();
 
   await tapFieldOnce(page, 'Milch');
@@ -143,7 +143,7 @@ test('a finger swipe across a row opens nothing and moves nothing; a hold edits;
   await page.goto('/login');
   await signIn(page, email);
   const row = itemRow(page, 'Zahnpasta');
-  const before = await boxOf(row);
+  const before = await settledBox(row);
 
   // Lifted after the engine's 200 ms click window, so it is a drag, not a tap that ticks.
   await swipeLeft(page, row, { pause: 300, onMove: () => screenshot(page, '78-iphone-swipe-mid') });

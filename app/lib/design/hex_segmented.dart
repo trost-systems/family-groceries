@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One option of a [HexSegmented]: the [value] it picks, its [label] and
 /// optionally an [icon] before it. [key] goes on the segment.

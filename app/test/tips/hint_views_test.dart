@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/household/household_kind.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
@@ -11,9 +12,9 @@ import 'package:family_groceries/tips/hint_views.dart';
 import 'package:family_groceries/tips/hints.dart';
 import 'package:family_groceries/tips/hints_cubit.dart';
 import 'package:family_groceries/tips/usage_log.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../list/fake_repository.dart';
 import '../list/memory_cache.dart';
@@ -21,7 +22,7 @@ import 'hints_cubit_test.dart' show MemoryHintStore;
 
 void main() {
   Widget app(Widget child, {HintHost? host}) => MaterialApp(
-    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    localizationsDelegates: appLocalizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
     locale: const Locale('de'),
     home: RepositoryProvider.value(

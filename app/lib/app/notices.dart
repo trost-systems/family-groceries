@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Follows the root navigator's top route: dialogs and sheets go there
 /// (`showModalBottomSheet` with `useRootNavigator: true`, the

@@ -1,6 +1,6 @@
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Lays [child] out as usual and, while a vertical scroll view in it has
 /// content below the fold, fades the page's surface in over the bottom

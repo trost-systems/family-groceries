@@ -12,9 +12,9 @@ import 'package:family_groceries/list/list_view/item_icon.dart';
 import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/list/name_dialog.dart';
 import 'package:family_groceries/list/stores_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// One store, or with a null [storeId] the section without a store: the
 /// categories in the order the list shows them there. A store is renamed

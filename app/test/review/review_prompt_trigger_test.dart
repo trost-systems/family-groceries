@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/list/entry.dart';
 import 'package:family_groceries/list/list_cubit.dart';
@@ -8,10 +6,10 @@ import 'package:family_groceries/review/review_counters.dart';
 import 'package:family_groceries/review/review_gates.dart';
 import 'package:family_groceries/review/review_prompt.dart';
 import 'package:family_groceries/review/review_prompt_trigger.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../list/fake_repository.dart';
 import '../list/memory_cache.dart';
@@ -267,9 +265,7 @@ void main() {
     await pumpTrigger(tester);
     await shop(tester, 3);
     final context = tester.element(find.byType(SizedBox).last);
-    unawaited(
-      showDialog<void>(context: context, builder: (_) => const Text('Dialog')),
-    );
+    showDialog<void>(context: context, builder: (_) => const Text('Dialog'));
     await tester.pump();
     expect(popups.open, isTrue);
     await idle(tester);

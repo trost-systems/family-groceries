@@ -9,8 +9,8 @@ import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/purchases/refund_help.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Onboarding Step 2b, also for someone in a household (the switcher's and
 /// More's "Mit Code beitreten", or an invite link): enter or keep the code,
@@ -107,6 +107,7 @@ class _JoinViewState() extends State<_JoinView> {
             LabeledField(
               label: l10n.inviteCode,
               field: TextField(
+                autofillHints: null,
                 key: const ValueKey('invite-code'),
                 controller: _code,
                 enabled: !state.busy,

@@ -4,6 +4,7 @@ import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/device_cache.dart';
 import 'package:family_groceries/app/environment.dart';
 import 'package:family_groceries/app/language.dart';
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/app/network.dart';
 import 'package:family_groceries/app/notices.dart';
 import 'package:family_groceries/app/router.dart';
@@ -36,9 +37,9 @@ import 'package:family_groceries/settings/account_repository.dart';
 import 'package:family_groceries/settings/integration_lock.dart';
 import 'package:family_groceries/tips/hint_host.dart';
 import 'package:family_groceries/tips/usage_log.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
 class const App({
@@ -307,7 +308,7 @@ class _AppState() extends State<App> {
           theme: _light,
           darkTheme: _dark,
           themeMode: context.watch<ThemeCubit>().state,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: switch (context.watch<LanguageCubit>().state) {
             final picked? => Locale(picked.code),

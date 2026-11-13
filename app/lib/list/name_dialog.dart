@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Asks for a name and hands it to [save], trimmed. The dialog stays open
 /// while [save] runs and when it answers false (a name taken, offline), so
@@ -106,6 +106,7 @@ class _NameDialogState() extends State<_NameDialog> {
           field: Semantics(
             hint: _error ?? '',
             child: TextField(
+              autofillHints: null,
               key: const ValueKey('name-dialog-field'),
               controller: _name,
               autofocus: true,

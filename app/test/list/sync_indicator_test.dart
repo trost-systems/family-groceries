@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/app/network.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/tactile.dart';
@@ -10,10 +11,10 @@ import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_screen.dart';
 import 'package:family_groceries/list/sync_indicator.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'fake_repository.dart';
 import 'memory_cache.dart';
@@ -187,7 +188,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: appTheme(brightness),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: locale,
           builder: (context, child) => MediaQuery(

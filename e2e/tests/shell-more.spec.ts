@@ -342,7 +342,7 @@ test.describe('with an English browser', () => {
 test('wide screens: a rail, a sheet as wide as the list column, More in two panes', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 1024 });
   await signUpWithHousehold(page, newEmail('wide'));
-  const railList = page.getByRole('button', { name: /^Liste Tab/ });
+  const railList = page.getByRole('tab', { name: 'Liste', exact: true });
   await expect(railList, 'the rail has the tabs').toBeVisible();
   const rail = await boxOf(railList);
   expect(rail.x, 'the rail is on the left').toBeLessThan(120);
@@ -357,7 +357,7 @@ test('wide screens: a rail, a sheet as wide as the list column, More in two pane
   await screenshot(page, 'wide-01-sheet-1366');
   await page.keyboard.press('Escape');
 
-  await page.getByRole('button', { name: /^Mehr Tab/ }).click();
+  await page.getByRole('tab', { name: 'Mehr', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Konto', exact: true }), 'the sections on the left').toBeVisible();
   await expect(page.getByText('MCP-Server', { exact: true }), 'and a page beside them').toBeVisible();
   const list = await boxOf(page.getByRole('button', { name: 'Konto', exact: true }));

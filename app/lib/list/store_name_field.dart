@@ -1,10 +1,11 @@
 import 'dart:async';
 
+import 'package:family_groceries/design/field_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A store name typed in place: a hex field with a check and a close
 /// button. Enter or the check confirms, Escape, back or the close button
@@ -104,25 +105,30 @@ class _StoreNameFieldState() extends State<StoreNameField> {
                 }
                 return KeyEventResult.ignored;
               },
-              child: TextField(
-                key: ValueKey(widget.fieldKey),
+              child: HintNamed(
                 controller: _controller,
-                focusNode: _focus,
-                readOnly: _busy,
-                maxLength: maxStoreNameLength,
-                maxLengthEnforcement: MaxLengthEnforcement.enforced,
-                textCapitalization: TextCapitalization.words,
-                textInputAction: TextInputAction.done,
-                style: TextStyle(fontSize: 16, color: scheme.onSurface),
-                onChanged: (_) => setState(() {}),
-                onEditingComplete: () {},
-                onSubmitted: (_) => unawaited(_confirm()),
-                decoration: InputDecoration(
-                  hintText: l10n.storeNameHint,
-                  hintStyle: TextStyle(color: scheme.onSurfaceVariant),
-                  counterText: '',
-                  constraints: const BoxConstraints.tightFor(
-                    height: HlSize.target,
+                hint: l10n.storeNameHint,
+                field: TextField(
+                  autofillHints: null,
+                  key: ValueKey(widget.fieldKey),
+                  controller: _controller,
+                  focusNode: _focus,
+                  readOnly: _busy,
+                  maxLength: maxStoreNameLength,
+                  maxLengthEnforcement: MaxLengthEnforcement.enforced,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.done,
+                  style: TextStyle(fontSize: 16, color: scheme.onSurface),
+                  onChanged: (_) => setState(() {}),
+                  onEditingComplete: () {},
+                  onSubmitted: (_) => unawaited(_confirm()),
+                  decoration: InputDecoration(
+                    hintText: l10n.storeNameHint,
+                    hintStyle: TextStyle(color: scheme.onSurfaceVariant),
+                    counterText: '',
+                    constraints: const BoxConstraints.tightFor(
+                      height: HlSize.target,
+                    ),
                   ),
                 ),
               ),

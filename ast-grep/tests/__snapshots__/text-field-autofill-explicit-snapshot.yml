@@ -1,0 +1,36 @@
+id: text-field-autofill-explicit
+snapshots:
+  "final field = CupertinoTextField(placeholder: hint);\n":
+    labels:
+    - source: "CupertinoTextField(placeholder: hint)"
+      style: primary
+      start: 14
+      end: 51
+    - source: CupertinoTextField
+      style: secondary
+      start: 14
+      end: 32
+  "final field = TextField(\n  controller: controller,\n  decoration: InputDecoration(hintText: l10n.addHint),\n);\n":
+    labels:
+    - source: |-
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(hintText: l10n.addHint),
+        )
+      style: primary
+      start: 14
+      end: 107
+    - source: TextField
+      style: secondary
+      start: 14
+      end: 23
+  "final field = TextFormField();\n":
+    labels:
+    - source: TextFormField()
+      style: primary
+      start: 14
+      end: 29
+    - source: TextFormField
+      style: secondary
+      start: 14
+      end: 27

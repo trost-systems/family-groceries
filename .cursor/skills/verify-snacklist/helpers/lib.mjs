@@ -186,9 +186,9 @@ export async function headingAbove(page, row) {
   return best?.text ?? null;
 }
 
-/** A tab of the shell by its ARB key ('tabList' or 'tabMore'): a tab on phones, a rail button from 840 px. */
+/** A tab of the shell by its ARB key ('tabList' or 'tabMore'): the bottom bar on phones, the rail from 840 px. */
 export async function openTab(page, L, key) {
-  await page.getByRole('tab', { name: L(key), exact: true }).or(page.getByRole('button', { name: `${L(key)} Tab ` })).click();
+  await page.getByRole('tab', { name: L(key), exact: true }).click();
 }
 
 /**

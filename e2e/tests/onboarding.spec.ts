@@ -539,8 +539,7 @@ for (const [lang, locale] of [['de', 'de-DE'], ['en', 'en-US']] as const) {
       await shot(page, '06', 'invite-web-fallback');
       await page.getByRole('button', { name: t.later }).click();
       await expect(addField(page).or(page.getByRole('textbox', { name: 'What do you need?' }))).toBeVisible();
-      await page.getByRole('tab', { name: lang === 'de' ? 'Mehr' : 'More', exact: true })
-        .or(page.getByRole('button', { name: `${lang === 'de' ? 'Mehr' : 'More'} Tab ` })).click();
+      await page.getByRole('tab', { name: lang === 'de' ? 'Mehr' : 'More', exact: true }).click();
       await page.getByRole('button', { name: new RegExp(`^${t.more}`) }).click();
       await page.getByRole('button', { name: t.newInvite }).click();
       await expect.poll(async () => (await shownInviteCodes(page)).length).toBe(2);

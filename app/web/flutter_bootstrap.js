@@ -28,7 +28,11 @@ globalThis.addEventListener('error', (event) => {
 // own origin, never from www.gstatic.com or fonts.gstatic.com. app/web/fonts/ mirrors the paths
 // the engine asks for (scripts/web-fonts.sh). The loader reads canvasKitBaseUrl, the engine
 // fontFallbackBaseUrl, so both get the config.
-const config = { canvasKitBaseUrl: '/canvaskit/', fontFallbackBaseUrl: '/fonts/' };
+// Job 201: the engines that may run main.dart.wasm. The loader still checks the Wasm features
+// dart2wasm needs (Safari 26.2+, Firefox 147+) and runs main.dart.js where they are missing.
+// Set an engine to false to send all its browsers back to main.dart.js.
+const wasmAllowList = { blink: true, webkit: true, gecko: true };
+const config = { canvasKitBaseUrl: '/canvaskit/', fontFallbackBaseUrl: '/fonts/', wasmAllowList };
 _flutter.loader.load({
   config,
   onEntrypointLoaded: async (engineInitializer) => {

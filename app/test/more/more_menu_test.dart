@@ -5,9 +5,9 @@ import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/more/app_update.dart';
 import 'package:family_groceries/more/more_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../analytics/fakes.dart' show MemoryAnalyticsStore, loadedAnalytics;
 import 'more_harness.dart';

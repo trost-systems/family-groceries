@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:family_groceries/app/guides.dart';
 import 'package:family_groceries/app/legal_links.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Apple's refund requests (support.apple.com/118223): sign in, "Request a
 /// refund", pick the purchase.

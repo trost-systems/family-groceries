@@ -1,6 +1,6 @@
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The in-app brand: the approved app icon (exported by
 /// `design/app-icon/build.mjs` into `assets/brand/`, 56 dp at 1x/2x/3x) over

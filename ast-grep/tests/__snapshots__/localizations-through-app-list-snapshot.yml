@@ -1,0 +1,30 @@
+id: localizations-through-app-list
+snapshots:
+  "final app = MaterialApp(\n  localizationsDelegates: AppLocalizations.localizationsDelegates,\n  home: child,\n);\n":
+    labels:
+    - source: AppLocalizations.localizationsDelegates
+      style: primary
+      start: 51
+      end: 90
+    - source: localizationsDelegates
+      style: secondary
+      start: 68
+      end: 90
+    - source: AppLocalizations
+      style: secondary
+      start: 51
+      end: 67
+  "final delegates = [...AppLocalizations.localizationsDelegates];\n":
+    labels:
+    - source: AppLocalizations.localizationsDelegates
+      style: primary
+      start: 22
+      end: 61
+    - source: localizationsDelegates
+      style: secondary
+      start: 39
+      end: 61
+    - source: AppLocalizations
+      style: secondary
+      start: 22
+      end: 38

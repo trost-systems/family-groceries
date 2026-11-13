@@ -2,14 +2,15 @@
 // row (honey), mid-strike and struck, a wrapped name struck on both lines,
 // light and dark, at the 358 px compact width. After a deliberate look change:
 //   flutter test --update-goldens test/design/list_row_golden_test.dart
+import 'package:family_groceries/app/localizations.dart';
 import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_view/item_row.dart';
 import 'package:family_groceries/list/list_view/leaving_rows.dart';
 import 'package:family_groceries/list/model.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'fonts.dart';
@@ -54,7 +55,7 @@ void main() {
           debugShowCheckedModeBanner: false,
           theme: appTheme(brightness),
           locale: const Locale('de'),
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: Scaffold(
             body: Column(

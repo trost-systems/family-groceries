@@ -1,6 +1,6 @@
 import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/tokens.g.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The site's `.hxp`: a pointy-top hexagon with a face and the 2 px contour,
 /// its content centred. The add bar's "+" and the empty list's cart.

@@ -17,9 +17,10 @@ import 'package:family_groceries/onboarding/onboarding_cubit.dart';
 import 'package:family_groceries/onboarding/onboarding_frame.dart';
 import 'package:family_groceries/session/login_screen.dart';
 import 'package:family_groceries/session/session_cubit.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The longest household name, in characters (code points, as Postgres'
 /// char_length counts them).
@@ -178,6 +179,7 @@ class _WhoStepState() extends State<_WhoStep> {
           LabeledField(
             label: l10n.whoOtherLabel,
             field: TextField(
+              autofillHints: null,
               key: const ValueKey('onboarding-kind-other-text'),
               controller: _other,
               maxLength: maxHouseholdName,
@@ -281,6 +283,7 @@ class _NameStepState() extends State<_NameStep> {
           field: Semantics(
             hint: _invalid ? l10n.householdNameInvalid : '',
             child: TextField(
+              autofillHints: null,
               key: const ValueKey('household-name'),
               controller: _name,
               maxLength: maxHouseholdName,
@@ -447,18 +450,36 @@ class const _NeedStep() extends StatefulWidget {
 class _NeedStepState() extends State<_NeedStep> {
   final _field = TextEditingController();
   final _focus = FocusNode();
+  Timer? _refocus;
 
   @override
   void dispose() {
+    _refocus?.cancel();
     _field.dispose();
     _focus.dispose();
     super.dispose();
   }
 
+  /// Adds what was typed and keeps the field ready for the next item. On
+  /// web the add button's tap and Enter (the "done" action) both blur the
+  /// field's input while Flutter keeps the field focused, so requestFocus
+  /// alone does nothing, and since Flutter 3.50 the input then stopped
+  /// reaching the app (job 201). A fresh focus gives it back after the
+  /// engine's blur, as ListScreen does after a tap outside its field.
   void _add() {
     context.read<OnboardingCubit>().addItem(_field.text);
     _field.clear();
-    _focus.requestFocus();
+    if (!kIsWeb) {
+      _focus.requestFocus();
+      return;
+    }
+    _focus.unfocus();
+    _refocus?.cancel();
+    _refocus = Timer(const Duration(milliseconds: 50), () {
+      if (mounted) {
+        _focus.requestFocus();
+      }
+    });
   }
 
   @override
@@ -503,6 +524,7 @@ class _NeedStepState() extends State<_NeedStep> {
         LabeledField(
           label: l10n.needFieldLabel,
           field: TextField(
+            autofillHints: null,
             key: const ValueKey('onboarding-need-field'),
             controller: _field,
             focusNode: _focus,
