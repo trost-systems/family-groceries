@@ -84,12 +84,8 @@ const newHouseholdPath = '/households/new';
 const invitePartnerPath = '/households/new/invite';
 
 /// The join screen for a typed code: onboarding's "Einladung annehmen" and
-/// More's "Anderem Haushalt beitreten".
+/// the household sheet's "Mit Code beitreten".
 const joinCodePath = '/join';
-
-/// More's „Anderem Haushalt beitreten“: the join screen inside the More
-/// tab, so back returns to More (job 78).
-const moreJoinPath = '/more/join';
 
 /// The analytics consent (job 19), asked once per install right after the
 /// first sign-in. Not [consentPath], which is MCP's OAuth consent.
@@ -134,6 +130,11 @@ const usageDataPath = '/more/usage-data';
 /// A Rechtliches page More had before its rows moved onto More itself
 /// (job 85); old links land on More.
 const moreLegalPath = '/more/legal';
+
+/// The join screen inside More (job 78) while More had „Anderem Haushalt
+/// beitreten“; joining is the household sheet's since job 206. Old links
+/// land on [joinCodePath].
+const moreJoinPath = '/more/join';
 
 /// Before job 29d both were one page here (Konto at `?section=account`);
 /// old links redirect ([legacySettingsRedirect]).
@@ -212,7 +213,7 @@ String _screenNameOfPath(Uri location) => switch (location.path) {
   newHouseholdPath => 'new_household',
   analyticsConsentPath => 'analytics_consent',
   consentPath => 'oauth_consent',
-  moreJoinPath || joinWaitingPath => 'join',
+  joinWaitingPath => 'join',
   _ when location.pathSegments.firstOrNull == 'join' => 'join',
   _ => 'other',
 };
@@ -536,7 +537,7 @@ List<RouteBase> moreTabRoutes() => [
             paywallEntry: PaywallEntry.parse(state.uri.queryParameters['from']),
           ),
         ),
-      GoRoute(path: 'join', builder: (_, _) => const JoinScreen()),
+      GoRoute(path: 'join', redirect: (_, _) => joinCodePath),
       GoRoute(path: 'legal', redirect: (_, _) => morePath),
       GoRoute(
         path: 'settings',

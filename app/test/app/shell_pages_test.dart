@@ -29,7 +29,7 @@ void main() {
 
   test('the route tables give the pages', () {
     expect(pages, containsAll(['/', '/edit', '/edit/lidl', '/more']));
-    expect(pages, containsAll(['/more/join', '/more/settings/language']));
+    expect(pages, containsAll(['/more/invites', '/more/settings/language']));
   });
 
   // An iPhone upright, and a smaller one on its side (its home indicator

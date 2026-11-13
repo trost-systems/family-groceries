@@ -1,0 +1,13 @@
+[15:17:03.341Z] setup: Mia made Nachbarn, Verein, Oma with an invite each
+[15:17:07.881Z] signed in as ida (de), shown household Familie Brandt
+[15:17:09.323Z] sheet → Mit Code beitreten: /join
+[15:17:09.884Z] Abbrechen: back on the list at /
+[15:17:13.235Z] More, scrolled top to end: 24 ARIA lines, join entries: []
+[15:17:13.673Z] old link /more/join → /join
+[15:17:17.784Z] typed code from the sheet: Ida in Nachbarn 1, still in Familie Brandt: 1
+[15:17:17.972Z] link /join/<code>: landing page /join/MKF5YLJ4, then the app at /
+[15:17:19.475Z] /join/<code> signed in: Ida in Verein 1
+[15:17:19.747Z] link /join/<code>: landing page /join/5BY9WJS2, then the app at /
+[15:17:20.462Z] signed out, /join/<code> → /login?invite=<code>
+[15:17:24.212Z] signed out → sign-in → join: Noah in Oma 1
+[15:17:24.303Z] PASS

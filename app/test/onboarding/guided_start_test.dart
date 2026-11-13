@@ -204,6 +204,22 @@ void main() {
       expect(chipSelected(tester, 'onboarding-kind-family'), isTrue);
     });
 
+    testWidgets("Android's back goes a step back, as Zurück does", (
+      tester,
+    ) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/start/name',
+        draft: const OnboardingDraft(
+          step: OnboardingStep.name,
+          kinds: [HouseholdKind.family],
+        ),
+      );
+      expect(await tester.binding.handlePopRoute(), isTrue, reason: 'stays');
+      await tester.pumpAndSettle();
+      expect(location(o), '/start/who');
+    });
+
     testWidgets('stores in the order picked, own ones too; a typed chain '
         'ticks its chip', (tester) async {
       final o = await pumpOnboarding(

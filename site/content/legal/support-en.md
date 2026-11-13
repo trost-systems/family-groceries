@@ -47,7 +47,7 @@ Tap **More**, then **Invite your partner**. Share the link or the code. An invit
 
 ### How do I join a household with a code?
 
-Open the invite link you received, or tap **More**, then **Join another household**, and enter the code. Snacklist shows you which household you are joining first. If you are brand new, choose **Join household** right after signing in.
+Open the invite link you received, or tap your household's name at the top of the list, then **Join with a code**, and enter the code. Snacklist shows you which household you are joining first. If you are brand new, choose **Join household** right after signing in.
 
 ### How do I export my data?
 

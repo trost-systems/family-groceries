@@ -47,7 +47,7 @@ Tippe auf **Mehr** und dann auf **Partner einladen**. Teile den Link oder den Co
 
 ### Wie trete ich mit einem Code einem Haushalt bei?
 
-Öffne den Einladungslink, den du bekommen hast, oder tippe auf **Mehr** und dann auf **Anderem Haushalt beitreten** und gib den Code ein. Snacklist zeigt dir vorher, welchem Haushalt du beitrittst. Bist du noch ganz neu, wählst du gleich nach der Anmeldung **Haushalt beitreten**.
+Öffne den Einladungslink, den du bekommen hast, oder tippe oben in der Liste auf den Namen deines Haushalts, dann auf **Mit Code beitreten**, und gib den Code ein. Snacklist zeigt dir vorher, welchem Haushalt du beitrittst. Bist du noch ganz neu, wählst du gleich nach der Anmeldung **Haushalt beitreten**.
 
 ### Wie exportiere ich meine Daten?
 

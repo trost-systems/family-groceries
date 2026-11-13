@@ -93,7 +93,7 @@ void main() {
     expect(groupOf(tester, 'more-archived'), groupOf(tester, 'more-invite'));
     expect(
       tester.getRect(key('more-archived')).top,
-      greaterThan(tester.getRect(key('more-join')).top),
+      greaterThan(tester.getRect(key('more-invite')).top),
     );
   });
 
@@ -104,7 +104,6 @@ void main() {
       'Konto',
       'Snacklist Premium',
       'Partner einladen',
-      'Anderem Haushalt beitreten',
       'Zugänge',
       'Einstellungen',
       'Tipps',
@@ -126,6 +125,15 @@ void main() {
     }
   });
 
+  // Job 206: joining is the household sheet's on the list.
+  testWidgets('More offers no join', (tester) async {
+    await pumpMore(tester, size: tall);
+    // Tall enough that every row is built.
+    await tester.scrollUntilVisible(key('more-sign-out'), 200);
+    expect(key('more-join'), findsNothing);
+    expect(find.textContaining('beitreten'), findsNothing);
+  });
+
   testWidgets('English labels in menu order', (tester) async {
     await pumpMore(tester, size: tall, device: const [Locale('en', 'US')]);
     expect(find.text('More'), findsOneWidget);
@@ -133,7 +141,6 @@ void main() {
       'Account',
       'Snacklist Premium',
       'Invite your partner',
-      'Join another household',
       'Access',
       'Settings',
       'Tips',

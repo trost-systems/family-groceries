@@ -298,7 +298,7 @@ void main() {
     await _openSheet(tester);
     await tester.tap(_key('household-join'));
     await tester.pumpAndSettle();
-    expect(_location(s), moreJoinPath);
+    expect(_location(s), joinCodePath);
   });
 
   testWidgets('the footer names the default; its picker moves it', (

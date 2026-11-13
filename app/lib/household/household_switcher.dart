@@ -268,7 +268,7 @@ class const HouseholdSheet({final int? openNow, super.key})
             key: const ValueKey('household-join'),
             leading: hex(Icons.group_add_outlined, t.surfaceSunken),
             title: Text(l10n.joinWithCode),
-            onTap: () => go(moreJoinPath),
+            onTap: () => go(joinCodePath),
           ),
           Divider(height: HlSpace.s4, indent: 72, color: t.divider),
           ListTile(

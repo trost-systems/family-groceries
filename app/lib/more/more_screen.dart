@@ -201,7 +201,6 @@ enum _Item(final IconData icon, final String key, final _Tint tint) {
   premium(Icons.favorite_outline, 'more-lifetime', _Tint.honey),
   household(Icons.home_outlined, 'more-household', _Tint.honey),
   invite(Icons.person_add_outlined, 'more-invite', _Tint.honey),
-  join(Icons.group_add_outlined, 'more-join', _Tint.honey),
   archived(Icons.inventory_2_outlined, 'more-archived', _Tint.honey),
   access(Icons.key_outlined, 'more-access', _Tint.cobalt),
   settings(Icons.settings_outlined, 'more-settings', _Tint.mint),
@@ -221,7 +220,7 @@ enum _Item(final IconData icon, final String key, final _Tint tint) {
   /// stands alone at the end.
   static const groups = <List<_Item>>[
     [account, premium],
-    [household, invite, join, archived],
+    [household, invite, archived],
     [access],
     [settings, usageData],
     [tips, feedback, rate, help],
@@ -342,11 +341,6 @@ class _MoreListState() extends State<_MoreList> {
         label: l10n.inviteMember,
         selected: selected == MorePage.invites,
         onTap: () => go(invitesPath),
-      ),
-      _Item.join => _Row(
-        item,
-        label: l10n.joinOtherHousehold,
-        onTap: () => go(moreJoinPath),
       ),
       _Item.archived => _Row(
         item,

@@ -201,9 +201,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get inviteMember => 'Partner einladen';
 
   @override
-  String get joinOtherHousehold => 'Anderem Haushalt beitreten';
-
-  @override
   String get signOut => 'Abmelden';
 
   @override

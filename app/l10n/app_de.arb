@@ -70,7 +70,6 @@
   "syncFailed": "Änderung abgelehnt: {name}",
   "@syncFailed": {"placeholders": {"name": {"type": "String"}}},
   "inviteMember": "Partner einladen",
-  "joinOtherHousehold": "Anderem Haushalt beitreten",
   "signOut": "Abmelden",
   "inviteTitle": "Mitglied einladen",
   "inviteBody": "Gib diesen Code in der App ein oder teile den Link. Die Einladung gilt 7 Tage und für eine Person.",

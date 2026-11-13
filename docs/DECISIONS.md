@@ -11928,3 +11928,37 @@ entitlement, paywall or Premium check anywhere on the path. It ships behind the 
 - **The `legal` string is gone.** After the heading went, nothing referenced `l10n.legal`, so the
   key left both ARBs, and the `legal:` flag on More's group table went with it (the table is a
   list of row lists now). The `/more/legal` redirect stays for old links.
+
+## Job 206: joining only from the list's household sheet, 2026-11-13
+
+Peter (t820u): More no longer offers „Anderem Haushalt beitreten“; joining is the household
+button's on the list.
+
+- **The paths, side by side, before the row went.** More is reachable only in a household
+  (`authRedirect` sends everyone else to the welcome or waiting screen), and the switcher chip
+  shows for exactly that session (`InHousehold`), so its „Mit Code beitreten“ covered every user
+  the More row did. Without a household, joining stays „Einladung annehmen“ on the welcome
+  screen. Invite links (`/join/<code>`, `?invite=`, the install referrer, pasted links) never went
+  through More: `authRedirect` sends them to `joinPath(code)` signed in or not, unchanged.
+- **The sheet opens `/join`, not More's `/more/join`.** `/more/join` put the join screen in the
+  More tab, so from the list it switched tabs, and back led to More, where nothing was offered any
+  more. On `/join` back and „Abbrechen“ return to the list (`leaveStep`). `/more/join` stays a
+  route that redirects to `/join` (like `/more/legal`), so an old link or a restored URL still
+  opens the join screen; it stays in `inMoreTab` because `authRedirect` runs before a route's own
+  redirect and would otherwise send it to the list.
+- **Android's back is the page's back on every `OnboardingPage`.** Gone to, `/join` (and
+  „Neuer Haushalt“'s `/households/new`, the same sheet) is the root navigator's only page, so
+  the system back found nothing to pop and closed the app (review of this job; Neuer Haushalt
+  had it since job 169b). `push` would have kept a page to pop, but go_router then leaves the
+  web URL at `/`. Instead `OnboardingPage` wraps itself in a `PopScope` that runs `onBack`, so
+  the system back does what the app bar's arrow does: to the list here, a step back in the
+  guided start (where it used to land on `/start`, the page below the steps). iOS's swipe back
+  is off where a back action sits over a page below (guided start steps, the waiting screen in
+  a household); both swiped to the wrong place before, and the arrow stays. The `PopScope` is
+  always there (`canPop: onBack == null`), since a wrapper that came and went with `onBack` (the
+  create page drops it while busy) would rebuild the page and lose the name.
+- **The chip steps aside only while joining cannot work.** At 320 px with large text the chip
+  gives way to the sync pill, which shows only while the device is offline or the server fails;
+  joining needs the server, so nothing is lost there.
+- **`joinOtherHousehold` is gone** from both ARBs (nothing else used it); `joinWithCode` stays.
+  The support page's join answer now points at the household name on the list.
