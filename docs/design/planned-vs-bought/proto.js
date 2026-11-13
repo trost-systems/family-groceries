@@ -1,5 +1,5 @@
 import {
-  scenarios, initialState, start, finish, next, toggle, addDuring, logBought, newId,
+  scenarios, initialState, start, finish, next, toggle, addDuring, logBought, newId, nextTrip,
   classify, summary, priceSum, euro, pastTrips, ME,
 } from './model.js';
 
@@ -100,8 +100,10 @@ function tripReview() {
       ? `${html}<div class="phase"><button class="hex primary" data-act="review">Rückblick ansehen</button></div>`
       : html;
   }
-  const extra = rows.filter((r) => r.bought && !state.snapshot.has(r.id));
-  const kept = rows.filter((r) => r.kind === 'planned-bought' && state.snapshot.has(r.id));
+  const extra = rows.filter((r) => r.kind === 'extra');
+  const kept = rows.filter((r) => r.kind === 'planned-bought');
+  const reclassButton = (r) => `<button class="toggle ${state.reclassified.has(r.id) ? 'on' : ''}" data-act="reclass" data-id="${r.id}"
+    aria-pressed="${state.reclassified.has(r.id)}">War geplant</button>`;
   const open = rows.filter((r) => !r.bought);
   const s = summary(rows);
   return `
@@ -113,13 +115,14 @@ function tripReview() {
         <h3>${state.snapshot.size ? 'Nicht auf der Liste beim Start' : 'Ohne Liste gekauft'}</h3>
         ${extra.length ? `<ul>${extra.map((r) => `<li class="row">
             <span class="name">${esc(r.name)}</span><span class="meta">${who(r)}${price(r)}</span>
-            <button class="toggle ${state.reclassified.has(r.id) ? 'on' : ''}" data-act="reclass" data-id="${r.id}"
-              aria-pressed="${state.reclassified.has(r.id)}">War geplant</button></li>`).join('')}</ul>
+            ${reclassButton(r)}</li>`).join('')}</ul>
             <p class="hint">„War geplant“ zählt den Artikel zur Liste, wenn er nur nicht aufgeschrieben war.</p>`
           : '<p class="empty">Alles stand auf der Liste.</p>'}
-        ${sumLine(extra.filter((r) => !state.reclassified.has(r.id)), 'Zusammen')}
+        ${sumLine(extra, 'Zusammen')}
       </div>` : ''}
-      ${kept.length ? `<details><summary>Wie geplant (${kept.length})</summary><ul>${kept.map((r) => row(r, { tick: false })).join('')}</ul></details>` : ''}
+      ${kept.length ? `<details ${state.reclassified.size ? 'open' : ''}><summary>Wie geplant (${kept.length})</summary><ul>${kept.map((r) => (state.reclassified.has(r.id)
+        ? `<li class="row"><span class="name">${esc(r.name)}</span><span class="meta">${who(r)}${price(r)}</span>${reclassButton(r)}</li>`
+        : row(r, { tick: false }))).join('')}</ul></details>` : ''}
       ${open.length ? `<div class="card"><h3>Nicht gekauft (${open.length})</h3>
         <p class="hint">Bleibt auf der Liste für das nächste Mal, außer du entfernst es.</p>
         <ul>${open.map((r) => `<li class="row"><span class="name">${esc(r.name)}</span>
@@ -193,8 +196,8 @@ function twoColumn() {
       ${ui.receiptColumn ? '<div class="gh muted" role="columnheader">Bon</div>' : ''}
       ${order.map((r) => `
         <div class="gc ${r.planned ? '' : 'blank'}" role="cell">${r.planned ? esc(r.name) : '–'}</div>
-        <button class="gc buy ${r.bought ? 'on' : ''} ${r.planned ? '' : 'extra'}" role="cell" data-act="toggle" data-id="${r.id}" aria-pressed="${r.bought}">
-          ${r.bought ? `✓ ${esc(r.name)}${price(r)}` : `<span class="muted">${r.planned ? 'offen' : `${esc(r.name)} · offen`}</span>`}</button>
+        <div role="cell" class="cellwrap"><button class="gc buy ${r.bought ? 'on' : ''} ${r.planned ? '' : 'extra'}" data-act="toggle" data-id="${r.id}" aria-pressed="${r.bought}">
+          ${r.bought ? `✓ ${esc(r.name)}${price(r)}` : `<span class="muted">${r.planned ? 'offen' : `${esc(r.name)} · offen`}</span>`}</button></div>
         ${ui.receiptColumn ? '<div class="gc muted" role="cell">–</div>' : ''}`).join('')}
     </div>
     ${order.length ? '' : '<p class="empty">Nichts geplant, nichts gekauft.</p>'}
@@ -212,7 +215,7 @@ function render() {
   document.querySelector('#prices').checked = ui.prices;
   const steps = scenarios[state.scenarioId].steps.length;
   document.querySelector('#step').textContent = `Schritt ${state.step} von ${steps}`;
-  document.querySelector('#next').disabled = state.step >= steps;
+  document.querySelector('#next').disabled = state.step >= steps || state.phase === 'done';
   document.querySelector('[data-act="partner"]').disabled = state.phase === 'done';
   document.querySelector('#appbar-sub').textContent =
     { before: 'vor dem Einkauf', shopping: 'Einkauf läuft', done: 'Einkauf beendet' }[state.phase];
@@ -231,7 +234,7 @@ document.addEventListener('click', (e) => {
   if (act === 'start') start(state);
   if (act === 'finish') { finish(state); ui.review = true; }
   if (act === 'review') ui.review = true;
-  if (act === 'close-review') { state = initialState(state.scenarioId, { played: false }); ui.review = false; }
+  if (act === 'close-review') { nextTrip(state); ui.review = false; }
   if (act === 'reclass') state.reclassified.has(id) ? state.reclassified.delete(id) : state.reclassified.add(id);
   if (act === 'remove') state.removed.has(id) ? state.removed.delete(id) : state.removed.add(id);
   if (act === 'receipt') ui.receiptColumn = !ui.receiptColumn;

@@ -48,9 +48,12 @@ badge is the one to add.
    brief for these prototypes, and this recommendation, use ticked or logged items instead, with a
    receipt as an optional later input. The row now notes this; Peter's pick settles it.
 2. **How does a trip start?** Every approach needs the snapshot taken at the start. The
-   prototypes use an explicit "Einkauf starten" button; the app has no trip start today. An
-   implicit start (the first tick after the list was last emptied, or after a few hours without
-   ticks) adds no step, but may snapshot the wrong moment. This is the biggest design question
+   prototypes have an explicit "Einkauf starten" button, and the first tick or logged item also
+   starts the trip; the app has no trip start today. An implicit start (the first tick after the
+   list was last emptied, or after a few hours without ticks) adds no step, but may snapshot the
+   wrong moment. Its typical false positive: if the snapshot is taken after the first tick and
+   leaves ticked items out, the item that started the trip shows up as extra. The snapshot
+   must hold every item open just before the starting tick. This is the biggest design question
    and decides most of job 197's build.
 3. **Is an item someone else adds during the shop planned?** The prototypes count it as extra,
    name who added it ("von Ben") and let the shopper mark it "War geplant". The other choice is
@@ -58,7 +61,11 @@ badge is the one to add.
    extra.
 4. **Where does "Schon gekauft" live?** Logging an item that is already in the basket is new
    (today an item is always written first, then ticked). It overlaps with the post-shop entry in
-   job 198's grocery log; one entry point should serve both.
+   job 198's grocery log; one entry point should serve both. A logged item must match an open
+   list item when it is the same thing, or every log counts as extra. The prototype matches
+   by name (case and spaces ignored) and ticks the list item. The app would match on
+   `items.canonical_key` (spelling variants and synonyms). Still open: what a near match
+   (Vollmilch for Milch) does, and whether the shopper confirms it.
 5. **Free or Premium?** P3a puts planned vs bought in the later Premium pitch. The counts need no
    prices; the "Zusammen" line needs `prices-and-trip-total` (Premium). One option: the review
    on Free, the price line with Premium.

@@ -16,6 +16,10 @@ const expect = async (label, text) => {
   const got = await screen.innerText();
   if (!got.includes(text)) failures.push(`${label}: missing "${text}"\n---\n${got}\n---`);
 };
+const expectNot = async (label, text) => {
+  const got = await screen.innerText();
+  if (got.includes(text)) failures.push(`${label}: unexpected "${text}"\n---\n${got}\n---`);
+};
 const open = async (hash) => {
   await page.goto(`${base}#${hash}`);
   await page.reload();
@@ -51,7 +55,8 @@ await expect('2 review', 'Nicht auf der Liste beim Start');
 await expect('2 review', 'Zusammen: 1,99');
 await page.getByRole('button', { name: 'War geplant' }).click();
 await expect('2 reclass', '3 von 3 von der Liste');
-await expect('2 reclass', 'Wie geplant (2)');
+await expect('2 reclass', 'Wie geplant (3)');
+await expect('2 reclass', 'Alles stand auf der Liste.');
 await shot('drive--trip-review-reclassified');
 
 await open('a=trip-review-unplanned&s=during');
@@ -62,6 +67,30 @@ await page.getByRole('button', { name: 'Entfernen' }).first().click();
 await expect('2 remove keeps counts', '1 von 2 von der Liste');
 await expect('2 remove', 'Entfernt');
 await shot('drive--trip-review-during');
+await page.getByRole('button', { name: 'Fertig' }).click();
+await expect('2 next list keeps what was not bought', 'Butter');
+await expectNot('2 next list drops the removed item', 'Brot');
+await expectNot('2 next list drops what was bought', 'Eier');
+await shot('drive--trip-review-next-list');
+
+await open('a=trip-review-unplanned&s=basic&played=0');
+await page.getByRole('button', { name: 'Einkauf starten' }).click();
+await page.getByLabel('Artikel').fill(' milch ');
+await page.getByRole('button', { name: 'Schon gekauft' }).click();
+await page.getByRole('button', { name: 'Einkauf beenden' }).click();
+await expect('2 logging a listed item buys it', '1 gekauft · 1 von 2 von der Liste');
+await expect('2 logging a listed item buys it', 'Nicht gekauft (1)');
+await expect('2 logging a listed item buys it', 'Alles stand auf der Liste.');
+await shot('drive--trip-review-logged-listed-item');
+
+await open('a=snapshot-vs-ticked-list&s=basic&played=0');
+await page.getByRole('button', { name: 'Milch abhaken', exact: true }).click();
+await expect('1 first tick starts the trip', '1 von 2 von der Liste gekauft');
+await expectNot('1 first tick starts the trip', 'zusätzlich');
+await page.getByLabel('Artikel').fill('Brot');
+await page.getByRole('button', { name: 'Dazuschreiben' }).click();
+await expectNot('1 no duplicate open row', 'Seit dem Start dazugekommen\nBrot');
+await shot('drive--first-tick-starts-trip');
 
 await open('a=trip-review-unplanned&s=nothing&done=1&review=1');
 await expect('2 nothing', 'Nichts gekauft.');
@@ -88,6 +117,10 @@ await page.getByRole('button', { name: 'Bon-Spalte' }).click();
 await expect('5 receipt', 'BON');
 await expect('5 receipt', 'Vorschau: einen Bon-Abgleich gibt es noch nicht.');
 await shot('drive--two-column-receipt-column');
+
+await page.setViewportSize({ width: 390, height: 844 });
+await open('a=trip-review-unplanned&s=basic');
+await page.screenshot({ path: `${out}/narrow-390.png` });
 
 await page.setViewportSize({ width: 800, height: 1000 });
 await open('a=snapshot-vs-ticked-list&s=basic');

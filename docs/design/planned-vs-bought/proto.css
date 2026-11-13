@@ -18,6 +18,12 @@ body {
 }
 button { font: inherit; color: inherit; cursor: pointer; }
 .stage { display: flex; gap: 28px; padding: 24px; align-items: flex-start; }
+@media (max-width: 760px) {
+  .stage { flex-direction: column-reverse; padding: 12px; }
+  .panel { width: 100%; }
+}
+.cellwrap { display: grid; }
+.cellwrap .gc { width: 100%; }
 
 .panel { width: 330px; flex: none; }
 .panel h1 { font: 700 24px/1.1 "Bricolage Grotesque", sans-serif; margin: 0 0 6px; }

@@ -11466,3 +11466,19 @@ name plus hint) and V3 A (no referrer) on 10 November, 20:21.
 - **No hosted preview.** The Vercel connector isn't available on the Hetzner runner, and project
   settings must not change. Peter can run `python3 -m http.server --directory
   docs/design/prices-trip/dist` or `npm run dev` in `sandbox/`.
+
+### Job 196 fix round 1 (review.0), 2026-11-13
+
+- **A logged purchase can tick a planned item.** "Schon gekauft" with the name of an open list
+  item (case and spaces ignored, standing in for `items.canonical_key`) ticks that item instead
+  of adding an extra row; "Dazuschreiben" no longer duplicates an open row. Before this, every
+  log counted as extra, which skewed all five approaches.
+- **The first tick starts the trip.** Ticking before "Einkauf starten" used to snapshot only the
+  unticked items, so the ticked one showed as extra "von dir". RECOMMENDATION.md now names this
+  as the false positive an implicit start must avoid, and the name matching as part of question 4.
+- **Review "Fertig" leaves the next list** (not bought, minus removed) instead of resetting the
+  scenario. "War geplant" moves the item into "Wie geplant", where the toggle undoes it.
+  "Nächster Schritt" is off once the trip ended. The page stacks below 760 px. The two-column
+  cells wrap their buttons.
+- Proof: `shoot.mjs` gained the reviewer's repros; they fail on main's e726902b sandbox (8
+  failures) and pass after the fix.
