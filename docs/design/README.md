@@ -30,3 +30,4 @@ python3 -m http.server 8771 --directory docs/design/h-satz-final/h-dist
 ## Feature prototypes
 
 - **Grocery log (job 198):** [`grocery-log/`](grocery-log/), five interactive approaches behind one switcher, plus [`RECOMMENDATION.md`](grocery-log/RECOMMENDATION.md). Serve the repo root (`python3 -m http.server 4198 --bind 127.0.0.1`) and open `/docs/design/grocery-log/index.html`.
+- **Household and list in the top bar (job 205):** [`app-bar-switcher/`](app-bar-switcher/README.md), five switcher prototypes next to Anpassen plus today's bar, and [`RECOMMENDATION.md`](app-bar-switcher/RECOMMENDATION.md) (`stacked-two-line`, household always shown). Not approved to implement.

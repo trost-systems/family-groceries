@@ -12020,3 +12020,45 @@ build of `hummlist-site` waits for the push-triggered **Supabase deploy** run th
   A waiting build holds a concurrent build slot for a few minutes. A push of several commits
   whose deploy-touching commit is not the head is matched by the run of any commit in range, and
   without one the gate builds after 90 s, as it does for `[skip ci]`.
+
+### Job 205: household and list in the top bar, five prototypes, 2026-11-13
+
+- **Vanilla sandbox in `docs/design/app-bar-switcher/`**, like job 198's, not a Flutter route.
+  It needs no flag, ships nothing in the app and builds into one static folder (`build.sh`) for
+  a Vercel preview on the existing `family-groceries-design` project.
+- **Every variant shows the sync pill as an icon only while offline**, between switcher and
+  Anpassen: the word "Offline" leaves no room for two names on a 320 px phone.
+- **A household switch never touches the Siri/Alexa/AI default**; every variant says so in a
+  notice after the switch, and the sheet keeps today's "Siri, Alexa & KI nutzen" row.
+- **Recommendation `stacked-two-line`, household always shown** (`RECOMMENDATION.md` there).
+  `shoot.mjs` measures which bar names are cut in 12 settings (390/360/320 px, 100/130 % text,
+  online/offline): the two-line button keeps both short names whole in 8, the others in 7, 4
+  and 4; at 320 px, 130 % and offline every variant cuts both, and long names are cut in every
+  bar. The sheets show every name in full (wrapped, hyphenated), measured on every sheet page.
+- **Review 0 fix:** the first version claimed full names in the sheet but clamped rows to two
+  lines and cut household chips, and its check only searched innerText (which keeps CSS-cut
+  text). The check now measures clipping on the element and its ancestors; it fails on the old
+  head (25 findings) and passes now.
+- **Review 1 fix:** the cited `grid-390-offline-big.png` was shot at 320 px (the script never
+  went back to 390 px) and showed the opposite of the claim; `shoot.mjs` now asserts the width
+  and the two-line bar before the shot. The Current reference mirrors `HouseholdChip.widest`
+  (steps aside under 96 px, pill icon-only while the name is cut) so Peter compares against
+  what the app really does.
+- **Review 2 fix (job 205b): a floor for every name in the bar.** Review 1's fix let the
+  breadcrumb's household crumb shrink to its padding (8 px, no glyph at 320 px, 130 %, offline),
+  and the check passed because it read `innerText`. `shoot.mjs` now measures each name's visible
+  glyphs (its text box cut by every overflow or clip-path box above it) against its first letters
+  plus an ellipsis in the same font: two for the household, one for the list. It runs in all five
+  scenarios at 390, 360 and 320 px, 100 and 130 % text, online and offline. On head b0117a23
+  it reports 49 failures, in all four always-on variants, not only the breadcrumb. So each variant
+  measures that floor in `afterLayout` (the single chip's `stub`, now shared). Where the floor
+  doesn't fit beside the offline icon and Anpassen, the switcher goes `tight`: no chevron,
+  plus no separator and slimmer padding in the breadcrumb, no dot in the single chip.
+  The empty `.grow` spacers are gone (Anpassen already has `margin-left: auto`); each cost
+  an 8 px gap. Today's bar is exempt from the name floors, since its chip steps aside by
+  design. The overflow check skips hidden buttons and fails when the bar overflows its own box.
+  The 8/7/4/4 counts hold; one cell changed (single chip at 320 px, 100 %, online keeps its
+  list whole).
+- **Share link left to the lead.** The preview deployed from the runner with the existing
+  team token (the project already allows previews); the runner has no Vercel connector for
+  `get_access_to_vercel_url`, so the lead mints Peter's link.
