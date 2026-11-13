@@ -40,6 +40,12 @@ if [[ "$(git rev-list --count origin/main..HEAD)" == 0 ]]; then
   exit 1
 fi
 description="$(gh pr view "$pr" --json body -q .body)"
+# Title and description become the commit message, and GitHub runs no workflow for a commit whose message
+# holds a skip marker: the PR would wait for a ci-ok that never comes (job 209).
+if marker="$(grep -oiE '\[(skip ci|ci skip|no ci|skip actions|actions skip)\]|skip-checks: *true' <<<"$title"$'\n'"$description")"; then
+  echo "#$pr's title or description contains \"${marker%%$'\n'*}\", which would stop CI on the pushed commit; reword it, then rerun scripts/push-pr.sh" >&2
+  exit 1
+fi
 note_dir="$(mktemp -d)"
 trap 'rm -rf "$note_dir"' EXIT
 printf '%s\n' "$description" >"$note_dir/body"

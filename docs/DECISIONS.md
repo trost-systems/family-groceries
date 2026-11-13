@@ -11985,3 +11985,38 @@ field.
 - **Goldens.** `components-*` (field cells 110 to 120 dp tall so the error fits) and
   `name-dialog-keyboard-*`. Test: `fields_test.dart` measures the error and counter at ring + s2
   for the hex and the multi-line field, and shows 4 dp without the change.
+
+## Job 209: the site deploy waits for supabase-deploy, 2026-11-13
+
+On the #363 landing the site went live about 18 s before the edge functions. Now a production
+build of `hummlist-site` waits for the push-triggered **Supabase deploy** run that covers it
+(`site/scripts/supabase-gate.mjs`, the `ignoreCommand` in `site/vercel.json`; docs/DEPLOY.md,
+"The site waits for Supabase deploy").
+
+- **Mechanism: Vercel's ignore step, not a GitHub Actions deploy.** The Actions route
+  (`vercel deploy --prod` after `needs: deploy`) needs a Vercel token in the repo's secrets and
+  Vercel's git deploys off for the project; neither exists (`gh secret list` has no Vercel
+  token), so it would not work until Peter made both, and a half-done switch stops the site from
+  deploying at all. The ignore step lives in the repo, needs no secret (the repo is public) and
+  leaves every dashboard setting, Deployment Protection and every domain as they are. It
+  overrides the dashboard's old step and keeps its branch rule (only `main` builds).
+- **Bounded, fail closed.** It polls every 30 s (longer when GitHub's rate limit asks for it) for at most 25 minutes (Vercel's build limit is
+  45). A failed or cancelled run, a timeout or an unexpected error exits 2: the deployment ends
+  in ERROR and the live site stays. Redeploying in Vercel reruns the gate.
+- **Which run counts.** Only `event=push` runs on `main`, so a rollback dispatch (`ref`) never
+  counts. The commits since the live site (`VERCEL_GIT_PREVIOUS_SHA` to this one) are checked
+  against the workflow's paths, commit by commit; none: the site builds at once, with no API
+  call. Otherwise the newest such commit's run decides, and when this commit touches the paths
+  only its own run does (a run that is not created yet is waited for, not skipped).
+- **A site-only push can wait on an earlier commit (deliberate, beyond the brief's wording).**
+  The brief says a site change waits only if its own commit triggered the deploy. That holds once
+  the earlier commit's site is live. But while it is not (its run still going, or failed), the
+  later site-only commit carries the earlier commit's pages, and publishing it would put them
+  ahead of the functions, which the first rule forbids. So the gate waits for the newest run among
+  the commits since the live site. A newer green run supersedes an older red one, since each
+  deploy ships the whole functions tree.
+- **Accepted.** Unauthenticated GitHub API (60 requests per hour per address); a 403 retries
+  until the limit and an optional `GITHUB_ACTIONS_READ_TOKEN` lifts it (NEEDS_PETER, Job 209).
+  A waiting build holds a concurrent build slot for a few minutes. A push of several commits
+  whose deploy-touching commit is not the head is matched by the run of any commit in range, and
+  without one the gate builds after 90 s, as it does for `[skip ci]`.

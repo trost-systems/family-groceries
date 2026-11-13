@@ -323,8 +323,10 @@ Delete the marker when Peter has approved that text.
 
 ## Vercel
 
-Every push to `main` is a production deployment and goes live on snacklist.app; other branches get
-preview deployments behind Vercel Authentication. When a public release is recorded, the
+Every push to `main` is a production deployment and goes live on snacklist.app; other branches
+build nothing (`ignoreCommand`). When the push also runs **Supabase deploy**, `scripts/supabase-gate.mjs`
+holds the build until that run has succeeded and leaves the live site up if it fails
+(`docs/DEPLOY.md`, "The site waits for Supabase deploy"). When a public release is recorded, the
 **Public release record** workflow pushes the record to `main`, and that build shows the content
 of the new version (`docs/DEPLOY.md`, "Guides site").
 
