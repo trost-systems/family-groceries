@@ -484,8 +484,11 @@ key's fingerprints; debug and locally signed builds need the upload key's.
 project `family-groceries-ci`, Android Publisher API enabled) has no key and
 no project roles. Only jobs in this repo's `release` environment can act as
 it: its `roles/iam.workloadIdentityUser` binding names the subject
-`repo:trost-systems@267752722/family-groceries@1429864759:environment:release`
-on the workload identity pool `github`, provider `family-groceries`.
+`repo:trost-systems@267752722/snacklist@1429864759:environment:release`
+on the workload identity pool `github`, provider `family-groceries` (the provider keeps
+its id). Since the repo rename on 2026-11-12 the binding and the provider's attribute
+condition must name `snacklist`; until Peter changes them the Play upload fails
+(`NEEDS_PETER.md`, "Job 201").
 `google-github-actions/auth` exchanges the job's GitHub OIDC token and writes
 an `external_account` credentials file, which fastlane's supply reads as
 `json_key`. Play Console grants the account access to Hummlist
