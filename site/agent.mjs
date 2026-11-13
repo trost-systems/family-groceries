@@ -238,8 +238,9 @@ export function loadSite({ dist, siteUrl, vercel, stage, publicApi }) {
         canonical: doc.querySelector('link[rel="canonical"]')?.getAttribute('href') ?? siteUrl + fileRoute(file),
         alternates,
         noindex: /\bnoindex\b/i.test(doc.querySelector('meta[name="robots"]')?.getAttribute('content') ?? ''),
-        // The root redirect and the 404 page are no content pages.
-        special: file === 'index.html' || file === '404.html',
+        // The root redirect, the 404 page and the team's review pages (public/internal/, preview
+        // builds only) are no content pages.
+        special: file === 'index.html' || file === '404.html' || file.startsWith('internal/'),
       };
     });
   const byFile = new Map(pages.map((p) => [p.file, p]));

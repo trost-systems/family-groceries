@@ -745,3 +745,4 @@ A production build of `hummlist-site` now waits until the push-triggered **Supab
 ## Job 208: more space between a field and its helper, error and counter (2026-11-13)
 
 The field theme puts every field's helper, error and counter `HlSpace.s2` past the focus ring (13 dp below the contour, was 4), app-wide. Merged as 4a4f7fd1 (#403). Details: [docs/done/208-input-helper-spacing.md](docs/done/208-input-helper-spacing.md).
+- Job 214, store frame proposals FR1 to FR5 redone for Snacklist (draft PR #425, preview for Peter): [docs/done/214-store-frames-redo.md](docs/done/214-store-frames-redo.md)

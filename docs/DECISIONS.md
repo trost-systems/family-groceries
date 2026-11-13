@@ -12087,3 +12087,48 @@ build of `hummlist-site` waits for the push-triggered **Supabase deploy** run th
   event for an id that names nothing still answers `no_household`, also for a deleted user:
   `app_user_owner` cannot tell a deleted user from an unknown id, so `store.ts` documents the label
   instead of guessing.
+
+## Job 214: store frame proposals FR1 to FR5, redone for Snacklist, 2026-11-13
+
+Job 77's five frame proposals (PR #204) and job 84's P2 set (PR #212) were closed as outdated
+after the rename to Snacklist. Job 214 rebuilds the five proposals from current `main` for the
+review page `/internal/store-frames` on the site's preview deployments. Peter picks one there;
+job 215 builds the final set from it.
+
+1. **Fresh captures, by script.** Job 77's captures showed the old app domain in the invite link
+   and an invite screen the app no longer has. `design/store-frames/capture.mjs` now takes the six
+   screens from the release web build on the verify-snacklist instance, with job 65's paused-clock
+   method (caret off, the „neu von“ highlight at the same moment each run). It also writes the
+   rows each caption points at to `raw/de-DE/meta.json`, so a new capture needs no hand
+   measurement. The invite screen runs at `https://app.snacklist.app` (route proxy), so its link
+   reads as on the phones.
+2. **A scenario of its own.** `store-frames.yaml`: „Unser Haushalt“ with Anna and Jonas (as on the
+   landing hero), the generic stores Wochenmarkt, Bäckerei, Supermarkt and Drogerie (Legal N-23),
+   and four past Supermarkt trips with Joghurt and Kaffee for the suggestion and the remembered
+   store. `demo-familie` has no stores, and the frames show the list by store.
+3. **432 × 960 at DPR 2.5.** It gives the same 1080 × 2400 as before. At 360 px wide the top bar
+   cut the household name to „Unser Haus…“.
+4. **The sync shot sends Kaffee, not Butter.** Butter has no remembered store, so it went to
+   „Ohne Laden“ below the fold. Kaffee goes to Supermarkt from past trips, and the sender's sheet
+   says so („Hinzugefügt: Kaffee → Supermarkt“). The captions say Kaffee.
+5. **Tagline FG2.** „mitsummt“ (FG1) was a bee pun on the old name. The feature graphics use FG2,
+   „Gemeinsam einkaufen, ohne Werbung.“, the landing page's approved hero title. FR5's first
+   caption is new: „Eine Einkaufsliste für den ganzen Haushalt“.
+6. **Labels FR1 to FR5.** P1 to P5 named both job 77's options and job 84's pick. The page marks
+   FR2 Großschrift as Peter's earlier pick („frühere Wahl“, job 84's P2) and asks for a label.
+7. **Review pages are no content pages.** The site's agent checks (added after job 77) require
+   hreflang alternates on every HTML page. `site/agent.mjs` now counts `internal/` pages as
+   special, like the root redirect and the 404 page. Production builds still delete `internal/`
+   (`site/test/internal.test.mjs`).
+8. **Kept from job 77:** one 6480 × 1920 strip per proposal cut into six shots, crops only at
+   clean lines found in the pixels (now above the floating add bar and tab bar, `chrome` in
+   `meta.json`), and the text share measured per shot (fails above 20 %, now 4.6 % to 12.7 %). No
+   mascot, no device frame except FR3's plain bezel, no Premium or price, no retailer.
+9. **The preview is on `family-groceries-design`, not the site's PR preview.** Since #404 the
+   site's `ignoreCommand` (`site/scripts/supabase-gate.mjs`) skips every branch but `main`, so
+   this PR's `hummlist-site` build ends "Canceled by Ignored Build Step". The standing rule for
+   prototype previews names the existing `family-groceries-design` project, so the review page
+   (the site build's `internal/` folder, `tokens.css` and two fonts, served with
+   `X-Robots-Tag: noindex, nofollow`) went there as a preview deployment by CLI, as job 223 did.
+   No project, domain, protection or bypass setting changed. Re-enabling site previews for
+   `internal/` pages is a separate decision about #404's gate and stays out of this job.
