@@ -1,0 +1,13 @@
+scenario	width	text	sync	breadcrumb	stacked	single	list	hide
+3	390	100%	on	f/f	f/f	f/f	f/f	f/f
+3	360	100%	on	f/f	f/f	f/f	f/f	f/f
+3	320	100%	on	c/c	f/f	c/f	f/f	f/f
+3	390	100%	off	f/f	f/f	f/f	f/f	f/f
+3	360	100%	off	c/c	f/f	c/c	f/f	f/f
+3	320	100%	off	c/c	f/c	c/c	c/c	f/c
+3	390	130%	on	f/f	f/f	f/f	f/f	f/f
+3	360	130%	on	c/c	f/f	c/c	f/f	f/f
+3	320	130%	on	c/c	f/c	c/c	c/c	f/c
+3	390	130%	off	c/c	f/f	c/c	f/c	f/f
+3	360	130%	off	c/c	f/c	c/c	c/c	f/c
+3	320	130%	off	c/c	c/c	c/c	c/c	c/c
