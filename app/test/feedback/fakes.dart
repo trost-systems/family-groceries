@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
+import 'package:flutter/widgets.dart';
 
 /// The server's feedback table: one row per id, like the database (a
 /// repeat of an id is no second row). [failNext] makes the next sends
@@ -40,6 +41,7 @@ class FakeFeedbackDevice() implements FeedbackDevice {
     build: '45',
     platform: 'android',
     osVersion: 'Android 14 (SDK 34)',
+    deviceModel: 'Google Pixel 8',
   );
 }
 
@@ -48,7 +50,16 @@ const sampleContext = FeedbackContext(
   build: '45',
   platform: 'android',
   osVersion: 'Android 14 (SDK 34)',
+  deviceModel: 'Google Pixel 8',
   locale: 'de',
-  screen: 'list',
   isInternal: false,
+  scene: FeedbackScene(
+    entryPoint: FeedbackEntryPoint.more,
+    screen: 'list',
+    theme: Brightness.light,
+    orientation: Orientation.portrait,
+    textScale: '1.0',
+    online: FeedbackOnline.yes,
+    entitlement: FeedbackEntitlement.free,
+  ),
 );

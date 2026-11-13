@@ -4,7 +4,7 @@ description: "Help with Snacklist: how to reach us, and answers to common questi
 locale: en
 path: /en/support
 translation_key: support
-updated: 2026-11-07
+updated: 2026-11-13
 draft: false
 ---
 
@@ -14,7 +14,7 @@ Snacklist is a shared shopping list for one household. Whatever one person adds,
 
 ## How to get help
 
-- **In the app:** tap **More**, then **Send feedback**. Describe what happened or what you are missing. The app version, device, language and the screen you are on are sent along, but no list items. This is the fastest way.
+- **In the app:** tap **More**, then **Send feedback**. On your phone you can also shake it on the screen where the problem happens. Describe what happened or what you are missing. The app version, device, language and the screen you are on are sent along, but no list items. This is the fastest way.
 - **By email:** [support@snacklist.app](mailto:support@snacklist.app). Please say which device you use (iPhone, Android or browser).
 
 Who is responsible for Snacklist is in the [imprint](/en/imprint). How Snacklist handles your data is in the [privacy policy](/en/privacy).

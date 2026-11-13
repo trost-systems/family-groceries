@@ -1,7 +1,7 @@
 -- Job 21: public.feedback (docs/FEEDBACK.md). Insert-only for the sender, checks, the household
 -- and is_internal set by the database, idempotent ids, the 12-month purge and its cron job.
 begin;
-select plan(52);
+select plan(68);
 
 create function pg_temp.login(uid uuid) returns void language plpgsql as $$
 begin
@@ -78,6 +78,72 @@ select throws_ok(
      values (gen_random_uuid(), now() - interval '2 years', 'Alt', '0.1.0', '1', 'web', 'Chrome on macOS', 'de',
        'list') $$,
   '42501', null, 'nor the time');
+
+-- Job 138: the context a current app adds. A full row goes in; the sender still reads nothing.
+create function pg_temp.send138(p_id uuid, p_extra jsonb default '{}') returns void
+language plpgsql as $$
+declare
+  v jsonb := jsonb_build_object('entry_point', 'shake', 'device_model', 'Google Pixel 8', 'theme', 'dark',
+    'orientation', 'portrait', 'text_scale', '1.3', 'online', 'no', 'entitlement', 'yearly') || p_extra;
+begin
+  insert into public.feedback (id, message, app_version, build, platform, os_version, locale, screen,
+    entry_point, device_model, theme, orientation, text_scale, online, entitlement)
+  values (p_id, 'Beim Schütteln', '0.2.0', '7', 'android', 'Android 14 (SDK 34)', 'de', 'stores',
+    v ->> 'entry_point', v ->> 'device_model', v ->> 'theme', v ->> 'orientation', v ->> 'text_scale',
+    v ->> 'online', v ->> 'entitlement');
+end $$;
+grant execute on function pg_temp.send138(uuid, jsonb) to authenticated;
+
+select lives_ok($$ select pg_temp.send138('13800000-0000-4000-8000-000000000001') $$,
+  'a note with entry point, model, theme, orientation, text size, connection and premium goes in');
+select throws_ok($$ select entry_point, device_model from public.feedback $$, '42501', null,
+  'the sender cannot read the new fields back either');
+select throws_ok($$ update public.feedback set theme = 'light' $$, '42501', null, 'nor change them');
+select throws_ok($$ select pg_temp.send138(gen_random_uuid(), '{"entry_point": "settings"}') $$, '23514', null,
+  'entry_point is more or shake');
+select throws_ok($$ select pg_temp.send138(gen_random_uuid(), '{"theme": "blue"}') $$, '23514', null,
+  'theme is light or dark');
+select throws_ok($$ select pg_temp.send138(gen_random_uuid(), '{"orientation": "upside_down"}') $$, '23514', null,
+  'orientation is portrait or landscape');
+select throws_ok($$ select pg_temp.send138(gen_random_uuid(), '{"text_scale": "2.7"}') $$, '23514', null,
+  'text_scale is a bucket, never a raw factor');
+select throws_ok($$ select pg_temp.send138(gen_random_uuid(), '{"online": "true"}') $$, '23514', null,
+  'online is yes, no or unknown');
+select throws_ok($$ select pg_temp.send138(gen_random_uuid(), '{"entitlement": "rc_abc123"}') $$, '23514', null,
+  'entitlement is a fixed status, never an id');
+select throws_ok(format($$ select pg_temp.send138(gen_random_uuid(), '{"device_model": "%s"}') $$, repeat('x', 49)),
+  '23514', null, 'device_model has at most 48 characters');
+select throws_ok($$ select pg_temp.send138(gen_random_uuid(), '{"device_model": ""}') $$, '23514', null,
+  'device_model is not empty');
+select throws_ok($$ select pg_temp.send138(gen_random_uuid(), jsonb_build_object('device_model', 'Pixel' || chr(10) || '8')) $$,
+  '23514', null, 'device_model has no control characters');
+select lives_ok($$ select pg_temp.send('13800000-0000-4000-8000-000000000002', 'Alte App') $$,
+  'an app from before job 138 still sends without the new fields');
+
+select pg_temp.as_postgres();
+select results_eq(
+  $$ select entry_point, device_model, theme, orientation, text_scale, online, entitlement
+     from public.feedback where id = '13800000-0000-4000-8000-000000000001' $$,
+  $$ values ('shake', 'Google Pixel 8', 'dark', 'portrait', '1.3', 'no', 'yearly') $$,
+  'the new fields are stored as sent');
+select results_eq(
+  $$ select entry_point, device_model, entitlement from public.feedback
+     where id = '13800000-0000-4000-8000-000000000002' $$,
+  $$ values (null::text, null::text, null::text) $$,
+  'an old app''s note leaves them empty');
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
+select is(
+  (select e - 'created_at' from jsonb_array_elements(public.export_my_data() -> 'feedback') e
+   where e ->> 'message' = 'Beim Schütteln'),
+  jsonb_build_object('message', 'Beim Schütteln', 'category', null, 'contact_ok', false, 'screen', 'stores',
+    'platform', 'android', 'app_version', '0.2.0', 'build', '7', 'os_version', 'Android 14 (SDK 34)',
+    'locale', 'de', 'household_id', (select id from ha), 'is_internal', false, 'entry_point', 'shake',
+    'device_model', 'Google Pixel 8', 'theme', 'dark', 'orientation', 'portrait', 'text_scale', '1.3',
+    'online', 'no', 'entitlement', 'yearly'),
+  'Meine Daten exportieren lists the new fields of one''s own note');
+select pg_temp.as_postgres();
+delete from public.feedback where id::text like '13800000-%';
+select pg_temp.login('00000000-0000-0000-0000-0000000000a1');
 
 -- Idempotency: the same id again (double tap, retry after a lost answer) stays one row.
 select lives_ok($$ select pg_temp.send('10000000-0000-4000-8000-000000000001', 'Der Haken reagiert spät.') $$,
@@ -214,7 +280,7 @@ select results_eq(
   $$ values ('00000000-0000-0000-0000-0000000000b1'::uuid, null::uuid) $$,
   'a deleted household leaves the note, without its id');
 
--- The PM's Monday summary reads the comments in the dashboard.
+-- Peter reads the column comments in the dashboard.
 select is((select count(*)::int from pg_attribute a
            where a.attrelid = 'public.feedback'::regclass and a.attnum > 0 and not a.attisdropped
              and col_description(a.attrelid, a.attnum) is null), 0, 'every column has a comment');

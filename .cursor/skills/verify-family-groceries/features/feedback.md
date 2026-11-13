@@ -1,6 +1,6 @@
 # Feedback
 
-Mehr → "Feedback senden" (`more-feedback`) opens a sheet where the user writes a short note (1 to 2,000 characters), optionally picks Bug, Idee or Sonstiges and ticks "Peter darf mich dazu kontaktieren", and sends it. The note goes into `public.feedback` with the app version, build, platform, OS version, app language and the screen the user came from (`list` when they opened More from the list), and nothing from the list. Clients can only insert; reading is for the service role (`docs/FEEDBACK.md`). On success the sheet closes and "Danke!" shows; on a failure the note stays with "Erneut senden".
+Mehr → "Feedback senden" (`more-feedback`) opens a sheet where the user writes a short note (1 to 2,000 characters), optionally picks Bug, Idee or Sonstiges and ticks "Peter darf mich dazu kontaktieren", and sends it. The note goes into `public.feedback` with the app version, build, platform, OS version, device model, app language, the screen the user came from (`list` when they opened More from the list), how it was opened, theme, orientation, text size bucket, list connection and Premium status, and nothing from the list. On iOS and Android a shake opens the same sheet about the screen on display (job 138). Clients can only insert; reading is for the service role (`docs/FEEDBACK.md`). On success the sheet closes and "Danke!" shows; on a failure the note stays with "Erneut senden".
 
 ## Sub-features
 
@@ -9,7 +9,8 @@ Mehr → "Feedback senden" (`more-feedback`) opens a sheet where the user writes
 - `fb-options` `feedback-category-bug` / `-idea` / `-other` (a second tap unpicks), `feedback-contact` (off by default; a pointy hex `HexCheckboxListTile` since job 57, still role checkbox). `feedback-attached` names what goes along.
 - `fb-limits` from 1,800 characters `feedback-counter` shows "N / 2000"; over 2,000 the field says "Höchstens 2000 Zeichen" and Send is disabled. Blank notes can't be sent.
 - `fb-retry` without a connection `feedback-error` ("Nicht gesendet. …") shows, the note stays, and `feedback-retry` ("Erneut senden") replaces Send. Closing (`feedback-close`) keeps the note for the next open.
-- `fb-screen` the row's `screen` is the last screen before More (`list`), or the More page the form sat beside on a wide screen (`account`).
+- `fb-screen` from More the row's `screen` is the last screen before More (`list`), or the More page the form sat beside on a wide screen (`account`); after a shake (`entry_point` `shake`) the screen on display. The row also has `entry_point`, `device_model`, `theme`, `orientation`, `text_scale`, `online`, `entitlement` (job 138, docs/FEEDBACK.md).
+- `fb-shake` iOS and Android only (the Linux build never listens, so fg can't shake): a shake in the signed-in shell opens the sheet with `feedback-shake-hint`. Proven by `app/test/feedback/shake_to_feedback_test.dart` (fake accelerometer samples into the real shell).
 
 ## How to get to it (user POV)
 

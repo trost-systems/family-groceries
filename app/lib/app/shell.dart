@@ -7,6 +7,7 @@ import 'package:family_groceries/design/hex_border.dart';
 import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/sticker.dart';
 import 'package:family_groceries/design/tokens.g.dart';
+import 'package:family_groceries/feedback/shake.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
 import 'package:family_groceries/list/list_repository.dart';
 import 'package:family_groceries/list/list_scope.dart';
@@ -15,6 +16,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 /// From this width the tabs become a rail and More shows two panes.
 const wideLayout = 840.0;
@@ -130,6 +132,10 @@ class const AppShell({
 
   /// Overrides the Supabase trips per household, for tests.
   final TripRepository Function(String householdId)? trips,
+
+  /// Overrides the accelerometer, for tests; a broadcast stream
+  /// ([ShakeToFeedback.samples]).
+  final Stream<AccelerometerEvent>? shakeSamples,
 }) extends StatefulWidget {
   @override
   State<AppShell> createState() => _AppShellState();
@@ -173,87 +179,94 @@ class _AppShellState() extends State<AppShell> {
     return ListScope(
       repositories: widget.repositories,
       trips: widget.trips,
-      child: SheetOpen(
-        notifier: _sheetOpen,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            if (constraints.maxWidth >= wideLayout) {
+      child: ShakeToFeedback(
+        samples: widget.shakeSamples,
+        child: SheetOpen(
+          notifier: _sheetOpen,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth >= wideLayout) {
+                return Scaffold(
+                  body: Row(
+                    children: [
+                      NavigationRail(
+                        selectedIndex: switch (shown.indexWhere(
+                          (d) => d.branch == branch,
+                        )) {
+                          -1 => null,
+                          final i => i,
+                        },
+                        onDestinationSelected: (i) => _select(shown[i]),
+                        labelType: NavigationRailLabelType.all,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerLow,
+                        destinations: [
+                          for (final destination in shown)
+                            NavigationRailDestination(
+                              icon: Icon(
+                                destination.icon,
+                                key: destination.key,
+                              ),
+                              selectedIcon: Icon(destination.selectedIcon),
+                              label: Text(destination.label(l10n)),
+                            ),
+                        ],
+                      ),
+                      const VerticalDivider(width: 1),
+                      Expanded(child: widget.shell),
+                    ],
+                  ),
+                );
+              }
+              // Once the keyboard rises past the band, the band goes: no page
+              // gets an inset for a band under the keyboard. Below that the
+              // band stays, hidden, so the field above it never jumps.
+              final keyboard =
+                  MediaQuery.viewInsetsOf(context).bottom >
+                  _bandHeight(context);
+              final band = keyboard
+                  ? null
+                  : SheetOpen.of(context).value
+                  ? _Band.hint
+                  : _Band.tabs;
               return Scaffold(
-                body: Row(
-                  children: [
-                    NavigationRail(
-                      selectedIndex: switch (shown.indexWhere(
-                        (d) => d.branch == branch,
-                      )) {
-                        -1 => null,
-                        final i => i,
-                      },
-                      onDestinationSelected: (i) => _select(shown[i]),
-                      labelType: NavigationRailLabelType.all,
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerLow,
-                      destinations: [
-                        for (final destination in shown)
-                          NavigationRailDestination(
-                            icon: Icon(destination.icon, key: destination.key),
-                            selectedIcon: Icon(destination.selectedIcon),
-                            label: Text(destination.label(l10n)),
+                // Every page runs on behind the pill; the band's height
+                // reaches it as the bottom padding.
+                extendBody: true,
+                // A page's floating button keeps off the view padding, which
+                // the Scaffold leaves at the system's: it covers the band too.
+                body: Builder(
+                  builder: (context) {
+                    final media = MediaQuery.of(context);
+                    return MediaQuery(
+                      key: _page,
+                      data: media.copyWith(
+                        viewPadding: media.viewPadding.copyWith(
+                          bottom: math.max(
+                            media.viewPadding.bottom,
+                            media.padding.bottom,
                           ),
-                      ],
-                    ),
-                    const VerticalDivider(width: 1),
-                    Expanded(child: widget.shell),
-                  ],
-                ),
-              );
-            }
-            // Once the keyboard rises past the band, the band goes: no page
-            // gets an inset for a band under the keyboard. Below that the
-            // band stays, hidden, so the field above it never jumps.
-            final keyboard =
-                MediaQuery.viewInsetsOf(context).bottom > _bandHeight(context);
-            final band = keyboard
-                ? null
-                : SheetOpen.of(context).value
-                ? _Band.hint
-                : _Band.tabs;
-            return Scaffold(
-              // Every page runs on behind the pill; the band's height
-              // reaches it as the bottom padding.
-              extendBody: true,
-              // A page's floating button keeps off the view padding, which
-              // the Scaffold leaves at the system's: it covers the band too.
-              body: Builder(
-                builder: (context) {
-                  final media = MediaQuery.of(context);
-                  return MediaQuery(
-                    key: _page,
-                    data: media.copyWith(
-                      viewPadding: media.viewPadding.copyWith(
-                        bottom: math.max(
-                          media.viewPadding.bottom,
-                          media.padding.bottom,
                         ),
                       ),
-                    ),
-                    child: widget.shell,
-                  );
-                },
-              ),
-              bottomNavigationBar: band == null
-                  ? null
-                  : ScrollThrough(
-                      under: _page,
-                      child: _TabBand(
-                        band: band,
-                        shown: shown,
-                        branch: branch,
-                        onSelect: _select,
+                      child: widget.shell,
+                    );
+                  },
+                ),
+                bottomNavigationBar: band == null
+                    ? null
+                    : ScrollThrough(
+                        under: _page,
+                        child: _TabBand(
+                          band: band,
+                          shown: shown,
+                          branch: branch,
+                          onSelect: _select,
+                        ),
                       ),
-                    ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );

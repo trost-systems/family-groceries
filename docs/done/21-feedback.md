@@ -5,7 +5,7 @@ PR: https://github.com/trost-systems/family-groceries/pull/103
 Testers (and, from the next release, every DACH user) send a short note from **Mehr → Feedback
 senden** on iOS, Android and the web. The note lands in `public.feedback` with the app version,
 build, platform, OS version, app language and the screen the user came from, and nothing from
-the list. Peter and the PM read it with the service role; nothing notifies anyone (Peter's
+the list. Peter and the PM read it with the service role (superseded by job 224: only Peter reads it); nothing notifies anyone (Peter's
 decisions 1-5 of 2026-10-27, DECISIONS "Job 21"). Overview: [FEEDBACK.md](../FEEDBACK.md).
 
 ## What changed for users

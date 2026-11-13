@@ -1,10 +1,15 @@
 # In-app feedback
 
 Job 21 (Spec #2, Peter's decisions of 2026-10-27 in DECISIONS.md "Job 21"). Testers and
-customers send a short note from **Mehr → Feedback senden** on iOS, Android and the web. The
-note goes into one table, `public.feedback`, which Peter and the Snacklist PM read with the
-service role (Supabase dashboard or the Supabase connector). Nothing notifies anyone: the PM
-reads the table every Monday with the SQL below.
+customers send a short note from **Mehr → Feedback senden** on iOS, Android and the web. Since
+job 138 (DECISIONS "Job 138") **shaking the phone** opens the same form on iOS and Android, about
+the screen on display: the form teaches it („Einen Fehler gefunden? Geh zurück zu dem
+Bildschirm, stell ihn nach und schüttle das Handy …“). Shaking works only in the signed-in app
+(not on sign-in or onboarding), never while a dialog or sheet is open, and at most once per
+1.5 s. The web has no shake: More only. The
+note goes into one table, `public.feedback`, which only Peter reads, by hand in the Supabase
+dashboard. No bot, connector or routine reads the notes (Peter's rule of 1 Nov 2026, Legal
+Review 13 Nov 2026, DECISIONS "Job 224"). Nothing notifies anyone.
 
 ## What is stored
 
@@ -24,12 +29,24 @@ One row per note (`supabase/migrations/20261030070000_feedback.sql`; every colum
 | `platform` | `ios`, `android`, `web`, `linux`, `macos`, `windows`. |
 | `os_version` | `Android 14 (SDK 34)`, `iOS 18.1`; on the web only the browser family and OS (`Safari on iOS`), never the user agent. |
 | `locale` | The app's language when sending (`de`, `en`). |
-| `screen` | The screen the note is about, a fixed name: the last screen before the More tab (`list` almost always), or the More page the form was opened beside on wide screens (`access`, `account`, `privacy`). Never a path, an invite code or an item. The names are `screenNames` in `app/lib/app/router.dart`. |
+| `screen` | The screen the note is about, a fixed name. After a shake: the screen on display. From More: the last screen before the More tab (`list` almost always), or the More page the form was opened beside on wide screens (`access`, `account`). Never a path, an invite code or an item. The names are `screenNames` in `app/lib/app/router.dart`. |
+| `entry_point` | `more` (More's row) or `shake`. Empty from builds before job 138 (More only then). |
+| `device_model` | The marketing name where the OS gives one: `iPhone 15 Pro`, `Google Pixel 8`; `web` in a browser; `unknown` otherwise. At most 48 characters; never a serial, IMEI, device name or id. |
+| `theme` | `light` or `dark`, the app's theme when the form opened. |
+| `orientation` | `portrait` or `landscape` when the form opened. |
+| `text_scale` | The system text size as a bucket: `0.8-`, `0.9`, `1.0` … `1.4`, `1.5+`. |
+| `online` | Whether the list was connected to the server when the form opened: `yes`, `no`, `unknown` (still connecting). |
+| `entitlement` | Premium in the household when the form opened, from its rows or the sender's own (job 185): `free`, `lifetime`, `yearly`, `promotional` (testers), `unknown` (not read yet). No store or RevenueCat ids. |
 | `is_internal` | Peter's household (the `ANALYTICS_INTERNAL_HOUSEHOLDS` define), a debug, profile or preview build, an install marked internal under More, or a test account. The database forces it for test accounts (`.test`, `.invalid`, `.example`, `.localhost`, `example.com/.net/.org`), whatever the app says. |
 
+Everything from `entry_point` to `entitlement` describes the moment the form opened, not the
+moment of Send (job 138). Fields an older build doesn't know stay empty.
+
 Nothing from the list is attached: no item, category or store names, no household name. The
-form says so ("App-Version, Gerät, Sprache und aktueller Bildschirm. Keine Listeneinträge.").
-No screenshots, no device model, no e-mail.
+form says so („Wird mitgeschickt: App-Version, Gerät und Modell, Sprache, Bildschirm,
+Darstellung (hell/dunkel, Ausrichtung, Textgröße), Verbindung, Premium-Status und wie du das
+Formular geöffnet hast. Keine Listeneinträge.“). No screenshots, no e-mail, no full user agent,
+no location, contacts or clipboard.
 
 ## Who can read it
 
@@ -37,8 +54,12 @@ No screenshots, no device model, no e-mail.
   themselves (`user_id = auth.uid()`). No select, update or delete, not even of their own notes;
   anon gets nothing. RLS policy `feedback_insert_own` plus column grants; proven in
   `supabase/tests/feedback.test.sql`, `rls.test.sql` and `e2e/tests/rls.spec.ts`.
-- **Peter and the PM** read with the service role: the dashboard's Table Editor
-  (`public.feedback`) or the Supabase connector, project `jdwqrallbpdbshrdhenk`.
+- **Peter** reads it himself, signed in to the Supabase dashboard (project
+  `jdwqrallbpdbshrdhenk`): the Table Editor (`public.feedback`) or the SQL editor with the
+  queries below. Nobody else reads it, and no bot, connector, routine or script reads the notes.
+  The privacy policy names no other recipient (§10). Two scheduled jobs touch the table without
+  reading notes for anyone: the daily purge (below) and the encrypted nightly backup
+  (docs/BACKUP.md).
 - **The sender** gets their own notes in "Meine Daten exportieren" (section `feedback`).
 
 ## Retention
@@ -53,12 +74,12 @@ No screenshots, no device model, no e-mail.
 Check the schedule: `select jobname, schedule, command, active from cron.job;` and its runs:
 `select status, return_message, start_time from cron.job_run_details order by start_time desc limit 7;`
 
-## Monday summary
+## Weekly queries
 
-The PM runs these through the Supabase connector (service role, project
-`jdwqrallbpdbshrdhenk`) every Monday. Both are read-only. "Last week" is the previous full
-calendar week in Berlin time, Monday 00:00 to Monday 00:00, so consecutive Mondays never
-overlap or miss a note (daylight-saving weeks included). External notes come first.
+Peter pastes these into the dashboard's SQL editor when he reads the notes. Both are
+read-only. "Last week" is the previous full calendar week in Berlin time, Monday 00:00 to
+Monday 00:00, so reading on consecutive Mondays never overlaps or misses a note
+(daylight-saving weeks included). External notes come first.
 
 All notes of last week:
 
@@ -80,14 +101,22 @@ select case when f.is_internal then 'internal' else 'external' end as audience,
        f.locale,
        f.household_id,
        f.user_id,
-       f.contact_ok
+       f.contact_ok,
+       coalesce(f.entry_point, 'more') as entry_point,
+       f.device_model,
+       f.theme,
+       f.orientation,
+       f.text_scale,
+       f.online,
+       f.entitlement
 from public.feedback f, week
 where f.created_at >= week.starts and f.created_at < week.ends
 order by f.is_internal, f.created_at, f.id;
 ```
 <!-- /monday-sql -->
 
-How many, per category and per platform:
+How many, per category, per platform and per way in (More or a shake; builds before job 138
+leave `entry_point` empty and could only open the form from More):
 
 <!-- monday-sql:counts -->
 ```sql
@@ -106,11 +135,15 @@ from last_week group by is_internal, category
 union all
 select case when is_internal then 'internal' else 'external' end, 'platform', platform, count(*)
 from last_week group by is_internal, platform
+union all
+select case when is_internal then 'internal' else 'external' end, 'entry_point',
+       coalesce(entry_point, 'more'), count(*)
+from last_week group by is_internal, coalesce(entry_point, 'more')
 order by audience, by, notes desc, value;
 ```
 <!-- /monday-sql -->
 
-When a note has `contact_ok = true`, Peter (only he contacts anyone) looks up the address:
+When a note has `contact_ok = true`, Peter looks up the address:
 
 <!-- monday-sql:contact -->
 ```sql

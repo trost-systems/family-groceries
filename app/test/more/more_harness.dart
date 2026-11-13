@@ -35,6 +35,7 @@ import 'package:http/testing.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -188,6 +189,10 @@ Future<More> pumpMore(
 
   /// The store's rating prompt and listing.
   FakeStoreReview? storeReview,
+
+  /// The accelerometer of `app`'s shell; none by default (tests have no
+  /// sensors plugin).
+  Stream<AccelerometerEvent> shakeSamples = const Stream.empty(),
 }) async {
   tester.view
     ..devicePixelRatio = 1
@@ -245,7 +250,7 @@ Future<More> pumpMore(
     observers: [popups],
     redirect: app ? (_, state) => authRedirect(session.state, state.uri) : null,
     routes: app
-        ? appRoutes(repositories: (_) => repo)
+        ? appRoutes(repositories: (_) => repo, shakeSamples: shakeSamples)
         : [
             // As in the app, the list sits above the tabs (AppShell's
             // ListScope).

@@ -17,7 +17,8 @@ import {
 } from './helpers';
 
 // Job 21: in-app feedback (docs/FEEDBACK.md). More -> "Feedback senden" -> a note with the app's
-// context, insert-only into public.feedback; read back here with the service role, as the PM does.
+// context, insert-only into public.feedback; read back here with the local stack's service role
+// (in production only Peter reads it, in the dashboard).
 
 const phone = { width: 390, height: 844 };
 
@@ -37,7 +38,7 @@ async function userIdOf(email: string): Promise<string> {
   return data.user.id;
 }
 
-/** The user's notes, as the PM reads them (service role). */
+/** The user's notes, read with the local stack's service role. */
 async function rowsOf(userId: string): Promise<Row[]> {
   const { data, error } = await adminClient().from('feedback').select('*').eq('user_id', userId).order('created_at');
   if (error) throw error;
@@ -67,8 +68,10 @@ test('a note from More after the list: one row, screen list, the context, no lis
   await addItem(page, 'Geheimzutat Kardamom');
 
   await openFeedback(page, 'Feedback senden', 'Mehr', 'job21-more-entry-de');
-  await expect(page.getByText('App-Version, Gerät, Sprache und aktueller Bildschirm. Keine Listeneinträge.', { exact: false }))
+  await expect(page.getByText('Darstellung (hell/dunkel, Ausrichtung, Textgröße), Verbindung, Premium-Status', { exact: false }))
     .toBeVisible();
+  // Job 138: a browser can't shake, so the form doesn't teach it.
+  await expect(page.getByText('schüttle das Handy', { exact: false })).toHaveCount(0);
   await expect(sendButton(page)).toBeDisabled();
   await screenshot(page, 'job21-form-empty-de');
   await typeInto(messageField(page), 'Beim Abhaken springt die Liste nach oben.');
@@ -102,6 +105,11 @@ test('a note from More after the list: one row, screen list, the context, no lis
     expect(String(row[field]).length, field).toBeGreaterThan(0);
   }
   expect(row.os_version).toMatch(/^Chrome on (Linux|macOS|Windows)$/);
+  // Job 138: how the form was opened and how the app looked then.
+  expect(row).toMatchObject({ entry_point: 'more', device_model: 'web', theme: 'light', text_scale: '1.0' });
+  expect(['portrait', 'landscape']).toContain(row.orientation);
+  expect(['yes', 'no', 'unknown']).toContain(row.online);
+  expect(['free', 'unknown']).toContain(row.entitlement);
   // AC9: no item name or list text in any column but the message.
   const { message: _, ...rest } = row;
   const scanned = JSON.stringify(rest);
@@ -142,7 +150,7 @@ test('with analytics consent: one feedback_submitted, without the text (AC8)', a
   const event = firstOf(submitted(), 'feedback_submitted event');
   expect(event.properties).toMatchObject({
     category: 'idea',
-    entry_point: 'settings',
+    entry_point: 'more',
     screen: 'list',
     contact_ok: true,
     is_internal: true,
@@ -292,7 +300,7 @@ test.describe('in English', () => {
       await expect(page.getByRole('checkbox', { name: text, exact: true })).toBeVisible();
     }
     await expect(page.getByRole('checkbox', { name: 'Peter may contact me about this' })).toBeVisible();
-    await expect(page.getByText('App version, device, language and current screen. No list items.', { exact: false }))
+    await expect(page.getByText('connection, Premium status and how you opened this form. No list items.', { exact: false }))
       .toBeVisible();
     await typeInto(messageField(page, 'Your message'), 'The list jumps when I tick an item.');
     await screenshot(page, 'job21-form-filled-en');

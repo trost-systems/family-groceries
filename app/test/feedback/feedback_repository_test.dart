@@ -67,9 +67,16 @@ void main() {
       'build': '45',
       'platform': 'android',
       'os_version': 'Android 14 (SDK 34)',
+      'device_model': 'Google Pixel 8',
       'locale': 'de',
       'screen': 'list',
       'is_internal': false,
+      'entry_point': 'more',
+      'theme': 'light',
+      'orientation': 'portrait',
+      'text_scale': '1.0',
+      'online': 'yes',
+      'entitlement': 'free',
     });
   });
 
@@ -80,14 +87,15 @@ void main() {
         message: 'x',
         category: null,
         contactOk: false,
-        context: const FeedbackContext(
+        context: FeedbackContext(
           appVersion: '1.2.3',
           build: '45',
           platform: 'android',
           osVersion: 'Android 14 (SDK 34)',
+          deviceModel: 'Google Pixel 8',
           locale: 'de',
-          screen: 'list',
           isInternal: false,
+          scene: sampleContext.scene,
           householdId: 'club',
         ),
       ),

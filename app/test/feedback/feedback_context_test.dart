@@ -1,4 +1,6 @@
 import 'package:family_groceries/feedback/feedback_context.dart';
+import 'package:family_groceries/list/list_repository.dart';
+import 'package:family_groceries/purchases/entitlements.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -36,6 +38,7 @@ void main() {
   group('fitField', () {
     test('trims and drops control characters', () {
       expect(fitField('  iOS\n18.1\t', 64), 'iOS 18.1');
+      expect(fitField('Pixel\u{85}8\u{2028}', 48), 'Pixel 8');
     });
 
     test('empty is unknown, or what the caller says', () {
@@ -47,5 +50,108 @@ void main() {
       expect(fitField('🛒' * 70, 64).runes.length, 64);
       expect(fitField('a' * 40, 32), 'a' * 32);
     });
+  });
+
+  group('textScaleBucket', () {
+    const cases = [
+      (0.5, '0.8-'),
+      (0.84, '0.8-'),
+      (0.85, '0.9'),
+      (0.9, '0.9'),
+      (1.0, '1.0'),
+      (1.04, '1.0'),
+      (1.06, '1.1'),
+      (1.15, '1.2'),
+      (1.3, '1.3'),
+      (1.44, '1.4'),
+      (1.45, '1.5+'),
+      (2.0, '1.5+'),
+      (3.2, '1.5+'),
+      (double.nan, '1.0'),
+      (double.infinity, '1.0'),
+    ];
+    for (final (factor, bucket) in cases) {
+      test('$factor is $bucket', () {
+        expect(textScaleBucket(factor), bucket);
+        expect(textScaleBuckets, contains(bucket));
+      });
+    }
+  });
+
+  test('online: the list connection, unknown while connecting or without a '
+      'list', () {
+    expect(FeedbackOnline.of(ConnectionStatus.online), FeedbackOnline.yes);
+    expect(FeedbackOnline.of(ConnectionStatus.offline), FeedbackOnline.no);
+    expect(
+      FeedbackOnline.of(ConnectionStatus.connecting),
+      FeedbackOnline.unknown,
+    );
+    expect(FeedbackOnline.of(null), FeedbackOnline.unknown);
+  });
+
+  group('entitlement', () {
+    final now = DateTime.utc(2026, 11, 6);
+    FeedbackEntitlement of(List<PremiumRow> rows) => FeedbackEntitlement.of(
+      EntitlementsKnown(
+        householdId: 'home',
+        unlocks: Unlocks(rows: rows),
+      ),
+      now,
+    );
+
+    test('not read yet is unknown', () {
+      expect(
+        FeedbackEntitlement.of(const EntitlementsUnknown(), now),
+        FeedbackEntitlement.unknown,
+      );
+    });
+
+    test('no row, or only an ended plan, is free', () {
+      expect(of([]), FeedbackEntitlement.free);
+      expect(
+        of([
+          PremiumRow(
+            source: PremiumSource.yearly,
+            expiresAt: now.subtract(const Duration(days: 1)),
+          ),
+        ]),
+        FeedbackEntitlement.free,
+      );
+    });
+
+    test('the active source names itself', () {
+      expect(
+        of([const PremiumRow(source: PremiumSource.lifetime)]),
+        FeedbackEntitlement.lifetime,
+      );
+      expect(
+        of([
+          PremiumRow(
+            source: PremiumSource.yearly,
+            expiresAt: now.add(const Duration(days: 30)),
+          ),
+        ]),
+        FeedbackEntitlement.yearly,
+      );
+      expect(
+        of([const PremiumRow(source: PremiumSource.promotional)]),
+        FeedbackEntitlement.promotional,
+      );
+    });
+  });
+
+  group('androidModel', () {
+    const cases = {
+      ('Google', 'Pixel 8'): 'Google Pixel 8',
+      ('samsung', 'SM-S918B'): 'samsung SM-S918B',
+      ('Xiaomi', 'Xiaomi 14'): 'Xiaomi 14',
+      ('OnePlus', 'oneplus 12'): 'oneplus 12',
+      ('', 'Pixel 8'): 'Pixel 8',
+    };
+    for (final MapEntry(key: (maker, model), value: name) in cases.entries) {
+      test('$maker $model is $name', () {
+        expect(androidModel(maker, model), name);
+      });
+    }
   });
 }

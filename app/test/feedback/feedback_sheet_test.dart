@@ -1,12 +1,38 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:family_groceries/analytics/analytics.dart';
 import 'package:family_groceries/app/language.dart';
 import 'package:family_groceries/design/hex_checkbox.dart';
+import 'package:family_groceries/feedback/feedback_context.dart';
 import 'package:family_groceries/feedback/feedback_repository.dart';
+import 'package:family_groceries/list/list_repository.dart';
+import 'package:family_groceries/list/model.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
+import '../analytics/fakes.dart';
+import '../list/fake_repository.dart';
 import '../more/more_harness.dart';
+import '../purchases/fakes.dart';
+
+const germanAttached =
+    'Wird mitgeschickt: App-Version, Gerät und Modell, Sprache, Bildschirm, '
+    'Darstellung (hell/dunkel, Ausrichtung, Textgröße), Verbindung, '
+    'Premium-Status und wie du das Formular geöffnet hast. '
+    'Keine Listeneinträge.';
+const germanHint =
+    'Einen Fehler gefunden? Geh zurück zu dem Bildschirm, stell ihn nach und '
+    'schüttle das Handy — der Bericht enthält diesen Bildschirm plus App- und '
+    'Gerätedaten. Keine Listeneinträge.';
+const englishAttached =
+    'Sent along: App version, device and model, language, screen, display '
+    '(light/dark, orientation, text size), connection, Premium status and how '
+    'you opened this form. No list items.';
+const englishHint =
+    'Found a bug? Go back to that screen, reproduce it, then shake your phone '
+    '— the report includes that screen plus app and device details. '
+    'No list items.';
 
 void main() {
   setUpAll(fakeSupabase);
@@ -25,8 +51,23 @@ void main() {
     WidgetTester tester, {
     AppLanguage? language,
     Size size = const Size(390, 844),
+    Brightness deviceBrightness = Brightness.light,
+    FakeEntitlementsSource? entitlements,
+    Analytics? analytics,
+    void Function(FakeRepository repo)? seed,
+    void Function(More more)? before,
   }) async {
-    final more = await pumpMore(tester, language: language, size: size);
+    final more = await pumpMore(
+      tester,
+      language: language,
+      size: size,
+      deviceBrightness: deviceBrightness,
+      entitlements: entitlements,
+      analytics: analytics,
+      seed: seed,
+    );
+    before?.call(more);
+    await tester.pump();
     more.screens
       ..visit(Uri.parse('/'))
       ..visit(Uri.parse('/more'));
@@ -63,13 +104,8 @@ void main() {
     ]) {
       expect(find.text(text), findsOneWidget, reason: text);
     }
-    expect(
-      find.textContaining(
-        'App-Version, Gerät, Sprache und aktueller Bildschirm. '
-        'Keine Listeneinträge.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.textContaining(germanAttached), findsOneWidget);
+    expect(find.text(germanHint), findsOneWidget);
     expect(enabled(tester, 'feedback-send'), isFalse, reason: 'nothing typed');
     final contact = tester.widget<HexCheckboxListTile>(key('feedback-contact'));
     expect(contact.value, isFalse, reason: 'off by default');
@@ -97,12 +133,8 @@ void main() {
     ]) {
       expect(find.text(text), findsWidgets, reason: text);
     }
-    expect(
-      find.textContaining(
-        'App version, device, language and current screen. No list items.',
-      ),
-      findsOneWidget,
-    );
+    expect(find.textContaining(englishAttached), findsOneWidget);
+    expect(find.text(englishHint), findsOneWidget);
     more.feedback.failNext = 1;
     await tester.enterText(key('feedback-message'), 'Offline note');
     await tester.pump();
@@ -130,17 +162,147 @@ void main() {
     expect(row.category, isNull);
     expect(row.contactOk, isFalse);
     final context = row.context;
+    final scene = context.scene;
     expect(
       [
         context.appVersion,
         context.build,
         context.platform,
         context.osVersion,
+        context.deviceModel,
         context.locale,
-        context.screen,
+        scene.screen,
+        scene.entryPoint,
+        scene.theme,
+        scene.orientation,
+        scene.textScale,
+        scene.online,
+        scene.entitlement,
       ],
-      ['1.2.3', '45', 'android', 'Android 14 (SDK 34)', 'de', 'list'],
+      [
+        '1.2.3',
+        '45',
+        'android',
+        'Android 14 (SDK 34)',
+        'Google Pixel 8',
+        'de',
+        'list',
+        FeedbackEntryPoint.more,
+        Brightness.light,
+        Orientation.portrait,
+        '1.0',
+        FeedbackOnline.unknown,
+        FeedbackEntitlement.free,
+      ],
     );
+  });
+
+  testWidgets('from More: how the app looked when the form opened, the '
+      "list's connection and the Premium status (job 138)", (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final more = await openForm(
+      tester,
+      size: const Size(1000, 760),
+      deviceBrightness: Brightness.dark,
+      entitlements: FakeEntitlementsSource(unlockedNow: true),
+      before: (more) => more.repo.emitStatus!(ConnectionStatus.online),
+    );
+    // Later changes are not where the bug was.
+    more.repo.emitStatus!(ConnectionStatus.offline);
+    await tester.enterText(key('feedback-message'), 'Dunkel und quer');
+    await tapKey(tester, 'feedback-send');
+    final scene = more.feedback.rows.values.single.context.scene;
+    expect(scene.entryPoint, FeedbackEntryPoint.more);
+    expect(scene.screen, 'list', reason: 'the last screen before More');
+    expect(scene.theme, Brightness.dark);
+    expect(scene.orientation, Orientation.landscape);
+    expect(scene.textScale, '1.3');
+    expect(scene.online, FeedbackOnline.yes);
+    expect(scene.entitlement, FeedbackEntitlement.lifetime);
+  });
+
+  testWidgets('offline when the form opened: online "no"', (tester) async {
+    final more = await openForm(
+      tester,
+      before: (more) => more.repo.emitStatus!(ConnectionStatus.offline),
+    );
+    await tester.enterText(key('feedback-message'), 'Funkloch');
+    await tapKey(tester, 'feedback-send');
+    expect(
+      more.feedback.rows.values.single.context.scene.online,
+      FeedbackOnline.no,
+    );
+  });
+
+  testWidgets(
+    'the shake hint shows on phones',
+    (tester) async {
+      await openForm(tester);
+      expect(key('feedback-shake-hint'), findsOneWidget);
+    },
+    variant: const TargetPlatformVariant({
+      TargetPlatform.android,
+      TargetPlatform.iOS,
+    }),
+  );
+
+  testWidgets('no shake hint on a desktop; the attached line stays', (
+    tester,
+  ) async {
+    await openForm(tester);
+    expect(key('feedback-shake-hint'), findsNothing);
+    expect(find.textContaining(germanAttached), findsOneWidget);
+  }, variant: TargetPlatformVariant.desktop());
+
+  testWidgets('nothing of the list goes along: no item, store, category or '
+      'household name in the row or the event (job 138)', (tester) async {
+    const names = [
+      'Hafermilch Barista',
+      'Biomarkt Sonnenschein',
+      'Feinkostecke',
+      'Zuhause',
+    ];
+    final sink = NativePostHog()..install();
+    final analytics = await loadedAnalytics(MemoryAnalyticsStore())
+      ..setUser(customer);
+    await analytics.decide(granted: true);
+    final more = await openForm(
+      tester,
+      analytics: analytics,
+      seed: (repo) {
+        repo
+          ..categories = [
+            ...repo.categories,
+            const Category(id: 'deli', name: 'Feinkostecke', sortOrder: 40),
+          ]
+          ..stores = [
+            ...repo.stores,
+            const Store(
+              id: 'bio',
+              name: 'Biomarkt Sonnenschein',
+              sortOrder: 30,
+            ),
+          ]
+          ..remoteAdd('Hafermilch Barista', categoryId: 'deli', storeId: 'bio');
+      },
+    );
+    await tester.enterText(key('feedback-message'), 'Bitte prüfen');
+    await tapKey(tester, 'feedback-category-bug');
+    await tapKey(tester, 'feedback-send');
+    await analytics.flush();
+    final note = more.feedback.rows.values.single;
+    final sent = [
+      jsonEncode(feedbackRow(note)),
+      for (final e in sink.events)
+        if (e['event'] == 'feedback_submitted') jsonEncode(e),
+    ];
+    expect(sent, hasLength(2), reason: 'the insert and the event');
+    for (final text in sent) {
+      for (final name in names) {
+        expect(text, isNot(contains(name)), reason: name);
+      }
+    }
   });
 
   testWidgets('category and contact go along', (tester) async {

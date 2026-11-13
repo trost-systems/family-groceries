@@ -1157,7 +1157,11 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get feedbackAttached =>
-      'App-Version, Gerät, Sprache und aktueller Bildschirm. Keine Listeneinträge.';
+      'App-Version, Gerät und Modell, Sprache, Bildschirm, Darstellung (hell/dunkel, Ausrichtung, Textgröße), Verbindung, Premium-Status und wie du das Formular geöffnet hast. Keine Listeneinträge.';
+
+  @override
+  String get feedbackShakeHint =>
+      'Einen Fehler gefunden? Geh zurück zu dem Bildschirm, stell ihn nach und schüttle das Handy — der Bericht enthält diesen Bildschirm plus App- und Gerätedaten. Keine Listeneinträge.';
 
   @override
   String get feedbackAttachedTitle => 'Wird mitgeschickt:';
