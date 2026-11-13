@@ -9,7 +9,7 @@ keeps the free project from pausing. Nightly backups and restores are in
 ## Deploy
 
 Every push to `main` that touches `supabase/**`,
-`scripts/smoke-remote.sh` or the workflow file runs **Supabase deploy**
+`scripts/smoke-remote.sh`, `scripts/mcp-smoke.sh` or the workflow file runs **Supabase deploy**
 (`.github/workflows/supabase-deploy.yml`):
 
 1. Migrations, through the Management API (`supabase/deploy/migrate.ts`).
@@ -19,6 +19,10 @@ Every push to `main` that touches `supabase/**`,
 
 The workflow runs from `main` only. A dispatch on another branch fails
 before it deploys anything.
+
+The guides site waits for this workflow: a site build of a push that ran it
+goes live only after the run has passed all three steps (see "Guides site"
+below). The workflow itself waits for nothing.
 
 ## Web app: preview from main, production with the store release
 
@@ -89,9 +93,9 @@ the deployment on any other exit code.
   only when it is at most 9 commits past the last production build.
 - To build previews again, change the `case` in `scripts/vercel-ignore.sh`.
 
-The other projects keep their step in the dashboard. `hummlist-site` builds
-only `main` (`case "$VERCEL_GIT_COMMIT_REF" in main|"") exit 1;; *) exit 0;; esac`,
-no git), so PRs get no site preview. `hummlist-mcp` runs
+`hummlist-site` has its own `ignoreCommand` in `site/vercel.json` (see
+"Guides site" below); the old dashboard step, `case "$VERCEL_GIT_COMMIT_REF" in main|"") exit 1;; *) exit 0;; esac`,
+is overridden and its branch rule kept, so PRs get no site preview. The other projects keep their step in the dashboard. `hummlist-mcp` runs
 `git diff --quiet HEAD^ HEAD -- . || exit 1`, which exits 1 on any git error.
 `hummlist-nexus` has no git connection.
 
@@ -124,13 +128,13 @@ Hummlist builds keep `https://app.hummlist.com`.
 The Vercel project `hummlist-site` (Root Directory `site`, `site/vercel.json`)
 builds the site from every push to `main`: the landing pages `/de` and `/en` (where `/`
 redirects by `Accept-Language`), the guides, the changelog and the legal pages. A push to `main` is its production
-deployment and goes live on `https://snacklist.app` without a manual step
+deployment and goes live on `https://snacklist.app`
 (`www.snacklist.app` redirects to it; `hummlist.com`, and through it
 `www.hummlist.com` and `hummlist-site.vercel.app`, 308 to it by the host rules
-in `site/vercel.json`). Since job 174
+in `site/vercel.json`) without a manual step. When the push also runs
+**Supabase deploy**, the site goes live only after that run (below). Since job 174
 the pages name snacklist.app as canonical (`siteUrl` in `site/config.json`). Every other
-branch skips the build since 2026-11-09 (its step is quoted at the end of
-"Build skips" above), so check a
+branch skips the build since 2026-11-09, so check a
 site change locally with `npm run build` in `site/`.
 
 The build reads two files outside `site/`, so the project setting "Include
@@ -144,6 +148,59 @@ A public release changes what the site shows through the same path: the
 ([`RELEASE.md`](RELEASE.md), "Public releases"), and that push is the
 production build with the new live version. No deploy hook or Vercel token
 is involved.
+
+### The site waits for Supabase deploy
+
+A site page can describe a function or a policy that only the same commit
+deploys, so the site must not go live before the functions (job 209). The
+site's `ignoreCommand` (`site/vercel.json`) runs `site/scripts/supabase-gate.mjs`
+before the build:
+
+- It lists the commits since the live site (`VERCEL_GIT_PREVIOUS_SHA`, the
+  last successful production deployment, up to this commit; only this commit
+  when that one is not in Vercel's 10-commit clone).
+- None of them touches the workflow's paths (`DEPLOY_PATHS` in the script;
+  a site test keeps it equal to `on.push.paths`): the site builds at once.
+  This is the case for a site-only push.
+- Otherwise it asks the GitHub API for the **Supabase deploy** runs with
+  `event=push` on `main`, takes the run of the newest of those commits, and
+  polls every 30 s. When this commit itself touches the paths, only its own
+  run counts, so a site never goes live on an earlier commit's run. A
+  rollback dispatch (`ref`) is a `workflow_dispatch` run and never counts.
+- The run succeeded (migrations, functions and smoke test): the site builds
+  and goes live.
+- The run failed or was cancelled, or 25 minutes passed: the gate exits 2,
+  the deployment ends in ERROR and the last good site stays live. Vercel's
+  build limit is 45 minutes.
+
+A site-only push that follows a mixed push before that push's site is live
+waits for the mixed push's run too: it carries the same pages. Once the site
+of a commit with a green run is live, later site-only pushes no longer wait
+for anything. A commit whose message has `[skip ci]` starts no run; the gate
+then waits 90 s for one and builds.
+
+After a failed run, the site of that commit stays off production. Fix
+forward: the next push's run succeeds and its site carries both changes. If
+the run is rerun green instead, select **Redeploy** on the ERROR deployment
+in the Vercel project `hummlist-site` (keep "Use project's Ignore Build
+Step" on), and the gate passes. To publish a site past a failing Supabase
+deploy on purpose, Redeploy with that box off.
+
+The gate calls the GitHub API without a token (60 requests per hour per
+address; a normal deploy needs about 10, and a spent limit makes the gate sleep until its reset). If a build log shows `GitHub
+answered 403` with `remaining 0`, a read-only GitHub token in the project's
+environment variable `GITHUB_ACTIONS_READ_TOKEN` lifts the limit
+([`NEEDS_PETER.md`](NEEDS_PETER.md), "Job 209"). A waiting build holds one of
+the team's concurrent build slots, so an app or MCP proxy build may queue
+behind it for those minutes.
+
+Check the gate without Vercel (it only reads GitHub):
+
+```bash
+cd site
+VERCEL_GIT_COMMIT_REF=main VERCEL_GIT_COMMIT_SHA=<sha> VERCEL_GIT_PREVIOUS_SHA=<sha>^ \
+  node scripts/supabase-gate.mjs; echo "exit $?"   # 1 builds, 2 stays off production
+```
 
 ## Smoke test
 
@@ -184,7 +241,8 @@ gh workflow run supabase-deploy.yml -R trost-systems/family-groceries --ref main
 ```
 
 The run checks out that commit, deploys its edge functions and runs that
-commit's own `scripts/smoke-remote.sh`. It skips migrations. It refuses:
+commit's own `scripts/smoke-remote.sh`. It skips migrations, and the site
+does not wait for it or move with it. It refuses:
 
 - a SHA that is not on `main`, so only reviewed code reaches production;
 - a commit older than `scripts/smoke-remote.sh` (job 13), because it

@@ -40,6 +40,8 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   (landing pages `/de` and `/en`, guides, changelog, legal pages), its own Vercel project (Root Directory
   `site`), static HTML from Markdown and `site/content/landing/copy.yml`;
   `site/README.md` explains adding a guide and the landing copy and media. Separate from the app's build.
+  A production build waits for the same commit's `supabase-deploy` run (`site/scripts/supabase-gate.mjs`,
+  the `ignoreCommand`).
   Production hides content tagged `since:` a version above the live one:
   the newest public release in `releases/releases.json` (the public release
   record, `releases/README.md`), else `app/pubspec.yaml`.
