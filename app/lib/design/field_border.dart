@@ -127,6 +127,11 @@ class const ContourInputBorder({
 /// text. A [LabeledField]'s label starts here too.
 const hexFieldInset = HlHex.tip * HlSize.target + HlSpace.s1;
 
+/// From a field's contour down to its helper, error and counter row: past
+/// the focus ring's outer edge, then [HlSpace.s2] of air. Material's 4 dp
+/// left the row on the ring (job 208).
+const fieldSubtextGap = HlFocus.ringGap + HlFocus.ringWidth + HlSpace.s2;
+
 /// Text field decoration in [shape], from the tokens: a raised face, the
 /// 2 px contour (cobalt plus the focus ring when focused, the error colour
 /// on an error, faded when disabled).
@@ -144,6 +149,13 @@ InputDecorationThemeData fieldTheme(SnacklistColors t, FieldShape shape) {
             : BorderSide.none,
       );
   final idle = contour(t.border);
+  final padding = switch (shape) {
+    FieldShape.hex => const EdgeInsets.symmetric(
+      horizontal: hexFieldInset,
+      vertical: HlSpace.s2,
+    ),
+    FieldShape.rounded => const EdgeInsets.all(HlSpace.s3),
+  };
   return InputDecorationThemeData(
     filled: true,
     fillColor: WidgetStateColor.resolveWith(
@@ -156,13 +168,8 @@ InputDecorationThemeData fieldTheme(SnacklistColors t, FieldShape shape) {
     // ellipsis; German messages at large text sizes need several.
     errorMaxLines: 8,
     helperMaxLines: 8,
-    contentPadding: switch (shape) {
-      FieldShape.hex => const EdgeInsets.symmetric(
-        horizontal: hexFieldInset,
-        vertical: HlSpace.s2,
-      ),
-      FieldShape.rounded => const EdgeInsets.all(HlSpace.s3),
-    },
+    contentPadding: padding,
+    supportingTextPadding: padding.copyWith(top: fieldSubtextGap, bottom: 0),
     border: idle,
     enabledBorder: idle,
     focusedBorder: contour(t.brand, focused: true),

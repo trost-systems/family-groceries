@@ -11962,3 +11962,26 @@ button's on the list.
   joining needs the server, so nothing is lost there.
 - **`joinOtherHousehold` is gone** from both ARBs (nothing else used it); `joinWithCode` stays.
   The support page's join answer now points at the household name on the list.
+
+## Job 208: more space between a field and its helper, error and counter, 2026-11-13
+
+Peter (t823u): on "Neuer Haushalt" the error and the `0/80` counter sat tight against the name
+field.
+
+- **Fixed in the field theme, so every field gets it.** `fieldTheme` (`app/lib/design/field_border.dart`)
+  sets `supportingTextPadding`, with top `fieldSubtextGap`. Every field under the app theme and
+  every `RoundedFields` multi-line field now leaves the same room above its helper, error and
+  counter. That covers New household, the name dialogs, store fields and the rest. No screen got
+  its own padding.
+- **The gap is the focus ring's outer edge plus `HlSpace.s2`:** `HlFocus.ringGap + HlFocus.ringWidth + HlSpace.s2` = 13 dp
+  below the contour. Material's 4 dp ended inside the ring, which reaches 5 dp out. s2 is the
+  next step after s1, the step the brief named. The row sits in the same place idle and focused,
+  so focus does not move text.
+- **The padding repeats the field's horizontal content padding.** With `supportingTextPadding`
+  set, the decorator takes the row's start and end from it, not from `contentPadding`. Fields
+  that set their own `contentPadding` (the narrow edit-sheet fields, the trip sheet rows) show no
+  helper, error or counter today. A field that sets both would need to set
+  `supportingTextPadding` too.
+- **Goldens.** `components-*` (field cells 110 to 120 dp tall so the error fits) and
+  `name-dialog-keyboard-*`. Test: `fields_test.dart` measures the error and counter at ring + s2
+  for the hex and the multi-line field, and shows 4 dp without the change.
