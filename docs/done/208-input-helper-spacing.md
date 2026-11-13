@@ -18,4 +18,11 @@ Peter (t823u): on "Neuer Haushalt" the error and the `0/80` counter sat tight ag
 
 ## Landed
 
-PR https://github.com/trost-systems/snacklist/pull/403, merged as 4a4f7fd1. No flag: it ships to everyone with the next green main build on TestFlight and Play internal. Nothing blocked.
+PR https://github.com/trost-systems/snacklist/pull/403, merged as fe620c94 (PR head 4a4f7fd1, same tree). No flag: it ships to everyone with the next green main build on TestFlight and Play internal. Nothing blocked.
+
+## Review 0 (2026-11-13)
+
+- **SHA corrected.** The record quoted the PR heads. On main, #403 is `fe620c94` and the done-summary PR #412 is `d3c01d09`.
+- **Test.** `fields_test.dart` now covers `helperText` as well as the error. It also checks that the row's start lines up with the field's text and the counter's end with the text's end, and fails when the row shifts sideways.
+- **Peter's screenshot** (`peter-t823u-new-household.png`) is not in the job dir. Its source is on the box and the Hetzner runner cannot reach it.
+- **Not changed.** An empty submit on New household shows the validation message twice, under the field and above "Haushalt erstellen". This predates job 208. It is a copy and flow question for Peter, and the brief rules out flow changes.
