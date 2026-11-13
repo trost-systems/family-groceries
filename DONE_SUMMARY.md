@@ -724,3 +724,7 @@ Peter's 11 Nov evening pricing and tier decisions are in the product feature map
 ## Job 184: Siri free, and the approved prices as a drift-check transition (2026-11-13)
 
 Siri is free like Alexa in the integration gate (per-user form from job 185) and in the paywall copy, and the voice function no longer asks the gate. `expectedPrices` holds the approved €24.99 / €149.99 for euro storefronts, and the drift check accepts the old €9.99 / €29.99 with a note until Ops moves the stores. No store or console was touched; the lock stays off. Merged as 13d2391e (#388). Details: [docs/done/184-siri-free-price-prep.md](docs/done/184-siri-free-price-prep.md).
+
+## Job 190: prices on the list row, list total and per-store subtotals (2026-11-13)
+
+Peter's `inline-row-price` (t832u) with LQ2/PW1 as he locked them (t833u): a price chip on every row and a compact editor under it (unit price kept when the quantity changes, the scale weight replaces the planned one, units follow the item), the list's total pinned above the add bar and a subtotal per store section, the household currency (default EUR, live). Free, no entitlement check, behind the PostHog flag `prices-and-trip-total` (off). Saving a price never ticks. Merged as a1f53b75 (#393); TestFlight build 1271. Peter reviews with the flag on for his install only (NEEDS_PETER "Job 190"). Not built: the end-of-trip summary, receipt scanning, spend history, API/MCP prices, shared views. Details: [docs/done/190-prices-ui-design-review.md](docs/done/190-prices-ui-design-review.md).
