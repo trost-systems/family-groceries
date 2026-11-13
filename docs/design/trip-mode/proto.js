@@ -477,7 +477,7 @@ function renderPanel() {
       <button data-act="lea">Lea schreibt etwas dazu</button><button data-act="reopen">App beenden und neu öffnen</button></div>
     <div class="row-controls"><button data-act="premium-toggle" aria-pressed="${!s.premium}">${s.premium ? 'Premium (umschalten auf Free)' : 'Free (umschalten auf Premium)'}</button></div>
     <p class="note">Tippe Artikel zum Abhaken. „Was brauchst du?“ öffnet eine Tastatur-Attrappe mit Vorschlägen.</p>
-    <p class="note"><a href="#rec" data-act="rec">Empfehlung und offene Fragen (TQ1 bis TQ12)</a></p>`;
+    <p class="note"><a href="#rec" data-act="rec">Empfehlung und offene Fragen (TQ1 bis TQ14)</a></p>`;
   document.querySelector('#strip').innerHTML = `<div class="strip-tms">${TMS.map((x) => `<button data-act="tm" data-tm="${x.id}" aria-pressed="${x.id === s.v}">${x.id}</button>`).join('')}
     <button data-act="panel" aria-label="Szenarien und Einstellungen">${icon('menu')}</button></div>
     <div class="strip-step"><span>${sc.id} · ${s.step}/${sc.steps.length}${s.premium ? '' : ' · Free'}</span>${s.step < sc.steps.length ? `<button data-act="step">Weiter: ${esc(sc.steps[s.step].label)}</button>` : '<button data-act="restart">Szenario von vorn</button>'}</div>`;

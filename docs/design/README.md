@@ -30,3 +30,4 @@ python3 -m http.server 8771 --directory docs/design/h-satz-final/h-dist
 ## Feature prototypes
 
 - **Grocery log (job 198):** [`grocery-log/`](grocery-log/), five interactive approaches behind one switcher, plus [`RECOMMENDATION.md`](grocery-log/RECOMMENDATION.md). Serve the repo root (`python3 -m http.server 4198 --bind 127.0.0.1`) and open `/docs/design/grocery-log/index.html`.
+- **Shopping trip mode (job 217):** [`trip-mode/`](trip-mode/README.md), TM1 to TM5: the „Kaufst du gerade ein?“ question, the trip bar, the planned-vs-bought summary and the Premium gate, with six scenarios, `shoot.mjs` checks and [`RECOMMENDATION.md`](trip-mode/RECOMMENDATION.md) (TQ1 to TQ14). Waits for Peter's pick.

@@ -12187,3 +12187,27 @@ On main it showed on the first failed read of the opening resync, or on the firs
 - **No new timeout on the reads** and no PostgREST retries (2b.5, 4b.5): the grace is the
   longer wait. The realtime client's timeout stays at its 10 s default.
 - **No feature flag**: a startup reliability fix for every install (ANALYTICS.md, Feature flags).
+
+## Job 217: shopping trip mode, five prototypes, 2026-11-14
+
+- **Prototype gate only.** Peter's PB1c, PB2a and PB3a (t839u, t840u, 13 Nov 2026) are sketched
+  in `docs/design/trip-mode/` as TM1 to TM5. No app, `supabase/` or `alexa/` change, and the
+  draft PR is not for merge. Changelog: none.
+- **One state shape, five policies.** `model.js` holds the items, the trip and the frozen
+  summaries. A trip starts at the tick that raised the question, and its snapshot is the open
+  items just before that tick (job 196's false positive). Each prototype differs only in its
+  `POLICY` entry (when to ask, how long "no" holds, what a long trip does) and its rendering.
+- **Time is simulated but real.** The clock starts at 14 Nov 2026 10:00 Europe/Berlin and runs
+  in real time, and "+5 Min." to "+3 Std." move it forward. The state lives in `localStorage`, so
+  "App beenden und neu öffnen" is a real page reload (S3).
+- **Every automatic or proposed end uses the last tick**, so a forgotten trip keeps an honest
+  duration. A paused trip still counts ticks (open question TQ5).
+- **Recommended TM1 `card-ask-slim-strip`** with TM2's Premium card (no blur) and the last-tick
+  end (`RECOMMENDATION.md`). It neither blocks nor hides the question, "Nein" holds for one
+  session (2 h without a tick), and the 52 px strip adds 60 px without touching the field or the tabs.
+- **Proof is `shoot.mjs`.** It runs 6 scenarios × 5 prototypes, Premium and Free, at 900 px and on
+  a 390 × 844 phone. It checks state, copy, overlap, 44 px targets and that no price shows. Two
+  mutations prove the layout checks bite: buttons at 34 px fail 84 checks, and the bar pushed
+  onto the field fails 42.
+- **Preview** on `family-groceries-design` as a preview deployment (SSO; the lead mints the
+  share link). The preview is built by `build.sh`, which vendors `tokens.css` and two fonts.
