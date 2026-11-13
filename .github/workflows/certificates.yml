@@ -75,10 +75,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      # No Actions cache in a job with the signing secrets: any run on main can write an entry
+      # that this job would unpack and run (job 220).
       - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
         with:
           working-directory: app
-          bundler-cache: true
+      - name: Install the gems from the lockfile
+        run: |
+          bundle config set --local deployment true
+          bundle install --jobs 4
       # match clones and pushes the private certificates repo over SSH.
       - uses: webfactory/ssh-agent@e83874834305fe9a4a2997156cb26c5de65a8555 # v0.10.0
         with:

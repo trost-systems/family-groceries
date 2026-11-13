@@ -53,6 +53,9 @@ python3 scripts/app-shortcuts-bundle-test.py
 log "AI brand names"
 deno run --allow-read scripts/brand-names.ts
 deno test -q --config scripts/deno.json --allow-read --allow-write scripts/brand-names_test.ts
+log "workflow hardening"
+deno run --allow-read --config scripts/deno.json scripts/workflow-hardening.ts
+deno test -q --config scripts/deno.json --allow-read --allow-write scripts/workflow-hardening_test.ts
 log "mcp.snacklist.app routes"
 deno test -q --config scripts/deno.json --allow-read scripts/mcp-proxy-routes_test.ts
 

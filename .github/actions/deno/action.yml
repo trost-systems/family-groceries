@@ -5,8 +5,8 @@
 # retried by download.sh) and puts that release on PATH. When resolve fails (versions.json
 # unreachable after the retries, or a range other than vN.x or an exact version), the step warns and setup-deno runs
 # instead. Without setup-deno, Deno's problem matcher (error annotations) is not registered; the
-# gates' exit codes are the same. Workflows that hold secrets pass `cache: false`: a cache entry
-# can be written by any PR run, so they run only a binary checked against its release checksum.
+# gates' exit codes are the same. Workflows that hold secrets pass `cache: false`: any job that
+# runs on main can save a cache entry, so they run only a binary checked against its release checksum.
 # deno-version-file (.dvmrc) works as in setup-deno: a `deno <version>` line, else the whole file.
 # Needs the repo checked out.
 name: Deno

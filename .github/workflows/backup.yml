@@ -21,6 +21,11 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # The environment is where this job's secrets can be limited to main; a scheduled run is no
+    # deployment, so it leaves no deployment record.
+    environment:
+      name: ops
+      deployment: false
     env:
       GH_TOKEN: ${{ github.token }}
       ISSUE_TITLE: 'Database backup failed'

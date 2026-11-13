@@ -18,20 +18,25 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
   issues: write
 
 jobs:
   delete:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # The environment is where this job's secrets can be limited to main; a scheduled run is no
+    # deployment, so it leaves no deployment record.
+    environment:
+      name: ops
+      deployment: false
     env:
-      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
       GH_TOKEN: ${{ github.token }}
-      DELETIONS_SECRET: ${{ secrets.REVENUECAT_DELETIONS_SECRET }}
       ISSUE_TITLE: 'RevenueCat customer deletion failed'
     steps:
       - name: Delete due RevenueCat customers
+        env:
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF || secrets.SUPABASE_PROJECT_REF }}
+          DELETIONS_SECRET: ${{ secrets.REVENUECAT_DELETIONS_SECRET }}
         run: |
           if [ -z "$SUPABASE_PROJECT_REF" ]; then
             echo "::error::Repository variable SUPABASE_PROJECT_REF is missing; nothing was done."
@@ -42,8 +47,10 @@ jobs:
             exit 1
           fi
           url="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/purchases/revenuecat/deletions?forceFunctionRegion=eu-central-1"
-          code=$(curl -sS --max-time 120 --retry 2 --retry-delay 15 -o deletions.json -w '%{http_code}' \
-            -X POST -H "x-deletions-secret: $DELETIONS_SECRET" "$url") || true
+          # The header goes in on stdin: a command line is readable in the runner's process list.
+          code=$(printf 'x-deletions-secret: %s\n' "$DELETIONS_SECRET" |
+            curl -sS --max-time 120 --retry 2 --retry-delay 15 -o deletions.json -w '%{http_code}' \
+              -X POST -H @- "$url") || true
           echo "Deletions: HTTP ${code:-none} $(head -c 300 deletions.json 2>/dev/null)"
           [ "$code" = 200 ]
       - name: Report the failure in an issue

@@ -273,8 +273,8 @@ tools and retries what is still downloaded.
     to `denoland/setup-deno`, which retries its download only 3 times and
     `versions.json` for about 8 s.
   - `supabase-deploy.yml` and `price-drift.yml` hold secrets and pass
-    `cache: false`: any PR run can write a cache entry, so those jobs run
-    only a freshly downloaded, checksum-verified binary.
+    `cache: false`: any job that runs on `main` can save a cache entry, so
+    those jobs run only a freshly downloaded, checksum-verified binary.
 - npm: `ci.yml` and `e2e.yml` set `NPM_CONFIG_FETCH_RETRIES` and its
   timeouts, which cover `npm ci` and the Supabase CLI package install in
   `supabase/setup-cli`. The action's own `bun install` is not covered.
@@ -283,7 +283,20 @@ tools and retries what is still downloaded.
 - Playwright browsers are not cached: `playwright install` already retries 5
   times across 3 CDN mirrors, and the repository's Actions cache already sits
   at its 10 GB limit, so three browsers would evict other entries.
-- Flutter comes from `subosito/flutter-action`'s own cache (`cache: true`).
+- Flutter comes from `subosito/flutter-action`'s own cache (`cache: true`) in
+  the jobs without secrets.
+- A job that reads a secret, names an environment or whose token may write
+  restores no Actions cache (lint rule `no-cache-in-trusted-job`): any job
+  that runs on `main` can save an entry, which that job would unpack and run.
+  One exception is on the allow-list: `supabase-deploy.yml`'s `deploy` job
+  runs `supabase/setup-cli`, which restores its `bun` binary from the cache
+  and has no input to turn that off. `release.yml` downloads Flutter on every
+  run, and it and `certificates.yml` install the gems from `Gemfile.lock` in
+  a step. The setup steps take about a minute longer per store job (one run
+  each in job 220: flutter-action 79 s instead of 54 s on macOS and 64 s
+  instead of 22 s on Linux, `bundle install` 42 s and 30 s instead of a
+  restore of about 5 s). What the missing pub cache adds to the later steps
+  was not measured.
 - Not covered: the Supabase CLI's Docker images, the biggest download left,
   which `supabase start` pulls in db and e2e without a retry of ours. They
   come from Docker Hub (`SUPABASE_INTERNAL_IMAGE_REGISTRY`, DECISIONS job
