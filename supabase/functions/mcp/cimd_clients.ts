@@ -30,10 +30,16 @@ export type RegistryDeps = {
 /**
  * Hourly limits of the front, per host of the document URL and in all. Anyone may send any
  * client_id URL to authorize, so fetches and registrations are bounded before they happen.
+ * A URL that is already a client has its own fetch limit: strangers can use up a host's and the
+ * overall one, and that must not keep a known client's users from signing in. Its count starts
+ * again whenever the document could be fetched: it bounds fetches that fail in a row, and those
+ * under way before the first one finishes, not how many a stale document gets while requests
+ * pour in.
  */
 export const LIMITS = {
   fetchPerHost: 30,
   fetchAll: 600,
+  fetchPerClient: 30,
   newPerHost: 5,
   newAll: 100,
   tokenPerAddress: 120,
@@ -62,23 +68,22 @@ type Row = {
  */
 export async function resolveClient(url: ClientIdUrl, deps: RegistryDeps): Promise<MappedClient> {
   const sql = deps.sql();
-  const [cached] = await sql<{ auth_client_id: string; redirect_uris: string[] }[]>`
-    select auth_client_id, redirect_uris from public.oauth_cimd_clients
-    where client_id = ${url} and fresh_until > now()`;
-  if (cached) {
-    return { authClientId: cached.auth_client_id, redirectUris: cached.redirect_uris };
+  const [known] = await sql<{ auth_client_id: string; redirect_uris: string[]; fresh: boolean }[]>`
+    select auth_client_id, redirect_uris, fresh_until > now() as fresh
+    from public.oauth_cimd_clients where client_id = ${url}`;
+  if (known?.fresh) {
+    return { authClientId: known.auth_client_id, redirectUris: known.redirect_uris };
   }
   const host = new URL(url).hostname;
-  if (
-    !await withinLimits(sql, [[`fetch:${host}`, LIMITS.fetchPerHost], [
-      'fetch:all',
-      LIMITS.fetchAll,
-    ]])
-  ) throw busy();
+  const limits: [string, number][] = known
+    ? [[`fetch:${url}`, LIMITS.fetchPerClient]]
+    : [[`fetch:${host}`, LIMITS.fetchPerHost], ['fetch:all', LIMITS.fetchAll]];
+  if (!await withinLimits(sql, limits)) throw busy();
   const { metadata, maxAgeSeconds } = await deps.fetchDocument(url);
   const freshFor = `${freshForSeconds(maxAgeSeconds)} seconds`;
   return await sql.begin(async (tx) => {
     await tx`select pg_advisory_xact_lock(hashtextextended(${url}, 94))`;
+    if (known) await tx`delete from public.oauth_cimd_rate where key = ${`fetch:${url}`}`;
     const [row] = await tx<Row[]>`
       select auth_client_id, client_name, redirect_uris, client_uri from public.oauth_cimd_clients where client_id = ${url}`;
     if (row && !changed(row, metadata)) {
