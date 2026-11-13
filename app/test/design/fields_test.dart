@@ -149,35 +149,49 @@ void main() {
     ('hex', (Widget f) => f, 1),
     ('multi-line', (Widget f) => RoundedFields(child: f), 3),
   ]) {
-    testWidgets('$name: the error and counter sit s2 below the focus ring', (
-      tester,
-    ) async {
-      final focus = FocusNode();
-      addTearDown(focus.dispose);
-      Widget field({required bool subtext}) => wrap(
-        TextField(
-          autofillHints: null,
-          focusNode: focus,
-          autofocus: true,
-          minLines: lines,
-          maxLines: lines,
-          maxLength: subtext ? 80 : null,
-          decoration: InputDecoration(errorText: subtext ? 'Nein' : null),
-        ),
-      );
-      await pumpField(tester, field(subtext: false));
-      await tester.pumpAndSettle();
-      final contour = tester.getRect(decorator()).height;
-      await pumpField(tester, field(subtext: true));
-      await tester.pumpAndSettle();
-      final top = tester.getTopLeft(decorator()).dy;
-      double below(String text) =>
-          tester.getTopLeft(find.text(text)).dy - top - contour;
+    for (final error in [true, false]) {
+      final kind = error ? 'error' : 'helper';
+      testWidgets('$name: the $kind and counter sit s2 below the focus ring, '
+          'in line with the text', (tester) async {
+        final focus = FocusNode();
+        addTearDown(focus.dispose);
+        Widget field({required bool subtext}) => wrap(
+          TextField(
+            autofillHints: null,
+            focusNode: focus,
+            autofocus: true,
+            minLines: lines,
+            maxLines: lines,
+            maxLength: subtext ? 80 : null,
+            decoration: InputDecoration(
+              errorText: subtext && error ? 'Nein' : null,
+              helperText: subtext && !error ? 'Nein' : null,
+            ),
+          ),
+        );
+        await pumpField(tester, field(subtext: false));
+        await tester.pumpAndSettle();
+        final contour = tester.getRect(decorator()).height;
+        await pumpField(tester, field(subtext: true));
+        await tester.pumpAndSettle();
+        final top = tester.getTopLeft(decorator()).dy;
+        double below(String text) =>
+            tester.getTopLeft(find.text(text)).dy - top - contour;
 
-      const ringOuter = HlFocus.ringGap + HlFocus.ringWidth;
-      expect(below('Nein'), ringOuter + HlSpace.s2);
-      expect(below('0/80'), below('Nein'));
-    });
+        const ringOuter = HlFocus.ringGap + HlFocus.ringWidth;
+        expect(below('Nein'), ringOuter + HlSpace.s2);
+        expect(below('0/80'), below('Nein'));
+        final text = tester.getRect(find.byType(EditableText));
+        expect(
+          tester.getTopLeft(find.text('Nein')).dx,
+          moreOrLessEquals(text.left),
+        );
+        expect(
+          tester.getTopRight(find.text('0/80')).dx,
+          moreOrLessEquals(text.right),
+        );
+      });
+    }
   }
 
   group('the add field', () {
