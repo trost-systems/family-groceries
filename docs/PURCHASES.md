@@ -605,7 +605,10 @@ setup"). Without
 | `REVENUECAT_DELETIONS_SECRET` | What the daily deletion workflow and `scripts/iap/promotional.ts reconcile --apply` send as `x-deletions-secret`; also a repository secret of the same name (NEEDS_LEAD "Job 47"). Unset: the deletion and reconcile routes refuse every call |
 
 Expected prices (the drift check's constants, `expectedPrices` in `scripts/iap/product.ts`; never
-shown in the app, which shows only what the store returns):
+shown in the app, which shows only what the store returns). These are the amounts set in the
+stores today. Peter approved EUR 24.99 a year and EUR 149.99 Lifetime on 11 Nov 2026; they are not
+shipped. Ops sets them in the stores, then a PR updates this table and `expectedPrices`
+(`store-prices-ops` in [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md)):
 
 | Storefront | Yearly | Lifetime |
 | --- | --- | --- |

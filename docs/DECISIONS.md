@@ -11482,3 +11482,30 @@ name plus hint) and V3 A (no referrer) on 10 November, 20:21.
   cells wrap their buttons.
 - Proof: `shoot.mjs` gained the reviewer's repros; they fail on main's e726902b sandbox (8
   failures) and pass after the fix.
+
+## Job 194: pricing and tiers of 11 Nov 2026 evening in the planning docs, 2026-11-12
+
+- **Recorded, nothing built.** Peter's t788u (20:42), t789u (20:49), t791u (20:54), t792u (20:59),
+  t-PM-2115 (21:15, P5b 21:16) and t796u (21:26), Europe/Berlin, are in
+  [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md): yearly €24.99 and Lifetime €149.99 (approved,
+  not shipped), price entry, trip totals, unlimited barcode scanning and purchase recording in Free,
+  paid readiness on differentiated Premium value (`premium-differentiation`), Lifetime allowances
+  (numbers open), the CS1 tiers, `grocery-log` as the eighth considering row, and the planning slugs
+  (`lifetime-revenue-math`, `premium-pitch`, `ai-suggestions-cost-example`, `dec1-paid-launch`,
+  `validation-plan`, `store-prices-ops`, `fable-review-deferred`). `PAYWALL_RELEASE.md`'s product
+  prerequisites and step 2.3, and the expected-prices note in `PURCHASES.md`, follow.
+- **Superseded, not deleted.** Old amounts and tiers stay in the map in rows and sentences marked
+  *Superseded*; `five-free-scans` and `sales-prerequisite` keep their slugs and legacy IDs with the
+  date that replaced them. No new legacy IDs.
+- **No live price changed.** `expectedPrices` in `scripts/iap/product.ts` still holds €9.99 /
+  €29.99, because it checks the stores and the stores are still set to those amounts. The docs label
+  the new amounts as approved, not shipped; Ops sets the stores, then a PR moves `expectedPrices`.
+- **N-127 kept as on main.** The brief's t-PM-2115 line says N-127 is open (21:15). PR #373 recorded
+  the U2B / Legal option R1 path at 21:39 and 21:51, later the same evening. The map keeps #373's
+  docs-only status and records the 21:15 state as what it was then; no build and no real receipts
+  until N-135 to N-144.
+- **Last-price memory left open.** No decision re-tiered it. Under
+  `free-convenience-no-running-cost` it reads as Free, but the map marks the tier open instead of
+  guessing.
+- **Sources.** The lead's research notes for t788u and t789u are not on the Hetzner runner (research
+  syncs from hz to the box only), so the brief's text is the source here.

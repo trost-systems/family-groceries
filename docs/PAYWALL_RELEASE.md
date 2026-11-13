@@ -27,17 +27,36 @@ Owners:
 Product work that bears on the sale, not switches. The decisions and their
 status are in [`PRODUCT_FEATURE_MAP.md`](PRODUCT_FEATURE_MAP.md).
 
-- **Prices and trip total** must ship before Premium goes on sale (step 5).
-- **Shelf-label scanning** must not delay the sale. It stays planned and
-  ships later, when it works well. This replaces Peter's earlier hold that
-  also waited for it (`sales-prerequisite` in the map).
+- **Differentiated Premium value** must exist before Premium goes on sale
+  (step 5): insights, automation, the API and MCP, or conveniences with a
+  real per-use cost (`premium-differentiation`, 20:42). Which slice the
+  paid launch needs is open; the built public API and MCP are evaluated
+  first. 1 Dec 2026 is a paid launch (`dec1-paid-launch`), so that slice
+  is built before then.
+- **Free price entry is not a sales gate.** Price entry, trip totals,
+  unlimited barcode scanning and purchase recording are Free
+  (`free-convenience-no-running-cost`, `barcode-free-limit`). Superseded:
+  "Prices and trip total must ship before Premium goes on sale" (07:23).
+- **Shelf-label scanning** must not delay the sale. It stays planned, is
+  Free since 20:59, and ships later when it works well
+  (`sales-prerequisite` in the map).
 - **Household limit**: a user belongs to at most 20 households, on Free
   and on Premium. In the database since job 200 (`public.household_cap()`);
   the paywall and the terms do not name it yet (job 187).
-- **Also approved and not yet in this checklist**: per-user Premium,
-  Lifetime at EUR 39.99 and Siri free under the lock. The map lists them
-  under "Now and what blocks sales"; the steps below still describe the
-  household model and EUR 29.99.
+- **Prices: yearly EUR 24.99 and Lifetime EUR 149.99**, both at the paid
+  launch, no monthly or weekly plan (`yearly-plan`, `lifetime-plan`, 20:42).
+  Approved, not shipped: the stores, `expectedPrices` and step 2.3 below
+  still hold EUR 9.99 / EUR 29.99. Ops sets the stores, other currencies
+  included, without a further yes from Peter; engineering does not touch the
+  stores (`store-prices-ops`). Paywall and store copy read the price from
+  StoreKit / Play Billing and never hardcode an amount. Superseded:
+  EUR 9.99 / EUR 39.99 (11 Nov morning).
+- **Lifetime** has the same features as yearly, with explicit allowances
+  for costly processing and API use, not unlimited (`lifetime-allowances`;
+  the numbers wait for a cost check).
+- **Also approved and not yet in this checklist**: per-user Premium and
+  Siri free under the lock. The steps below still describe the household
+  model.
 
 ## The switches
 
@@ -113,10 +132,14 @@ hold 46 days, **no free trial or introductory offer**). The one-time product
 plan itself. An offer added later would not be charged without an app
 change, which keeps the shown price the charged price (Legal Review A2-5).
 
-2.3 **Peter's yes**: the prices. Euro storefronts EUR 9.99 a year and
-EUR 29.99 Lifetime. US $9.99 / $29.99, UK £8.99 / £24.99, CH CHF 10 / CHF 30.
-Brazil, Mexico and India get yearly only (`expectedPrices` in
-`scripts/iap/product.ts`).
+2.3 **Ops**: the prices. Peter approved EUR 24.99 a year and EUR 149.99
+Lifetime (11 Nov 2026); Ops sets the other currencies accordingly without a
+further yes (`store-prices-ops` in the map). Not set yet. Today the stores
+and `expectedPrices` in `scripts/iap/product.ts` hold the superseded
+amounts: euro storefronts EUR 9.99 / EUR 29.99, US $9.99 / $29.99, UK
+£8.99 / £24.99, CH CHF 10 / CHF 30, and Brazil, Mexico and India yearly
+only. Once Ops has set the stores, a PR updates `expectedPrices` to the
+stores' amounts so the drift check in 2.4 guards them.
 
 2.4 **Lead**: the price drift check. Set the repository secrets `ASC_KEY_ID`,
 `ASC_ISSUER_ID`, `ASC_KEY_P8` and `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`. Then
