@@ -12,7 +12,7 @@ import 'package:material_ui/material_ui.dart';
 import '../analytics/fakes.dart' show MemoryAnalyticsStore, loadedAnalytics;
 import 'more_harness.dart';
 
-/// The M-P2 menu (job 85): inset groups, the legal rows under their label,
+/// The M-P2 menu (job 85): inset groups, the legal rows in their own group,
 /// sign-out alone, the version last, Nutzungsdaten as a page, the update
 /// card on top.
 void main() {
@@ -225,40 +225,38 @@ void main() {
     expect(find.text('Kategorien verwalten'), findsNothing);
   });
 
-  group('Rechtliches (DDG §5: the imprint one tap from the tab)', () {
+  group('The legal rows (DDG §5: the imprint one tap from the tab)', () {
     for (final (device, label) in const [
-      (Locale('de', 'DE'), 'RECHTLICHES'),
-      (Locale('en', 'US'), 'LEGAL'),
+      (Locale('de', 'DE'), 'Rechtliches'),
+      (Locale('en', 'US'), 'Legal'),
     ]) {
-      testWidgets('${device.languageCode}: $label heads its own group, '
+      testWidgets('${device.languageCode}: an unlabeled group of their own, '
           'below help, above sign-out', (tester) async {
         await pumpMore(tester, size: tall, device: [device]);
-        final heading = find.descendant(
-          of: key('more-screen'),
-          matching: find.byType(HlSectionLabel),
-        );
-        expect(heading, findsOneWidget, reason: 'the only label on More');
         expect(
-          find.descendant(of: heading, matching: find.text(label)),
-          findsOneWidget,
+          find.descendant(
+            of: key('more-screen'),
+            matching: find.byType(HlSectionLabel),
+          ),
+          findsNothing,
+          reason: 'no group on More has a label',
         );
+        expect(find.text(label.toUpperCase()), findsNothing);
+        expect(find.text(label), findsNothing);
         final legal = groupOf(tester, legalRows.first);
         for (final row in legalRows) {
           expect(groupOf(tester, row), legal, reason: '$row is legal');
         }
         Rect box(Element e) =>
             tester.getRect(find.byElementPredicate((x) => x == e));
-        final top = tester.getRect(heading);
+        final help = box(groupOf(tester, 'more-help'));
+        final signOut = box(groupOf(tester, 'more-sign-out'));
+        expect(box(legal).top, greaterThan(help.bottom), reason: 'below help');
+        expect(box(legal).bottom, lessThan(signOut.top), reason: 'above');
         expect(
-          top.top,
-          greaterThanOrEqualTo(box(groupOf(tester, 'more-help')).bottom),
-          reason: 'below Hilfe & Kontakt',
-        );
-        expect(top.bottom, lessThanOrEqualTo(box(legal).top));
-        expect(
-          box(legal).bottom,
-          lessThanOrEqualTo(tester.getRect(key('more-sign-out')).top),
-          reason: 'above Abmelden',
+          box(legal).top - help.bottom,
+          signOut.top - box(legal).bottom,
+          reason: 'spaced like the other groups',
         );
         expect(
           [for (final row in legalRows) tester.getRect(key(row)).top],

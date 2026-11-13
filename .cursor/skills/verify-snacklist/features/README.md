@@ -82,7 +82,7 @@ Settings, help and account
 - [language](./language.md): German, English or the device's language, and which texts stay German.
 - [feedback](./feedback.md): Mehr → „Feedback senden“.
 - [rate-snacklist](./rate-snacklist.md): Mehr → „Snacklist bewerten“ (iPhone and Android apps) and the system rating dialog after a completed trip in public store builds. Evidence from before the sweep is filed under the old id `rate-hummlist`.
-- [more-help](./more-help.md): the tabs, every Mehr entry in order, help and contact, guides on snacklist.app (Siri, Alexa, Claude), the Nutzungsdaten page and the Rechtliches rows (imprint, privacy policy, terms, licenses), version.
+- [more-help](./more-help.md): the tabs, every Mehr entry in order, help and contact, guides on snacklist.app (Siri, Alexa, Claude), the Nutzungsdaten page and the legal rows (imprint, privacy policy, terms, licenses), version.
 - [account-deletion](./account-deletion.md): Mehr → Konto: data export, account deletion, deleting single data without deleting the account.
 
 Connections and Premium

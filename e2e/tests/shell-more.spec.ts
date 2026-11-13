@@ -14,7 +14,7 @@ async function openMore(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
 }
 
-test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit on More; licenses name Snacklist; sign-out ends at the login', async ({ page }) => {
+test('More opens every entry; Nutzungsdaten is a page; the legal rows sit on More; licenses name Snacklist; sign-out ends at the login', async ({ page }) => {
   const email = newEmail('more');
   await signUpWithHousehold(page, email, { stores: ['Supermarkt', 'Drogerie'] });
   await openMore(page);
@@ -78,7 +78,7 @@ test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit 
   await page.getByRole('button', { name: 'Zurück' }).click();
   await expect(page).toHaveURL(/\/more$/);
 
-  // Job 85: the rows carry no hints; one label, Rechtliches, above the legal rows.
+  // Job 85: the rows carry no hints. No group on More has a label.
   await expect(page.getByText('Daten exportieren, Konto löschen'), 'no row hints').toHaveCount(0);
 
   // Job 85: Nutzungsdaten is a page with the usage-data switch (this build has a PostHog key), nothing else.
@@ -100,16 +100,17 @@ test('More opens every entry; Nutzungsdaten is a page; the Rechtliches rows sit 
   const signOut = page.getByRole('button', { name: /^Abmelden/ });
   await wheelTo(page, signOut);
   await screenshot(page, 'more-07-legal');
+  await expect(page.getByRole('heading', { name: 'Rechtliches', exact: true }), 'no label above the legal rows')
+    .toHaveCount(0);
   const top = async (target: Locator) => (await boxOf(target)).y;
   const order = [
     page.getByRole('button', { name: 'Hilfe & Kontakt', exact: true }),
-    page.getByRole('heading', { name: 'Rechtliches', exact: true }),
     ...legalRows.map((name) => page.getByRole('button', { name, exact: true })),
     signOut,
   ];
   const ys = [];
   for (const target of order) ys.push(await top(target));
-  expect(ys, 'help, then the Rechtliches label, its four rows, then Abmelden').toEqual([...ys].sort((a, b) => a - b));
+  expect(ys, 'help, then the four legal rows, then Abmelden').toEqual([...ys].sort((a, b) => a - b));
 
   await page.context().route('https://snacklist.app/**', (route) =>
     route.fulfill({ contentType: 'text/html', body: '<title>snacklist.app</title>' }));
@@ -158,7 +159,7 @@ test('the Impressum is two taps from the list: Mehr, Impressum (DDG §5); old /m
   await expect(page, 'the Rechtliches page is gone; its link lands on More').toHaveURL(/\/more$/);
   await expect(page.getByRole('heading', { name: 'Mehr' })).toBeVisible();
   await wheelTo(page, imprint);
-  await expect(page.getByRole('heading', { name: 'Rechtliches', exact: true })).toBeVisible();
+  await expect(imprint).toBeVisible();
 });
 
 test('old /settings links open the right page; back from a deep link goes to More', async ({ page }) => {
@@ -324,9 +325,9 @@ test.describe('with an English browser', () => {
     await page.getByRole('button', { name: 'Back' }).click();
     await wheelTo(page, page.getByRole('button', { name: /^Sign out/ }));
     for (const name of ['Imprint', 'Privacy policy', 'Terms of Use (EULA)', 'Licenses']) {
-      await expect(page.getByRole('button', { name, exact: true }), `${name} under Legal`).toBeVisible();
+      await expect(page.getByRole('button', { name, exact: true }), `${name} on More`).toBeVisible();
     }
-    await expect(page.getByRole('heading', { name: 'Legal', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Legal', exact: true }), 'no label above the legal rows').toHaveCount(0);
     await expectNoGerman(page, 'More, the legal rows', german);
     await wheelTo(page, page.getByRole('button', { name: /^Settings/ }));
     await page.getByRole('button', { name: /^Settings/ }).click();
@@ -371,7 +372,6 @@ test('wide screens: a rail, a sheet as wide as the list column, More in two pane
   await screenshot(page, 'wide-02-more-1366');
   // Job 85: the legal rows stay in the left pane, the Impressum one tap away.
   await wheelTo(page, page.getByRole('button', { name: 'Impressum', exact: true }));
-  await expect(page.getByRole('heading', { name: 'Rechtliches', exact: true })).toBeInViewport();
   await expect(page.getByRole('button', { name: 'Impressum', exact: true })).toBeInViewport();
   await wheelTo(page, page.getByRole('button', { name: /^Zugänge/ }));
   await page.getByRole('button', { name: /^Zugänge/ }).click();

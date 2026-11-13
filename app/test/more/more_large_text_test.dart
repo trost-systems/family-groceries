@@ -1,5 +1,4 @@
 import 'package:family_groceries/app/router.dart';
-import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/more/app_update.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -13,11 +12,10 @@ void main() {
   setUpAll(fakeSupabase);
 
   /// More top to bottom in a build that sends usage data: every row, the
-  /// Rechtliches label above its rows, the version.
+  /// version.
   final everything =
       [
         for (final row in menuRows) ...[
-          if (row == legalRows.first) find.byType(HlSectionLabel),
           find.byKey(ValueKey(row)),
           if (row == 'more-settings')
             find.byKey(const ValueKey('more-usage-data')),

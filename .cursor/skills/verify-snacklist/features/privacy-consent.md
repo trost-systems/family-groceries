@@ -18,7 +18,7 @@ Builds that carry an analytics key (the web app, TestFlight and Play builds) ask
 - Signed out on a new device: „Los geht's“ on the start screen; the question is the first step.
 - Or right after the first sign-in or sign-up on a device (from „Schon ein Konto? Anmelden“, an invite link or a link to a screen): the question appears before „Willkommen bei Snacklist“ and before the list.
 - Later: tab „Mehr“ / "More" → „Nutzungsdaten“ / "Usage data" → the switch. This is the path the consent text names.
-- The privacy page: the link „Datenschutzerklärung“ / "privacy policy" in the question, or More → „Datenschutzerklärung“ / "Privacy policy" (under the heading „Rechtliches“ / "Legal").
+- The privacy page: the link „Datenschutzerklärung“ / "privacy policy" in the question, or More → „Datenschutzerklärung“ / "Privacy policy" (in the group below „Hilfe & Kontakt“).
 
 Exact text (DE, never paraphrase): „Snacklist (Anbieter: Peter Trost) möchte verstehen, welche Funktionen genutzt werden, Fehler finden, messen, ob sich Snacklist trägt, und neue Funktionen schrittweise freischalten. Dafür speichert Snacklist eine zufällige Kennung auf diesem Gerät und sendet damit pseudonyme Nutzungsdaten (etwa zu Einträgen, Haushalten und der Einrichtung und welche Tipps du siehst), Fehlerberichte, die Kennung deines Haushalts und technische Angaben zu Gerät oder Browser an unseren Dienstleister PostHog (Server in der EU). Listeninhalte, Namen und E-Mail-Adressen werden nie gesendet. Du kannst jederzeit unter Mehr → Nutzungsdaten widerrufen. Mehr in der Datenschutzerklärung.“
 

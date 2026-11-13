@@ -11919,3 +11919,12 @@ entitlement, paywall or Premium check anywhere on the path. It ships behind the 
 - Units per g/ml and the current-day rule stay as decided; both are now questions for Peter in
   NEEDS_PETER "Job 190".
 
+
+## Job 203: no "Rechtliches" heading on More, 2026-11-13
+
+- **Why.** Peter (12 Nov): it was the only labeled group on More. The imprint, privacy policy,
+  terms and licenses rows stay a group of their own, in the same place and order, with the same
+  `HlSpace.s5` gap as every other group, so the imprint is still two taps from the list (DDG §5).
+- **The `legal` string is gone.** After the heading went, nothing referenced `l10n.legal`, so the
+  key left both ARBs, and the `legal:` flag on More's group table went with it (the table is a
+  list of row lists now). The `/more/legal` redirect stays for old links.
