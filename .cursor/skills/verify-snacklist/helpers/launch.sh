@@ -27,6 +27,19 @@ if [[ $VH_PREFIX == 543 && -z ${VH_ALLOW_543:-} ]]; then
 fi
 mkdir -p "$VH_STATE_DIR/fg" "$VH_EVIDENCE_DIR"
 
+stamp="$(vh_build_stamp)" build=0
+[[ $rebuild == 1 || ! -f $VH_BUILD_DIR/index.html || "$(cat "$VH_BUILD_DIR/.vh-stamp" 2>/dev/null)" != "$stamp" ]] && build=1
+if [[ $build == 1 ]]; then
+  # An older SDK still builds, but rewrites app/pubspec.lock (so doctor never sees a matching
+  # build) and serves an app users don't get.
+  want="$(vh_flutter_version)"
+  have="$(vh_flutter_have)"
+  if [[ $have != "$want" ]]; then
+    echo "flutter on PATH is $have, CI builds with $want (.github/workflows/ci.yml); set FLUTTER_DIR to a Flutter $want SDK (scripts/lib.sh puts its bin first on PATH)" >&2
+    exit 1
+  fi
+fi
+
 started_stack=false
 [[ -f $VH_INSTANCE && "$(vh_json startedStack)" == true ]] && started_stack=true
 if ! stack_running; then
@@ -35,8 +48,7 @@ if ! stack_running; then
 fi
 supabase_up >/dev/null
 
-stamp="$(vh_build_stamp)"
-if [[ $rebuild == 1 || ! -f $VH_BUILD_DIR/index.html || "$(cat "$VH_BUILD_DIR/.vh-stamp" 2>/dev/null)" != "$stamp" ]]; then
+if [[ $build == 1 ]]; then
   log "flutter build web (release, wasm) against $SUPABASE_URL"
   defines="$(mktemp --suffix=.json)"
   vh_defines >"$defines"

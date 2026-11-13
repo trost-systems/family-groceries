@@ -41,7 +41,7 @@ The List tab has one slot at the top of the list (job 168b, H2 trigger hints; be
 
 ## Driving it with Playwright
 
-Not driven yet for job 168b (hints branch: widget tests only). Preconditions: `signIn` from helpers/lib.mjs dismisses the checklist („Erste Schritte ausblenden“), which takes that session's slot, so a hint shows only after a reload, 10 s after it.
+Preconditions: `signIn` from helpers/lib.mjs dismisses the checklist („Erste Schritte ausblenden“), which takes that session's slot, so a hint shows only after a reload, 10 s after it.
 
 - **Checklist.** On a fresh account the list shows „Erste Schritte“ once it has an item (add one first); `page.getByText('Tippen hakt ab · Halten bearbeitet')` is visible; `page.getByRole('button', { name: 'Erste Schritte ausblenden' })` hides it.
 - **Hint.** After a reload with 5 or more open items, within 15 s the ARIA snapshot contains „Artikel bearbeiten Halte einen Artikel gedrückt …“ (title and text are one merged node). „Tipp ausblenden“ hides it and shows „Alle Tipps unter Mehr → Tipps.“; after another reload no hint comes back for 24 h.

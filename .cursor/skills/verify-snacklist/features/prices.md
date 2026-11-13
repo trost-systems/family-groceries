@@ -34,7 +34,7 @@ Preconditions:
 
 - **Chip.** `page.getByRole('button', { name: /^Preis für Milch(: .*)?$/ })`. Its amount uses a no-break space before the sign: match money with `\s` (`/^Preis für Milch: 2,38\s€, ändern$/`).
 - **Enter a price.** Click the chip, `typeInto(page.getByRole('textbox', { name: 'Preis', exact: true }), '1,19')`, `page.getByRole('button', { name: 'Fertig', exact: true }).click()`. Observable: the textbox is gone, the chip's name carries the line, `itemRow(page, 'Milch')` is still there and `not.toBeChecked()`.
-- **Editor line.** On the web it is not text of its own: the open row's group carries it in its name, `page.getByRole('group', { name: /Zusammen 2,38\s€ · Summe danach 2,38\s€$/ })`.
+- **Editor line.** A text node of its own inside the open row's group („Preis für Milch“), not part of the group's name: `page.getByText(/^Zusammen 2,38\s€ · Summe danach 2,38\s€$/)` (driven 2026-11-13 on the release web build with `FLAGS_ON=grocery-log,prices-and-trip-total`; a group-name match finds nothing).
 - **Gesamt.** `page.getByRole('radio', { name: 'Gesamt', exact: true }).click()` before typing.
 - **Weight.** Set the quantity first (`openEdit`, `typeInto(editField(page, 'Menge'), '846 g')`, `saveEdit`). In the editor `expectFieldValue(page.getByRole('textbox', { name: 'Gewicht in kg', exact: true }), '0,846')`; type the price and `1,02`, Fertig. Observable: `itemRow(page, 'Bananen 1,02 kg')`, chip `2,03 €`.
 - **Letters.** Click the price field, `page.keyboard.type('1a2b,5xc9')`: value `12,59`; `page.keyboard.insertText('Milch')` leaves it at `12,59`.
