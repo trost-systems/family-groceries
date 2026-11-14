@@ -17,7 +17,7 @@ import {
 } from './helpers';
 
 // Job 21: in-app feedback (docs/FEEDBACK.md). More -> "Feedback senden" -> a note with the app's
-// context, insert-only into public.feedback; read back here with the service role, as the PM does.
+// context, insert-only into public.feedback; read back here with the service role, as Peter does.
 
 const phone = { width: 390, height: 844 };
 

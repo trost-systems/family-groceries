@@ -141,7 +141,9 @@ routine or agent reads or relays it.
 text and simple HTML, English labels. One entry per note, oldest first: the time (Berlin), the
 category (or "none"), the note, `platform · version (build)`, `Premium: yes/no` (the sender's
 household or own Premium when the digest runs), `Reply allowed: yes/no`, and `Email: <address>`
-only when the sender allowed a reply. Internal notes (`is_internal`) are left out. The mail has
+only when the sender allowed a reply. Internal notes (`is_internal`) are left out. In the plain
+text part each line of the note starts with `> `, so a typed "Email: ..." line can't pass for
+the entry's own. The mail has
 no links, images or tracking pixel.
 
 **The day.** The digest of day D holds the notes after the watermark and before D 07:59 Berlin.
@@ -187,9 +189,13 @@ send the day's mail as soon as the cause is gone. The function's logs and answer
 codes only (`feedback-digest: sent`, `send_failed 422`, `db_error 23505`), never a note or an
 address; pg_net keeps answers in `net._http_response`, so they carry none either.
 
-**Resend tracking.** Open and click tracking are Resend domain settings, not per mail. The
-digest has no links and nothing to load, so neither could record anything, but check that both
-are off for `snacklist.app` before switching the digest on.
+**Resend tracking.** Open and click tracking are Resend domain settings, not per mail. With
+open tracking on, Resend adds a 1x1 pixel to the HTML of every mail the domain sends, the digest
+included, and records each opening; with click tracking on, it rewrites links. So both must be
+off for the sending domain, `snacklist.app`, before the digest is switched on (NEEDS_PETER "Job
+225", step 3). The waitlist mails want them off too (docs/WAITLIST.md). Should another mail ever
+need tracking on `snacklist.app`, the digest moves to its own sending subdomain with tracking
+off first.
 
 **Look at the runs** (SQL editor, service role):
 

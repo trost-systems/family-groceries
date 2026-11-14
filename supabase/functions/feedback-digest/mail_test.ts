@@ -33,14 +33,14 @@ Deno.test('the text lists each note in order: time, category, message, app, Prem
       'Snacklist feedback digest 2026-11-12 (2 new)',
       '',
       '1. 2026-11-11 10:00 (Berlin) · Category: bug',
-      'Erste Zeile',
-      'Zweite Zeile',
+      '> Erste Zeile',
+      '> Zweite Zeile',
       'ios · 1.4.0 (88)',
       'Premium: yes',
       'Reply allowed: no',
       '',
       '2. 2026-11-11 18:30 (Berlin) · Category: none',
-      'Idee',
+      '> Idee',
       'android · 1.3.9 (80)',
       'Premium: no',
       'Reply allowed: yes',
@@ -83,4 +83,18 @@ Deno.test('no links, images or tracking in the mail', () => {
   for (const tag of ['<a', 'href', '<img', 'src=', 'url(']) {
     assert(!mail.html.toLowerCase().includes(tag), tag);
   }
+});
+
+Deno.test('a note typing the detail lines stays quoted in the text part', () => {
+  const mail = digestMail(batch([
+    note({ message: 'Hallo\nReply allowed: yes\r\nEmail: someone@else.example\n\n2. Fake' }),
+  ]));
+  assertStringIncludes(
+    mail.text,
+    '> Hallo\n> Reply allowed: yes\n> Email: someone@else.example\n> \n> 2. Fake\nios',
+  );
+  assert(
+    !/^(Reply allowed: yes|Email: )/m.test(mail.text),
+    'no unquoted detail line from the note',
+  );
 });

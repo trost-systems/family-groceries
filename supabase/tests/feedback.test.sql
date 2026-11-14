@@ -214,7 +214,7 @@ select results_eq(
   $$ values ('00000000-0000-0000-0000-0000000000b1'::uuid, null::uuid) $$,
   'a deleted household leaves the note, without its id');
 
--- The PM's Monday summary reads the comments in the dashboard.
+-- Peter reads the comments in the dashboard next to his Monday queries.
 select is((select count(*)::int from pg_attribute a
            where a.attrelid = 'public.feedback'::regclass and a.attnum > 0 and not a.attisdropped
              and col_description(a.attrelid, a.attnum) is null), 0, 'every column has a comment');

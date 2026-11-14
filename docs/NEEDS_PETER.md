@@ -807,7 +807,7 @@ Live with the next release; nothing to switch on. Details in [FEEDBACK.md](FEEDB
    app version and build, platform and OS version (on the web the browser family and OS), the
    app language, the name of the screen they came from, their account id and household id. No
    list items, no screenshots, no device model; the e-mail is not copied. Stored at Supabase
-   (EU, Frankfurt), readable only by Peter and the Snacklist PM. Deleted 12 months after sending
+   (EU, Frankfurt), readable only by Peter Trost. Deleted 12 months after sending
    (daily cleanup), at once when the account is deleted; the encrypted nightly backups keep a
    deleted note up to 90 more days. Contact happens only by Peter and only when the user ticked
    "Peter darf mich dazu kontaktieren". Legal basis: the user sends it on purpose (Art. 6(1)(b)
@@ -1832,8 +1832,14 @@ after the Legal Review GO, in this order:
    ```sql
    select vault.create_secret('<the value of $v>', 'feedback_digest_secret');
    ```
-3. Resend → Domains → `snacklist.app`: check that open tracking and click tracking are off.
-4. Switch it on (SQL editor):
+3. Resend → Domains → `snacklist.app`: open tracking and click tracking must both be off
+   (open tracking would add a pixel to the digest and record every opening). Do not switch the
+   digest on while either is on.
+4. Privacy policy first: once the digest is on, each note and, when the sender allowed a reply,
+   their address go through Resend (USA) into the `hello@snacklist.app` mailbox. Update the
+   feedback paragraphs of `site/content/legal/datenschutz.md` and `privacy.md` with Legal, and
+   let them go live, before the next step.
+5. Switch it on (SQL editor):
    ```sql
    select public.feedback_digest_set(true, 'https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/feedback-digest');
    ```
