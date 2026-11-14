@@ -12608,6 +12608,34 @@ The baseline is 199 jobs' transcripts and 14 days of CI; its numbers go into
   after the wait for the box-wide e2e lock, which took one job 2.5 h on one day of the baseline
   (job 123, 5 Nov), and a stop would send the run to the end of the queue. The db gate has
   always reset a running stack.
+- **Recipes are files the verdict line points at, and each proves its own signal.** A failed
+  gate whose output has a recipe's signal names it in its verdict, `seen before? <file>`
+  (`.cursor/skills/verify-snacklist/recipes/`). The match is a question: the recipe's Condition
+  has a command that tells the known cause from a real failure, and the gate stays failed.
+  `scripts/verify-test.sh` runs `verify.sh` on every recipe's Example and Not this, on each test
+  line of the Example alone and on the same tests as passed lines, in three forms that it
+  writes. So a signal that loses a test of its Example, or takes a line of its Not this or one
+  of those passed lines, fails the lint gate. A list of advice in the skill was rejected: every failed run prints its
+  verdict, and a list reaches only the agent that opens it (reasoned, not measured).
+- **One recipe, because only one recurring cause could not be removed.** A recipe needs a
+  failure that came back (three runs or two jobs, counted), a known cause that is not the change
+  under test, and no way to remove the cause. The fake sign-in provider that the stack's
+  containers cannot reach on the Hetzner runner is one: nine of its ten tests have failed lines
+  from local runs in the transcripts of at least 20 of 199 jobs (the tenth passed without a user
+  until this job), and the runner's firewall is not the jobs' to change. The count is a lower
+  bound: it reads the reporter's `✘` lines, and the agents print failures in other forms too. The
+  others on the baseline's list did not qualify. Stale migrations (17 runs) and another Flutter
+  SDK became gate checks.
+  Format drift (`dart format`, `deno fmt`: 18 runs) already names its fix in the failure. Port
+  in use, a missing tool and a stopped stack (7 runs together) say what is wrong in one line.
+- **Not built in job 219.** A table from changed paths to the gates to run: over 199 jobs the agents
+  waited 11.8 h on `verify.sh` runs of several gates against 172.7 h on CI and 55.8 h on the merge
+  lock, and a wrong table gives a local green that CI turns red. Reusing the web build between e2e
+  runs: the gate cannot tell which defines and sources a build in `app/build/web` came from without
+  hashing what the build reads, and a stale build is a false verdict. A container for the fake
+  provider on the stack's network: it changes how the suite reaches the provider in CI too, for a
+  failure that CI does not have. Moving `scripts/fg` to CI's Flutter: its Linux build container
+  mounts `~/flutter`.
 
 ## Job 225 review 0: feedback doc and the digest URL, 2026-11-14
 

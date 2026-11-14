@@ -1,6 +1,6 @@
 ---
 name: verify-snacklist
-description: "Drive the real Snacklist app (the Flutter web release build in Chromium via Playwright) against this checkout's local Supabase stack with a seeded demo household, and prove behavior with screenshots, ARIA snapshots, video and database state. Use before claiming a Snacklist feature works, to reproduce a bug, to capture PR evidence, or to look up what the app does today (features/, and features/FEATURES-FOR-WRITERS.md for copy)."
+description: "Drive the real Snacklist app (the Flutter web release build in Chromium via Playwright) against this checkout's local Supabase stack with a seeded demo household, and prove behavior with screenshots, ARIA snapshots, video and database state. Use before claiming a Snacklist feature works, to reproduce a bug, to capture PR evidence, or to look up what the app does today (features/, and features/FEATURES-FOR-WRITERS.md for copy). Also when a scripts/verify.sh gate fails: how to read its verdict line, and the recipes for failures seen before (recipes/)."
 ---
 
 # Verify Snacklist
@@ -121,6 +121,21 @@ Cleanup does these things:
 After `--keep-stack` the record is gone, so a later `cleanup.sh` no longer stops the stack: stop it yourself with `supabase stop --no-backup` from the repo root (your project only) when you are done.
 
 It never touches `$VH_EVIDENCE_DIR`. Its last line names the evidence dir and how many files it holds.
+
+## Gates
+
+Driving the app proves a behavior. The gates decide whether a change may land: `scripts/verify.sh` runs the same `scripts/gates/<gate>.sh` scripts as CI. Neither stands in for the other. A journey that passes says nothing about a red gate, a green gate is not evidence that a feature works, and nothing else you can show (screenshots, a smaller diff, a review score) offsets a failed gate.
+
+The loop after an edit:
+
+1. Run the gates the change can break: `scripts/verify.sh --only lint,flutter` (comma-separated), one spec with `--only e2e -- tests/<spec>.spec.ts`. Before pushing, run `scripts/verify.sh` whole.
+2. Read the last line. It is `[verify] passed: <gates>` or `[verify] FAILED: <gate> (exit <n>) after <s> s; its output: <file>`. The file holds that run's whole output: open it instead of running the gate again to see the error.
+3. `seen before? <recipe>` on that line names a file in [`recipes/`](recipes/README.md): a failure that came back across jobs and whose cause is known. Run the recipe's Condition. The gate has failed either way; the recipe says where its verdict comes from instead.
+4. `flake: <gate> had the other result (pass|fail) on this same tree at <time>` means the files git does not ignore are the same, so they are not the cause. Find what differs outside them (`docs/CI.md`, "The local loop", lists the causes found so far) and write it into the PR. A rerun that passes is a second observation, not a fix.
+5. `<gate> has failed 3 runs in a row on this branch` means stop patching. Write down what the fixes assumed and test that assumption before a fourth.
+6. Take a claim about gate time or flakiness from `scripts/verify.sh --history [<date>]`, which reads the ledger of every local gate run.
+
+Never make a gate pass by skipping, loosening or deleting what it checks. No recipe does any of the three.
 
 ## Helpers
 

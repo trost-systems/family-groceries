@@ -2,7 +2,8 @@
 # Tests scripts/verify.sh on a scratch repository with stub gates: the hard stop at the first
 # failing gate, the plain last line, the log of each gate run (whole under a burst of output,
 # its own beside a leftover writer or a second run), the ledger with its flake and streak notes,
-# and that a process a gate leaves behind cannot hold the run open. Run by the lint gate.
+# that a process a gate leaves behind cannot hold the run open, and the recipes a failed gate's
+# verdict names (the skill's own included). Run by the lint gate.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 # A locale the box lacks would put bash's warning into every stub gate's output.
@@ -59,6 +60,11 @@ wait_for() {
 # The file a FAILED verdict names.
 named() { sed -n 's/.*; its output: \([^;]*\.log\).*/\1/p' <<<"${1:-$(last)}"; }
 ledger() { cut -f4,5,7 "$VERIFY_LEDGER" | tr '\t\n' ' ;'; }
+# What verify.sh itself said in the last run, with seconds, the flake note's time and the log's
+# name masked; and what was not from verify.sh, sorted (a gate's two streams have no fixed order).
+own() { grep '^\[verify\]' <<<"$out" | sed -e 's/[0-9][0-9]* s/N s/g' -e 's/\( on this same tree at \)[^ ]*\. The/\1T. The/' -e "s|$VERIFY_LOG_DIR/\([a-z0-9]*\)\.[0-9.-]*\.log|LOG/\1.log|"; }
+rest() { grep -v '^\[verify\]' <<<"$out" | sort; }
+flake() { echo "[verify] flake: $1 had the other result ($2) on this same tree at T. The files git does not ignore are the same, so something else differs: find it and write it down (docs/CI.md, \"The local loop\")"; }
 
 verify --only gitleaks,lint,flutter
 [[ $code == 0 && $ran == "gitleaks lint flutter " ]] || fail "three passing gates: exit $code, ran '$ran'"
@@ -262,8 +268,119 @@ for _ in {1..7}; do verify --only lint,gitleaks; done
 [[ "$(find "$VERIFY_LOG_DIR" -name 'gitleaks.*.log' | wc -l)" -le 5 && -z "$(find "$VERIFY_LOG_DIR" -name '*.done')" ]] || fail "leftovers in the log directory: $(ls "$VERIFY_LOG_DIR")"
 [[ "$(cat "$VERIFY_LOG_DIR/lint.log")" == $'lint ran\nlint on stderr' ]] || fail "lint.log after pruning: $(cat "$VERIFY_LOG_DIR/lint.log" 2>&1)"
 
+# A failed gate whose output has a recipe's signal names the recipe in its verdict, every recipe
+# that matches, and fails as before: the gate's exit code, a fail row in the ledger. Not named: a
+# recipe of another gate, a file without front matter, a signal that is no pattern, and none for
+# a run that passed or for other output.
+says() {
+  cat >"$repo/scripts/gates/$1.sh" <<'GATE'
+#!/usr/bin/env bash
+basename "$0" .sh >>"$STUBS/ran"
+cat "$STUBS/output"
+exit "$(cat "$STUBS/exit")"
+GATE
+  chmod +x "$repo/scripts/gates/$1.sh"
+}
+says lint
+fresh recipes
+export VERIFY_RECIPES="$tmp/recipes"
+mkdir -p "$VERIFY_RECIPES"
+printf '%s\n' --- 'gate: lint' 'signal: ^ +[0-9]+ files? left unformatted$' --- '# Known' >"$VERIFY_RECIPES/known.md"
+printf '%s\n' --- 'gate: flutter' 'signal: unformatted' --- >"$VERIFY_RECIPES/other-gate.md"
+printf '%s\n' '# Recipes' --- 'gate: lint' 'signal: unformatted' --- >"$VERIFY_RECIPES/README.md"
+printf '%s\n' --- 'gate: lint' 'signal: (unformatted' --- >"$VERIFY_RECIPES/no-pattern.md"
+{ echo checking; printf 'lib/file_%s.dart\n' {1..40}; printf '\033[31m  2 files left unformatted\033[0m\ndone\n'; } >"$STUBS/output"
+echo 3 >"$STUBS/exit"
+verify --only lint,flutter
+[[ $code == 3 && "$(last)" == "[verify] FAILED: lint (exit 3) after "*" s; its output: $VERIFY_LOG_DIR/lint."*".log; seen before? $VERIFY_RECIPES/known.md; not run: flutter" ]] || fail "a failure with a recipe's signal: exit $code, $(last)"
+[[ $ran == "lint " ]] || fail "a failure with a recipe's signal ran its gate again or went on: '$ran'"
+grep -q '^\[verify\] took: lint [0-9]* s$' <<<"$out" || fail "no seconds for the gate next to a recipe: $out"
+[[ "$(cat "$(named)")" == "$(cat "$STUBS/output")" ]] || fail "the verdict with a recipe no longer names the run's output: $(named)"
+[[ "$(ledger)" == "lint fail ;" ]] || fail "the ledger after a failure with a recipe's signal: $(ledger)"
+printf '%s\n' --- 'gate: lint' 'signal: ^checking$' --- '# Also known' >"$VERIFY_RECIPES/also.md"
+verify --only lint
+[[ $code == 3 && "$(last)" == *"; seen before? $VERIFY_RECIPES/also.md $VERIFY_RECIPES/known.md" ]] || fail "two recipes with a signal in the output: exit $code, $(last)"
+[[ $ran == "lint " ]] || fail "a failure with two recipes ran its gate again: '$ran'"
+rm "$VERIFY_RECIPES/also.md"
+echo 0 >"$STUBS/exit"
+verify --only lint
+[[ $code == 0 && "$(last)" == "[verify] passed: lint" ]] || fail "a recipe's signal in a run that passed: exit $code, $(last)"
+grep -q 'seen before\|known\.md' <<<"$out" && fail "a run that passed names a recipe: $out"
+[[ "$(own)" == "[verify] gate: lint"$'\n'"$(flake lint fail)"$'\n[verify] took: lint N s (N s)\n[verify] passed: lint' && "$(rest)" == "$(sort "$STUBS/output")" ]] || fail "a run that passed with a recipe's signal says more than gate, flake note, took and passed: $out"
+# A gate that passed with the signal is not looked at when a later gate fails.
+echo 1 >"$STUBS/flutter"
+verify --only lint,flutter
+[[ $code == 1 && $ran == "lint flutter " && "$(last)" == "[verify] FAILED: flutter (exit 1) after "*" s; its output: $VERIFY_LOG_DIR/flutter."*".log" ]] || fail "a later gate's failure after a pass with a recipe's signal: exit $code, ran '$ran', $(last)"
+[[ "$(own)" == "[verify] gate: lint"$'\n'"$(flake lint fail)"$'\n[verify] gate: flutter\n[verify] took: lint N s, flutter N s\n[verify] FAILED: flutter (exit 1) after N s; its output: LOG/flutter.log' && "$(rest)" == "$({ cat "$STUBS/output"; printf '%s\n' 'flutter ran' 'flutter on stderr'; } | sort)" ]] || fail "a later gate's failure after a pass with a recipe's signal says more than without recipes: $out"
+rm "$STUBS/flutter"
+echo 3 >"$STUBS/exit"
+verify --only lint
+grep -q '^\[verify\] flake: lint had the other result (pass) on this same tree' <<<"$out" || fail "a recipe took the flake note's place: $out"
+[[ $code == 3 && "$(last)" == *"; seen before? $VERIFY_RECIPES/known.md" ]] || fail "a flake with a recipe's signal: exit $code, $(last)"
+[[ $ran == "lint " ]] || fail "a flake with a recipe ran its gate again: '$ran'"
+printf 'checking\nno files left unformatted\n' >"$STUBS/output"
+echo 1 >"$STUBS/exit"
+verify --only lint
+[[ $code == 1 && "$(last)" == "[verify] FAILED: lint (exit 1) after "*" s; its output: $VERIFY_LOG_DIR/lint."*".log" ]] || fail "a failure without a recipe's signal: exit $code, $(last)"
+[[ "$(own)" == "[verify] gate: lint"$'\n'"$(flake lint pass)"$'\n[verify] took: lint N s\n[verify] FAILED: lint (exit 1) after N s; its output: LOG/lint.log' && "$(rest)" == "$(sort "$STUBS/output")" ]] || fail "a failure without a recipe's signal says more than without recipes: $out"
+# Without VERIFY_RECIPES the recipes are the skill's, named by their path in the checkout.
+unset VERIFY_RECIPES
+mkdir -p "$repo/.cursor/skills/verify-snacklist/recipes"
+printf '%s\n' --- 'gate: lint' 'signal: ^checking$' --- '# In the checkout' >"$repo/.cursor/skills/verify-snacklist/recipes/in-checkout.md"
+verify --only lint
+[[ $code == 1 && "$(last)" == *".log; seen before? .cursor/skills/verify-snacklist/recipes/in-checkout.md" ]] || fail "the checkout's own recipes: exit $code, $(last)"
+[[ $ran == "lint " ]] || fail "a failure with exit 1, a recipe and no gate left ran its gate again: '$ran'"
+[[ "$(ledger)" == "lint fail ;lint fail ;lint pass ;lint pass ;flutter fail ;lint fail ;lint fail ;lint fail ;" ]] || fail "the ledger after a failure with exit 1 and a recipe: $(ledger)"
+grep -q '^\[verify\] lint has failed 3 runs in a row on this branch' <<<"$out" || fail "a recipe took the streak note's place: $out"
+
+# The skill's own recipes: each names a gate and has every section, the README lists it, its
+# Example gets it named and its Not this does not.
+export VERIFY_RECIPES="$REPO_ROOT/.cursor/skills/verify-snacklist/recipes"
+section() { awk -v title="## $2" '$0 == title { on = 1; next } /^## / { on = 0 } on && /^```/ { fenced = !fenced; next } on && fenced' "$1"; }
+count=0
+for recipe in "$VERIFY_RECIPES"/*.md; do
+  name="$(basename "$recipe" .md)"
+  [[ $name != README ]] || continue
+  count=$((count + 1))
+  [[ $name =~ ^[a-z0-9-]+$ ]] || fail "recipe '$name': lower-case letters, digits and hyphens only, so the verdict stays one line of names"
+  of="$(awk '/^gate: / { print $2; exit }' "$recipe")"
+  [[ -n $of && -x "$REPO_ROOT/scripts/gates/$of.sh" ]] || { fail "recipe $name: gate '$of' is not one of scripts/gates"; continue; }
+  for title in Condition Mechanism "Do" "Do not" Evidence Example "Not this"; do
+    grep -qx "## $title" "$recipe" || fail "recipe $name has no section '$title'"
+  done
+  grep -qF "($name.md)" "$VERIFY_RECIPES/README.md" || fail "recipes/README.md does not list $name"
+  says "$of"
+  echo 1 >"$STUBS/exit"
+  section "$recipe" Example >"$STUBS/output"
+  [[ -s $STUBS/output ]] || fail "recipe $name has no example"
+  rows="$(wc -l <"$VERIFY_LEDGER")"
+  verify --only "$of"
+  [[ "$(last)" == *"; seen before? "*"/$name.md"* ]] || fail "recipe $name: its example does not get it named: $(last)"
+  [[ $code == 1 && $ran == "$of " ]] || fail "recipe $name: its example's failure ran the gate again or lost its exit code: exit $code, ran '$ran'"
+  [[ "$(wc -l <"$VERIFY_LEDGER")" == "$((rows + 1))" && "$(ledger)" == *"$of fail ;" ]] || fail "recipe $name: the ledger after its example: $(ledger)"
+  # Where the example is Playwright's summary, each of its test lines alone gets the recipe
+  # named, and the same tests as passed lines of the list do not: with a number of one, two and
+  # three digits, the last without its time.
+  while IFS= read -r line; do
+    [[ $line == "    ["* ]] || continue
+    printf '%s\n' "$line" >"$STUBS/output"
+    verify --only "$of"
+    [[ $code == 1 && $ran == "$of " && "$(last)" == *"; seen before? "*"/$name.md"* ]] || fail "recipe $name: this line of its example alone does not get it named, with the gate run once and its exit code: $line"
+  done < <(section "$recipe" Example)
+  section "$recipe" Example | sed -n 's/^    \(\[.*[^ ]\) *$/  ✓  1 \1 (1.0s)\n  ✓  12 \1 (12.3s)\n  ✓  123 \1/p' >"$STUBS/output"
+  if [[ -s $STUBS/output ]]; then
+    verify --only "$of"
+    [[ "$(last)" == "[verify] FAILED: $of "* && "$(last)" != *"$name.md"* ]] || fail "recipe $name: named when the tests of its example pass: $(last)"
+  fi
+  section "$recipe" "Not this" >"$STUBS/output"
+  [[ -s $STUBS/output ]] || fail "recipe $name has no 'Not this' output"
+  verify --only "$of"
+  [[ "$(last)" == "[verify] FAILED: $of "* && "$(last)" != *"$name.md"* ]] || fail "recipe $name: named for output that is not its failure: $(last)"
+done
+[[ $count -gt 0 ]] || fail "no recipes in $VERIFY_RECIPES"
+
 if [[ $failures -gt 0 ]]; then
   echo "verify-test: $failures failed" >&2
   exit 1
 fi
-log "verify.sh stops at the first failure, ends on a plain verdict and keeps its ledger: all cases pass"
+log "verify.sh stops at the first failure, ends on a plain verdict, names known causes and keeps its ledger: all cases pass"

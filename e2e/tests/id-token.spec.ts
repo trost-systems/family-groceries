@@ -74,5 +74,5 @@ test('Apple and Google again with the same email reuse the one account', async (
   const second = randomUUID();
   const a = await signInWithIdToken(await fakeIdToken({ email, nonce: sha256(first) }), first);
   const b = await signInWithIdToken(await fakeIdToken({ email, nonce: sha256(second) }), second);
-  expect(b.user?.id).toBe(a.user?.id);
+  expect(b.user?.id).toBe(must(a.user, 'user from the first sign-in').id);
 });

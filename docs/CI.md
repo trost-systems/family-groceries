@@ -89,6 +89,16 @@ Two notes come from the ledger:
   past it. Stop patching: write down what the fixes had in common, and test
   that assumption directly before a fourth.
 
+A failed gate's verdict can name `seen before? <file>`: the run's output has
+the signal of a recipe in `.cursor/skills/verify-snacklist/recipes/`. A recipe
+is one gate failure that came back across jobs and whose cause is known and
+is not the change under test: its condition with a command that tells it from
+a real failure, the mechanism, what to do and what not, the evidence. The
+note is a question and the gate has failed either way. A cause that can be
+removed gets removed instead, as the checks below did, so there are few
+recipes. The README there says when to add one, and `scripts/verify-test.sh`
+runs `verify.sh` on each recipe's example and counter-example.
+
 A local run uses CI's toolchain or says what is missing:
 
 - **Flutter.** `scripts/lib.sh` puts `FLUTTER_DIR` first on `PATH`, else
