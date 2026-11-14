@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:family_groceries/app/router.dart';
 import 'package:family_groceries/design/field_border.dart';
+import 'package:family_groceries/design/motion.dart';
 import 'package:family_groceries/design/tokens.g.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
@@ -58,6 +59,7 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
   /// The own store being typed; false while the add row shows.
   var _naming = false;
   final _nameFocus = FocusNode();
+  final _scroll = ScrollController();
   var _busy = false;
   var _invalidName = false;
   HouseholdProblem? _problem;
@@ -66,6 +68,7 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
   void dispose() {
     _name.dispose();
     _nameFocus.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -102,8 +105,17 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
     final name = _name.text.trim();
     if (!validHouseholdName(name)) {
       setState(() => _invalidName = true);
-      // Below the store choices the field may be out of view.
-      _nameFocus.requestFocus();
+      // The error shows only under the field (Peter E1). From the button
+      // below the store choices the field is scrolled away and, in the lazy
+      // list, not even built: focus alone would not bring it back.
+      await _scroll.animateTo(
+        0,
+        duration: hlMotion(context, HlDuration.short),
+        curve: HlEasing.standard,
+      );
+      if (mounted) {
+        _nameFocus.requestFocus();
+      }
       return;
     }
     final session = context.read<SessionCubit>();
@@ -149,6 +161,7 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
           ? l10n.newHousehold
           : l10n.createHousehold,
       listKey: const ValueKey('create-household-screen'),
+      controller: _scroll,
       onBack: _busy ? null : () => leaveStep(context),
       children: [
         LabeledField(
@@ -226,11 +239,6 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        if (_invalidName)
-          ProblemText(
-            l10n.householdNameInvalid,
-            key: const ValueKey('create-name-problem'),
-          ),
         if (problem != null)
           ProblemText(
             householdProblemText(l10n, problem),
