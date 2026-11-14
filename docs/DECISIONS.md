@@ -12950,3 +12950,25 @@ and the household sheet are today's.
    semantics actions); lists still move through More's household menu there, households don't.
 11. **Left for later:** the bottom area (none of BB1 to BB5; Peter revisits it), and whether More's
    household page also moves to long-press reorder.
+
+## Job 231 review 0: reduced motion and focus on „Neuer Haushalt“, 2026-11-14
+
+1. **Scroll animations go through `hlScrollTo`.** `hlMotion` gives `Duration.zero` under reduced
+   motion. A scroll `animateTo` of zero length fails `DrivenScrollActivity`'s assert, and on the
+   release web build throws a `LateInitializationError`, so #447's empty-name submit never focused
+   the field (review 0). `list_tabs.dart` had the same call since before. `hlScrollTo`
+   (`design/motion.dart`) jumps when the duration is zero; both callers use it, and the ast-grep
+   rule `scroll-animation-through-hl-scroll-to` stops a new `animateTo` with an `hlMotion`
+   duration. An AnimationController's `animateTo` takes zero fine; the rule cannot tell the two
+   apart, so such a call gets an ignore with that reason (none today).
+2. **Focus after the frame's timers.** At 390×844 the list is already at the top, so the scroll is
+   a jump and focus was asked for in the tap's frame. On the web build `document.activeElement`
+   went from the button's semantics element to `flutter-view` within 30 ms and typing reached
+   nothing (main: 0 of 1 drives typed; the review saw 4 of 4 fail). Waiting for the end of the
+   frame alone did not help, nor did unfocusing first. Asking after one zero timer past the frame
+   put the cursor in the input at once: 24 of 24 drives typed (de, en, 844 and 560 px, with and
+   without reduced motion; one more run failed earlier, at the sign-in screen, and passed on
+   rerun). Why the timer helps is inferred, not traced: the web engine reports a semantics
+   element's DOM focus in a timer after the frame, which would come after an earlier request.
+3. **Typing clears the error**, as on the guided start's name step, so the two name fields behave
+   the same.

@@ -438,6 +438,32 @@ void main() {
       });
     }
 
+    testWidgets('with animations off an empty name goes back to the field '
+        'and focuses it', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      await pumpOnboarding(tester, location: newHouseholdPath, session: inHome);
+      await tapKey(tester, 'create-household');
+      expect(tester.takeException(), isNull);
+      const message = 'Gib einen Namen mit 1 bis 80 Zeichen ein.';
+      expect(find.text(message).hitTestable(), findsOneWidget);
+      final field = tester.widget<TextField>(key('household-name'));
+      expect(field.focusNode?.hasFocus, isTrue);
+    });
+
+    testWidgets('typing a name takes the error away', (tester) async {
+      await pumpOnboarding(tester, location: newHouseholdPath, session: inHome);
+      await tapKey(tester, 'create-household');
+      const message = 'Gib einen Namen mit 1 bis 80 Zeichen ein.';
+      expect(find.text(message), findsOneWidget);
+      await tester.enterText(key('household-name'), 'F');
+      await tester.pump();
+      expect(find.text(message), findsNothing);
+    });
+
     testWidgets('offline at the create says so above the button', (
       tester,
     ) async {

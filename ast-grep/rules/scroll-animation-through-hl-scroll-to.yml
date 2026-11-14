@@ -1,0 +1,19 @@
+# hlMotion gives Duration.zero under reduced motion. A scroll animation of zero length fails
+# DrivenScrollActivity's assert in debug, and on the release web build throws a
+# LateInitializationError, so what follows the await never runs: the create screen's empty-name
+# submit never focused the field (job 231 review). hlScrollTo (app/lib/design/motion.dart) jumps
+# instead. An AnimationController's animateTo takes a zero duration fine; ignore the finding there
+# with that reason.
+id: scroll-animation-through-hl-scroll-to
+language: dart
+severity: error
+files:
+  - app/lib/**
+ignores:
+  - app/lib/design/motion.dart
+rule:
+  kind: call_expression
+  all:
+    - regex: '^[\w.?!]*\.animateTo\s*\('
+    - regex: 'duration:\s*hlMotion\s*\('
+message: 'A scroll animateTo with an hlMotion duration throws under reduced motion (Duration.zero): use hlScrollTo(context, position, offset) from app/lib/design/motion.dart, which jumps then'

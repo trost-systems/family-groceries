@@ -1,0 +1,29 @@
+id: scroll-animation-through-hl-scroll-to
+valid:
+  - |
+    void reveal() {
+      unawaited(hlScrollTo(context, position, to));
+    }
+  - |
+    Future<void> top() => _scroll.animateTo(
+      0,
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+    );
+  - |
+    final d = hlMotion(context, HlDuration.short);
+invalid:
+  - |
+    void reveal() {
+      unawaited(
+        position.animateTo(
+          to,
+          duration: hlMotion(context, HlDuration.short),
+          curve: HlEasing.standard,
+        ),
+      );
+    }
+  - |
+    Future<void> top() async {
+      await _scroll.animateTo(0, duration: hlMotion(context, HlDuration.short), curve: HlEasing.standard);
+    }

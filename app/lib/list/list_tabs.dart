@@ -66,13 +66,7 @@ class _ListTabsState() extends State<ListTabs> {
       }
       to = to.clamp(position.minScrollExtent, position.maxScrollExtent);
       if (to != position.pixels) {
-        unawaited(
-          position.animateTo(
-            to,
-            duration: hlMotion(context, HlDuration.short),
-            curve: HlEasing.standard,
-          ),
-        );
+        unawaited(hlScrollTo(context, position, to));
       }
     });
   }

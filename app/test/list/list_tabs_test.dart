@@ -127,25 +127,35 @@ void main() {
     expect(rows(tester), isEmpty, reason: 'the new list shows, empty');
   });
 
-  testWidgets('at 358 px many lists scroll sideways and the shown one is '
-      'in view', (tester) async {
-    const many = [
-      _weekly,
-      _diy,
-      _party,
-      HouseholdList(id: 'grill', name: 'Grillabend am Samstag', position: 3),
-      HouseholdList(id: 'xmas', name: 'Weihnachtsbäckerei', position: 4),
-    ];
-    await pumpList(tester, lists: many, width: 358);
-    expect(tester.takeException(), isNull, reason: 'no overflow');
-    cubit.showList('xmas');
-    await tester.pumpAndSettle();
-    final tab = tester.getRect(key('list-tab-xmas'));
-    expect(tab.left, greaterThanOrEqualTo(0));
-    expect(tab.right, lessThanOrEqualTo(358));
-    final first = tester.getRect(key('list-tab-weekly'));
-    expect(first.right, lessThan(16), reason: 'scrolled past the first');
-  });
+  for (final still in [false, true]) {
+    testWidgets('at 358 px many lists scroll sideways and the shown one is '
+        'in view${still ? ', with animations off too' : ''}', (tester) async {
+      if (still) {
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+      }
+      const many = [
+        _weekly,
+        _diy,
+        _party,
+        HouseholdList(id: 'grill', name: 'Grillabend am Samstag', position: 3),
+        HouseholdList(id: 'xmas', name: 'Weihnachtsbäckerei', position: 4),
+      ];
+      await pumpList(tester, lists: many, width: 358);
+      expect(tester.takeException(), isNull, reason: 'no overflow');
+      cubit.showList('xmas');
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final tab = tester.getRect(key('list-tab-xmas'));
+      expect(tab.left, greaterThanOrEqualTo(0));
+      expect(tab.right, lessThanOrEqualTo(358));
+      final first = tester.getRect(key('list-tab-weekly'));
+      expect(first.right, lessThan(16), reason: 'scrolled past the first');
+    });
+  }
 
   testWidgets('a row says who brings it', (tester) async {
     await pumpList(tester, lists: const [_weekly]);
