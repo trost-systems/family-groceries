@@ -711,8 +711,11 @@ class const _UnitMenu({
 
 /// The list's running total under the list (job 190): "Einkaufssumme",
 /// how many items have a price and how many open ones have none, and the
-/// sum in the household's currency.
-class const TotalBar({super.key}) extends StatelessWidget {
+/// sum in the household's currency. [inList], it is a row of the list after
+/// the open items, on the list's own surface (job 229, flag
+/// `list-declutter`).
+class const TotalBar({final bool inList = false, super.key})
+    extends StatelessWidget {
   static const height = 56.0;
 
   @override
@@ -740,12 +743,16 @@ class const TotalBar({super.key}) extends StatelessWidget {
       excludeSemantics: true,
       child: Container(
         constraints: const BoxConstraints(minHeight: TotalBar.height),
-        padding: const EdgeInsets.symmetric(
-          horizontal: HlSpace.s4,
+        // In the list: inset as the rows' text, the line as wide as theirs.
+        margin: inList
+            ? const EdgeInsets.fromLTRB(HlSpace.s4, HlSpace.s3, HlSpace.s4, 0)
+            : null,
+        padding: EdgeInsets.symmetric(
+          horizontal: inList ? HlSpace.s1 : HlSpace.s4,
           vertical: HlSpace.s1,
         ),
         decoration: BoxDecoration(
-          color: t.surfaceRaised,
+          color: inList ? null : t.surfaceRaised,
           border: Border(
             top: BorderSide(color: t.border, width: HlBorder.width),
           ),

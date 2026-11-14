@@ -801,3 +801,36 @@ Docs only (#449). `docs/PRODUCT_FEATURE_MAP.md` has a new row under "Planned (de
 Android's back on the account step („Konto erstellen“) goes to „Was fehlt gerade?“, as its arrow does (#453). Before, it showed the signed-out first screen. A probe over every step found the same cause on three steps without Zurück. These are „Mit wem“ from „Haushalt erstellen“, the setup and the invite step, where back showed a signed-in user „Los geht's“ and „Schon ein Konto? Anmelden“. Back now stays on those steps. Signed out, the first questions still go back to the first screen. The cause is that every step route sits under `/start`, and a pop runs no redirect. `onboardingStepScreen` now wraps each step in a `PopScope` that blocks the pop while signed in, and the account step has its own `PopScope` (`app/lib/onboarding/steps.dart`). iOS swipe-back is off on those screens too. On the steps without Zurück it used to go to the same wrong screen.
 
 Verified with five widget tests in `app/test/onboarding/guided_start_test.dart` that call `handlePopRoute`, which is what Android's back calls. Four failed before the fix and pass after it (output in #453). The fifth pins the signed-out usage question, which was already right. `scripts/verify.sh --only lint,changelog,flutter` passed. Not driven on a device: the web and Linux builds have no system back, and hz has no Android emulator. The Sonnet review passed, and its two test nits are fixed. Changelog `fixed`, no flag. It ships in the next green main build on TestFlight and Play internal. DECISIONS „Job 236“ explains why back stays on the step rather than acting as „Später“ or closing the app. Nothing for Peter.
+
+## Job 229: the decluttered list behind `list-declutter` (2026-11-14)
+
+Peter's pick from job 227's round 2 (t861u), built in Flutter behind the new PostHog flag **`list-declutter`**. With the flag off, the list and the household sheet stay as they are. PR https://github.com/trost-systems/snacklist/pull/448 (this entry's commit).
+
+**What Peter sees with the flag on**
+- **The list.** Top left is one switcher button, with the household in small type over the list in bold. The header is see-through, and the list scrolls under it. There are no list tabs any more. The total ("Einkaufssumme") is a row after the open items, above "Zuletzt verwendet". The bottom is unchanged: the add field and Liste, Verlauf, Mehr. At 130 % text, all three tab labels now stay on a 358 px phone too.
+- **The household page.** The switcher opens the shown household's page:
+  - "‹ Haushalte" at the top;
+  - the name with "Einladen";
+  - "3 Mitglieder · 1 Einladung offen";
+  - the household's lists, with only "Umbenennen" and "Löschen" in the ⋮ menu;
+  - "Neue Liste".
+- **The households page.** "‹ Haushalte" shows today's sheet without the invite buttons. A tap on a household opens its page, and picking a list there switches to that household.
+- **The members page.** The members row opens it. It has the members with the existing role rules (remove asks first), "Leute einladen", and the open invites with "Widerrufen".
+- **Reorder.** Press and hold a list or a household, then drag it. The order is kept on the server: the lists' order for the household, the households' order for each person.
+
+**Where.** The new files are `app/lib/list/list_switcher_button.dart`, `app/lib/household/switcher_sheet.dart`, `switcher_household.dart` and `member_tiles.dart`. Changed: the header and total in `list_screen.dart` and `shopping_list_view.dart`, the pill in `shell.dart`, and `ListScope.hold` and `release`. The migration is `20261114143045_household_order.sql`: a nullable `household_members.position` column and `reorder_households`, with no new table. The decisions are in `docs/DECISIONS.md` under "Job 229". The recipe is `.cursor/skills/verify-snacklist/features/list-declutter.md`, with `journeys/list-declutter.mjs`.
+
+**Also fixed for everyone.** Moving another list to the top no longer switches the list on screen. The drive found this.
+
+**Verified**
+- **Web build.** `journeys/list-declutter.mjs` ran on the web build with the flag on, in German light and English dark, at 100 % and 130 %. All four runs passed. A touch press-and-hold drag reordered a list and a household, and both orders were checked on the server. The screenshots are in `docs/screenshots/229/` and in this job's `screenshots/`.
+- **Widget tests.** `list_declutter_test.dart` has 16 tests and `switcher_sheet_test.dart` has 25, and the pgTAP file is `household_order.test.sql`. All of `flutter test` passed (2953). `scripts/verify.sh` passed every gate but e2e. There, 252 tests passed and 9 failed, all of them fake-sign-in-provider specs (id-token, AC6, social-sign-in). Those can't reach their fake host from the Hetzner runner's containers, so CI's e2e gates them.
+- **Review.** An independent Opus review returned FIX. Its must-fixes were two red CI gates and the Android tap beside the sheet going back a page. All three are fixed, along with its nice-to-haves: a stale count, the size of "Widerrufen", the English copy, and household orders sent in turn.
+
+**TestFlight.** The change ships with the next green main build after the merge, through release.yml to TestFlight and Play internal. In PostHog, the flag `list-declutter` needs to be on for Peter's account or the internal testers only, and off for everyone else. The lead creates it as internal-only. `releases/flags.json` has it with rollout off.
+
+**Left for later**
+- The bottom area. Peter liked none of BB1 to BB5, so R2 is today's bottom with the 130 % label fix. Revisit it with him.
+- More's household page still has "Nach oben" and "Nach unten". The brief changed only the sheet.
+- On the web, screen readers can't reorder. The engine has no custom actions there.
+- With the flag on, the total no longer stays in view while a price is being edited. It is a list row, which is what the brief asked for. Worth raising when the bottom area is revisited.

@@ -104,8 +104,11 @@ select pg_temp.as_postgres();
 delete from public.household_members where user_id = :zwanzig and household_id = pg_temp.hid('Offen');
 insert into public.household_members (household_id, user_id)
 values ('00000000-0000-0000-0000-000000173001', :zwanzig);
-update public.household_members set is_default = (household_id = '00000000-0000-0000-0000-000000173001')
-where user_id = :zwanzig;
+-- Two steps: the one-default index is checked row by row, in whatever order the rows are stored.
+update public.household_members set is_default = false
+where user_id = :zwanzig and household_id <> '00000000-0000-0000-0000-000000173001';
+update public.household_members set is_default = true
+where user_id = :zwanzig and household_id = '00000000-0000-0000-0000-000000173001';
 select pg_temp.login(:zwanzig);
 select is(public.accept_invite((select offen from code), false) ->> 'status', 'joined',
   'so does the old one with p_archive');
@@ -114,8 +117,11 @@ select pg_temp.as_postgres();
 delete from public.household_members where user_id = :zwanzig and household_id = pg_temp.hid('Offen');
 insert into public.household_members (household_id, user_id)
 values ('00000000-0000-0000-0000-000000173001', :zwanzig);
-update public.household_members set is_default = (household_id = '00000000-0000-0000-0000-000000173001')
-where user_id = :zwanzig;
+-- Two steps: the one-default index is checked row by row, in whatever order the rows are stored.
+update public.household_members set is_default = false
+where user_id = :zwanzig and household_id <> '00000000-0000-0000-0000-000000173001';
+update public.household_members set is_default = true
+where user_id = :zwanzig and household_id = '00000000-0000-0000-0000-000000173001';
 select pg_temp.login(:zwanzig);
 select is(public.join_household((select offen from code)), pg_temp.hid('Offen'),
   'and the oldest join_household answers the household');
@@ -124,8 +130,11 @@ select pg_temp.as_postgres();
 delete from public.household_members where user_id = :zwanzig and household_id = pg_temp.hid('Offen');
 insert into public.household_members (household_id, user_id)
 values ('00000000-0000-0000-0000-000000173001', :zwanzig);
-update public.household_members set is_default = (household_id = '00000000-0000-0000-0000-000000173001')
-where user_id = :zwanzig;
+-- Two steps: the one-default index is checked row by row, in whatever order the rows are stored.
+update public.household_members set is_default = false
+where user_id = :zwanzig and household_id <> '00000000-0000-0000-0000-000000173001';
+update public.household_members set is_default = true
+where user_id = :zwanzig and household_id = '00000000-0000-0000-0000-000000173001';
 
 -- Join requests and approvals ------------------------------------------------------------------
 

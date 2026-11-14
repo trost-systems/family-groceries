@@ -153,57 +153,21 @@ class const HouseholdSheet({final int? openNow, super.key})
       return const SizedBox.shrink();
     }
     final shown = session.household;
-    void close() => Navigator.of(context).pop();
-    void go(String path) {
-      final router = GoRouter.of(context);
-      close();
-      router.go(path);
-    }
-
-    Widget hex(IconData icon, Color face) => PointyHex(
-      face: face,
-      size: 34,
-      child: Icon(icon, size: 18, color: t.text),
-    );
     return SafeArea(
       child: ListView(
         key: const ValueKey('household-sheet'),
         shrinkWrap: true,
         padding: const EdgeInsets.only(bottom: HlSpace.s3),
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, HlSpace.s2),
-            child: Semantics(
-              header: true,
-              child: Text(
-                l10n.householdsTitle,
-                style: theme.textTheme.titleLarge,
-              ),
-            ),
-          ),
+          HouseholdSheetTitle(l10n.householdsTitle),
           for (final household in session.households)
-            ListTile(
-              key: ValueKey('household-row-${household.id}'),
-              minTileHeight: 64,
-              leading: hex(
-                Icons.home_outlined,
-                household.id == shown.id ? t.honeySoft : t.surfaceSunken,
-              ),
-              title: Text(
-                household.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(
-                [
-                  l10n.householdMembers(household.memberCount),
-                  l10n.householdOpenItems(
-                    household.id == shown.id
-                        ? openNow ?? household.openCount
-                        : household.openCount,
-                  ),
-                ].join(' · '),
-              ),
+            householdTile(
+              context,
+              household: household,
+              shown: household.id == shown.id,
+              open: household.id == shown.id
+                  ? openNow ?? household.openCount
+                  : household.openCount,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -228,80 +192,159 @@ class const HouseholdSheet({final int? openNow, super.key})
                   ),
                 ],
               ),
-              selected: household.id == shown.id,
               onTap: () {
-                close();
+                Navigator.of(context).pop();
                 unawaited(context.read<SessionCubit>().switchTo(household.id));
               },
             ),
-          // Asked to join, not in it yet (job 169b W3 M): greyed, no
-          // switching into it; a tap offers to withdraw.
-          for (final request in session.requests)
-            ListTile(
-              key: ValueKey('household-request-${request.householdId}'),
-              minTileHeight: 64,
-              textColor: t.textMuted,
-              leading: PointyHex(
-                face: t.surfaceSunken,
-                contour: t.divider,
-                size: 34,
-                child: Icon(
-                  Icons.hourglass_top_outlined,
-                  size: 18,
-                  color: t.textMuted,
-                ),
-              ),
-              title: Text(
-                request.householdName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(l10n.joinRequestPending),
-              onTap: () => unawaited(_offerWithdraw(context, request)),
-            ),
-          Divider(height: HlSpace.s4, indent: 72, color: t.divider),
-          ListTile(
-            key: const ValueKey('household-new'),
-            leading: hex(Icons.add, t.surfaceSunken),
-            title: Text(l10n.newHousehold),
-            onTap: () => go(newHouseholdPath),
-          ),
-          ListTile(
-            key: const ValueKey('household-join'),
-            leading: hex(Icons.group_add_outlined, t.surfaceSunken),
-            title: Text(l10n.joinWithCode),
-            onTap: () => go(joinCodePath),
-          ),
-          Divider(height: HlSpace.s4, indent: 72, color: t.divider),
-          ListTile(
-            key: const ValueKey('household-default-row'),
-            leading: hex(Icons.record_voice_over_outlined, t.accentSoft),
-            title: Text(
-              l10n.voiceDefaultRow(session.defaultHousehold.name),
-              style: theme.textTheme.bodyMedium,
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => unawaited(showDefaultPicker(context)),
-          ),
-          DefaultListPicker(
-            householdId: session.defaultHousehold.id,
-            builder: (context, list, pick) => ListTile(
-              key: const ValueKey('household-default-list-row'),
-              leading: hex(Icons.checklist, t.accentSoft),
-              title: Text(
-                l10n.defaultListRow(list),
-                style: theme.textTheme.bodyMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: const Icon(Icons.expand_more),
-              onTap: pick,
-            ),
-          ),
+          ...householdSheetTail(context, session),
         ],
       ),
     );
   }
+}
+
+/// A household sheet's title.
+class const HouseholdSheetTitle(final String text, {super.key})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(24, 0, 24, HlSpace.s2),
+    child: Semantics(
+      header: true,
+      child: Text(text, style: Theme.of(context).textTheme.titleLarge),
+    ),
+  );
+}
+
+/// The pointy hex in front of a row of the household sheets.
+Widget sheetHex(BuildContext context, IconData icon, Color face) => PointyHex(
+  face: face,
+  size: 34,
+  child: Icon(
+    icon,
+    size: 18,
+    color: SnacklistColors.of(Theme.of(context).brightness).text,
+  ),
+);
+
+/// [household]'s row in the household sheets: its name, members and [open]
+/// items, honey and selected when it is the [shown] one.
+Widget householdTile(
+  BuildContext context, {
+  required Household household,
+  required bool shown,
+  required int open,
+  required Widget trailing,
+  required VoidCallback onTap,
+}) {
+  final l10n = AppLocalizations.of(context);
+  final t = SnacklistColors.of(Theme.of(context).brightness);
+  return ListTile(
+    key: ValueKey('household-row-${household.id}'),
+    minTileHeight: 64,
+    leading: sheetHex(
+      context,
+      Icons.home_outlined,
+      shown ? t.honeySoft : t.surfaceSunken,
+    ),
+    title: Text(household.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+    subtitle: Text(
+      [
+        l10n.householdMembers(household.memberCount),
+        l10n.householdOpenItems(open),
+      ].join(' · '),
+    ),
+    trailing: trailing,
+    selected: shown,
+    onTap: onTap,
+  );
+}
+
+/// What the households sheet shows below the households: the join requests
+/// waiting (greyed), "Neuer Haushalt", "Mit Code beitreten", and the
+/// default household and list for Siri, Alexa & KI. The switcher sheet's
+/// first page (job 229) has them too.
+List<Widget> householdSheetTail(BuildContext context, InHousehold session) {
+  final l10n = AppLocalizations.of(context);
+  final theme = Theme.of(context);
+  final t = SnacklistColors.of(theme.brightness);
+  void go(String path) {
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop();
+    router.go(path);
+  }
+
+  return [
+    // Asked to join, not in it yet (job 169b W3 M): greyed, no switching
+    // into it; a tap offers to withdraw.
+    for (final request in session.requests)
+      ListTile(
+        key: ValueKey('household-request-${request.householdId}'),
+        minTileHeight: 64,
+        textColor: t.textMuted,
+        leading: PointyHex(
+          face: t.surfaceSunken,
+          contour: t.divider,
+          size: 34,
+          child: Icon(
+            Icons.hourglass_top_outlined,
+            size: 18,
+            color: t.textMuted,
+          ),
+        ),
+        title: Text(
+          request.householdName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(l10n.joinRequestPending),
+        onTap: () => unawaited(_offerWithdraw(context, request)),
+      ),
+    Divider(height: HlSpace.s4, indent: 72, color: t.divider),
+    ListTile(
+      key: const ValueKey('household-new'),
+      leading: sheetHex(context, Icons.add, t.surfaceSunken),
+      title: Text(l10n.newHousehold),
+      onTap: () => go(newHouseholdPath),
+    ),
+    ListTile(
+      key: const ValueKey('household-join'),
+      leading: sheetHex(context, Icons.group_add_outlined, t.surfaceSunken),
+      title: Text(l10n.joinWithCode),
+      onTap: () => go(joinCodePath),
+    ),
+    Divider(height: HlSpace.s4, indent: 72, color: t.divider),
+    ListTile(
+      key: const ValueKey('household-default-row'),
+      leading: sheetHex(
+        context,
+        Icons.record_voice_over_outlined,
+        t.accentSoft,
+      ),
+      title: Text(
+        l10n.voiceDefaultRow(session.defaultHousehold.name),
+        style: theme.textTheme.bodyMedium,
+      ),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => unawaited(showDefaultPicker(context)),
+    ),
+    DefaultListPicker(
+      householdId: session.defaultHousehold.id,
+      builder: (context, list, pick) => ListTile(
+        key: const ValueKey('household-default-list-row'),
+        leading: sheetHex(context, Icons.checklist, t.accentSoft),
+        title: Text(
+          l10n.defaultListRow(list),
+          style: theme.textTheme.bodyMedium,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: const Icon(Icons.expand_more),
+        onTap: pick,
+      ),
+    ),
+  ];
 }
 
 /// Asks whether to withdraw [request], and does.

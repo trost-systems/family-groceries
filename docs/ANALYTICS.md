@@ -178,7 +178,7 @@ property and `$lib: hummlist-app`; no query reads them.
 | `api_key_used` | server only (job 195, F5): one per REST API request whose key, scope and household access let it through, before the operation runs (also when it then fails), for a key owner whose newest consent answer is yes. Not for a missing, unknown or rate-limited key, a missing scope, a locked household or an unknown path. At most 1000 a day per household (the API's day limit) | `scope` (`read`, `write`: the route's scope); the key's household. Never the token, its hint or id, the route or the body |
 | `shop_started` | job 195 (F2): a shopping trip began. Allowed, not sent: job 190's prices (flag `prices-and-trip-total`) have no trip-start step; a later trip UI sends it only from that flagged code path | none; never the store |
 | `price_entered` | job 195 (F2): a price was entered for an item, or a remembered one confirmed. Sent since job 190, only from the `prices-and-trip-total` flagged code path: once per price saved in a row's price editor (`ListCubit.setPrice`), not when a price is removed | `confirmed` (`true`: a remembered price confirmed, `false`: a price typed; job 190 sends only `false`). Never the amount, the item or the store |
-| `trip_total_viewed` | job 195 (F2): the trip's total was shown. Sent since job 190, only from the `prices-and-trip-total` flagged code path: the first time the list's total bar shows a total with at least one price, once per list and app session (`ListCubit.totalViewed`) | `final` (`true`: the finished trip's total, `false`: the running total; job 190 sends only `false`). Never the amount |
+| `trip_total_viewed` | job 195 (F2): the trip's total was shown. Sent since job 190, only from the `prices-and-trip-total` flagged code path: the first time the list's total bar (with `list-declutter` the total row, once the list builds it near the screen) shows a total with at least one price, once per list and app session (`ListCubit.totalViewed`) | `final` (`true`: the finished trip's total, `false`: the running total; job 190 sends only `false`). Never the amount |
 | `scan_started` | job 195 (F3): a barcode scan began. Allowed, not sent: no scanner exists yet; it sends this only from its flagged code path | none; never the EAN |
 | `off_miss` | job 195 (F3): the Open Food Facts lookup for a scanned code found no product. Allowed, not sent yet (as `scan_started`) | none; never the EAN or a product name |
 | `paywall_viewed` | job 50: the Premium page showed a plan with its store price to a household that can buy it; once per visit. Never with the switch `premium_offer` or `REVENUECAT_PURCHASES` off (the page offers nothing then) | `entry_point` (`more`: More's row, `integrations`: the integration settings' Buy, `history`: the history's locked row of older trips, job 199) |
@@ -390,9 +390,10 @@ Runtime toggles are PostHog feature flags, read in one place: `Analytics.flags.i
   ones.
 - **Keys and rollouts live in PostHog** (project 319492); the Lead creates them. The app reads
   `public-api` (the API keys under Zugänge, job 73), `grocery-log` (the Verlauf tab, job 199),
-  `prices-and-trip-total` (prices and the trip total, job 190) and `default-list-voice-target`
+  `prices-and-trip-total` (prices and the trip total, job 190), `default-list-voice-target`
   (the list Siri, Alexa and AI add to without a named list, on the household page and sheet,
-  job 207). A flag gates code paths only; it never gates consent, data or legal texts.
+  job 207) and `list-declutter` (one switcher for household and list in a see-through header,
+  the total as a row of the list, the switcher sheet, job 229). A flag gates code paths only; it never gates consent, data or legal texts.
 - **Targeting internal installs.** A flag may be released by the person property
   `is_internal`, so that only internal installs get it (Peter's TestFlight build, marked
   internal under More). The app sends `{'is_internal': Analytics.internalNow}` with

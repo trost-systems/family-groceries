@@ -25,6 +25,7 @@ import 'package:family_groceries/list/dictation_button.dart';
 import 'package:family_groceries/list/list_cubit.dart';
 import 'package:family_groceries/list/list_link.dart';
 import 'package:family_groceries/list/list_scope.dart';
+import 'package:family_groceries/list/list_switcher_button.dart';
 import 'package:family_groceries/list/list_tabs.dart';
 import 'package:family_groceries/list/list_view/price_views.dart';
 import 'package:family_groceries/list/list_view/shopping_list_view.dart';
@@ -438,9 +439,15 @@ class _ShoppingListState() extends State<_ShoppingList> {
   @override
   Widget build(BuildContext context) {
     final open = context.select<AddSheetCubit, bool>((c) => c.state.open);
-    final tabs = context.select<ListCubit, bool>(
-      (c) => ListTabs.shownFor(c.state.catalog.lists),
+    final declutter = context.select<Flags?, bool>(
+      (flags) => flags?.isOn(listDeclutterFlag) ?? false,
     );
+    // Decluttered, the lists are switched in the switcher's sheet.
+    final tabs =
+        !declutter &&
+        context.select<ListCubit, bool>(
+          (c) => ListTabs.shownFor(c.state.catalog.lists),
+        );
     final prices = context.select<Flags?, bool>(
       (flags) => flags?.isOn(pricesFlag) ?? false,
     );
@@ -541,6 +548,7 @@ class _ShoppingListState() extends State<_ShoppingList> {
                                     anpassenWidth: _anpassenWidth,
                                     statusRoom: _statusRoom,
                                     tabs: tabs,
+                                    declutter: declutter,
                                   ),
                                 ),
                               ),
@@ -600,7 +608,8 @@ class _ShoppingListState() extends State<_ShoppingList> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (prices && hasItems)
+                  // Decluttered, the total is a row of the list.
+                  if (prices && hasItems && !declutter)
                     // In the add bar's place, it keeps clear of the shell's
                     // tab pill as the add bar does.
                     SafeArea(
@@ -903,12 +912,15 @@ const _composeHeight = 52.0;
 /// 152); the new adds sit in their own small capsule beside it, only while
 /// there are any. The sync indicator's
 /// pill sits right of the household chip (job 161). With [tabs], the
-/// household's lists follow below the bar (job 169b K).
+/// household's lists follow below the bar (job 169b K). With [declutter]
+/// (job 229) the [ListSwitcherButton] takes the chip's place, and the list
+/// draws the bar and the status bar as one see-through layer.
 class const _Header({
   required final ValueNotifier<double> chipWidth,
   required final ValueNotifier<double> anpassenWidth,
   required final ValueNotifier<double?> statusRoom,
   required final bool tabs,
+  required final bool declutter,
 }) extends StatelessWidget implements PreferredSizeWidget {
   /// The bar's height: the tab pill's.
   static const height = 52.0;
@@ -937,9 +949,10 @@ class const _Header({
       key: const ValueKey('list-header'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The status bar keeps the page behind it, not passing rows.
+        // The status bar keeps the page behind it, not passing rows; the
+        // decluttered layer covers both.
         ColoredBox(
-          color: t.surface,
+          color: declutter ? Colors.transparent : t.surface,
           child: SizedBox(height: top),
         ),
         LayoutBuilder(
@@ -993,14 +1006,24 @@ class const _Header({
         listenable: Listenable.merge([chipWidth, anpassenWidth]),
         builder: (context, _) => Row(
           children: [
-            HouseholdChip(
-              maxWidth: HouseholdChip.widest(
-                row,
-                anpassen: anpassenWidth.value,
-                trouble: state.trouble != null,
+            if (declutter)
+              ListSwitcherButton(
+                maxWidth: HouseholdChip.widest(
+                  row,
+                  anpassen: anpassenWidth.value,
+                  trouble: state.trouble != null,
+                ),
+                onWidth: (width) => chipWidth.value = width,
+              )
+            else
+              HouseholdChip(
+                maxWidth: HouseholdChip.widest(
+                  row,
+                  anpassen: anpassenWidth.value,
+                  trouble: state.trouble != null,
+                ),
+                onWidth: (width) => chipWidth.value = width,
               ),
-              onWidth: (width) => chipWidth.value = width,
-            ),
             SyncPillSpace(row: row - chipWidth.value),
             const SizedBox(width: HlSpace.s2),
             Expanded(

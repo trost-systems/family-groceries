@@ -2888,4 +2888,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get currencyPick => 'Choose currency';
+
+  @override
+  String get listSwitch => 'Switch list or household';
+
+  @override
+  String get switcherHouseholds => 'Households';
+
+  @override
+  String switcherBack(String page) {
+    return 'Back: $page';
+  }
+
+  @override
+  String get switcherInvite => 'Invite';
+
+  @override
+  String switcherOpenInvites(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count open invites',
+      one: '1 open invite',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get switcherOpenInvitesTitle => 'Open invites';
 }

@@ -101,6 +101,45 @@ void main() {
     expect((await w.cache.list('peter', 'home').load())?.pending, isEmpty);
   });
 
+  group("the switcher sheet holds another household's list (job 229)", () {
+    ListHolds holds(WidgetTester tester) =>
+        tester.element(find.byType(SizedBox)).read<ListHolds>();
+
+    testWidgets('released, it closes once what was queued in it is sent', (
+      tester,
+    ) async {
+      final world = await _pump(tester, shown: _home);
+      final w = holds(tester);
+      final club = w.hold('club');
+      await tester.pumpAndSettle();
+      expect(club.state.loaded, isTrue);
+      final server = world.servers['club']!..online = false;
+      club.addEntry(parseEntry('Wurst'));
+      await tester.pumpAndSettle();
+      w.release('club');
+      await tester.pumpAndSettle();
+      expect(club.isClosed, isFalse, reason: 'Wurst is not sent yet');
+      server.online = true;
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+      expect(_names(server), ['Wurst']);
+      expect(club.isClosed, isTrue);
+    });
+
+    testWidgets('a switch to the held household shows the held list, which '
+        'its release leaves open', (tester) async {
+      final world = await _pump(tester, shown: _home);
+      final club = holds(tester).hold('club');
+      await world.session.switchTo('club');
+      await tester.pumpAndSettle();
+      expect(_shownList(tester), same(club));
+      holds(tester).release('club');
+      await tester.pumpAndSettle();
+      expect(club.isClosed, isFalse);
+      expect(world.servers['club']!.watches, 1, reason: 'one list');
+    });
+  });
+
   testWidgets('switching back while it still sends shows the same list, so '
       'one list owns the queue', (tester) async {
     final w = await _pump(tester, shown: _home);

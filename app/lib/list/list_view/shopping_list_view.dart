@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter, SemanticsHitTestBehavior;
 
 import 'package:family_groceries/analytics/flags.dart';
 import 'package:family_groceries/app/notices.dart';
@@ -461,6 +462,9 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
     final prices = context.select<Flags?, bool>(
       (flags) => flags?.isOn(pricesFlag) ?? false,
     );
+    final declutter = context.select<Flags?, bool>(
+      (flags) => flags?.isOn(listDeclutterFlag) ?? false,
+    );
     SliverList column(List<StoreSection> run) {
       final entries = _entries(
         run,
@@ -536,6 +540,7 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
             delegate: _PinnedHeader(
               header,
               MediaQuery.paddingOf(context).top + header.preferredSize.height,
+              glass: declutter,
             ),
           ),
         SliverPadding(
@@ -546,6 +551,9 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
               const SliverToBoxAdapter(child: TripPromptCards()),
               const SliverToBoxAdapter(child: SizedBox(height: 4)),
               body,
+              // Without the flag the screen shows it in a bar at the bottom.
+              if (declutter && prices && state.items.isNotEmpty)
+                const SliverToBoxAdapter(child: TotalBar(inList: true)),
               if (used.isNotEmpty)
                 SliverToBoxAdapter(
                   child: Padding(
@@ -727,8 +735,16 @@ class _ShoppingListViewState() extends State<ShoppingListView> {
   }
 }
 
-class _PinnedHeader(final Widget child, final double extent)
-    extends SliverPersistentHeaderDelegate {
+class _PinnedHeader(
+  final Widget child,
+  final double extent, {
+
+  /// The see-through header of job 229 instead of the fade.
+  required final bool glass,
+}) extends SliverPersistentHeaderDelegate {
+  /// How far the list scrolls before the glass shows its edge line.
+  static const _lifted = 4.0;
+
   @override
   double get minExtent => extent;
 
@@ -741,6 +757,9 @@ class _PinnedHeader(final Widget child, final double extent)
   /// no taps: they reach the bar or the rows as before.
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlaps) {
+    if (glass) {
+      return _glass(context, lifted: shrinkOffset > _lifted);
+    }
     final strength = shrinkOffset / extent;
     final top = MediaQuery.paddingOf(context).top;
     final surface = Theme.of(context).scaffoldBackgroundColor;
@@ -774,7 +793,50 @@ class _PinnedHeader(final Widget child, final double extent)
     );
   }
 
+  /// One frosted layer from the screen's top edge to the bar's end, the
+  /// status bar included: the rows scroll on under it, blurred, and an edge
+  /// line shows once they do ([lifted]). The whole layer takes taps, so a
+  /// near miss beside a button never acts on a row under it.
+  Widget _glass(BuildContext context, {required bool lifted}) {
+    final t = SnacklistColors.of(Theme.of(context).brightness);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: DecoratedBox(
+              key: const ValueKey('list-header-glass'),
+              decoration: BoxDecoration(
+                color: t.surface.withValues(alpha: 0.72),
+                border: lifted
+                    ? Border(
+                        bottom: BorderSide(
+                          color: t.border,
+                          width: HlBorder.width,
+                        ),
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        ),
+        // On the web the rows under the layer keep their tappable semantics
+        // elements, which take a browser click before the framework sees
+        // it; the opaque node blocks them, the bar's buttons still get
+        // theirs.
+        Semantics(
+          container: true,
+          hitTestBehavior: SemanticsHitTestBehavior.opaque,
+          child: Listener(behavior: HitTestBehavior.opaque, child: child),
+        ),
+      ],
+    );
+  }
+
   @override
   bool shouldRebuild(_PinnedHeader oldDelegate) =>
-      oldDelegate.child != child || oldDelegate.extent != extent;
+      oldDelegate.child != child ||
+      oldDelegate.extent != extent ||
+      oldDelegate.glass != glass;
 }

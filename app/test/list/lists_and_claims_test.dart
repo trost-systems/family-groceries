@@ -172,6 +172,13 @@ void main() {
       await sub.cancel();
     });
 
+    test('moving another list first keeps the list on screen', () async {
+      expect(cubit.state.shownList?.id, 'weekly');
+      expect(await cubit.moveList('party', 0), isTrue);
+      expect(cubit.state.catalog.lists.first.id, 'party');
+      expect(cubit.state.shownList?.id, 'weekly');
+    });
+
     test('lists are added, renamed, moved and deleted on the server; the new '
         'list shows', () async {
       final list = await cubit.createList('  Grillen ');

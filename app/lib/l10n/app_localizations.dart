@@ -4675,6 +4675,42 @@ abstract class AppLocalizations {
   /// In de, this message translates to:
   /// **'Währung wählen'**
   String get currencyPick;
+
+  /// Job 229 (flag list-declutter): screen reader hint of the switcher top left of the list, which shows the household and the list and opens the switcher sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Liste oder Haushalt wechseln'**
+  String get listSwitch;
+
+  /// Job 229: switcher sheet, the back row from a household's page to the households
+  ///
+  /// In de, this message translates to:
+  /// **'Haushalte'**
+  String get switcherHouseholds;
+
+  /// Job 229: switcher sheet, screen reader label of the back row; page is where it goes ("Haushalte" or the household's name)
+  ///
+  /// In de, this message translates to:
+  /// **'Zurück: {page}'**
+  String switcherBack(String page);
+
+  /// Job 229: switcher sheet, the labeled button beside the household's name that opens the invite sheet
+  ///
+  /// In de, this message translates to:
+  /// **'Einladen'**
+  String get switcherInvite;
+
+  /// Job 229: switcher sheet, the members row after the member count, e.g. "3 Mitglieder · 1 Einladung offen"
+  ///
+  /// In de, this message translates to:
+  /// **'{count, plural, =1{1 Einladung offen} other{{count} Einladungen offen}}'**
+  String switcherOpenInvites(int count);
+
+  /// Job 229: switcher sheet's members page, section of the person invites not used yet
+  ///
+  /// In de, this message translates to:
+  /// **'Offene Einladungen'**
+  String get switcherOpenInvitesTitle;
 }
 
 class _AppLocalizationsDelegate
