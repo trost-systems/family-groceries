@@ -841,7 +841,8 @@ RevenueCat entitlement `premium` (`entl654efcfce4`) with all four products attac
    - App: `REVENUECAT_PURCHASES=true` (Job 43/47 steps).
 5. **Secrets for the price drift check** (`scripts/iap/price_drift.ts`, `.github/workflows/price-drift.yml`,
    daily 05:17 UTC; it fails with "SKIPPED: … missing (NEEDS_LEAD Job 49)" until they exist).
-   Repository secrets, set without printing them:
+   Secrets of the environment `ops` (`gh secret set <NAME> --env ops`, not repository secrets:
+   NEEDS_PETER, Job 220, step 3), set without printing them:
    - `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` (the `.p8` text): an App Store Connect API key;
      the check only reads (subscription prices, IAP price schedule, availability). The existing
      App Manager key works; a read-only role may suffice (not tested).
@@ -2194,3 +2195,26 @@ Status: open, the lead's call. No browser step. Numbers:
    CI run (median 23.8 min from creation to green). Nothing to do unless that wait starts to hurt; a change (CI before
    the lock, a merge queue on GitHub) is a design of its own.
 
+
+## Job 220: what the security review leaves with other jobs (2026-11-14)
+
+Status: open, the lead's call who takes each. No browser step here; Peter's part (repository
+settings) is in `NEEDS_PETER.md`, "Job 220".
+
+1. **`.github/workflows/supabase-deploy.yml` (job 209's file).** Its `deploy` job reads the
+   Supabase access token from the job's `env:`, names no environment and runs a `bun` that
+   `supabase/setup-cli` restores from the Actions cache. The lint check `workflow-hardening`
+   excepts exactly these in `scripts/workflow-hardening.allow.json` (three entries) and fails on
+   a stale entry. The fix, step by step: `docs/done/220-security-hardening.md`, "In files other
+   jobs own". Until it lands, the token stays a repository secret (NEEDS_PETER, Job 220,
+   step 3), which a workflow file on any pushed branch can read.
+2. **Request bodies read before the caller is known.** `supabase/functions/voice/handler.ts`
+   (jobs 207 and 213) and `supabase/functions/alexa/handler.ts` (PR #405) read the body without a
+   size limit before the token or signature check. Small, and behind the gateway's own limit;
+   recorded in the done doc, not changed here because both files were in flight.
+3. **`scripts/merge-pr.sh --wait` gives up after 30 minutes; a green CI run took up to 33.8.**
+   On 14 November one of this job's lands held the merge lock for 31 minutes and merged nothing
+   (run 43570436349 took 33.5 minutes). The wait is `MERGE_WAIT_MINUTES` (default 30,
+   `docs/CI.md`): a default of 40, or land scripts that set it, would keep such a hold from
+   being wasted
+   (`docs/hillclimb/fable-improvement-2026-11.md`, Job 220, the merge lock table).

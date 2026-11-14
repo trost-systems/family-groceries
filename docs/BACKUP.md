@@ -20,7 +20,9 @@ sources are in [`DECISIONS.md`](DECISIONS.md), job 13b.
 `scripts/backup/dump.sh` makes the backup. It runs `pg_dump 17 --data-only`
 through the session pooler (`aws-1-eu-central-1.pooler.supabase.com:5432`,
 user `postgres.jdwqrallbpdbshrdhenk`, TLS required) with the password from
-the repository secret `SUPABASE_DB_PASSWORD`, and pipes the output straight
+the secret `SUPABASE_DB_PASSWORD` (a repository secret until it moves into
+the environment `ops`, which the job names: NEEDS_PETER, Job 220), and pipes
+the output straight
 into `age`, encrypted to the public key in `supabase/backup/recipient.txt`.
 Nothing unencrypted reaches the disk or the log. The script deletes the
 file and fails if `pg_dump` fails, if the file doesn't start with
@@ -48,7 +50,7 @@ the keepalive ([`DEPLOY.md`](DEPLOY.md)).
 
 | Failed step | Meaning | What to do |
 | --- | --- | --- |
-| Password secret | `SUPABASE_DB_PASSWORD` is missing or empty | Set it: `gh secret set SUPABASE_DB_PASSWORD -R trost-systems/family-groceries` (the value from Project Settings, Database) |
+| Password secret | `SUPABASE_DB_PASSWORD` is missing or empty | Set it: `gh secret set SUPABASE_DB_PASSWORD -R trost-systems/snacklist` (the value from Project Settings, Database); with `--env ops` once the secret lives in the environment (NEEDS_PETER, Job 220) |
 | Dump and encrypt, "password authentication failed" | The database password changed | Update the secret as above |
 | Dump and encrypt, "Tenant or user not found" or a timeout | The project is paused, or the pooler host changed | Resume the project ([`DEPLOY.md`](DEPLOY.md)); compare the host with Connect, Session pooler in the dashboard |
 | pg_dump and age | apt or the PGDG repository was down | Rerun the workflow |

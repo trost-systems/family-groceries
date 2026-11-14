@@ -539,3 +539,135 @@ it):
   gives up after 30. The run turned green 3 min later; the merge had to queue for the lock
   again (2 h 5 min, behind five other lands). By then main had moved, so the second turn was
   one more push and CI run (43586832198).
+
+## Job 220: security hardening, 2026-11-13
+
+The brief: review the database policies, the edge functions, secrets in the repo and CI, and
+dependency and Actions pinning from evidence, then land the well-supported hardenings in small
+PRs, each with a test that fails without it. Findings and what remains:
+`docs/done/220-security-hardening.md`. Build and review ran on `claude-fable-5-2`; every reviewer
+stated its model.
+
+### What the checks say, before and after
+
+Each number comes from a command a reader can rerun; "main" is `9efe6c19`, where the review
+started, unless a line says otherwise.
+
+| Check | Before | After |
+| --- | --- | --- |
+| `supabase/tests/least_privilege.test.sql` (9 tests, new) | 6 fail on main's schema | 9 pass (#416) |
+| Functions `anon` may execute in `public` beyond the one meant for it | 3 | 0 (#416) |
+| `scripts/workflow-hardening.ts` on main's workflows (new, 4 rules) | 16 findings | 0; 12 fixed, 4 behind 3 allow-list entries for `supabase-deploy.yml` (#421) |
+| `uses:` lines that name an action in another repository, pinned to a commit SHA (14 more name a local action) | 73 of 73, by habit | 73 of 73, a lint rule (#421) |
+| Jobs with secrets or a write token that restore an Actions cache | 5 (release `plan`, `ios`, `android`; `certificates`; supabase-deploy `deploy`) | 1, on the allow-list (#421) |
+| `scripts/pinned-deps.ts` on main's files (new) | 3 errors (two ranges, no Gradle checksum) | 0 (#418) |
+| Gates that refuse a dependency the lockfile does not record | 0 of 6 (flutter, web-prod, e2e; functions, fg-cli, nexus) | 6 of 6 (#418) |
+| Fetches of a known MCP client's document that strangers can block for an hour | all (shared limit of 600 an hour, 30 per host) | none; a known client has its own count (#417) |
+| Alexa certificate chains kept per worker | one per distinct URL, query string included, no cap | at most 16, keyed on host and path (#417) |
+
+Not measured: whether any of the closed gaps was ever used. The review found no sign of it and
+had no production access to look.
+
+### Tests and mutation runs
+
+| PR | New tests | Mutations of the new check, killed |
+| --- | --- | --- |
+| #416 | 9 pgTAP | not run (the 6 failing-without tests are the proof) |
+| #417 | 3 deno (`alexa/verify_test.ts`, `mcp/cimd_integration_test.ts`) | not run |
+| #418 | 62 deno (`scripts/pinned-deps_test.ts`) | 37 of 37 |
+| #421 | 32 deno (`scripts/workflow-hardening_test.ts`) | 28 of 28 |
+
+The mutation lists grew with the reviews: each surviving mutant a reviewer reported became a
+test and an entry in the list (`pinned-deps` 18 to 37, `workflow-hardening` 21 to 28).
+
+### Cost
+
+Wall time: 14 h 43 min from the start (13 November, 19:51 CET) to the last code PR's merge
+(14 November, 10:34), of which the session did not run for 6 h 52 min (23:40 to 06:32) and most
+of the rest after 21:19 was waiting for the merge lock (below). The docs PR's own land is not in
+these numbers. Tokens are the sums the harness reported per delegate, and for the main thread the
+usage fields of its session log (largest value per message id).
+
+| Part | Runs | Tokens | Wall time |
+| --- | ---: | ---: | ---: |
+| Review delegates (functions, CI and secrets, dependencies) | 3 | 274,366 | 577 s, 736 s, 771 s (in parallel) |
+| Build delegates (#418, #421 first versions) | 2 | 215,317 | 727 s, 1,010 s |
+| Reviewers #416 | 1 | 130,050 | 445 s |
+| Reviewers #417 | 4 | 389,492 | 1,437 s |
+| Reviewers #418 | 5 | 592,381 | 3,930 s |
+| Reviewers #421 (one of them for the cache rule before it was folded in) | 5 | 605,830 | 4,203 s |
+| Reviewers docs PR #444 | 3 | 420,445 | 1,292 s |
+| Main thread, to #418's merge | 1 | output 505,150; input 902; cache written 1,931,127; cache read 48,864,934 | the whole job |
+
+Review verdicts in order. #416: PASS. #417: FAIL, FAIL, FAIL, PASS. #418: PASS, FAIL, FAIL, FAIL, PASS. #421:
+FAIL, PASS, FAIL (cache rule), FAIL, PASS. Docs PR #444: FAIL, FAIL, PASS (both failures were steps
+in NEEDS_PETER that would have broken CI or the automatic release if followed).
+
+CI (`ci.yml`, created to last update), 27 runs on the four code PRs: 11 green (19.9 to 33.8
+minutes; #416 three, #417 two, #418 four, #421 two), 2 failed on a flake (below) and 14 were
+cancelled, each by the next push of a fix round or by the rebase a land made. One on-demand e2e
+run (`tests/boot.spec.ts` on #421's branch): 10.7 minutes (run 43497126475).
+
+Merge lock (times CET; every wait includes the 30 minutes `merge-lock` waits for the Mac lock,
+which was unreachable all night):
+
+| PR | Queued | Lock held | Waited | Held | Outcome |
+| --- | --- | --- | ---: | ---: | --- |
+| #416 | 21:19 | 22:46 | 88 min | 25 min | merged 23:12 |
+| #417 | 22:06 | 00:31 | 145 min | 22 min | merged 00:52 |
+| #421 | 22:36 | 00:52 | 137 min | 28 min | merged 01:20 |
+| #418 | 22:56 | 01:40 | 165 min | under 1 min | rebase conflict with #421, which had merged 20 minutes before |
+| #418 | 06:36 | 08:17 | 101 min | 31 min | no merge: CI took 33.5 minutes, `merge-pr.sh --wait` gives up after 30 |
+| #418 | 08:53 | 10:08 | 75 min | 27 min | merged 10:34 |
+
+Waited: 711 minutes in all (the queues overlapped). Held: 133 minutes, of which 31 landed
+nothing.
+
+Release jobs after #421 took the Actions cache out of them (job time from start to end, medians
+of the 10 release runs before the merge and the 6 after, all on 13 and 14 November):
+
+| Job | Before | After | Reading |
+| --- | ---: | ---: | --- |
+| `plan` | 32 s (26 to 46) | 55 s (47 to 58) | Slower. Over all green release runs of those days, most of which run `plan` only (20 before, 9 after): 31 s (25 to 50) and 54 s (43 to 65) |
+| `android` | 572 s (464 to 668) | 564 s (540 to 698) | No difference seen |
+| `ios` | 858 s (719 to 1,576) | 986 s (721 to 1,334) | Not decided: the ranges overlap almost fully |
+
+### Flakes seen
+
+Neither PR touches the app, the e2e tests or the function under test; both reruns were a new
+push, not a retry of the same commit. No other run on this job's PRs failed.
+
+- `e2e (2)`, `[chromium] tests/mcp.spec.ts:203`, run 43499255912 (#418): the MCP SDK's
+  `connect()` hung for about 52 s; the trace reports no host stall.
+- `e2e (2)`, `[firefox] tests/wasm-boot.spec.ts:71`, run 43500256507 (#421): "could not scroll
+  ... Brot into view".
+
+### What the rounds taught
+
+- **A check's PR text should list forms, not promise completeness.** The last failed rounds of
+  #418 (rounds 3 and 4) and of #421 (the cache rule's own round and round 3) each reported one
+  more form the check missed, found against a sentence that said "every" or "the one place".
+  After the texts listed what fails and what is known to pass, the next round of each passed
+  (#421 round 4, #418 round 5) and reported the forms still open as notes, which the texts now
+  list. The rounds were not wasted: each closed a form Deno or GitHub really accepts (a JSX
+  pragma that resolves a range, `cache-jdk`, `export ... from`), with a probe that showed it.
+- **Mutation lists catch what a reviewer would otherwise find.** Every allow-list or pattern
+  finding that failed a round was a mutant no test killed. Running the reviewer's mutants before
+  asking for the next round took one to two minutes per list.
+- **Small PRs cost a CI run and a lock hold each.** Five PRs at about 30 minutes of CI and a
+  shared lock is why the cache rule went into #421 instead of a PR of its own (DECISIONS,
+  Job 220).
+- **Two PRs that add a row to the same table collide at the land, not before.** #418 and #421
+  each add a lint row to `AGENTS.md` and three lines to `scripts/lint.sh`. The second to land
+  stopped in its rebase inside the lock. The session was not running then, so it sat for 4 h 52
+  min until the next check found it; keeping both sides took two minutes. One PR for both
+  checks' lint wiring, or landing the second right after the first from one script, would have
+  saved a lock hold and a CI run.
+- **`merge-pr.sh --wait` gives up after 30 minutes; a green CI run took up to 33.8.** One lock
+  hold of 31 minutes landed nothing. This job's land script then waited a second time while a
+  check was still pending. The setting for it existed all along and this job missed it:
+  `MERGE_WAIT_MINUTES` (default 30, `docs/CI.md`). A land with `MERGE_WAIT_MINUTES=40` would
+  have merged in that hold. The default is the lead's call (NEEDS_LEAD, Job 220).
+- **A stay-off file still gets a recorded finding and a fence.** `supabase-deploy.yml` could not
+  be changed here; the allow-list entries name exactly what is excepted, fail when stale, and the
+  done doc carries the fix for the job that owns the file.
