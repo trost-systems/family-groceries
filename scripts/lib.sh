@@ -195,6 +195,18 @@ FORMAT
   fi
 }
 
+# Stores the `append-log` merge driver's command (scripts/merge-append-log.sh, named by
+# .gitattributes for the logs every job appends to, job 218) in the repository config, which every
+# worktree shares: git reads a driver's command from the config only. Without it a log conflict
+# stops the rebase as before. So does one the script does not take, or a checkout without the
+# script: the command then merges as git does without a driver.
+install_merge_driver() {
+  local driver='scripts/merge-append-log.sh %O %A %B || git merge-file -q -L ours -L base -L theirs %A %O %B || exit 1'
+  [[ "$(git config --get merge.append-log.driver || true)" == "$driver" ]] ||
+    git config merge.append-log.driver "$driver" ||
+    echo "could not store the append-log merge driver; a log conflict stops the rebase as before." >&2
+}
+
 # Rebases the current branch onto origin/main, carrying local edits of skip-worktree files (a
 # checkout's port block in supabase/config.toml, COORDINATION.md) across: git refuses to rebase
 # over them once main changes such a file.
@@ -207,6 +219,7 @@ rebase_onto_main() {
     git diff -- "${files[@]}" >"$patch"
     git checkout -- "${files[@]}"
   fi
+  install_merge_driver
   if ! git rebase -q origin/main; then
     echo "rebase stopped; resolve it and run git rebase --continue." >&2
     [[ -s $patch ]] && echo "Then restore your local edits: git apply $patch && git update-index --skip-worktree ${files[*]}" >&2

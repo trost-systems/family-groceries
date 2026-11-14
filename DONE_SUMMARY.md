@@ -713,13 +713,12 @@ Five interactive prototypes behind one switcher in `docs/design/grocery-log/`: `
 
 ## Job 196: planned vs bought, five prototypes (2026-11-12)
 
-Five interactive throwaway prototypes behind one switcher in `docs/design/planned-vs-bought/`; recommended `trip-review-unplanned`. No app change, no receipt scanning. Details: [docs/done/196-planned-vs-bought-prototypes.md](docs/done/196-planned-vs-bought-prototypes.md).
+Five interactive throwaway prototypes behind one switcher in `docs/design/planned-vs-bought/`; recommended `trip-review-unplanned`. No app change, no receipt scanning. Fix round 1: logged items match the list, the first tick starts the trip. Details: [docs/done/196-planned-vs-bought-prototypes.md](docs/done/196-planned-vs-bought-prototypes.md).
 
 ## Job 189: five price-entry and trip-total prototypes (2026-11-12)
 
 Five sandbox prototypes for price entry and the trip total, on one comparison page, with a recommendation (`inline-row-price`). This is sandbox only: no production UI and no approval to implement. Details: [docs/done/189-prices-trip-prototypes.md](docs/done/189-prices-trip-prototypes.md).
 
-Five interactive throwaway prototypes behind one switcher in `docs/design/planned-vs-bought/`; recommended `trip-review-unplanned`. No app change, no receipt scanning. Fix round 1: logged items match the list, the first tick starts the trip. Details: [docs/done/196-planned-vs-bought-prototypes.md](docs/done/196-planned-vs-bought-prototypes.md).
 ## Job 194: pricing and tiers alignment in the planning docs (2026-11-12)
 
 Peter's 11 Nov evening pricing and tier decisions are in the product feature map, `PAYWALL_RELEASE.md` and `PURCHASES.md`: €24.99 / €149.99 approved, not shipped; price entry, trip totals and unlimited barcode scanning Free; `grocery-log` considering. Docs only. Details: docs/done/194-docs-t788u-pricing-alignment.md.

@@ -2152,3 +2152,23 @@ in the dashboard), keep `nexus.env` mode 600 and outside every checkout, and rev
 hz is ever shared beyond these jobs. A separate free Hobby team just for nexus would contain it
 fully but is not needed at €0 either way; the lead's call.
    Send Peter `https://nexus.snacklist.app`; he signs in with his Vercel account.
+
+## Job 218: a PR that conflicts only in the logs needs no rebase job (2026-11-13)
+
+Status: open, the lead's call. No browser step: two notes for the watcher and the standing
+instructions.
+
+1. **GitHub still says CONFLICTING.** Since job 218, `scripts/push-pr.sh` rebases over sections
+   other jobs appended to `docs/DECISIONS.md`, `docs/NEEDS_LEAD.md`, `docs/NEEDS_PETER.md` and
+   `DONE_SUMMARY.md` without stopping (`scripts/merge-append-log.sh`, `docs/CI.md`, "Landing a
+   PR"). GitHub runs no merge drivers, so the PR page shows such a PR as conflicting until that
+   push. A green, reviewed PR whose only conflicts are these files can go straight to the land
+   (`merge-lock bash -c 'scripts/push-pr.sh && scripts/merge-pr.sh --wait <n>'`); it needs no
+   rebase job of its own, as `204b-rebase-merge-400` and `204c-land-400` were on 13 November.
+   Each clone learns the driver at its first `push-pr.sh` from a branch that has job 218's
+   commit; nothing to install on hz or the box.
+2. **Optional: one decisions file per job.** The driver leaves the conflicts where a job edits
+   old lines or adds a follow-up to an older section (18 of 256 in main's history). Writing each
+   job's decisions to `docs/decisions/<job>.md` would end those too. It needs the standing
+   instructions changed (where a job writes, how docs cite a decision) and is not worth it for
+   that remainder alone; say so if it should be done.

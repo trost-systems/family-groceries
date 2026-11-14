@@ -74,6 +74,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   required author and trailers), `e2e-stress.sh` (a stressed e2e repro:
   pauses the browser, runner or stack S s of every P s, DECISIONS job 119).
   `docs/CI.md` explains CI.
+- `tool/hotspots/`: where jobs collide, measured: `history.py` (change counts and co-change on
+  main), `conflicts.py` (conflicts in the job transcripts) and `replay.py` (main's history of a file
+  replayed as rebases). Results: `docs/hillclimb/fable-improvement-2026-11.md`.
 
 ## Conventions
 
@@ -162,6 +165,12 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   force-pushes and exits 2; rerun it after `ci-ok`, at the cost of a second
   CI run. GitHub's own squash merge authors the commit with the account's
   default email and rejects the noreply address, hence the scripts.
+- The logs every job appends to (`docs/DECISIONS.md`, `docs/NEEDS_LEAD.md`, `docs/NEEDS_PETER.md`,
+  `DONE_SUMMARY.md`; listed in `.gitattributes`) merge through `scripts/merge-append-log.sh`: two
+  sections added at the same place both stay, main's first. Append yours at the end and start it
+  with a heading. An edit of existing lines, an entry main already holds, or a follow-up without
+  its own `##` heading next to a section main added, still stops the rebase: place it by hand.
+  push-pr.sh's rebase installs the driver in the clone's git config (job 218).
 
 ## Lint rules
 

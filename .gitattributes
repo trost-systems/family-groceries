@@ -1,0 +1,8 @@
+# The logs every job appends to merge with scripts/merge-append-log.sh: two sections added at the
+# same place both stay instead of stopping the rebase (job 218). List a file here only if its
+# entries start with a `#` heading or are single lines.
+docs/DECISIONS.md merge=append-log
+docs/NEEDS_LEAD.md merge=append-log
+docs/NEEDS_PETER.md merge=append-log
+docs/hillclimb/fable-improvement-2026-11.md merge=append-log
+/DONE_SUMMARY.md merge=append-log

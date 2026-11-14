@@ -12417,3 +12417,74 @@ Follow-ups from job 184's post-merge review (`jobs/184-siri-free-price-prep/revi
    tracking is off for `snacklist.app` is a step before switching on (NEEDS_PETER "Job 225").
 9. **The Resend mailer moved to `_shared/resend.ts`** with its own `Mail` shape (reply-to and
    headers optional); the waitlist and `scripts/waitlist` import it from there.
+
+## Job 218: sections appended to the logs merge themselves, 2026-11-13
+
+The evidence, the replay and the hotspot list are in
+`docs/hillclimb/fable-improvement-2026-11.md`.
+
+1. **The first hotspot is this file, not code.** 79 of 198 jobs stopped in a rebase conflict in a
+   log every job appends to, 78 of them here; in 102 of 145 conflict events nothing else
+   conflicted. The code hotspots that history shows (the list cluster above all) change together
+   but rarely collide, and in-flight jobs own them today. So the first PR fixes the logs.
+2. **A merge driver, not `merge=union`.** Git's built-in union would be one line per file in
+   `.gitattributes` and needs no config. Replayed on the 256 conflicts main's history holds, it
+   lost the blank line before a heading 140 times and never stops: for #89 and #336, which edited
+   lines in `NEEDS_PETER.md`, it would have kept the old and the new line. A wrong merge nobody
+   sees is worse than a conflict. `scripts/merge-append-log.sh` keeps two insertions at the same
+   place, ours first, and leaves everything else a conflict.
+3. **Three guards.** A side that edits or deletes lines stops, and so do two sides that both
+   created the file. An entry that is there twice stops: a line ours added that is also the first
+   line theirs adds, or a later heading of theirs of that level (any line that is no heading,
+   where theirs starts without one). That is a commit replayed after its section landed, as on a branch
+   stacked on another job's. And theirs must start with a heading at least as high as every
+   heading ours adds: a follow-up paragraph or a `### fix round` for an older section would
+   otherwise land under main's newest section, which is how PR #386 put job 196's fix round in
+   the wrong place. The third guard also stops 9 merges that landed in exactly that order;
+   stopping is the safe side.
+4. **Ours first.** In a rebase onto main, ours is main: main's sections keep their place and the
+   PR's go after them, so sections sit in landing order, as they do today.
+5. **The rebase installs the driver.** Git takes a driver's command only from the config, never
+   from the repository. `rebase_onto_main` writes it to the clone's config before it rebases, so
+   every worktree of a clone has it from the first `push-pr.sh` on, with nothing to run by hand.
+   `bootstrap.sh` was the other candidate; long-lived clones never rerun it. Without the config
+   git merges these files as before.
+6. **Five files, listed by name.** `docs/DECISIONS.md`, `docs/NEEDS_LEAD.md`,
+   `docs/NEEDS_PETER.md`, `DONE_SUMMARY.md` and the Fable programme's log. No glob: a file
+   qualifies only if its entries start with a heading or are single lines.
+   `FEATURES-FOR-WRITERS.md` (11 conflict events) does not, its sections are edited in place.
+7. **Not one decisions file per job.** It would end the sharing itself, but it moves 200 sections,
+   breaks every "DECISIONS job n" citation and needs the lead's standing instructions changed,
+   for the 7 % of conflicts the driver leaves. Offered in `NEEDS_LEAD.md`.
+8. **`DONE_SUMMARY.md` repaired.** #386's hand resolution left job 196's fix-round paragraph under
+   job 189, glued to the `## Job 194` heading. It is back in job 196's entry, in place of the
+   entry's older paragraph, which it repeats and extends.
+9. **The measuring scripts stay** (`tool/hotspots/`), so the numbers can be checked and a later
+   job can see whether a hotspot cooled down. They are not a gate: counts of this kind are
+   evidence for choosing a target, not a score to drive up.
+10. **The script never writes a conflict; the stored command falls back to git** (review 0). The
+    first version ended in its own `git merge-file` for the markers. A script that failed before
+    that line (no `mktemp`, a checkout without the script) left a conflicted file without markers,
+    and a file `git merge-file` cannot read came out empty and "merged". Now the script changes
+    the file only when it takes the merge, and the command in the config is
+    `scripts/merge-append-log.sh %O %A %B || git merge-file ... || exit 1`: whatever goes wrong,
+    the file is merged the way git merges it without a driver. The final `exit 1` keeps a status
+    above 128 (255 for a binary file) from reaching git, which then fails the rebase with "failed
+    to execute internal merge" instead of stopping in a conflict (tried on git 2.43).
+11. **`/DONE_SUMMARY.md`, anchored** (review 0). The bare name also matched
+    `docs/design/h-satz-final/sandbox-src/DONE_SUMMARY.md`, which is no log.
+12. **No fence parsing** (reviews 1 to 4). A `# comment` in fenced code is no heading, and the
+    script told fences apart for that. Three reviews in a row found a hole in the rule (an
+    unclosed fence, inline code at the start of a line, a fence line inside another fence), each
+    a way to put a section in the wrong place. Now every line that starts with one to six `#`
+    and a space counts as a heading. That adds a stop next to a fenced `#` line and drops the
+    stop at a fence ours leaves open, where the next append lands in the fence with or without a
+    merge. No replayed conflict comes out differently: the four logs have four fence lines at
+    the start of a line today and no `#` line between them. A merge that would not end in a
+    newline is left to git too (review 1).
+13. **No histogram option.** A rebase diffs with histogram, `git merge-file` with Myers, and takes
+    `--diff-algorithm` only from git 2.44 on. hz has 2.43, so a branch for newer gits could not be
+    run here; an untested branch on the machine that lands PRs is worse than the limit, which
+    review 0 measured as none of 1,946 merges built from this file's lines.
+14. **The test goes through `rebase_onto_main`** (review 1), not `install_merge_driver`: the one
+    call that turns the driver on for every clone is what a refactor would lose unnoticed.
