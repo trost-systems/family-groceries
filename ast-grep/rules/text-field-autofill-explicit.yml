@@ -2,7 +2,9 @@
 # off-screen form, so the browser can still save credentials (flutter/flutter#180652). A field's
 # autofill is on by default, so every field with a hint left a second, unseen textbox of the same
 # name for screen readers (and Playwright) to find (job 201). A field says what it wants:
-# `autofillHints: null` for no autofill, or its hints (the login fields).
+# `autofillHints: null` for no autofill, or its hints (the login fields). The copies, values
+# included, stay until something calls `TextInput.finishAutofillContext`: a field with hints needs
+# that call before the next screen's field takes the input (`SignInPanel._endAutofill`, job 226).
 id: text-field-autofill-explicit
 language: dart
 severity: error

@@ -14,6 +14,8 @@ class FakeAuth() extends Fake implements GoTrueClient {
   final idTokenCalls = <IdTokenCall>[];
   final metadataUpdates = <Map<String, Object?>>[];
   final signOutScopes = <SignOutScope>[];
+  final passwordSignIns = <String>[];
+  Exception? passwordError;
   Exception? idTokenError;
   User? user;
 
@@ -37,6 +39,20 @@ class FakeAuth() extends Fake implements GoTrueClient {
       throw error;
     }
     idTokenCalls.add((provider: provider, idToken: idToken, nonce: nonce));
+    return AuthResponse();
+  }
+
+  @override
+  Future<AuthResponse> signInWithPassword({
+    required String password,
+    String? email,
+    String? phone,
+    String? captchaToken,
+  }) async {
+    passwordSignIns.add(email ?? '');
+    if (passwordError case final error?) {
+      throw error;
+    }
     return AuthResponse();
   }
 
