@@ -404,3 +404,60 @@ Deno.test('withTelemetry returns a finished answer untouched, keeping its length
   const answer = Response.json({ ok: true });
   assert((await withTelemetry('api', () => answer, t)(new Request('http://x/api'))) === answer);
 });
+
+Deno.test('withTelemetry sends a finished answer with its Content-Length', async () => {
+  const t = telemetryFor('api', env({}), recorder().fetchImpl);
+  const handler = withTelemetry('api', () => Response.json({ ok: true }), t);
+  const server = Deno.serve({ port: 0, hostname: '127.0.0.1', onListen: () => {} }, handler);
+  try {
+    const res = await fetch(`http://127.0.0.1:${server.addr.port}/api`);
+    assertEquals(res.headers.get('content-length'), '11');
+    assertEquals(await res.json(), { ok: true });
+  } finally {
+    await server.shutdown();
+  }
+});
+
+Deno.test('withTelemetry answers only after an unread request body has arrived', async () => {
+  const t = telemetryFor('mcp', env({}), recorder().fetchImpl);
+  const bytes = new TextEncoder().encode('{"jsonrpc":"2.0"}');
+  let arrive = () => {};
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(bytes.slice(0, 5));
+      arrive = () => {
+        controller.enqueue(bytes.slice(5));
+        controller.close();
+      };
+    },
+  });
+  const req = new Request('http://x/mcp', { method: 'POST', body });
+  let answered = false;
+  const answer = withTelemetry('mcp', () => new Response(null, { status: 401 }), t)(req)
+    .then((res) => {
+      answered = true;
+      return res;
+    });
+  await new Promise((turn) => setTimeout(turn, 0));
+  assertFalse(answered, 'answered while the body was still arriving');
+  arrive();
+  assertEquals((await answer).status, 401);
+  assert(req.bodyUsed);
+});
+
+Deno.test('withTelemetry reads the unread body before its 500 too', async () => {
+  const t = telemetryFor('mcp', env({}), recorder().fetchImpl);
+  const req = new Request('http://x/mcp', { method: 'POST', body: '{"jsonrpc":"2.0"}' });
+  const boom = (): Response => {
+    throw new Error('boom');
+  };
+  assertEquals((await withTelemetry('mcp', boom, t)(req)).status, 500);
+  assert(req.bodyUsed);
+});
+
+Deno.test('withTelemetry leaves a body the handler read alone', async () => {
+  const t = telemetryFor('voice', env({}), recorder().fetchImpl);
+  const req = new Request('http://x/voice', { method: 'POST', body: 'Milch' });
+  const res = await withTelemetry('voice', async (r) => new Response(await r.text()), t)(req);
+  assertEquals(await res.text(), 'Milch');
+});

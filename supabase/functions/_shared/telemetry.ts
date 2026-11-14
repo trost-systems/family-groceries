@@ -7,6 +7,7 @@
 // Use: `Deno.serve(withTelemetry('voice', handler))`. Errors a handler catches itself go through
 // `telemetry.exception(e)`; the wrapper sends everything queued before the response returns, and
 // what an event stream queues when it ends.
+import { discardUnreadBody } from './http.ts';
 
 export const posthogEuHost = 'https://eu.i.posthog.com';
 
@@ -261,7 +262,8 @@ export function telemetryFor(fn: string, env: Env = Deno.env, fetchImpl: Fetch =
 
 /**
  * Wraps a function's handler: an exception it does not catch is reported and answered with 500,
- * and whatever the request queued is sent before the response returns.
+ * a request body it left unread is read to its end first (discardUnreadBody), and whatever the
+ * request queued is sent before the response returns.
  */
 export function withTelemetry(
   fn: string,
@@ -280,6 +282,7 @@ export function withTelemetry(
         headers: { 'content-type': 'application/json; charset=utf-8' },
       });
     }
+    await discardUnreadBody(req);
     await telemetry.flush();
     return flushAtEnd(response, telemetry);
   };
@@ -292,7 +295,8 @@ export function withTelemetry(
  */
 function flushAtEnd(response: Response, telemetry: Telemetry): Response {
   const streamed = response.headers.get('content-type')?.startsWith('text/event-stream');
-  if (!response.body || !streamed) return response;
+  // The type first: reading `body` makes a finished answer a stream, and it goes out chunked.
+  if (!streamed || !response.body) return response;
   const body = response.body.pipeThrough(new TransformStream({ flush: () => telemetry.flush() }));
   return new Response(body, response);
 }

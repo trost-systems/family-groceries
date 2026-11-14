@@ -1,5 +1,6 @@
 import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@modelcontextprotocol/client';
 import { Buffer } from 'node:buffer';
+import { deadlineFetch } from './deadline';
 import { expect, type Page, test } from './fixtures';
 import {
   addItem, apiAs, firstOf, itemRow, must, newEmail, openMore, openTab, password, publishableKey, screenshot, signUpWithHousehold, supabaseUrl, typeInto, within,
@@ -14,7 +15,7 @@ type Item = { id: string; name: string; quantity: string | null; category: strin
 const metadataUrl = `${mcpUrl}/.well-known/oauth-protected-resource`;
 
 const toolsList = (token: string) =>
-  fetch(mcpUrl, {
+  deadlineFetch(mcpUrl, {
     method: 'POST',
     headers: {
       authorization: `Bearer ${token}`,
@@ -32,18 +33,18 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   await addItem(app, 'Brot');
 
   // Discovery as an MCP host performs it, asserted step by step.
-  const unauthenticated = await fetch(mcpUrl, {
+  const unauthenticated = await deadlineFetch(mcpUrl, {
     method: 'POST',
     headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
   });
   expect(unauthenticated.status, 'no token: 401').toBe(401);
   expect(unauthenticated.headers.get('www-authenticate')).toContain(`resource_metadata="${metadataUrl}"`);
-  const prm = await (await fetch(metadataUrl)).json();
+  const prm = await (await deadlineFetch(metadataUrl)).json();
   expect(prm.resource).toBe(mcpUrl.toString());
   const issuer = `${supabaseUrl}/auth/v1`;
   expect(prm.authorization_servers).toEqual([issuer]);
-  const as = await (await fetch(`${issuer}/.well-known/openid-configuration`)).json();
+  const as = await (await deadlineFetch(`${issuer}/.well-known/openid-configuration`)).json();
   expect(as.issuer).toBe(issuer);
   expect(as.registration_endpoint, 'dynamic client registration is enabled').toBe(`${issuer}/oauth/clients/register`);
   expect(as.code_challenge_methods_supported).toContain('S256');
@@ -145,7 +146,7 @@ test('MCP over OAuth 2.1: discovery, registration, consent with PKCE, then tools
   expect(afterDisconnect.headers.get('www-authenticate')).toContain('error="invalid_token"');
   await expect(client.callTool({ name: 'list_items', arguments: {} }), 'the connected SDK client is cut off too')
     .rejects.toThrow();
-  const refreshed = await fetch(`${issuer}/oauth/token`, {
+  const refreshed = await deadlineFetch(`${issuer}/oauth/token`, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -319,19 +320,19 @@ test('another household\'s credentials can neither see nor change this household
 
 test('app session tokens and forged tokens are refused by the MCP endpoint', async () => {
   const email = newEmail('session');
-  const response = await fetch(`${supabaseUrl}/auth/v1/signup`, {
+  const response = await deadlineFetch(`${supabaseUrl}/auth/v1/signup`, {
     method: 'POST',
     headers: { apikey: publishableKey, 'content-type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
   const { access_token: sessionToken } = await response.json();
-  await fetch(`${supabaseUrl}/rest/v1/rpc/create_household`, {
+  await deadlineFetch(`${supabaseUrl}/rest/v1/rpc/create_household`, {
     method: 'POST',
     headers: { apikey: publishableKey, authorization: `Bearer ${sessionToken}`, 'content-type': 'application/json' },
     body: '{}',
   });
   for (const token of [sessionToken, `${sessionToken.slice(0, -4)}AAAA`, 'fgp_made-up']) {
-    const res = await fetch(mcpUrl, {
+    const res = await deadlineFetch(mcpUrl, {
       method: 'POST',
       headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
       body: '{}',

@@ -12561,6 +12561,44 @@ The baseline is 199 jobs' transcripts and 14 days of CI; its numbers go into
   had the file, so its deletion or edit must still fail). In CI's shallow clone
   git knows no merge base and the check is as strict as before; the tree there is the merge
   commit, which has all of main's migrations.
+- **A function answers only after the request body has arrived (job 219c).** CI's mcp shard hung
+  in 15 of 420 runs since the edge runtime's `per_worker` policy (#260), in none of 542 before; 12
+  of the 15 were in the OAuth test's SDK connect, whose first POST carries no token, each ending
+  at the test's 60 s. Those 15 runs kept no stack logs. A later one did (run 43566212940, #420's
+  own run to main, after #423): the test sat in `client.connect()`, the runtime logged `user body
+  write aborted` 3 ms after it began to serve the mcp request, and Kong closed that POST as 499
+  when the test timed out, with no answer in between. Reproduced on the local stack with the
+  runtime on one core: a POST with a body whose answer the handler returns without reading that
+  body, as a stream, got no byte back in 55, 53 and 49 of 150 tries (`/mcp`, `/account/delete`,
+  `/purchases/webhook`, asked at the runtime; 2 of 150 through Kong), and an SDK connect a late
+  503 in 11 of 300. `withTelemetry` now reads an unread body to its end before it returns (at most
+  1 MiB or 5 s, then it cancels): 0 of 150 on each, 0 of 1000 connects. With the runtime on all 12
+  cores nothing was lost: 0 of 2000 on each of the four without the body read, 0 of 150 on each
+  with it. On two cores 1, 2, 3 and 1 of 500 were lost without it and none with it, so fewer cores
+  make the race visible here. The local hits log the same runtime line as that CI run; for the 15
+  runs before it, that the runners hit this race is inferred from the cliff at #260. Whether the
+  hosted project loses answers this way is not measured.
+- **The wait for the body ends after 5 s.** Without a bound, a caller that sends part of a body
+  and stalls would hold its answer and the handler: over `Deno.serve`, 5 of 46 body bytes and
+  then silence got the 401 after 12 ms before the body read and no byte in 20 s with it (the
+  review's probe). With the bound the 401 leaves after 5.0 s, for 20 such callers at once too; a
+  whole body is answered in 6 ms. Through local Kong a stalled body does not reach a function:
+  Kong buffers the request. Hosted is not measured.
+- **Not the alternatives.** `req.body.cancel()` before the answer still lost 68 of 200. An answer
+  with a Content-Length lost 0 of 100, but the mcp function's CORS wrapper rebuilds every answer
+  from its body, and the next handler would need the same care. `oneshot` loses none and brings
+  back job 124's empty 503. A retry in the test would hide a request that a real client sends
+  once.
+- **The MCP specs' requests have a 15 s deadline on the response headers**
+  (`e2e/tests/deadline.ts`), with no retry: an unanswered request fails as `no response headers
+  after 15005 ms: POST <url>` where it used to be a 60 s test timeout that named nothing. With
+  the body read removed and the runtime on one core, 1 of 30 runs of the two MCP tests failed
+  with that line; with it, 30 of 30 passed.
+- **A finished answer keeps its Content-Length.** `flushAtEnd` read `response.body` before it
+  looked at the content type, and reading it makes a stream of a static answer: since #380 every
+  answer with a body from a function behind `withTelemetry` (all but `waitlist` and
+  `feedback-digest`) went out chunked, against the function's comment. Its test compared object
+  identity, which held; the new one reads the header over `Deno.serve`.
 
 ## Job 225 review 0: feedback doc and the digest URL, 2026-11-14
 

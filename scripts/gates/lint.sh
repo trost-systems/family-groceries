@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Workflows (actionlint), shell scripts (shellcheck), the e2e TypeScript (tsc), the TypeScript lint
 # pack (tool/lint/ts), the gate wiring, the landing, append-log merge driver, e2e gate, verify.sh, Flutter SDK, Vercel ignore step, CI download, stack logs and release scripts' tests, the
-# structural lints in scripts/lint.sh, and
+# e2e request deadline's test (e2e/deadline.test.mjs), the structural lints in scripts/lint.sh, and
 # the generated files against their source: the design tokens (design/tokens/build.mjs) and the
 # app icon and splash screens (design/app-icon/build.mjs), the Android widget's hex shapes
 # (design/widget/build.mjs) and the item icon table with its samples (tool/item_icons/build.mjs, its
@@ -27,6 +27,9 @@ scripts/vercel-ignore-test.sh
 scripts/ci/download-test.sh
 scripts/ci/stack-logs-test.sh
 scripts/release/test.sh
+# Node 22 before 22.18 strips the types of e2e/tests/deadline.ts only with the flag; later
+# versions take the flag too.
+node --experimental-strip-types --test e2e/deadline.test.mjs
 scripts/lint.sh
 node design/tokens/build.mjs --check
 node design/app-icon/build.mjs --check
