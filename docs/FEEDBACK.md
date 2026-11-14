@@ -2,9 +2,10 @@
 
 Job 21 (Spec #2, Peter's decisions of 2026-10-27 in DECISIONS.md "Job 21"). Testers and
 customers send a short note from **Mehr → Feedback senden** on iOS, Android and the web. The
-note goes into one table, `public.feedback`, which Peter and the Snacklist PM read with the
-service role (Supabase dashboard or the Supabase connector). Nothing notifies anyone: the PM
-reads the table every Monday with the SQL below.
+note goes into one table, `public.feedback`. Only Peter reads it, by hand in the Supabase
+dashboard (his GDPR rule of 2026-11-01, Legal N-174): no bot, connector or agent reads the
+notes. The one routine is the daily digest (below, off until Legal's GO), which mails new notes
+to him alone.
 
 ## What is stored
 
@@ -37,8 +38,9 @@ No screenshots, no device model, no e-mail.
   themselves (`user_id = auth.uid()`). No select, update or delete, not even of their own notes;
   anon gets nothing. RLS policy `feedback_insert_own` plus column grants; proven in
   `supabase/tests/feedback.test.sql`, `rls.test.sql` and `e2e/tests/rls.spec.ts`.
-- **Peter and the PM** read with the service role: the dashboard's Table Editor
-  (`public.feedback`) or the Supabase connector, project `jdwqrallbpdbshrdhenk`.
+- **Peter** reads with the service role, by hand: the dashboard's Table Editor
+  (`public.feedback`) or SQL editor, project `jdwqrallbpdbshrdhenk`. Once switched on, the
+  daily digest mails him the new notes.
 - **The sender** gets their own notes in "Meine Daten exportieren" (section `feedback`).
 
 ## Retention
@@ -55,8 +57,8 @@ Check the schedule: `select jobname, schedule, command, active from cron.job;` a
 
 ## Monday summary
 
-The PM runs these through the Supabase connector (service role, project
-`jdwqrallbpdbshrdhenk`) every Monday. Both are read-only. "Last week" is the previous full
+Peter can run these by hand in the dashboard's SQL editor (project `jdwqrallbpdbshrdhenk`)
+on a Monday. Both are read-only. "Last week" is the previous full
 calendar week in Berlin time, Monday 00:00 to Monday 00:00, so consecutive Mondays never
 overlap or miss a note (daylight-saving weeks included). External notes come first.
 
@@ -146,7 +148,8 @@ no links, images or tracking pixel.
 The minute's margin is for notes still being written: `created_at` is the start of the inserting
 transaction. A note from 07:59:30 goes into the next day's mail.
 
-**The schedule.** `public.feedback_digest_set(true, <function url>)` switches it on and creates
+**The schedule.** `public.feedback_digest_set(true, <function url>)` (an `https://` URL; plain
+`http://` only to the local stack) switches it on and creates
 the pg_cron job `feedback-digest`, hourly at minute 0 (pg_cron runs in UTC; hourly avoids
 daylight-saving arithmetic). The job posts to the `feedback-digest` function through pg_net with
 the header `x-feedback-digest-secret`, read from the vault secret `feedback_digest_secret` at
@@ -178,9 +181,11 @@ digest is on and unhealthy or the function does not answer. A failed run opens o
 the issue "Feedback digest failed", which names no content; the next green run closes it. A 404
 (the function not deployed yet) is only a notice. So the watch can't tell a digest whose
 function went missing after switching on; `net._http_response` then shows 404s. A notice in the
-watch after switching on means: look at the runs below. The function's logs and answers carry fixed codes
-only (`feedback-digest: sent`, `send_failed 422`, `db_error 23505`), never a note or an address;
-pg_net keeps answers in `net._http_response`, so they carry none either.
+watch after switching on means: look at the runs below. The watch runs once a day, so a digest
+that starts failing after the 08:00 run is reported at the next 07:40 UTC; the hourly retries
+send the day's mail as soon as the cause is gone. The function's logs and answers carry fixed
+codes only (`feedback-digest: sent`, `send_failed 422`, `db_error 23505`), never a note or an
+address; pg_net keeps answers in `net._http_response`, so they carry none either.
 
 **Resend tracking.** Open and click tracking are Resend domain settings, not per mail. The
 digest has no links and nothing to load, so neither could record anything, but check that both
