@@ -75,3 +75,15 @@ network. It now waits up to 10 s for the server after a start or a return to the
   held there, as the grace intends. The spec now drops the channel once a fetch has answered.
   Locally, `live-sync`, `offline-start`, `connectivity` and `list-header` passed 30/30 with
   `--repeat-each=2`.
+
+## Post-merge review fix (round 1, PR #433)
+
+- **`_graceOver` checks the channel, not the state** (`app/lib/list/list_cubit.dart`, `_graceOver`).
+  A channel that joined and then dropped in the grace, with no fetch answered, left the state
+  online. The banner came only at about 35 s. Now it shows at 10 s. Test: "a channel that joins
+  and drops in the grace, with no answer, shows offline once the grace is over".
+- **A stale resync failure still arms the 3 s retry,** so a network that died meanwhile shows
+  offline within 3 s. Test: "a stale failure still retries: a network that died meanwhile shows
+  offline".
+- **Mutation check:** reverting either change fails exactly its test.
+- **Writers' "Last verified"** is restamped with main's SHA.

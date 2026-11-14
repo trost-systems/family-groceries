@@ -1085,6 +1085,44 @@ void main() {
       });
     });
 
+    test('a channel that joins and drops in the grace, with no answer, '
+        'shows offline once the grace is over', () {
+      fakeAsync((async) {
+        repo.itemsGate = Completer();
+        final (c, _) = started(async);
+        async.elapse(const Duration(seconds: 1));
+        repo.emitStatus!(ConnectionStatus.online);
+        async.elapse(const Duration(seconds: 4));
+        repo.emitStatus!(ConnectionStatus.offline);
+        async.elapse(justBefore - const Duration(seconds: 5));
+        expect(c.state.trouble, isNull, reason: 'no banner in the grace');
+        async.elapse(const Duration(milliseconds: 200));
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+      });
+    });
+
+    test('a stale failure still retries: a network that died meanwhile '
+        'shows offline', () {
+      fakeAsync((async) {
+        final (c, _) = started(async);
+        async.elapse(const Duration(seconds: 11));
+        final stale = repo.itemsGate = Completer();
+        unawaited(c.resync());
+        async.elapse(Duration.zero);
+        repo.itemsGate = null;
+        unawaited(c.resync());
+        async.elapse(Duration.zero);
+        repo.online = false;
+        stale.completeError(Exception('connection reset'));
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, isNull);
+        async.elapse(const Duration(seconds: 3));
+        expect(c.state.trouble, SyncTrouble.offline, reason: 'the retry told');
+        close(async, c);
+      });
+    });
+
     test('a resync that fails after a later one answered shows nothing', () {
       fakeAsync((async) {
         final (c, seen) = started(async);

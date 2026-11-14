@@ -12193,7 +12193,7 @@ On main it showed on the first failed read of the opening resync, or on the firs
 
 - **The channel joining no longer ends the grace.** Only an answered fetch or an acknowledged
   write does (`_endGrace`). Before, a channel that joined at 1 s let the first fetch's failure at
-  5 s show "Offline" inside the 10 s. `_graceOver` still leaves an online channel alone.
+  5 s show "Offline" inside the 10 s. `_graceOver` still leaves a channel that is up alone.
 - **A resync that fails after a later one answered shows nothing.** A resync started on resume
   can go out on a socket the OS killed in the background and fail after the channel's resync,
   on a fresh connection, answered. That stale failure used to show "Offline" for about 3 s right
@@ -12259,3 +12259,15 @@ Follow-ups from job 184's post-merge review (`jobs/184-siri-free-price-prep/revi
   Peter's copy decision before lock-on (brief item 5). Other merged items on main still name
   Hummlist; they are not wrong about what is free, and a rename sweep of the changelog is its own
   call (rewords.json is the tool for it).
+
+### Job 212 post-merge review (round 1), 2026-11-14
+
+- **`_graceOver` checks the channel, not the state.** A channel that joined in the grace set the
+  state online. If it dropped inside the grace while no fetch had answered, the held drop left
+  the state online with nothing live, and the banner came only when a later rejoin timed out
+  (about 35 s on the web build). Now, when the grace ends with no answer, the list is online only
+  if its channel is up at that moment. Otherwise it shows offline at 10 s.
+- **A stale resync failure still arms the 3 s retry.** It does not show "Offline", but if the
+  network died after the newer resync answered, the retry tells within 3 s.
+- **Kept:** the e2e drop spec still waits a fixed 500 ms after the items GET. There is no
+  app-side signal for "the list has answered" to poll.
