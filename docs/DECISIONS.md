@@ -12858,3 +12858,20 @@ before anyone merges it.
    `supabase/tests/feedback.test.sql`, and Job 21's policy draft in NEEDS_PETER (now "readable
    only by Peter Trost", as the live policy says), no longer name the PM.
 
+
+## Job 236: Android back on the guided start, 2026-11-14
+
+- **Account step.** Android's back now goes to „Was fehlt gerade?“, as its arrow does. The page
+  builds its own Scaffold (the sign-in panel and the legal footer), not `OnboardingPage`, so it
+  missed that page's `PopScope`; it now has one with the same back. vmaint-20261114 read this from
+  code; the failing widget test showed the pop went to `/start`, the signed-out first screen.
+- **Steps without Zurück, signed in.** The same test pattern over every step found three more:
+  „Mit wem“ from „Haushalt erstellen“, the setup and the invite step popped a signed-in user onto
+  `/start`, which offers „Los geht's“ and „Schon ein Konto? Anmelden“. Every step route sits under
+  `/start` and go_router runs no redirect on a pop. One `PopScope` around every step screen
+  (`onboardingStepScreen`) now keeps back on the step while signed in. Signed out the first
+  questions still go back to the first screen, which is the screen before them.
+- **Stay, not „Später“ or closing the app.** On the invite step back could have meant „Später“, and
+  on a step with nothing before it Android usually closes the app. Both change what the user gets
+  (an ended guided start, or a closed app with the draft resumed later) for a key press. Staying
+  is the smallest change, and the X or „Später“ remain the ways out.
