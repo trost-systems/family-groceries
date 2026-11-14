@@ -231,7 +231,8 @@ class _ScopeState() extends State<_Scope> {
       cubit,
     );
     _lifecycle = AppLifecycleListener(
-      onResume: () => unawaited(cubit.resync()),
+      onHide: cubit.hidden,
+      onResume: () => unawaited(cubit.resumed()),
     );
     _rejections = cubit.rejections.listen((rejection) {
       if (!mounted) {

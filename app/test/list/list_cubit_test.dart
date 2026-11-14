@@ -36,7 +36,13 @@ void main() {
   setUp(() async {
     repo = FakeRepository();
     cache = MemoryListCache();
-    cubit = ListCubit(repo, cache, userId: 'peter')..start();
+    cubit = ListCubit(
+      repo,
+      cache,
+      userId: 'peter',
+      // Past its start grace; the grace has its own tests, under fake time.
+      grace: Duration.zero,
+    )..start();
     await settle();
   });
 
@@ -753,7 +759,11 @@ void main() {
         async.elapse(networkSettle);
         expect(repo.watches, watches + 1);
         expect(repo.renewals, 0, reason: 'its socket closed already');
-        expect(c.state.trouble, SyncTrouble.offline, reason: 'channel not up');
+        expect(
+          c.state.trouble,
+          isNull,
+          reason: 'the resync answered; the channel is not up yet',
+        );
         repo.emitStatus!(ConnectionStatus.online);
         async.elapse(Duration.zero);
         expect(c.state.trouble, isNull);
@@ -815,8 +825,8 @@ void main() {
           expect(repo.renewals, 1, reason: 'it may have died with the network');
           expect(
             c.state.trouble,
-            SyncTrouble.offline,
-            reason: 'the resync answered, realtime is not back yet',
+            isNull,
+            reason: 'the resync answered, realtime is not back yet (job 212)',
           );
           repo.emitStatus!(ConnectionStatus.online);
           async.elapse(Duration.zero);
@@ -827,17 +837,24 @@ void main() {
     );
 
     test('a retry that gets through before the network settled does not '
-        'trust the channel either', () {
+        'trust the channel either, and the renewal does not flicker', () {
       fakeAsync((async) {
         final (c, seen) = following(async);
         repo.rejoinOnRenew = false;
         down(async);
         async.elapse(const Duration(seconds: 2));
         up(async);
-        // The 3 s retry answers while the network settles.
-        async.elapse(networkSettle);
-        expect(repo.renewals, 1);
+        // The 3 s retry answers while the network settles: the OS still
+        // says down until it settled.
+        async.elapse(const Duration(milliseconds: 1100));
         expect(c.state.trouble, SyncTrouble.offline);
+        async.elapse(const Duration(milliseconds: 400));
+        expect(repo.renewals, 1);
+        expect(c.state.trouble, isNull, reason: 'the reconnect answered');
+        // The renewed socket errors the channel once, then it joins again.
+        repo.emitStatus!(ConnectionStatus.offline);
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, isNull);
         repo.emitStatus!(ConnectionStatus.online);
         async.elapse(Duration.zero);
         expect(c.state.trouble, isNull);
@@ -917,10 +934,276 @@ void main() {
     });
   });
 
-  test('a resync does not claim online while the channel is down', () async {
-    repo.emitStatus!(ConnectionStatus.offline);
-    await cubit.resync();
-    expect(cubit.state.connection, ConnectionStatus.offline);
+  group('the start grace (job 212)', () {
+    /// A list started under fake time with the real grace, and every
+    /// trouble it shows.
+    (ListCubit, List<SyncTrouble?>) started(
+      FakeAsync async, {
+      Stream<Network>? network,
+    }) {
+      final c = ListCubit(
+        repo,
+        MemoryListCache(),
+        userId: 'peter',
+        network: network,
+      );
+      final seen = <SyncTrouble?>[];
+      c.stream.listen((s) => seen.add(s.trouble));
+      c.start();
+      async.elapse(Duration.zero);
+      return (c, seen);
+    }
+
+    void close(FakeAsync async, ListCubit c) {
+      unawaited(c.close());
+      async.flushMicrotasks();
+    }
+
+    const justBefore = Duration(milliseconds: 9900);
+
+    test('a first fetch still in flight stays connecting through the grace, '
+        'then shows offline', () {
+      fakeAsync((async) {
+        repo.itemsGate = Completer();
+        final (c, seen) = started(async);
+        async.elapse(justBefore);
+        expect(c.state.connection, ConnectionStatus.connecting);
+        expect(seen, everyElement(isNull), reason: 'no banner in the grace');
+        async.elapse(const Duration(milliseconds: 200));
+        expect(c.state.trouble, SyncTrouble.offline);
+        repo.itemsGate!.complete();
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, isNull, reason: 'the answer hides it');
+        close(async, c);
+      });
+    });
+
+    test('a first fetch that fails and answers on a retry in the grace '
+        'never shows offline', () {
+      fakeAsync((async) {
+        repo.online = false;
+        final (c, seen) = started(async);
+        // The 3 s retry fails too.
+        async.elapse(const Duration(seconds: 4));
+        expect(c.state.connection, ConnectionStatus.connecting);
+        repo.online = true;
+        // The 6 s retry answers.
+        async.elapse(const Duration(seconds: 3));
+        expect(c.state.connection, ConnectionStatus.online);
+        async.elapse(const Duration(seconds: 10));
+        expect(seen, everyElement(isNull));
+        close(async, c);
+      });
+    });
+
+    test('no answer in the whole grace shows offline once it is over', () {
+      fakeAsync((async) {
+        repo.online = false;
+        final (c, _) = started(async);
+        async.elapse(justBefore);
+        expect(c.state.trouble, isNull);
+        async.elapse(const Duration(milliseconds: 100));
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+      });
+    });
+
+    test('a channel that drops in the grace shows nothing; it comes up '
+        'before the grace is over', () {
+      fakeAsync((async) {
+        repo.online = false;
+        final (c, seen) = started(async);
+        repo.emitStatus!(ConnectionStatus.offline);
+        async.elapse(const Duration(seconds: 3));
+        // The resubscribe times out as well.
+        repo.emitStatus!(ConnectionStatus.offline);
+        async.elapse(const Duration(seconds: 5));
+        expect(c.state.connection, ConnectionStatus.connecting);
+        repo.online = true;
+        repo.emitStatus!(ConnectionStatus.online);
+        async.elapse(const Duration(seconds: 10));
+        expect(c.state.connection, ConnectionStatus.online);
+        expect(seen, everyElement(isNull));
+        close(async, c);
+      });
+    });
+
+    test('a channel that drops in the grace shows nothing once a fetch '
+        'answered, also when its join times out just after the grace', () {
+      fakeAsync((async) {
+        repo.itemsGate = Completer();
+        final (c, seen) = started(async);
+        async.elapse(const Duration(seconds: 6));
+        repo.itemsGate!.complete();
+        async.elapse(Duration.zero);
+        expect(c.state.connection, ConnectionStatus.online);
+        async.elapse(const Duration(milliseconds: 4050));
+        // The first join's 10 s timeout, a moment after the grace.
+        repo.emitStatus!(ConnectionStatus.offline);
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, isNull);
+        expect(seen, everyElement(isNull));
+        // Its resubscribe started after the grace: that one tells.
+        final watches = repo.watches;
+        async.elapse(const Duration(seconds: 3));
+        expect(repo.watches, watches + 1);
+        repo.emitStatus!(ConnectionStatus.offline);
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+      });
+    });
+
+    test('a live channel that drops after the list was online shows '
+        'offline at once, grace or not', () {
+      fakeAsync((async) {
+        final (c, _) = started(async);
+        repo.emitStatus!(ConnectionStatus.online);
+        async.elapse(const Duration(seconds: 1));
+        repo.emitStatus!(ConnectionStatus.offline);
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+      });
+    });
+
+    test('the OS saying no network shows offline at once, in the grace', () {
+      fakeAsync((async) {
+        repo.online = false;
+        final network = StreamController<Network>();
+        final (c, _) = started(async, network: network.stream);
+        network.add(Network.down);
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+        unawaited(network.close());
+      });
+    });
+
+    test('a send that fails after a fetch answered shows offline at once, '
+        'grace or not', () {
+      fakeAsync((async) {
+        final (c, _) = started(async);
+        expect(c.state.connection, ConnectionStatus.online);
+        repo.online = false;
+        c.addEntry(parseEntry('Kaffee'));
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+      });
+    });
+
+    test('what fails in the background shows nothing; back in the '
+        'foreground, the list asks again with the same grace', () {
+      fakeAsync((async) {
+        final (c, seen) = started(async);
+        repo.emitStatus!(ConnectionStatus.online);
+        async.elapse(const Duration(seconds: 11));
+        c.hidden();
+        // The socket closes in the background; a retry there fails.
+        repo.online = false;
+        repo.emitStatus!(ConnectionStatus.offline);
+        async.elapse(const Duration(minutes: 5));
+        expect(c.state.trouble, isNull);
+
+        unawaited(c.resumed());
+        async.elapse(justBefore);
+        expect(seen, everyElement(isNull), reason: 'no banner in the grace');
+        async.elapse(const Duration(milliseconds: 200));
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+      });
+    });
+
+    test('a web window that only got the focus back gets no new grace', () {
+      fakeAsync((async) {
+        repo.online = false;
+        final (c, _) = started(async);
+        async.elapse(const Duration(seconds: 6));
+        unawaited(c.resumed());
+        async.elapse(const Duration(seconds: 4, milliseconds: 100));
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+      });
+    });
+
+    test('an offline the user saw stays on resume until an answer', () {
+      fakeAsync((async) {
+        repo.online = false;
+        final (c, seen) = started(async);
+        async.elapse(const Duration(seconds: 11));
+        expect(c.state.trouble, SyncTrouble.offline);
+        final shown = seen.length;
+
+        c.hidden();
+        unawaited(c.resumed());
+        async.elapse(const Duration(seconds: 2));
+        expect(
+          seen.skip(shown),
+          everyElement(SyncTrouble.offline),
+          reason: 'not hidden only to open again',
+        );
+        repo.online = true;
+        async.elapse(const Duration(seconds: 3));
+        expect(c.state.trouble, isNull);
+        close(async, c);
+      });
+    });
+
+    test('an answer while the OS says no network keeps offline', () {
+      fakeAsync((async) {
+        final network = StreamController<Network>();
+        final (c, _) = started(async, network: network.stream);
+        network.add(Network.down);
+        async.elapse(Duration.zero);
+        unawaited(c.resync());
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+        unawaited(network.close());
+      });
+    });
+
+    test('back in the foreground with the OS saying no network, offline '
+        'stays', () {
+      fakeAsync((async) {
+        final network = StreamController<Network>();
+        final (c, _) = started(async, network: network.stream);
+        repo.online = false;
+        network.add(Network.down);
+        async.elapse(Duration.zero);
+        c.hidden();
+        unawaited(c.resumed());
+        async.elapse(Duration.zero);
+        expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+        unawaited(network.close());
+      });
+    });
+  });
+
+  test('a resync that answers clears offline while the channel is down, '
+      'which is still subscribed again (job 212)', () {
+    fakeAsync((async) {
+      final c = ListCubit(
+        repo,
+        MemoryListCache(),
+        userId: 'peter',
+        grace: Duration.zero,
+      )..start();
+      async.elapse(Duration.zero);
+      repo.emitStatus!(ConnectionStatus.offline);
+      async.elapse(Duration.zero);
+      expect(c.state.trouble, SyncTrouble.offline);
+      final watches = repo.watches;
+      unawaited(c.resync());
+      async.elapse(Duration.zero);
+      expect(c.state.trouble, isNull);
+      async.elapse(const Duration(seconds: 3));
+      expect(repo.watches, watches + 1, reason: 'the channel is not live');
+      unawaited(c.close());
+      async.flushMicrotasks();
+    });
   });
 
   test('an add acked during a catalog reload survives the reload', () async {
@@ -1399,7 +1682,8 @@ void main() {
 
       await restart();
       expect(cubit.state.loaded, isTrue);
-      expect(cubit.state.connection, ConnectionStatus.offline);
+      // Job 212: the list shows at once; offline waits out the start grace.
+      expect(cubit.state.connection, ConnectionStatus.connecting);
       expect(cubit.state.server.keys, [bread]);
       expect(cubit.state.pending, hasLength(2));
       expect(activeNames(), ['Käse']);
@@ -1574,7 +1858,7 @@ void main() {
       await elapse(const Duration(milliseconds: 400));
       repo.online = false;
       await startAgain();
-      expect(cubit.state.connection, ConnectionStatus.offline);
+      expect(cubit.state.connection, isNot(ConnectionStatus.online));
       expect(names(cubit.suggestionsFor('mi')), ['Milch', 'Hafer-Milch']);
       expect(names(cubit.dueUsuals), hasLength(3));
     });

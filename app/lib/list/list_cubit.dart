@@ -207,6 +207,12 @@ const _maxResubscribe = Duration(seconds: 30);
 /// network that flaps reconnects once, after the last change.
 const networkSettle = Duration(milliseconds: 1500);
 
+/// How long after a start or a resume the list may stay unanswered before
+/// it says offline: a slow network takes a few seconds.
+/// As long as the realtime join's timeout, so a join that times out at the
+/// start does not race it.
+const startGrace = Duration(seconds: 10);
+
 class ListCubit(
   final ListRepository _repo,
   final ListCache _cache, {
@@ -215,6 +221,9 @@ class ListCubit(
   required final String userId,
   DateTime Function()? clock,
   Duration resubscribeAfter = const Duration(seconds: 3),
+
+  /// [startGrace]; zero says offline at the first failure.
+  Duration grace = startGrace,
 
   /// Told once per user action (add, tick, re-add, reorder); never by an
   /// op's retry, a realtime echo or an undo (docs/ANALYTICS.md).
@@ -228,6 +237,23 @@ class ListCubit(
   this : super(const ListState());
 
   final DateTime Function() _clock = clock ?? DateTime.now;
+  final _graceLength = grace;
+
+  /// Runs for [startGrace] after a start or a resume, until the list is
+  /// online. Meanwhile a failed request or a dropped channel is retried
+  /// unseen; the OS's network down still shows offline at once.
+  Timer? _grace;
+
+  /// The app is hidden, and on a phone its realtime socket closed on
+  /// purpose: what fails meanwhile is asked again on resume.
+  var _away = false;
+
+  /// The realtime socket was renewed: its channel errors once on the way to
+  /// joining again.
+  var _renewing = false;
+
+  /// Whether a failure now is retried unseen.
+  bool get _holding => (_grace != null || _away) && !_networkDown;
   final _networkChanges = network;
   StreamSubscription<Network>? _network;
   Timer? _networkBack;
@@ -308,8 +334,8 @@ class ListCubit(
   /// realtime missed: the row shows, and another resync settles it.
   Set<String>? _shownInFlight;
 
-  /// Whether the realtime channel is subscribed. A resync that answers only
-  /// brings the list back online while it is.
+  /// Whether the realtime channel is subscribed. A resync that answers
+  /// shows the list online also while it is not (job 212).
   var _channelUp = false;
 
   /// A channel the server closed is never rejoined by the client library,
@@ -378,14 +404,53 @@ class ListCubit(
     if (_closing) {
       return;
     }
+    _beginGrace();
     _network = _networkChanges?.listen(_onNetwork);
     _watch();
     unawaited(resync());
   }
 
+  /// The app is hidden: in the background, or on the web another tab.
+  void hidden() => _away = true;
+
+  /// The app is in front again: the connection it knew may have died while
+  /// it was hidden, so it is asked again, with the same grace as a start.
+  /// An offline the user saw before stays until an answer. A web window
+  /// that only got the focus back was never hidden: no grace.
+  Future<bool> resumed() {
+    final away = _away;
+    _away = false;
+    if (away && state.connection != ConnectionStatus.offline) {
+      emit(state.copyWith(connection: ConnectionStatus.connecting));
+      _beginGrace();
+    }
+    return resync();
+  }
+
+  void _beginGrace() {
+    _grace?.cancel();
+    _grace = _graceLength > Duration.zero
+        ? Timer(_graceLength, _graceOver)
+        : null;
+  }
+
+  void _graceOver() {
+    _grace = null;
+    if (isClosed || state.connection != ConnectionStatus.connecting) {
+      return;
+    }
+    if (_channelUp) {
+      emit(state.copyWith(connection: ConnectionStatus.online));
+    } else {
+      _goOffline();
+    }
+  }
+
   void _watch() {
     final generation = ++_watchGeneration;
     bool current() => generation == _watchGeneration && !isClosed;
+    // A join begun in the grace gets its whole timeout, even past it.
+    var joiningInGrace = _grace != null;
     _unwatch = _repo.watch(
       onItem: (row) {
         if (current()) {
@@ -450,26 +515,38 @@ class ListCubit(
       },
       onStatus: (status) {
         if (current()) {
-          _onChannelStatus(status);
+          _onChannelStatus(status, joiningInGrace: joiningInGrace);
+          joiningInGrace = false;
         }
       },
     );
   }
 
-  void _onChannelStatus(ConnectionStatus status) {
+  void _onChannelStatus(
+    ConnectionStatus status, {
+    required bool joiningInGrace,
+  }) {
     _channelUp = status == ConnectionStatus.online;
     _channelSuspect = false;
-    if (status == ConnectionStatus.offline) {
+    final renewing = _renewing;
+    _renewing = false;
+    final held =
+        status == ConnectionStatus.offline &&
+        (_holding || joiningInGrace || renewing) &&
+        !_networkDown;
+    if (status == ConnectionStatus.offline && !held) {
       _troubleRound = null;
     }
     // Offline says nothing of the server: back online, the next send or
     // fetch tells again, so the failing card never flashes up in between.
-    emit(
-      state.copyWith(
-        connection: status,
-        failing: status == ConnectionStatus.offline ? false : null,
-      ),
-    );
+    if (!held) {
+      emit(
+        state.copyWith(
+          connection: status,
+          failing: status == ConnectionStatus.offline ? false : null,
+        ),
+      );
+    }
     if (_channelUp) {
       _resubscribe?.cancel();
       _resubscribe = null;
@@ -488,8 +565,7 @@ class ListCubit(
       case Network.down:
         _networkDown = true;
         if (_channelUp) {
-          // Until it joins again, a resync that answers does not bring the
-          // list online.
+          // Not trusted until it joins again.
           _channelUp = false;
           _channelSuspect = true;
         }
@@ -508,6 +584,7 @@ class ListCubit(
     _networkDown = false;
     if (_channelSuspect) {
       _channelSuspect = false;
+      _renewing = true;
       _repo.renewRealtime();
     } else if (!_channelUp) {
       _resubscribe?.cancel();
@@ -1494,7 +1571,9 @@ class ListCubit(
         server: snapshot,
         claimRows: claims,
         loaded: true,
-        connection: _channelUp ? ConnectionStatus.online : null,
+        // Job 212: an answer shows the list online, the channel down or
+        // not, unless the OS says there is no network.
+        connection: _networkDown ? null : ConnectionStatus.online,
       ),
     );
     if (state.seen == null && _cacheRead) {
@@ -1791,7 +1870,11 @@ class ListCubit(
 
   void _goOffline() {
     _troubleRound = null;
-    emit(state.copyWith(connection: ConnectionStatus.offline, failing: false));
+    if (!_holding) {
+      emit(
+        state.copyWith(connection: ConnectionStatus.offline, failing: false),
+      );
+    }
     _retryLater();
   }
 
@@ -1830,6 +1913,11 @@ class ListCubit(
     super.onChange(change);
     final next = change.nextState;
     final before = change.currentState;
+    if (next.connection == ConnectionStatus.online) {
+      // Online once is the end of the grace: what fails later shows.
+      _grace?.cancel();
+      _grace = null;
+    }
     if (_tripTicked.isNotEmpty && !_hasOpenItem(next.items)) {
       _tripTicked.clear();
     }
@@ -1888,6 +1976,7 @@ class ListCubit(
   Future<void> close() async {
     _closing = true;
     _retry?.cancel();
+    _grace?.cancel();
     _networkBack?.cancel();
     _resubscribe?.cancel();
     _catalogReload?.cancel();
