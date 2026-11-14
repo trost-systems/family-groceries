@@ -746,3 +746,8 @@ A production build of `hummlist-site` now waits until the push-triggered **Supab
 ## Job 208: more space between a field and its helper, error and counter (2026-11-13)
 
 The field theme puts every field's helper, error and counter `HlSpace.s2` past the focus ring (13 dp below the contour, was 4), app-wide. Merged as fe620c94 (#403). Details: [docs/done/208-input-helper-spacing.md](docs/done/208-input-helper-spacing.md).
+The field theme puts every field's helper, error and counter `HlSpace.s2` past the focus ring (13 dp below the contour, was 4), app-wide. Merged as 4a4f7fd1 (#403). Details: [docs/done/208-input-helper-spacing.md](docs/done/208-input-helper-spacing.md).
+
+## Job 210: Firefox keeps the add field after an add by Enter (2026-11-13)
+
+In Firefox the add field no longer loses its focus after an add by Enter: on web it has no `onSubmitted`, so `EditableText` no longer restarts the text connection, whose deferred engine blur landed after the refocus. `wasm-boot.spec.ts` adds two items in a row by Enter in Chromium, WebKit and Firefox again (CI 10x: 60/60 Firefox and Chromium, 30/30 WebKit). Merged as ab93915a (#409). Details: [docs/done/210-firefox-enter-focus.md](docs/done/210-firefox-enter-focus.md).

@@ -12087,6 +12087,7 @@ build of `hummlist-site` waits for the push-triggered **Supabase deploy** run th
   event for an id that names nothing still answers `no_household`, also for a deleted user:
   `app_user_owner` cannot tell a deleted user from an unknown id, so `store.ts` documents the label
   instead of guessing.
+
 ## Job 210: Firefox keeps the add field after an add by Enter, 2026-11-13
 
 - **Root cause, traced.** Flutter web delivers each Enter twice. The engine's `KeyboardBinding`
