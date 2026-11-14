@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { type BrowserContext, expect, type Locator, type Page } from '@playwright/test';
+import { type BrowserContext, expect, type Locator, type Page, type Response as PageResponse } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { Buffer } from 'node:buffer';
@@ -165,6 +165,28 @@ export async function tick(page: Page, name: string): Promise<void> {
   const rows = await itemRow(page, name).count();
   await itemRow(page, name).click();
   await expect(itemRow(page, name)).toHaveCount(rows - 1);
+}
+
+/**
+ * [tick], then waits until the server has taken the write. The row leaves the page in the frame
+ * in which the app only starts the request; in CI a reload right after [tick] came back with the
+ * row open and no write at the server (job 219, docs/DECISIONS.md). Use it where the test leaves or
+ * reloads the page next.
+ */
+export async function tickSaved(page: Page, name: string): Promise<void> {
+  let saved = false;
+  const seen = (r: PageResponse): void => {
+    const request = r.request();
+    saved ||= r.ok() && request.method() === 'PATCH' && new URL(r.url()).pathname === '/rest/v1/items' &&
+      request.postDataJSON()?.status === 'bought';
+  };
+  page.on('response', seen);
+  try {
+    await tick(page, name);
+    await expect.poll(() => saved, `the server took the tick of ${name}`).toBe(true);
+  } finally {
+    page.off('response', seen);
+  }
 }
 
 /** A store's divider by its name; its accessible name is "<store>, <n> Artikel". */

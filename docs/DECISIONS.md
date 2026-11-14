@@ -12530,6 +12530,21 @@ The baseline is 199 jobs' transcripts and 14 days of CI; its numbers go into
   ignored ones. A flake needs the same arguments too, `--screenshots` included; the streak counts
   the gate whatever the arguments, as the baseline did, so a fix loop that varies `-g` still
   reaches 3.
+- **A test that reloads after a tick waits for the tick's write (`tickSaved`, job 219g).**
+  `wasm-boot.spec.ts` failed twice on WebKit in CI with the ticked row open after the reload. The
+  one trace read (run 43503369675) has no PATCH for the tick, in the browser or at Kong; the
+  reload came 3 ms after the assertion saw the row gone (the poll 504 ms earlier still saw it).
+  The row commits when its leave animation completes, and the web engine runs no microtasks
+  between a frame's begin and draw, so the row leaves the DOM in the frame whose task only starts
+  the write: locally the `fetch` call is 0 to 10 ms ahead of the row leaving (Chromium wasm at CPU
+  throttle 1x, 6x, 20x; JS fallback on Chromium and WebKit). That the reload cancelled the request
+  is inferred: an instant reload kept the tick in 20 of 20 local tries. The helper waits for a 2xx
+  to a PATCH that sets `status: bought`, so it holds under either reading, and a write that never
+  leaves fails by name. Not `tick` itself: most ticks are followed by more work on the same page.
+  `edit-sheet.spec.ts`'s phone test ticks with a tap and polls the row's status over the API
+  instead. The app's side (a tick that was neither sent nor sent again after the reload, when the
+  page went away within about half a second of the row leaving; seen once) is not changed here; it
+  is noted for the lead.
 
 ## Job 225 review 0: feedback doc and the digest URL, 2026-11-14
 

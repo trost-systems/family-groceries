@@ -2,7 +2,7 @@ import { expect, test } from './fixtures';
 import { groupHeadings } from './catalog';
 import {
   addedNote, addField, addItem, closeSheet, editField, enterItem, itemRow, newEmail, openEdit, pickInSheet, putBack, saveEdit, screenshot,
-  signUpWithHousehold, tick, typeInto, usedRow,
+  signUpWithHousehold, tick, tickSaved, typeInto, usedRow,
 } from './helpers';
 
 test.beforeEach(async ({ page }) => {
@@ -42,7 +42,7 @@ test('ticking removes the item without an undo snackbar; a tap on it under "Zule
   await expect(usedRow(page, 'Joghurt')).toHaveCount(0);
   await screenshot(page, '03b-put-back');
 
-  await tick(page, 'Joghurt');
+  await tickSaved(page, 'Joghurt');
   await page.reload();
   await expect(addField(page)).toBeFocused();
   await expect(itemRow(page, 'Joghurt'), 'the tick persisted on the server').toHaveCount(0);

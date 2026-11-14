@@ -1,5 +1,5 @@
 import { expect, test, type Page } from './fixtures';
-import { addField, addSheet, addedNote, closeSheet, itemRow, newEmail, screenshot, signUpWithHousehold, tick, typeInto } from './helpers';
+import { addField, addSheet, addedNote, closeSheet, itemRow, newEmail, screenshot, signUpWithHousehold, tickSaved, typeInto } from './helpers';
 import { engineOf, wasmAllowList, watchBuild, withoutWasmGC, type Build } from './web-build';
 
 // Job 28: the web build is `flutter build web --wasm`, holding a wasm app and a JS app. Job 201:
@@ -71,7 +71,7 @@ async function useTheList(page: Page, build: Build, item: string): Promise<void>
   expect(await page.evaluate((key) => key in window, renderer), `the ${build === 'wasm' ? 'skwasm' : 'CanvasKit'} renderer runs`).toBe(true);
 
   await addTwoByEnter(page, blurs, item, 'Brot');
-  await tick(page, 'Brot');
+  await tickSaved(page, 'Brot');
   await page.reload();
   await expect(itemRow(page, item)).toBeVisible();
   await expect(itemRow(page, 'Brot')).toHaveCount(0);

@@ -196,6 +196,8 @@ test.describe('on a phone browser', () => {
 
     await itemRow(page, 'Brot').tap();
     await expect(itemRow(page, 'Brot'), 'ticked').toHaveCount(0);
+    // The row can be gone before the server has the write (tickSaved in helpers.ts): wait for it, then reload.
+    await expect.poll(async () => (await rowOf(email, 'Brot')).status, { message: 'the server took the tick' }).toBe('bought');
     await page.reload();
     await expect(itemRow(page, 'Milch'), 'the list loaded').toBeVisible({ timeout: 30_000 });
     await expect(itemRow(page, 'Zahnpasta'), 'untouched').toBeVisible();
