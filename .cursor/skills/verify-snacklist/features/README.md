@@ -75,6 +75,7 @@ The list
 - [live-sync](./live-sync.md): members see each other's changes live; „N neu von <Name>“ and the sync icon.
 - [offline](./offline.md): what works without a connection, what waits, and the messages.
 - [grocery-log](./grocery-log.md): behind the flag `grocery-log` (not public): the „Verlauf“ tab with trips by date under a month calendar with store dots, or by store, one toggle; „Einkauf eintragen“ by hand; the list's card after a store's section is ticked off; Free sees 4 weeks.
+- [trip-mode](./trip-mode.md): behind the flag `trip-mode` (not public): „Kaufst du gerade ein?“ after a tick, the running trip's strip with stopwatch, pause and „Beenden“, its own pause after 45 min and end after 4 h at the last tick, the summary „Geplant und gekauft“ per store with planned and paid prices (Premium; Free sees a locked card), Verlauf trips per store, Mehr › „Einkauf starten“.
 
 Settings, help and account
 

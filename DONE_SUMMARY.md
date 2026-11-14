@@ -801,3 +801,32 @@ Docs only (#449). `docs/PRODUCT_FEATURE_MAP.md` has a new row under "Planned (de
 Android's back on the account step („Konto erstellen“) goes to „Was fehlt gerade?“, as its arrow does (#453). Before, it showed the signed-out first screen. A probe over every step found the same cause on three steps without Zurück. These are „Mit wem“ from „Haushalt erstellen“, the setup and the invite step, where back showed a signed-in user „Los geht's“ and „Schon ein Konto? Anmelden“. Back now stays on those steps. Signed out, the first questions still go back to the first screen. The cause is that every step route sits under `/start`, and a pop runs no redirect. `onboardingStepScreen` now wraps each step in a `PopScope` that blocks the pop while signed in, and the account step has its own `PopScope` (`app/lib/onboarding/steps.dart`). iOS swipe-back is off on those screens too. On the steps without Zurück it used to go to the same wrong screen.
 
 Verified with five widget tests in `app/test/onboarding/guided_start_test.dart` that call `handlePopRoute`, which is what Android's back calls. Four failed before the fix and pass after it (output in #453). The fifth pins the signed-out usage question, which was already right. `scripts/verify.sh --only lint,changelog,flutter` passed. Not driven on a device: the web and Linux builds have no system back, and hz has no Android emulator. The Sonnet review passed, and its two test nits are fixed. Changelog `fixed`, no flag. It ships in the next green main build on TestFlight and Play internal. DECISIONS „Job 236“ explains why back stays on the step rather than acting as „Später“ or closing the app. Nothing for Peter.
+
+## Job 234: trip mode behind `trip-mode` (2026-11-14)
+
+Built from Peter's pick t864u (PR #454, https://github.com/trost-systems/snacklist/pull/454).
+
+- **The question.** TM2's sheet „Kaufst du gerade ein?“ appears on every own tick while no trip
+  runs, with „Zurücknehmen“.
+- **The strip.** TM1's slim strip holds the stopwatch, Pause and Beenden. After 45 min without a
+  tick the trip pauses itself; after 4 h it ends itself, always at the last tick.
+- **The summary.** TM1's page has a section per store: planned vs paid per item, store totals,
+  the overall total, the difference, and „ohne Preis“ counts. The same page opens from the trip's
+  Verlauf entries.
+- **Free.** TM2's card shows without blur.
+- **Server.** `public.trip_sessions` with one Verlauf entry per store.
+
+Flags: `trip-mode` is new (off; the lead creates it internal-only). The amounts need
+`prices-and-trip-total` and the Verlauf entries `grocery-log`; none of them is widened. Ships in
+the next green main build on TestFlight once merged; Peter's install needs `trip-mode` on (steps
+in `docs/NEEDS_PETER.md` "Job 234").
+
+Legal GL-2: pharmacies get no question and no log card: `Store.isPharmacy`
+(`app/lib/list/model.dart:70`), used at `app/lib/trip/trip_cubit.dart:301` and
+`app/lib/log/trip_prompts.dart:76`. Review 0 also fixed a double log through job 199's card. Ships
+in the next green main build after the merge (TestFlight), behind `trip-mode`.
+
+Verified: `drive.sh trip-mode` PASS in de, en, dark and 358 px, plus a 1100 px rail check. The
+unit, widget and pgTAP tests pass, and so does `ci-ok`. TQ1 to TQ15, decided or left open:
+`docs/done/234-trip-mode-impl.md`, `docs/DECISIONS.md` "Job 234". Details:
+[docs/done/234-trip-mode-impl.md](docs/done/234-trip-mode-impl.md)
