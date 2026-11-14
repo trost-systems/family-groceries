@@ -12815,3 +12815,21 @@ before anyone merges it.
   separately. The row names the App Intents that job 51 already ships, since Siri AI reads App
   Intents and a build extends those rather than starting over.
 - The living Page (Cursor canvas) is not editable from the runner; the lead mirrors the row there.
+
+## Job 231: the empty-name error shows once on „Neuer Haushalt“, 2026-11-14
+
+1. **Only under the field (Peter E1).** „Haushalt erstellen“ with an empty name showed „Gib einen
+   Namen mit 1 bis 80 Zeichen ein.“ under the name field and again above the button. The copy
+   above the button goes; a server problem (offline, 20 households) still shows there.
+2. **The list scrolls back to the field.** Job 58 put the copy above the button because the field
+   may be out of view there. The onboarding page is a lazy list: in the widget test (390×844,
+   test font) the field was no longer built after scrolling to the button, so `requestFocus()`
+   found nothing and the copy above the button was the only error on screen. Deleting it alone
+   would have left no visible error. `OnboardingPage` takes a `ScrollController`; the screen
+   scrolls to the top (`hlMotion`, so none with reduced motion), then focuses the field. On the
+   web build the field stayed built off-screen and focus alone brought it back; the scroll makes
+   it hold wherever the field leaves the build range (large text, small phones).
+3. **Other dialogs already show it once.** New list and rename list (`list/name_dialog.dart`),
+   rename household (`household_page.dart`) and the guided start's name step show the error only
+   under the field; join with a code shows its error only above the button, with no field error.
+   None changed.

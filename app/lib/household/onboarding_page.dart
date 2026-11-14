@@ -30,6 +30,10 @@ class const OnboardingPage({
   /// nothing to pop.
   final VoidCallback? onBack,
   final Key? listKey,
+
+  /// The list's scroll position, for a step that brings its field back
+  /// into view.
+  final ScrollController? controller,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -56,6 +60,7 @@ class const OnboardingPage({
           constraints: const BoxConstraints(maxWidth: 420),
           child: ListView(
             key: listKey,
+            controller: controller,
             // Clear of the home indicator, and in the More tab of the
             // floating tab pill.
             padding: const EdgeInsets.all(24).add(

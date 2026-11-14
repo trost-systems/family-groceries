@@ -128,7 +128,7 @@ On Android the phone's back button goes one screen back, as the arrow in the tit
 
 **How to get there.**
 1. Right after the setup: the invite screen of the guided start. Its button names whom to invite, for example „Partner·in einladen“ or „Familie einladen“ (EN: "Invite your partner", "Invite your family"); „Weitere Einladung“ (EN: "Another invite") makes one more.
-2. Switch: tap the household's name top left of the list. „Deine Haushalte“ (EN: "Your households") lists them with members and open items; tap one. „Neuer Haushalt“ (EN: "New household") creates one more, „Mit Code beitreten“ (EN: "Join with a code") joins one.
+2. Switch: tap the household's name top left of the list. „Deine Haushalte“ (EN: "Your households") lists them with members and open items; tap one. „Neuer Haushalt“ (EN: "New household") creates one more (without a name it asks for one under the name field), „Mit Code beitreten“ (EN: "Join with a code") joins one.
 3. Invite later: in „Deine Haushalte“ the person-plus button on a household's row, or „Leute einladen“ (EN: "Invite people") on the household page, or tab „Mehr“ (EN: "More"), row „Partner einladen“ (EN: "Invite your partner"); then „Neue Einladung“ (EN: "New invite") for one person or „Gruppenlink erstellen“ (EN: "Create group link") for a group. In the iPhone and Android apps the share sheet opens right away. Otherwise share it with „Teilen“ (EN: "Share") where the browser offers it, or copy it with „Link kopieren“ / „Code kopieren“ (EN: "Copy link" / "Copy code").
 4. To join: tap the household's name top left of the list, then „Mit Code beitreten“ (EN: "Join with a code"), enter the code, „Weiter“ (EN: "Continue"), then „Haushalt beitreten“ (EN: "Join household"). Or open the invite link. Back or „Abbrechen“ (EN: "Cancel") returns to the list. „Mehr“ has no join row.
 5. The household page: tab „Mehr“, the row with the household's name. „Umbenennen“ (EN: "Rename"), „Mitglieder“ (EN: "Members"), „Als Standard nutzen“ (EN: "Make default"), „Haushalt verlassen“ (EN: "Leave household").
@@ -146,7 +146,7 @@ On Android the phone's back button goes one screen back, as the arrow in the tit
 - Purchases or Premium tied to joining: Premium is not on sale yet. Don't write whom it will cover. The app now ties a purchase to the person who buys it (not on sale), and the copy for that waits for Peter and the legal review.
 - That members can approve joins: only the owner and admins can. Or that older app versions handle a request: they show an error until updated.
 
-**Last verified.** 14 November 2026, code version cc54c7f0, in the web app (German and English).
+**Last verified.** 14 November 2026, code version b4edcec7, in the web app (German and English).
 
 ## Several lists and „Ich bringe“
 

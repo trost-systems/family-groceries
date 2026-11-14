@@ -412,6 +412,48 @@ void main() {
       expect(o.onboarding.state, isNull);
     });
 
+    for (final (locale, message) in [
+      (const Locale('de'), 'Gib einen Namen mit 1 bis 80 Zeichen ein.'),
+      (const Locale('en'), 'Enter a name of 1 to 80 characters.'),
+    ]) {
+      testWidgets('an empty name says so once, under the field '
+          '(${locale.languageCode})', (tester) async {
+        final o = await pumpOnboarding(
+          tester,
+          location: newHouseholdPath,
+          session: inHome,
+          locale: locale,
+        );
+        await tapKey(tester, 'create-household');
+        expect(o.session.creates, isEmpty);
+        expect(find.text(message), findsOneWidget);
+        expect(find.text(message).hitTestable(), findsOneWidget);
+        expect(
+          find.descendant(
+            of: key('household-name'),
+            matching: find.text(message),
+          ),
+          findsOneWidget,
+        );
+      });
+    }
+
+    testWidgets('offline at the create says so above the button', (
+      tester,
+    ) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: newHouseholdPath,
+        session: inHome,
+      );
+      await tester.enterText(key('household-name'), 'Ferienhaus');
+      o.session.fail = HouseholdProblem.offline;
+      await tapKey(tester, 'create-household');
+      expect(find.text(offline), findsOneWidget);
+      expect(key('create-problem'), findsOneWidget);
+      expect(location(o), newHouseholdPath);
+    });
+
     testWidgets('makes one invite, opens the share sheet with link and code', (
       tester,
     ) async {
