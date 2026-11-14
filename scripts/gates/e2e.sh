@@ -32,6 +32,17 @@ echo "$holder" >"$LOCK"
 trap '[[ "$(cat "$LOCK" 2>/dev/null)" == "$holder" ]] && : >"$LOCK"' EXIT
 
 supabase_up
+# Job 219: a stack this run did not start can be behind the checkout (it ran through a rebase, or
+# came back from its volume after one), and the suite then fails as if the app were broken (job
+# 168c repeated a run over it). CI's stack is always new, so the local one has to match the files.
+stale="$(stack_migrations_diff)" || {
+  log "cannot read which migrations the stack's database has applied (docker exec supabase_db_$(project_id) psql)"
+  exit 1
+}
+if [[ -n $stale ]]; then
+  log "the running stack's migrations are not this checkout's ($(paste -sd, <<<"$stale" | sed 's/,/, /g')): resetting its database, as the db gate does"
+  db_reset
+fi
 log "web build against the local stack"
 cd "$REPO_ROOT/app"
 flutter pub get --enforce-lockfile >/dev/null

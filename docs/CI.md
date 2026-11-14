@@ -108,6 +108,18 @@ A local run uses CI's toolchain or says what is missing:
   main took as another commit had it, so losing it is a deletion); the
   check's last line says how many the branch lacks. A branch's own
   migration still has to sort after main's newest.
+- **The stack's schema.** CI starts a new stack for every run. A local stack
+  keeps running, and `supabase start` applies nothing to a running one, so
+  after a rebase it lacks the migrations main gained. The db gate resets the
+  database of a running stack; a stopped one it starts. The e2e gate compares
+  the versions the database has applied with the files in
+  `supabase/migrations` (`stack_migrations_diff` in `scripts/lib.sh`) and
+  resets it when they differ, naming the versions. A reset removes what
+  `scripts/fg seed` or the verify-snacklist skill seeded: run
+  `scripts/fg seed <scenario>` again, or the skill's
+  `.cursor/skills/verify-snacklist/helpers/launch.sh --fresh`. A migration
+  edited after it was applied keeps its version and is not noticed: run the
+  db gate.
 
 To add a check, add it to the gate script it belongs to. To add a gate, add
 `scripts/gates/<name>.sh`, a `ci.yml` job of the same name that runs it, the
