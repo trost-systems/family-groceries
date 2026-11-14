@@ -12,7 +12,6 @@ const rpc = '**/rest/v1/rpc/preview_invite_public';
 const okAnswer = {
   status: 'ok',
   household: 'Familie Brandt',
-  kind: 'household',
   inviter: 'Peter',
   members: 3,
   'open_items': 12,

@@ -903,13 +903,15 @@ Future<void> scrollTo(WidgetTester tester, Finder finder) async {
   await tester.ensureVisible(finder);
 }
 
-/// Legal's invite-sheet hint (N-112), byte for byte.
+/// Legal's invite-sheet hint (N-112, N-151b), byte for byte.
 const joinPageHintDe =
     'Wer den Link hat, sieht auf der Beitrittsseite deinen Vornamen (aus '
-    'deinem Anzeigenamen), den Namen und die Art des Haushalts und die Zahl '
-    'der Mitglieder. Gib den Link nur an Personen weiter, die du einladen '
-    'willst.';
+    'deinem Anzeigenamen, falls du einen eingetragen hast), den Namen des '
+    'Haushalts, die Zahl der Mitglieder und der offenen Einträge und ob der '
+    'Haushalt Snacklist Premium hat. Gib den Link nur an Personen weiter, die '
+    'du einladen willst.';
 const joinPageHintEn =
-    'Anyone with the link sees your first name (from your display name), '
-    "the household's name and kind and the number of members on the join "
-    'page. Only share the link with people you want to invite.';
+    'Anyone with the link sees on the join page your first name (from your '
+    "display name, if you have set one), the household's name, the number of "
+    'members and open items, and whether the household has Snacklist '
+    'Premium. Only share the link with people you want to invite.';
