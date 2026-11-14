@@ -29,7 +29,7 @@ Behind the PostHog flag `grocery-log` (rollout off, not public; job 199), a thir
 Preconditions:
 
 - `helpers/launch.sh` with `VH_DEFINES="FLAGS_ON=grocery-log"` (on the Hetzner runner also `FLUTTER_DIR=~/flutter-3.50.0`, the SDK main builds with), on `demo-familie`. Mia is Free.
-- `drive.sh grocery-log [--lang en] [--dark]` runs everything below (`journeys/grocery-log.mjs`), `drive.sh grocery-log --compact` the 358 × 760 checks. It adds the stores Lidl and Rewe if missing and saves eleven trips through `save_trip` with fixed ids (a rerun saves the same ones): yesterday at Lidl, three on one day (Lidl twice, Rewe once), five on a day last week, one 20 days ago, one 40 days ago. It deletes the household's other visible trips first and puts Butter, Nudeln and Reis back on the list under Lidl.
+- `drive.sh grocery-log [--lang en] [--dark]` runs everything below (`journeys/grocery-log.mjs`), `drive.sh grocery-log --compact` the 358 × 760 checks. It adds the stores Lidl and Rewe if missing and saves eleven trips through `save_trip` with fixed ids (a rerun saves the same ones): yesterday at Lidl, three on one day (Lidl twice, Rewe once), five on a day 8 days ago (under „Letzte Woche“ or, early in the week, a month heading), one 20 days ago, one 40 days ago. It deletes the household's other visible trips first and puts Butter, Nudeln and Reis back on the list under Lidl.
 - Second view: `apiAs(inst, mia).rpc('trip_history', { p_household, p_today: 'YYYY-MM-DD' })` returns `{ trips, premium, since, locked }`; trips' `items` are `{ name, quantity, canonical_key }`.
 
 - **Tab.** `page.getByRole('tablist')` holds three tabs; `openTab(page, L, 'tabHistory')`.

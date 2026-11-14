@@ -22,7 +22,9 @@ A household can keep several lists (job 169b K): „Wocheneinkauf“ next to „
 
 ## Driving it with Playwright
 
-Driven 2026-11-08 on the release web build against the W3 server, `e2e/tests/club.spec.ts`:
+Preconditions:
+
+- The baseline „Familie Brandt“ has one list, so there are no tabs: make a second one first (Mehr → „Familie Brandt“ → „Neue Liste“, „Name der Liste“, „Erstellen“; driven 2026-11-14 on main 97b2907e, then the tab „Sommerfest“ and a claim saved as „Du bringst“). No journey; `e2e/tests/club.spec.ts` covers the rest (driven 2026-11-08 on the release web build against the W3 server):
 
 - **Second list** (`lc-new`, `lc-manage`). With one list there is no `page.getByRole('group', { name: 'Listen' }).getByRole('tablist')` (the tablist itself has no name; its group is „Listen“, and the bottom bar „Liste“/„Mehr“ is a tablist too, so scope it). `openMore(page, '<household>')`, wheel to `page.getByRole('button', { name: 'Neue Liste', exact: true })`, click, `typeInto(page.getByRole('textbox', { name: 'Name der Liste' }), 'Sommerfest')`, button „Erstellen“. On the list: `page.getByRole('tab', { name: 'Sommerfest', exact: true })`; the shown one has `aria-selected="true"`. The track's „+“ is the same button name „Neue Liste“; a list made there is shown at once.
 - **Adds and switching** (`lc-shown`, `lc-add`). `addItem` adds to the shown list; another tab hides it. „Kuchen“ open on two lists at once is fine. Server check: `adminClient().from('items').select('name, lists(name)')`. After `page.reload()` the last shown list is still selected.

@@ -42,7 +42,7 @@ Preconditions:
 - **Total.** `page.getByText(/^Einkaufssumme 5,83\s€, 2 mit Preis, 1 offen$/)` (a text node with the whole sentence).
 - **Currency.** `openMore(page, 'Unser Haushalt')`, `wheelTo` then click `page.getByRole('button', { name: /^EUR · €/ })`, then `page.getByRole('radio', { name: 'CHF', exact: true }).click()`. Observable: the row reads `CHF`; the other member's total reads `Einkaufssumme 0,00 CHF, …` without a reload.
 - **Live.** A second browser context joined with `createInviteCode` and `joinWithCode`, with its own `fakeCollector` and consent yes; wrap its checks in `within(3_000, …)`.
-- **Spec coverage.** `e2e/tests/prices.spec.ts`: flag off; price without tick, two stores' subtotals, the total and a negative line, live for the partner; currency change live; letters dropped; scale weight and a typed total that keeps its unit price. Run `scripts/verify.sh --only e2e -- tests/prices.spec.ts`. Screenshots: `docs/screenshots/190/`.
+- **Spec coverage.** `e2e/tests/prices.spec.ts`: flag off; price without tick, two stores' subtotals, the total and a negative line, live for the partner; currency change live; letters dropped; scale weight and a typed total that keeps its unit price; the stepper changes only the count of a quantity like „2 x 500 g“. Run `scripts/verify.sh --only e2e -- tests/prices.spec.ts`. Screenshots: `docs/screenshots/190/`.
 
 ## Gotchas
 
@@ -52,5 +52,5 @@ Preconditions:
 - The chip names a price in its own currency; after a currency change an old price stays „1,19 €“ on its row while the total, in the new currency, leaves it out; the item counts neither as „mit Preis“ nor as „offen“.
 - A price saved yesterday no longer counts: a run that crosses midnight, or a seed with an old `priced_at`, shows „+ Preis“ and a lower total.
 - While the editor is open on a 480x900 window, the floating tab pill („Liste“ / „Mehr“) sits over the total bar's left side and hides part of „Einkaufssumme“ and the counts (seen in `docs/screenshots/190/prices-02-editor.png`, 2026-11-13).
-- The unit menu's button is named „Menü anzeigen Einheit: Stück“ (the menu's own tooltip comes first).
+- The unit menu's button is named „Einheit: Stück“ (ARB `priceUnitLabel` and the unit, `priceUnitPiece` / `priceUnitKg` / `priceUnitLitre`), with no tooltip text before it (the menu passes an empty tooltip): `page.getByRole('button', { name: /^Einheit: / })` (driven 2026-11-14 on the release web build with `FLAGS_ON=grocery-log,prices-and-trip-total`).
 - Prices are not in the public API, MCP, Siri or Alexa answers (from code: no function reads the price columns, 2026-11-13).

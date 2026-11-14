@@ -18,7 +18,7 @@ EN labels: "Send feedback", "Close", "Your message", "What did you notice?", "Ki
 
 ## How to get to it (user POV)
 
-- „Mehr“ / "More" → row „Feedback senden“ / "Send feedback" (second in the group, after „Tipps“ and before „Hilfe & Kontakt“, above the legal rows; no hint since job 85). It is the only entry point (no shake gesture, none from the list).
+- „Mehr“ / "More" → row „Feedback senden“ / "Send feedback" (second in the group, after „Tipps“ and before „Hilfe & Kontakt“ on the web; in the iPhone and Android apps „Snacklist bewerten“ sits between them; above the legal rows; no hint since job 85). It is the only entry point (no shake gesture, none from the list).
 - Works from a phone and beside an open More page on wide screens; the note's "screen" is the page the user was on before More (e.g. the list), or the open More page on wide layouts.
 
 ## Driving it with Playwright
