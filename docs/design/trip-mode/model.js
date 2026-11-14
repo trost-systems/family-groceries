@@ -221,12 +221,14 @@ export function answer(s, yes) {
   const p = s.prompt;
   if (!p) return;
   s.prompt = null;
+  if (s.trip) return;
   if (!yes) {
     const item = byId(s, p.itemId);
     POLICY[s.v].decline(s, p.at, item);
     return;
   }
   s.quiet = null;
+  s.notice = null;
   s.trip = {
     id: `t${p.at}`, startedAt: p.at, snapshot: p.snapshot, pauses: [], segments: [{ store: p.store, from: p.at }],
     markedPlanned: [], endedAt: null, endReason: null, nudge: false, notified: false,
@@ -241,6 +243,7 @@ export function startByHand(s) {
   const at = now(s);
   s.prompt = null;
   s.quiet = null;
+  s.notice = null;
   s.trip = {
     id: `t${at}`, startedAt: at, snapshot: s.items.filter(isOpen).map((i) => i.id), pauses: [], segments: [{ store: null, from: at }],
     markedPlanned: [], endedAt: null, endReason: null, nudge: false, notified: false,
@@ -289,6 +292,7 @@ export function reopenTrip(s, tripId) {
   if (idx < 0 || s.trip) return;
   const h = s.history[idx];
   s.history.splice(idx, 1);
+  s.prompt = null;
   const at = now(s);
   s.trip = {
     ...h.trip, endedAt: null, endReason: null, nudge: false, notified: false, reopenedAt: at, markedPlanned: h.markedPlanned,

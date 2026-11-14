@@ -12221,3 +12221,8 @@ On main it showed on the first failed read of the opening resync, or on the firs
   - the panel gave a wrong bar height.
 
   A long-running rule now measures from the last tick, from "Läuft noch" or from "Doch weiter", and it applies to paused trips too. Every prototype gained Mehr › "Einkauf starten" (TQ15). Each repro is a check in `shoot.mjs`, and the reviewer's own probe passes on the fixed sandbox.
+- **Review 0 (Claude, VERDICT FIX) fixed.**
+  - An open question and an auto-ended trip could lose a trip. In TM5, "Doch weiter" followed by a late "Ja" replaced the reopened trip. In TM2, a new trip left a dead "Doch weiter" card.
+  - Now `answer()` does nothing while a trip runs, a reopen closes the open question, and starting a trip clears the end card.
+  - The open question now survives a reload, so the ticked item stays in the snapshot. TM3 re-arms its 6 s timer after the reload.
+  - `shoot.mjs` takes a relative Playwright path, and it checks each of these paths. They fail 8 times on 438ed269.

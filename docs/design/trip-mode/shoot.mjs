@@ -4,9 +4,10 @@
 import { createRequire } from 'node:module';
 import { mkdirSync, readFileSync } from 'node:fs';
 import process from 'node:process';
+import { resolve } from 'node:path';
 
 const [url, out, pwDir = `${process.env.HOME}/family-groceries/e2e/node_modules/`] = process.argv.slice(2);
-const { chromium } = createRequire(pwDir)('playwright');
+const { chromium } = createRequire(`${resolve(pwDir)}/`)('playwright');
 mkdirSync(`${out}/raw`, { recursive: true });
 
 const TMS = ['TM1', 'TM2', 'TM3', 'TM4', 'TM5'];
@@ -271,6 +272,52 @@ for (const tm of ['TM3', 'TM4']) {
   await page.evaluate(() => { tm217.runStep(); tm217.runStep(); tm217.api.end(); tm217.render(); });
   await page.locator('button:has-text("Weiter einkaufen")').click();
   check((await state(page)).trip, `${tm} Free: an end can be undone with "Weiter einkaufen"`);
+}
+
+// Review 0 repros: an open question and an auto-ended trip must not lose a trip.
+const click = (sel, what) => page.locator(sel).first().click({ timeout: 3000 }).catch(() => fail(`missing: ${what}`));
+for (const tm of ['TM5', 'TM2']) {
+  await start(page, tm, 'S1');
+  await page.evaluate(() => { tm217.api.tick('Bananen'); tm217.api.yes(); tm217.api.tick('Butter'); tm217.api.wait(5 * 3600_000); tm217.render(); });
+  check(!(await state(page)).trip && (await state(page)).history.length === 2, `${tm}: the trip auto-ended after 5 h`);
+  await tick(page, 'Nudeln');
+  if (tm === 'TM5') {
+    await click('button:has-text("Doch weiter")', 'TM5 Doch weiter');
+    check(!(await state(page)).prompt && (await state(page)).trip, 'TM5: "Doch weiter" closes the open row question and reopens the trip');
+    check((await page.locator('button:has-text("Gekauft, Einkauf starten")').count()) === 0, 'TM5: no row question left after "Doch weiter"');
+    await page.evaluate(() => { tm217.api.yes(); tm217.render(); });
+    const st = await state(page);
+    check(st.trip && st.trip.snapshot.length === 6, 'TM5: a late "Ja" does not replace the reopened trip');
+    check(st.items.find((i) => i.name === 'Nudeln').doneAt >= st.trip.startedAt, 'TM5: the ticked item counts in the reopened trip');
+  } else {
+    await click('.sheet button:has-text("Ja, Einkauf starten")', 'TM2 sheet Ja');
+    const st = await state(page);
+    check(st.trip && st.history.length === 2 && !st.notice, 'TM2: a new trip clears the auto-end card');
+    check((await page.locator('button:has-text("Doch weiter")').count()) === 0, 'TM2: no dead "Doch weiter" while a trip runs');
+  }
+}
+{
+  await start(page, 'TM1', 'S1');
+  await tick(page, 'Bananen');
+  await page.reload();
+  await page.waitForTimeout(300);
+  check(has(await text(page), 'Kaufst du gerade ein?'), 'TM1: the question survives a reload');
+  await click('button:has-text("Ja, Einkauf starten")', 'TM1 Ja after reload');
+  const st = await state(page);
+  check(st.trip && st.trip.snapshot.length === 6, 'TM1: "Ja" after a reload keeps the ticked item in the snapshot');
+}
+for (const tm of ['TM3', 'TM1']) {
+  await start(page, tm, 'S1');
+  await page.evaluate(() => { for (let i = 0; i < 7; i++) tm217.runStep(); tm217.render(); });
+  const covered = await page.evaluate(() => {
+    const sc = document.querySelector('.page-body') ?? document.querySelector('#scroll');
+    sc.scrollTop = sc.scrollHeight;
+    const rows = [...document.querySelectorAll('.sum-row')];
+    const last = rows[rows.length - 1].getBoundingClientRect();
+    const nav = document.querySelector('.nav');
+    return nav && !document.querySelector('.page') ? last.bottom > nav.getBoundingClientRect().top : false;
+  });
+  check(!covered, `${tm}: scrolled to the end, the last summary row clears the tabs`);
 }
 
 // Peter's phone: one phone fills the screen, the strip steps the scenario, nothing overlaps.

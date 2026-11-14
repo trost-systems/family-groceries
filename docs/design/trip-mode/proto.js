@@ -27,7 +27,6 @@ function setup(scenId, keep = {}) {
 }
 
 if (!s) setup('S1');
-s.prompt = null;
 const params = new URLSearchParams(location.search);
 if (params.get('tm') && TMS.some((t) => t.id === params.get('tm'))) s.v = params.get('tm');
 if (params.get('free') === '1') s.premium = false;
@@ -585,6 +584,7 @@ setInterval(() => {
   else updateClocks();
 }, 1000);
 
+if (s.prompt && s.v === 'TM3') promptTimer = setTimeout(() => { if (s.prompt) { M.answer(s, false); render(); } }, 6000);
 if (sessionStorage.getItem('tm217-reopened')) {
   sessionStorage.removeItem('tm217-reopened');
   ui.reopened = true;
