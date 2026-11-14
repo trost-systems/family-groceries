@@ -12599,6 +12599,15 @@ The baseline is 199 jobs' transcripts and 14 days of CI; its numbers go into
   answer with a body from a function behind `withTelemetry` (all but `waitlist` and
   `feedback-digest`) went out chunked, against the function's comment. Its test compared object
   identity, which held; the new one reads the header over `Deno.serve`.
+- **The e2e gate resets a stack that is behind the checkout.** A stack started before a rebase
+  lacks main's new migrations, and the suite fails as if the app were broken (job 168c, 8 Nov:
+  28 failure lines in an unfinished run of ten spec files, about 14 tests with their retries,
+  and the run was repeated after a reset by hand). The gate compares the applied versions with
+  the files and resets the database when they differ; a database it cannot read or a reset that
+  fails stops it before the web build. Stopping with the fix named was rejected: the check runs
+  after the wait for the box-wide e2e lock, which took one job 2.5 h on one day of the baseline
+  (job 123, 5 Nov), and a stop would send the run to the end of the queue. The db gate has
+  always reset a running stack.
 
 ## Job 225 review 0: feedback doc and the digest URL, 2026-11-14
 

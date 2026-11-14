@@ -90,6 +90,22 @@ db_reset() {
   rm -f "$out"
 }
 
+# What a running stack's database has applied against supabase/migrations, one line per version
+# that differs; nothing when they match. `supabase start` applies nothing to a running stack or to
+# one that comes back from its volume, so one started before a rebase lacks the migrations main
+# gained until its database is reset.
+stack_migrations_diff() {
+  local applied files differ status=0
+  applied="$(docker exec "supabase_db_$(project_id)" psql -U postgres -tAc \
+    'select version from supabase_migrations.schema_migrations order by 1')" || return 1
+  # The CLI's own pattern for a migration: the files it skips are in no database.
+  files="$(find -L "$REPO_ROOT/supabase/migrations" -maxdepth 1 -type f -exec basename {} \; \
+    | sed -n 's/^\([0-9][0-9]*\)_.*\.sql$/\1/p' | sort)"
+  differ="$(diff <(sed '/^$/d' <<<"$applied") <(sed '/^$/d' <<<"$files"))" || status=$?
+  [[ $status -le 1 ]] || return 1
+  sed -n 's/^< \(.*\)/\1 is applied and has no file/p; s/^> \(.*\)/\1 is not applied/p' <<<"$differ"
+}
+
 # Starts the local Supabase stack if it is not running and exports its URLs and publishable key,
 # so the e2e tests and the web build talk to this checkout's stack whatever its port block.
 # The lock lets CI start the stack in the background early (ci.yml) while this waits for it.
