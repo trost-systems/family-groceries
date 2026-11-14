@@ -1814,3 +1814,37 @@ to the first list until someone picks another.
    exists: Alexa puts "Luftballons zur Geburtstag Liste" (or "Luftballons zur Geburtstag") into
    the items and the server takes the list phrase off. Untested on a device; a name that matches
    no list can then end up as an item, which the new intent avoids.
+
+## Job 225: daily feedback digest, switch on after Legal GO (2026-11-14)
+
+The digest is merged and off (docs/FEEDBACK.md, "Daily digest"): no cron job, switch off. Only
+after the Legal Review GO, in this order:
+
+1. Make one secret value and set it as the function secret:
+   ```sh
+   v="$(openssl rand -hex 32)"
+   supabase secrets set --project-ref jdwqrallbpdbshrdhenk FEEDBACK_DIGEST_SECRET="$v"
+   ```
+   The digest sends with the waitlist's function secret `RESEND_API_KEY`; check that
+   `supabase secrets list --project-ref jdwqrallbpdbshrdhenk` lists it (without it every run with
+   notes answers 503 `mail_not_configured`).
+2. Store the same value in the vault (dashboard, SQL editor, as postgres):
+   ```sql
+   select vault.create_secret('<the value of $v>', 'feedback_digest_secret');
+   ```
+3. Resend → Domains → `snacklist.app`: check that open tracking and click tracking are off.
+4. Switch it on (SQL editor):
+   ```sql
+   select public.feedback_digest_set(true, 'https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/feedback-digest');
+   ```
+   Notes from this moment on go into the next 08:00 mail; older notes are never mailed.
+
+Switch it off: `select public.feedback_digest_set(false);` (removes the cron job; switching on
+again later mails the notes from the pause too).
+
+Check the runs: `cron.job_run_details` for the job `feedback-digest`, `net._http_response` for
+the function's answers (`{"status":"sent","count":N}`, `empty`, `failed`), and
+`https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/feedback-digest/status`
+(`{"enabled":true,"healthy":true}`). The workflow "Feedback digest watch" checks that URL daily
+and opens the issue "Feedback digest failed" when a run fails. The queries are in
+docs/FEEDBACK.md.

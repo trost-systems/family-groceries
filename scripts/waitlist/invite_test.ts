@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertExists } from '@std/assert';
-import type { Mail } from '../../supabase/functions/waitlist/mail.ts';
+import type { Mail } from '../../supabase/functions/_shared/resend.ts';
 import { type Args, type Counts, type Deps, type InviteRow, parseArgs, run } from './invite.ts';
 
 const BATCH = '2026-W47';
@@ -172,9 +172,9 @@ Deno.test('--confirm mails each allowed row once, records it and exports the lis
     android.mail.text.includes('play.google.com') &&
       android.mail.from.includes('Peter · Snacklist'),
   );
-  assertEquals(android.mail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
+  assertEquals(android.mail.headers?.['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
   assert(
-    ios.mail.headers['List-Unsubscribe']?.startsWith(
+    ios.mail.headers?.['List-Unsubscribe']?.startsWith(
       `<https://snacklist.app/api/waitlist/unsubscribe?id=${ROWS[0].id}&s=`,
     ),
   );

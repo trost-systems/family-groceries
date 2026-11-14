@@ -14,7 +14,7 @@ import {
   type SignupRow,
   type Store,
 } from './handler.ts';
-import type { Mail } from './mail.ts';
+import type { Mail } from '../_shared/resend.ts';
 
 const PROXY = 'proxy-secret-for-tests';
 const HMAC = 'hmac-secret-for-tests';
@@ -205,7 +205,7 @@ function tokenOf(mail: Mail): string {
 }
 
 function oneClick(mail: Mail): { id: string; sig: string } {
-  const header = mail.headers['List-Unsubscribe'];
+  const header = mail.headers?.['List-Unsubscribe'];
   assertExists(header, 'a List-Unsubscribe header');
   const url = new URL(header.slice(1, -1));
   const id = url.searchParams.get('id');
@@ -524,9 +524,9 @@ Deno.test('AC11: the token confirms once within 48 h, then the welcome mail goes
   const welcome = nth(sent, 2);
   assertEquals(welcome.to, 'test+ac11@snacklist.app');
   assertEquals(welcome.key, `welcome/${rowOf(store, 'test+ac11@snacklist.app').id}`);
-  assertEquals(welcome.mail.headers['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
+  assertEquals(welcome.mail.headers?.['List-Unsubscribe-Post'], 'List-Unsubscribe=One-Click');
   assertMatch(
-    welcome.mail.headers['List-Unsubscribe'] ?? '',
+    welcome.mail.headers?.['List-Unsubscribe'] ?? '',
     /^<https:\/\/snacklist\.app\/api\/waitlist\/unsubscribe\?id=[0-9a-f-]{36}&s=[0-9a-f]{64}&l=de>$/,
   );
   assertEquals(await (await call('confirm', press(token))).json(), { status: 'invalid' }, 'used');

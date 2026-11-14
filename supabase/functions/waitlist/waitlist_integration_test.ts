@@ -12,7 +12,7 @@ import { databaseUrl } from '../_shared/db.ts';
 import { CONFIRM_VERSIONS, CONSENT_VERSIONS } from './consent.ts';
 import { hmacHex, sha256Hex } from './crypto.ts';
 import { configFrom, createHandler, LIMITS } from './handler.ts';
-import type { Mail } from './mail.ts';
+import type { Mail } from '../_shared/resend.ts';
 import { sqlStore } from './store.ts';
 
 const enabled = Deno.env.get('FG_DB_TEST') === '1';
@@ -121,7 +121,7 @@ Deno.test({
         launch_news: true,
       });
 
-      const header = sent[1]?.mail.headers['List-Unsubscribe'];
+      const header = sent[1]?.mail.headers?.['List-Unsubscribe'];
       assertExists(header, 'a List-Unsubscribe header on the welcome mail');
       const url = new URL(header.slice(1, -1));
       const id = url.searchParams.get('id');

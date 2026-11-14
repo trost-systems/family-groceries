@@ -124,3 +124,80 @@ In the dashboard's SQL editor, replace `:'feedback_id'` with the note's id in qu
 `scripts/feedback-monday.sh` (run by the db gate) seeds fake notes on the local stack, runs the
 three blocks above exactly as written here and checks the result, so this page and the queries
 can't drift apart. Its output on fake data is in the PR of job 21.
+
+## Daily digest (off until Legal GO)
+
+Job 225. Once switched on, Peter gets one mail a day with every external note since the last
+digest, so nobody has to open the table to see new feedback. It ships **off**: the migration
+(`supabase/migrations/20261114001000_feedback_digest.sql`) seeds the switch
+`app_switches.feedback_digest` off and schedules nothing. It goes on only after Legal Review GO,
+by hand (NEEDS_PETER "Job 225"). Only Peter reads the digest: it goes to
+`hello@snacklist.app`, from `"Peter · Snacklist" <hello@snacklist.app>`, through Resend. No bot,
+routine or agent reads or relays it.
+
+**The mail.** Subject `Snacklist feedback digest YYYY-MM-DD (N new)`; no mail when N is 0. Plain
+text and simple HTML, English labels. One entry per note, oldest first: the time (Berlin), the
+category (or "none"), the note, `platform · version (build)`, `Premium: yes/no` (the sender's
+household or own Premium when the digest runs), `Reply allowed: yes/no`, and `Email: <address>`
+only when the sender allowed a reply. Internal notes (`is_internal`) are left out. The mail has
+no links, images or tracking pixel.
+
+**The day.** The digest of day D holds the notes after the watermark and before D 07:59 Berlin.
+The minute's margin is for notes still being written: `created_at` is the start of the inserting
+transaction. A note from 07:59:30 goes into the next day's mail.
+
+**The schedule.** `public.feedback_digest_set(true, <function url>)` switches it on and creates
+the pg_cron job `feedback-digest`, hourly at minute 0 (pg_cron runs in UTC; hourly avoids
+daylight-saving arithmetic). The job posts to the `feedback-digest` function through pg_net with
+the header `x-feedback-digest-secret`, read from the vault secret `feedback_digest_secret` at
+run time, so `cron.job` never holds it. The function needs the same value as
+`FEEDBACK_DIGEST_SECRET`. The run after 08:00 Berlin sends; later runs that day find an empty
+window. `feedback_digest_set(false)` switches it off and removes the job; nothing else turns it
+on or off.
+
+**The watermark.** `public.feedback_digest_state` keeps the last mailed note's `created_at` and
+`id`. The first switch-on sets it to that moment, so older notes are never mailed; a later
+switch-on keeps it, so a pause delays notes and loses none. A run mails first and then moves the
+watermark only if it is still where the run read it. So:
+
+- A failed send leaves the watermark; the next hourly run mails the same notes plus any new ones.
+- A run whose watermark move failed after the send mails the same window again with the same
+  payload and the same Resend idempotency key (`feedback-digest/<day>/<payload hash>`), and
+  Resend delivers it once within 24 hours.
+- Of two runs at once, only one moves the watermark; the other answers `raced`.
+- Accepted repeats: if the retry's mail differs (a sender's Premium or address changed, a note
+  was deleted), its key differs and Resend sends it again; and two runs at once on either side
+  of 08:00 Berlin can both mail the notes they share (DECISIONS "Job 225", 4).
+
+**Failures.** Each run records `last_run_at`, `last_ok_at` and a fixed `last_error` code
+(`send_failed`, `db_error`, `mail_not_configured`). `GET /functions/v1/feedback-digest/status`
+answers only `{"enabled": bool, "healthy": bool}`, without a key; healthy means off, or no error
+and a good run in the last three hours. The workflow **Feedback digest watch**
+(`.github/workflows/feedback-digest-watch.yml`, daily at 07:40 UTC) reads it and fails when the
+digest is on and unhealthy or the function does not answer. A failed run opens or comments on
+the issue "Feedback digest failed", which names no content; the next green run closes it. A 404
+(the function not deployed yet) is only a notice. So the watch can't tell a digest whose
+function went missing after switching on; `net._http_response` then shows 404s. A notice in the
+watch after switching on means: look at the runs below. The function's logs and answers carry fixed codes
+only (`feedback-digest: sent`, `send_failed 422`, `db_error 23505`), never a note or an address;
+pg_net keeps answers in `net._http_response`, so they carry none either.
+
+**Resend tracking.** Open and click tracking are Resend domain settings, not per mail. The
+digest has no links and nothing to load, so neither could record anything, but check that both
+are off for `snacklist.app` before switching the digest on.
+
+**Look at the runs** (SQL editor, service role):
+
+```sql
+select status, return_message, start_time from cron.job_run_details
+where jobid = (select jobid from cron.job where jobname = 'feedback-digest')
+order by start_time desc limit 24;
+select id, status_code, content, created from net._http_response order by id desc limit 24;
+select last_digest_on, last_run_at, last_ok_at, last_error from public.feedback_digest_state;
+```
+
+Tests: `supabase/tests/feedback_digest.test.sql` (switch, schedule, day window across 08:00 and
+both DST days, empty and internal-only windows, address, Premium, watermark),
+`supabase/functions/feedback-digest/*_test.ts` (routes, mail, rerun key, no content in logs) and
+`digest_integration_test.ts` in the db gate (empty day, internal-only day, mixed day, rerun,
+failed send, the settle minute, the reply-allowed toggle, over the real database).

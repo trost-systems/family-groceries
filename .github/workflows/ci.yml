@@ -341,6 +341,9 @@ jobs:
       - run: gh workflow enable release.yml --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ github.token }}
+      - run: gh workflow enable feedback-digest-watch.yml --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   ci-ok:
     needs: [changes, gitleaks, lint, changelog, db, functions, nexus, site, site-agent, emails, fg-cli, flutter, web-prod, e2e, fastlane, android, ios]

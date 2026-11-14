@@ -32,7 +32,7 @@ import {
   unsubscribeLinks,
   welcomeMail,
 } from './mail.ts';
-import { type Mailer, RESEND_API_URL, resendMailer } from './resend.ts';
+import { type Mailer, RESEND_API_URL, resendMailer } from '../_shared/resend.ts';
 
 export interface Config {
   proxySecret: string;

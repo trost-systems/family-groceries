@@ -12372,3 +12372,48 @@ Follow-ups from job 184's post-merge review (`jobs/184-siri-free-price-prep/revi
   revokes rights on existing tables, sequences and three unrelated functions, and sets default
   privileges for tables and sequences; this migration adds a column and two functions with their
   own revoke and grant, so the order does not change what either does.
+
+## Job 225: daily feedback digest, merged off, 2026-11-14
+
+1. **Hourly cron, Berlin day window.** pg_cron runs in UTC; a job at 06:00 or 07:00 UTC would
+   need changing twice a year. The job runs hourly, and the database decides the window: the
+   digest of day D holds notes before D 07:59 Berlin, D being today from 08:00 Berlin on. The
+   run after 08:00 sends, later runs that day find nothing, and a failed 08:00 run is retried
+   the next hour.
+2. **One minute to settle.** `created_at` is the inserting transaction's start, so a note can
+   commit after a later run read the window. The window ends a minute before 08:00; such a note
+   goes into the next day's mail instead of being skipped by the watermark.
+3. **The first switch-on starts now.** The watermark is null until `feedback_digest_set(true)`,
+   which sets it to that moment; notes from before Legal GO are never mailed. A later switch-on
+   keeps it, so a pause delays notes and loses none.
+4. **Mail first, then compare-and-set; Resend's key catches the rerun.** The idempotency key is
+   `feedback-digest/<day>/<32 hex of SHA-256 of subject, text and html>`. A rerun of the same
+   window (lost watermark move, concurrent run) renders the same mail under the same key, and
+   Resend sends it once within 24 hours. A run with new notes renders a new key. The watermark
+   moves only from where the run read it, so two runs never both move it. Accepted: the key
+   hashes the rendered mail, so if a sent run's watermark move fails and before the retry a
+   sender's Premium or address changes or a note is deleted, the retry sends a second, slightly
+   different mail. Keying on the window alone would make Resend refuse the changed payload
+   (409) and stall the digest for up to 24 hours; a rare repeat is the smaller harm. Two runs
+   at once on either side of 08:00 Berlin (a manual run at 07:59, the cron at 08:00) can also
+   both mail the shared notes.
+5. **A database switch and no cron job in the migration.** `app_switches.feedback_digest`
+   (seeded off) and `feedback_digest_set` are the one way on or off; switching on needs the
+   vault secret and the URL, schedules the job and reads the secret at run time, so `cron.job`
+   never holds it. An environment flag alone would leave the job running against a 503.
+   Only the owner (postgres, which the function connects as) may run the digest's functions:
+   not even `service_role`, whose key could otherwise point the job and its secret header at
+   another URL (Opus review). Switching on marks the digest healthy until its first run, so a
+   switch-on just before the watch doesn't open an issue. The migration does install `pg_net`
+   (schema `net`, not exposed through the API) although nothing calls it while the digest is off.
+6. **The status endpoint is public with two booleans.** The watch workflow reads it without a
+   key (like `health`); it says only whether the digest is on and healthy, never a count, time or
+   content.
+7. **Premium is the state when the digest runs.** `feedback` has no Premium column yet; the
+   digest asks `household_has_premium` and `user_has_premium` at send time. PR #281's
+   entitlement column, once merged, can replace it with the state at sending.
+8. **Resend tracking is domain-level.** Resend has no per-mail switch for open and click
+   tracking. The digest has no links and no images, so nothing could be tracked; checking that
+   tracking is off for `snacklist.app` is a step before switching on (NEEDS_PETER "Job 225").
+9. **The Resend mailer moved to `_shared/resend.ts`** with its own `Mail` shape (reply-to and
+   headers optional); the waitlist and `scripts/waitlist` import it from there.
