@@ -4124,7 +4124,7 @@ abstract class AppLocalizations {
   /// **'{kind, select, club{Alle sehen dieselbe Liste und können selbst etwas draufsetzen.} other{Sieht deine Artikel sofort und kann selbst etwas draufsetzen.}}'**
   String checklistInviteBody(String kind);
 
-  /// Checklist item: done once the user's tick empties the list; listHint is the line under it
+  /// Checklist item: done once the user ticks an item off or saves an edit; listHint is the line under it
   ///
   /// In de, this message translates to:
   /// **'Einmal einkaufen'**

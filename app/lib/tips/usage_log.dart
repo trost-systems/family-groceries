@@ -36,6 +36,9 @@ enum Signal(final String wire) {
   /// The user's tick emptied the list.
   shopDone('shop_done'),
 
+  /// The user ticked an item off.
+  itemTicked('item_ticked'),
+
   /// An AI assistant's grant, an MCP token or an API key existed.
   assistantConnected('assistant_connected'),
 

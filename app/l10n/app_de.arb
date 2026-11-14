@@ -1133,7 +1133,7 @@
   "checklistInviteBody": "{kind, select, club{Alle sehen dieselbe Liste und können selbst etwas draufsetzen.} other{Sieht deine Artikel sofort und kann selbst etwas draufsetzen.}}",
   "@checklistInviteBody": {"description": "Checklist item invite: the line under it; done once a second member joined", "placeholders": {"kind": {"type": "String"}}},
   "checklistShop": "Einmal einkaufen",
-  "@checklistShop": {"description": "Checklist item: done once the user's tick empties the list; listHint is the line under it"},
+  "@checklistShop": {"description": "Checklist item: done once the user ticks an item off or saves an edit; listHint is the line under it"},
   "checklistAssistant": "KI-Assistenten verbinden",
   "@checklistAssistant": {"description": "Checklist item for clubs: connect an AI assistant"},
   "checklistAssistantBody": "Mehr → Zugänge. Er setzt Dinge auf eure Liste.",

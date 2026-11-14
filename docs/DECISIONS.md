@@ -12199,3 +12199,25 @@ On main it showed on the first failed read of the opening resync, or on the firs
   on a fresh connection, answered. That stale failure used to show "Offline" for about 3 s right
   after opening the app. It is ignored now (`number > _resyncShown`), also outside the grace.
 - **Left as they were:** "Sync gestört" keeps no grace, and a household switch starts a new grace.
+
+## Job 204: „Einmal einkaufen“ done on a tick, 2026-11-13
+
+Peter (t816u) ticked items and held one to edit on TestFlight; the „Erste Schritte“ card stayed at
+2 of 3. The step was done only by `Signal.shopDone`, which `HintsCubit` records on
+`TripCompleted`: the user's tick emptied the list. That was the plan's rule („one shop done (all
+ticked)“, docs/onboarding/PLAN.md), working as built, not a lost write (the log is saved on every
+change, per user and device).
+
+1. **A tick or a saved edit does the step.** The card's line under „Einmal einkaufen“ is the
+   gesture sentence „Tippen hakt ab · Halten bearbeitet“, so the step reads as „try the
+   gestures“, and Peter expects exactly that. A shared list is rarely emptied, so under the plan's
+   rule the card could stay for weeks, and while it is open it holds every hint back (168b.4).
+2. **A signal of its own.** `Signal.itemTicked` (`item_ticked`) comes from `OwnItemTicked`;
+   `firstShop` is done on it, `itemEdited` (a saved edit, 168b.3: a hold that only opens the sheet
+   does not count) or `shopDone` (logs from before this job). `shopDone` stays the finished shop:
+   the `store-order` hint and the review prompt (`TripCompleted`) do not change.
+3. **Copy unchanged.** The title and the gesture line already name what now completes the step. `checklist_step_done`
+   keeps the wire `first_shop`; its meaning in docs/ANALYTICS.md changes from this release.
+4. **An accidental tick undone at once still does the step.** The usage log only records;
+   undoing the tick takes nothing back, and the step is about having tried the tap, not about
+   what stays ticked.

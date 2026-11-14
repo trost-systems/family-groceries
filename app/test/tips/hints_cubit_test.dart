@@ -123,6 +123,74 @@ void main() {
     );
   });
 
+  List<String> open(ListCubit list) => [
+    for (final item in list.state.items.values)
+      if (item.status == ItemStatus.active) item.name,
+  ];
+
+  bool shopped(HintsCubit hints) =>
+      hints.state.checklist?.entries.any(
+        (e) => e.step == ChecklistStep.firstShop && e.done,
+      ) ??
+      false;
+
+  test('one tick does the first shop, with other items still open', () async {
+    cache.prefs = const ListPrefs();
+    final (list, hints) = await session();
+    list
+      ..addEntry(parseEntry('Brot'))
+      ..addEntry(parseEntry('Milch'));
+    await pumpEventQueue();
+    expect(hints.state.checklist?.open, 2);
+    expect(shopped(hints), isFalse);
+
+    list.tick(list.state.items.values.firstWhere((i) => i.name == 'Brot').id);
+    await pumpEventQueue();
+    expect(open(list), ['Milch']);
+    expect(shopped(hints), isTrue);
+    expect(hints.state.checklist?.open, 1, reason: 'the invite is left');
+    expect(
+      store.of('peter').saw(Signal.shopDone),
+      isFalse,
+      reason: 'store-order still waits for a finished shop',
+    );
+  });
+
+  test('a saved edit does the first shop too', () async {
+    cache.prefs = const ListPrefs();
+    final (list, hints) = await session();
+    list
+      ..addEntry(parseEntry('Brot'))
+      ..addEntry(parseEntry('Milch'));
+    await pumpEventQueue();
+    list.edit(
+      list.state.items.keys.first,
+      const ItemChanges(quantity: SetTo('2')),
+    );
+    await pumpEventQueue();
+    expect(shopped(hints), isTrue);
+  });
+
+  test('the last open step done takes the card away', () async {
+    cache.prefs = const ListPrefs();
+    repo.members = const [
+      Member(id: 'peter', displayName: 'Peter', role: 'owner'),
+      Member(id: 'lea', displayName: 'Lea', role: 'member'),
+    ];
+    final (list, hints) = await session();
+    list
+      ..addEntry(parseEntry('Brot'))
+      ..addEntry(parseEntry('Milch'));
+    await pumpEventQueue();
+    expect(hints.state.checklist?.open, 1);
+
+    list.tick(list.state.items.values.firstWhere((i) => i.name == 'Brot').id);
+    await pumpEventQueue();
+    expect(open(list), ['Milch']);
+    expect(hints.state.checklist, isNull);
+    expect(hints.state.hint, isNull, reason: 'the checklist had the slot');
+  });
+
   test('a hint shows after 10 s and is kept as shown', () async {
     seed(6);
     store.logs['peter'] = UsageLog(since: now).toJson();
