@@ -130,6 +130,18 @@ void main() {
     expect(lidl.sum.unpriced, 1);
   });
 
+  test('a price typed today in an earlier currency is left out: a floor, '
+      'but not „ohne Preis“', () {
+    final chf = _item('Milch', store: 'lidl', cents: 119);
+    final s = summaryOf(
+      [chf, _item('Brot', store: 'lidl')],
+      const Catalog(stores: [_lidl], currency: 'CHF'),
+      now: _now,
+    );
+    expect(s.total, const Sum(unpriced: 1, foreign: 1));
+    expect(s.total.floor, isTrue);
+  });
+
   test('a price per kg typed per kg on an open item is an estimate, and so '
       'is every sum holding it', () {
     final bananas = _item(

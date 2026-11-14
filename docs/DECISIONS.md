@@ -13089,8 +13089,8 @@ section's end). The rules are pure in `app/lib/list/subtotals.dart` (`Sum`, `Sto
   `list-declutter`.
 - **Floor (ST-Q1, Peter).** An item without a price in the household's currency today makes every
   sum holding it a floor: „mind. 32,08 €“ / "at least €32.08", per store and for Gesamt. A price
-  typed today in an earlier currency counts as unpriced here (job 190's bar left it out of both
-  counts); it is rare and the floor is then still true.
+  typed today in an earlier currency is left out of the sum and of „ohne Preis“, as job 190's bar
+  does (its chip shows a price), but it makes the sum a floor too (review 0).
 - **Estimate (ST-Q4, Peter): what „weighed“ means without a new column.** PW1 (job 190) writes
   the scale weight into `items.quantity` on save, so the app cannot tell a weight typed at the
   scale from the planned one the editor prefilled. Lead's call here: a line is an estimate while
@@ -13123,5 +13123,10 @@ section's end). The rules are pure in `app/lib/list/subtotals.dart` (`Sum`, `Sto
   to five lines at 160 % on 358 px.
 - **The price editor's „Summe danach“** uses the block's Gesamt with the flag on, so the two
   agree; without the flag it is job 190's bar total as before.
+- **Review 0 (Opus, independent).** Nothing must-fix. Taken: the other-currency rule above; an
+  open part with items but no price shows only the count („0,95 € gekauft · 1 ohne Preis“, not
+  „0,00 € offen“); „EINKAUFSSUMME“ is a heading for screen readers; tests for a trip on another
+  list, a fully bought store not being a button, a jump into a folded section, and a ticked
+  weighed item losing its „≈“.
 - **Seen, not fixed here:** at 160 % on 358 px job 234's trip strip breaks „Einkauf läuft“ inside
   the word („Einkau / f läuft“). Job 234's PR (#454) is still open; reported on the BOARD.

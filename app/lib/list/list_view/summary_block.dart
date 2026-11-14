@@ -71,13 +71,11 @@ class const _Line({
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final [before, after] = _qualified(
-      l10n,
-      sum,
-      _slot,
-      floor: true,
-      spoken: false,
-    ).split(_slot);
+    final marked = _qualified(l10n, sum, _slot, floor: true, spoken: false);
+    final at = marked.indexOf(_slot);
+    final (before, after) = at < 0
+        ? ('', '')
+        : (marked.substring(0, at), marked.substring(at + _slot.length));
     final money = formatMoney(
       sum.cents,
       currency: currency,
@@ -153,7 +151,10 @@ class const SummaryBlock({
                 top: HlSpace.s3,
                 bottom: HlSpace.s1,
               ),
-              child: ExcludeSemantics(
+              child: Semantics(
+                header: true,
+                label: l10n.tripTotal,
+                excludeSemantics: true,
                 child: Text(
                   l10n.tripTotal.toUpperCase(),
                   style: TextStyle(
@@ -202,13 +203,15 @@ List<String> _details(
   String part(Sum sum) =>
       sumText(context, sum, currency: currency, floor: false, spoken: spoken) ??
       formatMoney(0, currency: currency, locale: moneyLocale(context));
+  // Items but no price among them: the count says so, not „0,00 € offen“.
+  bool shows(Sum sum) => !sum.empty || !sum.floor;
   final unpriced = (bought ?? Sum.zero).unpriced + open.unpriced;
   return [
     if (allBought)
       l10n.subtotalsAllBought
     else if (bought != null && (split || !bought.empty || bought.floor)) ...[
-      l10n.subtotalsBought(part(bought)),
-      l10n.subtotalsOpen(part(open)),
+      if (shows(bought)) l10n.subtotalsBought(part(bought)),
+      if (shows(open)) l10n.subtotalsOpen(part(open)),
     ],
     if (unpriced > 0) l10n.subtotalsUnpriced(unpriced),
   ];
@@ -263,7 +266,7 @@ class const _StoreLine({
               Text.rich(
                 TextSpan(
                   children: [
-                    if (tally.allBought && tally.bought != null)
+                    if (tally.allBought)
                       WidgetSpan(
                         alignment: PlaceholderAlignment.middle,
                         child: Padding(

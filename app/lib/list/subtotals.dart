@@ -14,13 +14,16 @@ import 'package:family_groceries/trip/rules.dart' show boughtOnTrip;
 import 'package:flutter/foundation.dart' show immutable;
 
 /// What some items add up to: [cents] over [priced] items, [unpriced]
-/// items without today's price in the household's currency (the sum is at
-/// least [cents]), and whether a line in it is an [estimate].
+/// items without today's price, [foreign] ones priced today in another
+/// currency than the household's (left out, as job 190's total does; either
+/// makes the sum at least [cents]), and whether a line in it is an
+/// [estimate].
 @immutable
 class const Sum({
   final int cents = 0,
   final int priced = 0,
   final int unpriced = 0,
+  final int foreign = 0,
   final bool estimate = false,
 }) {
   /// One item's part.
@@ -31,6 +34,7 @@ class const Sum({
           priced: 1,
           estimate: plannedWeight(item),
         ),
+        null when item.currentPrice(now) != null => const Sum(foreign: 1),
         null => const Sum(unpriced: 1),
       };
 
@@ -40,14 +44,15 @@ class const Sum({
     cents: cents + other.cents,
     priced: priced + other.priced,
     unpriced: unpriced + other.unpriced,
+    foreign: foreign + other.foreign,
     estimate: estimate || other.estimate,
   );
 
   /// Nothing in it has a price: no amount to show.
   bool get empty => priced == 0;
 
-  /// Some of it has no price: the amount is a floor.
-  bool get floor => unpriced > 0;
+  /// Some of it is not summed: the amount is a floor.
+  bool get floor => unpriced > 0 || foreign > 0;
 
   @override
   bool operator ==(Object other) =>
@@ -55,15 +60,16 @@ class const Sum({
       other.cents == cents &&
       other.priced == priced &&
       other.unpriced == unpriced &&
+      other.foreign == foreign &&
       other.estimate == estimate;
 
   @override
-  int get hashCode => Object.hash(cents, priced, unpriced, estimate);
+  int get hashCode => Object.hash(cents, priced, unpriced, foreign, estimate);
 
   @override
   String toString() =>
       'Sum($cents, priced: $priced, unpriced: $unpriced, '
-      'estimate: $estimate)';
+      'foreign: $foreign, estimate: $estimate)';
 }
 
 /// Whether [item]'s line comes from its planned weight or volume: a price

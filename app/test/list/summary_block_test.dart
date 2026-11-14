@@ -188,6 +188,15 @@ void main() {
     expect(text(tester, 'subtotal-amount-lidl'), '≈ 1,51$_nbsp€');
     expect(text(tester, 'subtotal-amount-dm'), '0,95$_nbsp€');
     expect(text(tester, 'total-amount'), '≈ 2,46$_nbsp€');
+
+    // Ticked on a trip, it is in the cart: no estimate any more.
+    await tick(tester, 'Bananen');
+    await tester.tap(key('trip-ask-yes'));
+    await tester.pumpAndSettle();
+    await toBlock(tester);
+    expect(text(tester, 'subtotal-amount-lidl'), '1,51$_nbsp€');
+    expect(text(tester, 'total-amount'), '2,46$_nbsp€');
+    expect(find.textContaining('≈'), findsNothing);
   });
 
   testWidgets('a floor and an estimate together: „mind. ≈“', (tester) async {
@@ -266,6 +275,11 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(
+        tester.getSemantics(key('subtotal-dm')),
+        isSemantics(isButton: false, hasTapAction: false),
+        reason: 'no section to go to',
+      );
       // Lidl: Milch bought, Brot and Käse open.
       expect(text(tester, 'subtotal-amount-lidl'), 'mind. 3,68$_nbsp€');
       expect(
@@ -283,6 +297,51 @@ void main() {
         find.text('2,14$_nbsp€ gekauft · 5,49$_nbsp€ offen · 1 ohne Preis'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('open items without a price: no „0,00 € offen“, the count '
+        'says it', (tester) async {
+      await pumpList(
+        tester,
+        flags: _flags,
+        seed: (repo) => repo
+          ..remoteAdd('Seife', storeId: 'dm', price: _price(95))
+          ..remoteAdd('Käse', storeId: 'lidl'),
+      );
+      await tick(tester, 'Seife');
+      await tester.tap(key('trip-ask-yes'));
+      await tester.pumpAndSettle();
+      await toBlock(tester);
+      expect(text(tester, 'total-amount'), 'mind. 0,95$_nbsp€');
+      expect(find.text('0,95$_nbsp€ gekauft · 1 ohne Preis'), findsOneWidget);
+    });
+
+    testWidgets('a trip on another list of the household splits nothing '
+        'here', (tester) async {
+      final shop = await pumpList(
+        tester,
+        flags: _flags,
+        seed: (repo) {
+          repo.lists = const [
+            HouseholdList(id: 'weekly', name: 'Wocheneinkauf', position: 0),
+            HouseholdList(id: 'diy', name: 'Baumarkt', position: 1),
+          ];
+          _seed(repo);
+          repo
+            ..remoteAdd('Schrauben', listId: 'diy', price: _price(450))
+            ..remoteAdd('Dübel', listId: 'diy', price: _price(199));
+        },
+      );
+      await tick(tester, 'Seife');
+      await tester.tap(key('trip-ask-yes'));
+      await tester.pumpAndSettle();
+      expect(shop.trips.state, isA<Running>());
+      shop.list.showList('diy');
+      await tester.pumpAndSettle();
+      await tick(tester, 'Schrauben');
+      await toBlock(tester);
+      expect(text(tester, 'total-amount'), '1,99$_nbsp€');
+      expect(find.textContaining('gekauft'), findsNothing);
     });
 
     testWidgets('after the trip ends, ticked items drop out again', (
@@ -336,6 +395,21 @@ void main() {
     final header = tester.getRect(key('list-header'));
     expect(divider.top, greaterThanOrEqualTo(header.bottom - 1));
     expect(divider.top, lessThan(header.bottom + 24), reason: '$divider');
+  });
+
+  testWidgets('a tap on the line of a folded store unfolds it', (tester) async {
+    final shop = await pumpList(tester, flags: _flags, seed: _seed);
+    shop.list.toggleFold('lidl');
+    await tester.pumpAndSettle();
+    expect(row('Milch'), findsNothing);
+    await toBlock(tester);
+    await tester.tap(key('subtotal-lidl'));
+    await tester.pumpAndSettle();
+    expect(row('Milch'), findsOneWidget);
+    expect(
+      tester.getRect(key('store-lidl')).top,
+      greaterThanOrEqualTo(tester.getRect(key('list-header')).bottom - 1),
+    );
   });
 
   testWidgets('English', (tester) async {
