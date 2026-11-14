@@ -1,6 +1,7 @@
 // Job 51: lang, outcome, mode read and the siri_add / siri_read events of the voice function.
 import { assert, assertEquals, assertFalse, assertMatch } from '@std/assert';
 import { AuthError, type Via } from '../_shared/auth.ts';
+import type { ListCatalog } from '../_shared/list.ts';
 import { checkServerEvent, Telemetry } from '../_shared/telemetry.ts';
 import { copy, failureCodes } from './copy.ts';
 import { type Added, type Caller, createHandler, type Deps, type VoiceEvent } from './handler.ts';
@@ -18,6 +19,16 @@ const asAdded = (onList: string[]) => (_: Caller, items: ParsedItem[]): Promise<
     similarOnList: [],
   })));
 
+/** One list, the seeded one, which is the default (job 207). */
+const catalog: ListCatalog = (() => {
+  const main = {
+    id: '00000000-0000-4000-8000-0000000000a1',
+    name: 'Einkaufsliste',
+    seedKey: 'main',
+  };
+  return { lists: [main], defaultList: main };
+})();
+
 function fakeDeps(overrides: Partial<Deps> = {}) {
   const events: VoiceEvent[] = [];
   const deps: Deps = {
@@ -29,6 +40,7 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
         : Promise.reject(new AuthError('invalid_token', 'test'));
     },
     isMember: () => Promise.resolve(false),
+    lists: () => Promise.resolve(catalog),
     splitItems: (_caller, items) =>
       Promise.resolve(
         items.map((item) => ({
@@ -136,10 +148,14 @@ Deno.test('lang is de unless it is en; a plain-text body is German', async () =>
   assertEquals((await plain.json()).speech, 'Hinzugefügt: Eggs.');
 });
 
-Deno.test('a list id is accepted and ignored', async () => {
+Deno.test('a list name of no list adds to the default list and says so (job 207)', async () => {
   const { handle } = fakeDeps();
   const { status, body } = await answer(handle, post({ text: 'eggs', lang: 'en', list: 'any' }));
-  assertEquals([status, body.speech], [200, 'Added eggs to Snacklist.']);
+  assertEquals([status, body.speech], [
+    200,
+    "I couldn't find a list called any. Added eggs to the shopping list in Snacklist.",
+  ]);
+  assertEquals(body.list, { id: catalog.defaultList.id, name: 'Einkaufsliste' });
 });
 
 Deno.test('?format=text answers in the request language', async () => {
@@ -277,6 +293,7 @@ Deno.test('without lang (the Shortcut recipe) the answers carry no outcome, as b
       similarOnList: [],
     }],
     truncated: false,
+    list: { id: catalog.defaultList.id, name: 'Einkaufsliste' },
   });
   const failed = await answer(handle, post({ text: 'Bitte, danke' }, { token: 'fgp_pat' }));
   assertEquals(failed.body, {
@@ -443,8 +460,8 @@ Deno.test('every event the handler builds passes the server catalog', () => {
 
 /** Butter Weihenstephan is open: a plain "Butter" is held unless the request is the yes. */
 const withBrandedButter =
-  (calls: { addVariants?: boolean }[] = []): Deps['addItems'] => (_caller, items, options = {}) => {
-    calls.push(options);
+  (calls: { addVariants?: boolean }[] = []): Deps['addItems'] => (_caller, items, options) => {
+    calls.push({ addVariants: options.addVariants });
     return Promise.resolve(items.map((item): Added => {
       const butter = item.name.toLowerCase() === 'butter' && !options.addVariants;
       return butter
@@ -518,6 +535,7 @@ Deno.test('Q79: no question without ask (Shortcut, older apps): nothing added, a
     speech: 'Schon auf der Liste: Butter Weihenstephan.',
     items: shortcut.body.items,
     truncated: false,
+    list: { id: catalog.defaultList.id, name: 'Einkaufsliste' },
   });
   assertEquals(calls.map((c) => c.addVariants), [false, false], 'confirmed only counts with lang');
   assertFalse(

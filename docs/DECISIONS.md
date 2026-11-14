@@ -12320,3 +12320,55 @@ Follow-ups from job 184's post-merge review (`jobs/184-siri-free-price-prep/revi
   existing rule's message now says what such a field needs. Not
   observed: whether Chrome or iOS now offer to save the password (headless Chromium shows no
   prompt, no iPhone here).
+
+## Job 207: default list per member, and voice adds to a named list, 2026-11-13
+
+- **Where it lives.** `household_members.default_list_id`, one per membership, with the foreign
+  key `(default_list_id, household_id) -> lists (id, household_id) on delete set null
+  (default_list_id)`. The pair keeps the list in that membership's household, so a list id never
+  follows a user into another household when they change "Standard für Siri, Alexa & KI".
+  Deleting the list clears the column and the fallback applies; no trigger needed.
+  `public.default_list(household)` answers the caller's choice, else `first_list` (position,
+  created_at, id), and null for a non-member. `set_default_list(list)` goes through
+  `list_to_change` (list_not_found, not_a_member, the household's list lock, so it orders after
+  a racing `delete_list`). The column has no client write grant.
+- **Who uses it.** Everything that resolves a list without a name: `listOf` without a ref in
+  `_shared/list.ts`, so voice (Siri, Shortcut), Alexa, MCP and the API add, read and tick in the
+  caller's default list of the household they act in (the default household for voice and MCP
+  OAuth, the token's household for PATs and API keys). MCP `list_lists` marks that list
+  `default`. Named and id lists behave exactly as before, errors included. The
+  `items_fill_list` trigger (old store builds inserting without a list) still fills the first
+  list: those builds show only that one.
+- **No server-side flag.** A set column is honoured whenever present; while the
+  `default-list-voice-target` flag is off nobody can set it, so unnamed adds stay on the first
+  list.
+- **Unknown or ambiguous list name: no question** (decided in the brief). The items go to the
+  default list, and the answer names the items, says the name was not found („Eine Liste „Party“
+  habe ich nicht gefunden.“) or matches several lists („„Party“ passt zu mehreren Listen.“), and
+  names the list used („Ich habe Konfetti auf die Liste Alltag gesetzt.“). An id of no list of the
+  household (deleted, another household's) gets „Diese Liste gibt es nicht mehr.“ and is never a
+  household switch. Why: a clarification prompt is easy to drop on Alexa, so the add would be
+  lost, and the user must not believe the items went to the list they named.
+- **Matching** (`supabase/functions/_shared/spoken_list.ts`). Names are folded (case, umlauts,
+  punctuation), a trailing „Liste“/„list“ and a leading article are stripped. Order: a list whose
+  name is the spoken word exactly; then generic words („Liste“, „Einkaufsliste“, „shopping list“,
+  the app's names) mean no list was named; then exact with or without the suffix; then fuzzy, a
+  Levenshtein ratio of at least 0.75 (one edit per four letters), a name of 4 or more letters
+  inside the other scoring at least 0.8. A tie at the top is ambiguous. Bare „zu X“ / „to X“ at
+  the end of the text count only for an exact list name, since they may be part of an item
+  („Brot zu Hause“); phrases with „Liste“/„list“, the `list` field and Alexa's list slot match
+  fuzzily.
+- **The list is said whenever there is a choice** (review 0). Review 0 found „Servietten zur
+  Einkaufsliste“ landing on the default Geburtstag with a plain „Hinzugefügt: Servietten.“: the
+  generic-word rule hid a list really called „Einkaufsliste“. Exact names now come first, and with
+  two or more lists every voice confirmation names the list used, because some words never reach
+  the server (Alexa's sample „füg {items} zur einkaufsliste hinzu“ sends only the items). With one
+  list the answers stay as before job 207.
+- **Export.** `export_my_data` names each membership's chosen list (`default_list`, null when
+  none was chosen), like it names `is_default`.
+- **Migration timestamp (job 207c, landing).** #416 merged `20261113190206_least_privilege_grants.sql`
+  first, and the schema check and deploy refuse a new migration older than main's newest. The
+  default-list migration moved to `20261113221639_default_list.sql`, contents unchanged. #416 only
+  revokes rights on existing tables, sequences and three unrelated functions, and sets default
+  privileges for tables and sequences; this migration adds a column and two functions with their
+  own revoke and grant, so the order does not change what either does.

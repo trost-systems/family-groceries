@@ -138,6 +138,25 @@ final class VoiceClientTests: XCTestCase {
     XCTAssertNil(yesJson["ask"])
   }
 
+  func testANamedListGoesInTheRequestTrimmedAndOnlyWhenGiven() async throws {
+    StubProtocol.reply = .http(200, #"{"outcome":"added","speech":"Added balloons."}"#)
+    _ = await client().send(text: "balloons", mode: .add, lang: .en, list: " Birthday ")
+    let named = try XCTUnwrap(StubProtocol.requests.last?.body)
+    let namedJson = try XCTUnwrap(JSONSerialization.jsonObject(with: named) as? [String: Any])
+    XCTAssertEqual(namedJson["list"] as? String, "Birthday")
+    _ = await client().send(text: "balloons", mode: .add, lang: .en, list: "  ")
+    let blank = try XCTUnwrap(StubProtocol.requests.last?.body)
+    let blankJson = try XCTUnwrap(JSONSerialization.jsonObject(with: blank) as? [String: Any])
+    XCTAssertNil(blankJson["list"], "a blank name is no list")
+  }
+
+  func testConfirmKeepsTheListTheServerUsed() async {
+    let confirm = await send(.http(
+      200,
+      #"{"outcome":"confirm","speech":"s","question":"q","again":"butter","list":{"id":"l1","name":"Birthday"}}"#))
+    XCTAssertEqual(confirm, .confirm(speech: "s", question: "q", again: "butter", list: "l1"))
+  }
+
   func testConfirmCarriesTheQuestionAndWhatAYesSends() async {
     let confirm = await send(.http(
       200,
@@ -267,6 +286,24 @@ final class SiriKitListsTests: XCTestCase {
     XCTAssertNotNil(body["lang"], "the language follows the text (VoiceLanguage)")
     XCTAssertEqual(response.code, .success)
     XCTAssertEqual(response.addedTasks?.map(\.title.spokenPhrase), ["Zahnpasta", "Brot"])
+  }
+
+  func testTheTargetListGoesToVoiceByName() async throws {
+    StubProtocol.reply = .http(200, #"{"outcome":"added","speech":"Hinzugefügt auf Geburtstag: Luftballons."}"#)
+    let intent = INAddTasksIntent(
+      targetTaskList: INTaskList(
+        title: INSpeakableString(spokenPhrase: "Geburtstag"), tasks: [], groupName: nil,
+        createdDateComponents: nil, modifiedDateComponents: nil, identifier: nil),
+      taskTitles: [INSpeakableString(spokenPhrase: "Luftballons")],
+      spatialEventTrigger: nil, temporalEventTrigger: nil, priority: .notFlagged)
+    let response = await AddTasksHandler(client: client()).respond(to: intent)
+    XCTAssertEqual(try lastBody()["list"], "Geburtstag")
+    XCTAssertEqual(response.code, .success)
+    XCTAssertEqual(AddTasksHandler.listName(addTasks(["Milch"])), "Einkaufsliste")
+    let noList = INAddTasksIntent(
+      targetTaskList: nil, taskTitles: [INSpeakableString(spokenPhrase: "Milch")],
+      spatialEventTrigger: nil, temporalEventTrigger: nil, priority: .notFlagged)
+    XCTAssertNil(AddTasksHandler.listName(noList))
   }
 
   func testAlreadyOnTheListIsStillASuccess() async {

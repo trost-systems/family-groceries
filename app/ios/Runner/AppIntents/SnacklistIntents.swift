@@ -2,7 +2,8 @@ import AppIntents
 import Foundation
 import UIKit
 
-/// Adds what the user says to the household's list through `voice`. Runs in the background:
+/// Adds what the user says to the household's list through `voice`: the list `list` names, else
+/// the user's default list. Runs in the background:
 /// the answer is Siri's dialog, the app never comes forward.
 struct AddItemsIntent: AppIntent {
   static let title: LocalizedStringResource = "Add to Snacklist"
@@ -16,6 +17,12 @@ struct AddItemsIntent: AppIntent {
 
   @Parameter(title: "Item")
   var item: ItemSuggestion?
+
+  /// The list to add to, by name ("Geburtstag"), matched on the server like Alexa's (job 207):
+  /// without it, the user's default list, or a list the dictated text names ("Luftballons zur
+  /// Geburtstag Liste"). An unknown name adds to the default list and the answer says so.
+  @Parameter(title: "List")
+  var list: String?
 
   func perform() async throws -> some IntentResult & ProvidesDialog {
     let client = VoiceClient.live(caller: item == nil ? "AddItems" : "AddItems.item")
@@ -39,14 +46,14 @@ struct AddItemsIntent: AppIntent {
       spoken = dictated
       lang = VoiceLanguage.of(dictated)
     }
-    let result = await client.send(text: spoken, mode: .add, lang: lang, ask: true)
-    guard case .confirm(let speech, let question, let again) = result else {
+    let result = await client.send(text: spoken, mode: .add, lang: lang, ask: true, list: list)
+    guard case .confirm(let speech, let question, let again, let used) = result else {
       return .result(dialog: dialog(result.answer(mode: .add, copy: SiriCopy(lang))))
     }
     // Q79: one yes/no question; a no, a cancel or no answer adds nothing more.
     let yes = (try? await $text.requestConfirmation(for: spoken, dialog: dialog(question))) ?? false
     guard yes else { return .result(dialog: dialog(speech)) }
-    let added = await client.send(text: again, mode: .add, lang: lang, confirmed: true)
+    let added = await client.send(text: again, mode: .add, lang: lang, confirmed: true, list: used ?? list)
     return .result(dialog: dialog(added.answer(mode: .add, copy: SiriCopy(lang))))
   }
 }

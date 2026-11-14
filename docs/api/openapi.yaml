@@ -85,9 +85,10 @@ paths:
         Names are split like everywhere in Snacklist ("2 Gurken" is Gurken, quantity 2). An item
         already on the list is not added again (alreadyOnList); a spelling variant or synonym of
         an open item is added and reported (similarOnList). The items go to the list given by
-        list, else to the household's first list (where Siri and Alexa add too); "already on the
-        list" means on that list. One transaction: an unknown store, category or list fails the
-        whole batch. Requires the write scope.
+        list, else to the key owner's default list (chosen in the app, else the household's first
+        list; where Siri and Alexa add too); "already on the list" means on that list. One
+        transaction: an unknown store, category or list fails the whole batch. Requires the write
+        scope.
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:

@@ -1,9 +1,21 @@
 import { assertEquals, assertMatch } from '@std/assert';
 import { AuthError } from '../_shared/auth.ts';
+import type { ListCatalog } from '../_shared/list.ts';
 import { type Added, type Caller, confirmation, createHandler, type Deps } from './handler.ts';
 import type { ParsedItem } from './parse.ts';
 
 const caller: Caller = { userId: 'u1', householdId: 'h1' };
+
+/** One list, the seeded one, which is the default (job 207). */
+const catalog: ListCatalog = (() => {
+  const main = {
+    id: '00000000-0000-4000-8000-0000000000a1',
+    name: 'Einkaufsliste',
+    seedKey: 'main',
+  };
+  return { lists: [main], defaultList: main };
+})();
+
 const fail = (status: 401 | 403) =>
   new AuthError(status === 403 ? 'no_household' : 'invalid_token', 'test');
 
@@ -21,6 +33,7 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
     },
     // u1 is in h1 (the default) and h2.
     isMember: (_caller, household) => Promise.resolve(['h1', 'h2'].includes(household)),
+    lists: () => Promise.resolve(catalog),
     splitItems: (_caller, items) =>
       Promise.resolve(
         items.map((item) => ({

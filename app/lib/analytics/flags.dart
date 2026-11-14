@@ -11,6 +11,10 @@ const groceryLogFlag = 'grocery-log';
 /// the household's currency (job 190). Free for everyone.
 const pricesFlag = 'prices-and-trip-total';
 
+/// The flag that shows which list Siri, Alexa and AI assistants add to when
+/// no list is named, next to the household they use (job 207).
+const defaultListFlag = 'default-list-voice-target';
+
 /// PostHog feature flags, the app's runtime toggles (job 44,
 /// docs/ANALYTICS.md "Feature flags"). Read a toggle with [isOn] wherever it
 /// matters; nothing else in the app reads PostHog flags.

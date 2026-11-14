@@ -1,8 +1,8 @@
 // The shopping-list operations behind the MCP tools and the API. Every function runs as the
 // signed-in user (asUser), so RLS confines it to the caller's household; household_id filters
 // only narrow the query plan. A household has one or more lists (job 169b W3): the tools act in
-// the list a `list` reference names, else in the household's first list, where Siri and Alexa
-// act too.
+// the list a `list` reference names, else in the caller's default list there (job 207,
+// public.default_list: their choice, else the first list), where Siri and Alexa act too.
 import { oneRow, type Tx } from './db.ts';
 
 export type ToolErrorReason = 'not_found' | 'ambiguous' | 'invalid';
@@ -124,25 +124,47 @@ export function stores(tx: Tx, household: string): Promise<(Named & { sort_order
             where household_id = ${household} order by sort_order, name`;
 }
 
-/** The household's lists in their order; the first is where a write without a list goes. */
+/** The household's lists in their order. */
 export function lists(tx: Tx, household: string): Promise<(Named & { position: number })[]> {
   return tx`select id, name, position from public.lists
             where household_id = ${household} order by position, created_at, id`;
 }
 
+/** The caller's default list in the household (job 207): their choice, else the first list. */
+async function defaultListId(tx: Tx, household: string): Promise<string | null> {
+  const [row] = await tx<{ id: string | null }[]>`select public.default_list(${household}) as id`;
+  return row?.id ?? null;
+}
+
+/** A list as voice names it: `seedKey` 'main' marks the list every household starts with. */
+export type ListOption = Named & { seedKey: string | null };
+
+/** The household's lists in their order and the caller's default list among them (job 207). */
+export type ListCatalog = { lists: ListOption[]; defaultList: ListOption };
+
+export async function listCatalog(tx: Tx, household: string): Promise<ListCatalog> {
+  const [options, id] = await Promise.all([
+    tx<ListOption[]>`select id, name, seed_key as "seedKey" from public.lists
+                     where household_id = ${household} order by position, created_at, id`,
+    defaultListId(tx, household),
+  ]);
+  const defaultList = options.find((o) => o.id === id) ?? options[0];
+  // Every household has a list: none is visible only in a household the caller is not in.
+  if (!defaultList) throw new ToolError('Keine Liste in diesem Haushalt.', 'not_found', 'list');
+  return { lists: options, defaultList };
+}
+
 /**
  * The list [ref] names in the household (its id, or its exact name in any case), or without a
- * ref the first list. A list of another household is not found.
+ * ref the caller's default list. A list of another household is not found.
  */
 export async function listOf(tx: Tx, household: string, ref?: string | undefined): Promise<Named> {
+  if (ref === undefined) {
+    const { id, name } = (await listCatalog(tx, household)).defaultList;
+    return { id, name };
+  }
   const options = await lists(tx, household);
   const names = options.map((o) => o.name);
-  if (ref === undefined) {
-    const [first] = options;
-    if (first) return first;
-    // Every household has a list: none is visible only in a household the caller is not in.
-    throw new ToolError('Keine Liste in diesem Haushalt.', 'not_found', 'list', names);
-  }
   const wanted = ref.trim();
   const byId = UUID.test(wanted) ? options.find((o) => o.id === wanted.toLowerCase()) : undefined;
   if (byId) return byId;
@@ -330,7 +352,7 @@ export async function openItems(
   }));
 }
 
-/** The open items of one list, the one [filter] names or the first. */
+/** The open items of one list, the one [filter] names or the default list. */
 export async function listItems(
   tx: Tx,
   household: string,
@@ -374,7 +396,7 @@ export type Added = {
 };
 
 /**
- * Adds items to the list [list] names (else the first) through public.add_list_item, the shared
+ * Adds items to the list [list] names (else the default list) through public.add_list_item, the shared
  * add path (also Siri's): it splits the name into
  * Bezeichnung, Marke, Eigenschaften and Menge ("Windeln Pampers Größe 3", "2 Gurken"), classifies
  * with the household's learned corrections, picks the store, and returns the existing row for an
@@ -454,7 +476,7 @@ export async function addItems(
 /**
  * The open item [ref] names. With a [list] named, by name or id on that list. Without one, an id
  * finds the item on any list of the household (ids come from list_items of any list), a name only
- * on the first list.
+ * on the default list.
  */
 async function openItem(
   tx: Tx,
@@ -474,7 +496,7 @@ async function openItem(
 }
 
 /**
- * Ticks open items by name or id: on the list [list] names, else names on the first list and ids
+ * Ticks open items by name or id: on the list [list] names, else names on the default list and ids
  * on any list of the household.
  */
 export async function tickItems(
@@ -543,7 +565,7 @@ async function moveOpen(
 
 /**
  * Moves an open item by name or id (the MCP tool): on the list [move.list] names, else a name on
- * the first list and an id on any list of the household.
+ * the default list and an id on any list of the household.
  */
 export async function moveItem(
   tx: Tx,

@@ -37,9 +37,12 @@ supabase/bench/suggest_latency.sh
 # Job 169b: one default per user under concurrent leaves, joins and creates; the MCP household tools;
 # W2: joins racing for a group link's last uses never pass 50.
 # W3: two approvals racing for a group link's last use count one join; an approval racing the same
-# user's second tap or direct join leaves one membership and no open request; Siri and Alexa use the first list.
+# user's second tap or direct join leaves one membership and no open request; Siri and Alexa use the
+# default list (job 207; the first list while none is chosen).
 # Job 94: Client ID Metadata Documents through the mcp function and this stack's Supabase Auth.
 # Job 211: a RevenueCat customer note racing the account's deletion leaves the customer queued.
+# Job 207: adds without a named list go to the member's default list (else the first) through
+# voice, MCP and the API; a spoken list name ("Luftballons zur Geburtstag Liste") picks the list.
 db_port="$(sed -n '/^\[db\]/,/^\[/ s/^port = \([0-9]*\)$/\1/p' supabase/config.toml)"
 stack_env="$(supabase status -o env 2>/dev/null)"
 stack_value() { sed -n "s/^$1=\"\(.*\)\"$/\1/p" <<<"$stack_env"; }
@@ -52,7 +55,7 @@ stack_value() { sed -n "s/^$1=\"\(.*\)\"$/\1/p" <<<"$stack_env"; }
   _shared/one_open_item_integration_test.ts _shared/read_open_only_integration_test.ts api/api_integration_test.ts _shared/number_words_integration_test.ts \
   voice/split_integration_test.ts _shared/voice_variants_integration_test.ts waitlist/waitlist_integration_test.ts \
   _shared/households_integration_test.ts mcp/households_integration_test.ts \
-  mcp/cimd_integration_test.ts)
+  mcp/cimd_integration_test.ts _shared/default_list_integration_test.ts)
 supabase db lint --local --fail-on warning
 scripts/backup/drill.sh
 

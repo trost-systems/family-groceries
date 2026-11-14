@@ -3458,6 +3458,18 @@ abstract class AppLocalizations {
   /// **'Als Standard nutzen'**
   String get voiceDefaultMake;
 
+  /// Job 207: household page row under the default household (behind the flag default-list-voice-target): the list Siri, Alexa and AI add to when no list is named; its subtitle names the list, a tap picks another
+  ///
+  /// In de, this message translates to:
+  /// **'Liste für Siri, Alexa & KI'**
+  String get defaultListTitle;
+
+  /// Job 207: household sheet footer, under the row naming the default household: that household's list Siri, Alexa and AI add to when no list is named; a tap picks another
+  ///
+  /// In de, this message translates to:
+  /// **'Liste: {list}'**
+  String defaultListRow(String list);
+
   /// Job 169b W2: title of the invite sheet (switcher row, household page, More's Einladungen)
   ///
   /// In de, this message translates to:

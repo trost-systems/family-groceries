@@ -17,6 +17,7 @@ import 'package:family_groceries/household/paste_invite.dart';
 import 'package:family_groceries/household/pending_invite.dart';
 import 'package:family_groceries/household/welcome_screen.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/onboarding/draft.dart';
 import 'package:family_groceries/onboarding/onboarding_cubit.dart';
 import 'package:family_groceries/onboarding/start_screen.dart';
@@ -542,6 +543,39 @@ class TestSession(super.initialState)
           for (final h in households) flip(h),
         ]),
       );
+    }
+  }
+
+  /// Each household's lists in their order, and the user's pick of them
+  /// for Siri, Alexa and AI (job 207); no pick means the first.
+  final householdLists = <String, List<HouseholdList>>{};
+  final defaultLists = <String, String>{};
+
+  /// Each [setDefaultList] call's list.
+  final listPicks = <String>[];
+
+  @override
+  Future<String?> defaultList(String householdId) async {
+    await _answer();
+    return defaultLists[householdId] ??
+        householdLists[householdId]?.firstOrNull?.id;
+  }
+
+  @override
+  Future<List<HouseholdList>> lists(String householdId) async {
+    await _answer();
+    return householdLists[householdId] ?? const [];
+  }
+
+  @override
+  Future<void> setDefaultList(String listId) async {
+    listPicks.add(listId);
+    await _answer();
+    for (final MapEntry(key: household, value: lists)
+        in householdLists.entries) {
+      if (lists.any((l) => l.id == listId)) {
+        defaultLists[household] = listId;
+      }
     }
   }
 

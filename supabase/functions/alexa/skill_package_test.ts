@@ -241,6 +241,7 @@ Deno.test('the interaction models: required built-ins, one SearchQuery with carr
         'AMAZON.NavigateHomeIntent',
         'AMAZON.FallbackIntent',
         'AddItemIntent',
+        'AddToListIntent',
         'ReadListIntent',
       ]
     ) assert(names.includes(required), `${locale}: ${required}`);
@@ -258,6 +259,9 @@ Deno.test('the interaction models: required built-ins, one SearchQuery with carr
       if (intent === 'AddItemIntent') {
         assertEquals(slots, ['{items}'], sample);
         assert(words(sample).length > 1, `SearchQuery needs a carrier phrase: "${sample}"`);
+      } else if (intent === 'AddToListIntent') {
+        // A SearchQuery may be the only slot of a sample, so the list gets its own intent (job 207).
+        assertEquals(slots, ['{items}', '{list}'], sample);
       } else {
         assertEquals(slots, [], sample);
       }
@@ -270,11 +274,72 @@ Deno.test('the interaction models: required built-ins, one SearchQuery with carr
 Deno.test('the dialog models elicit the items with the prompt the handler speaks', () => {
   for (const locale of Object.keys(models)) {
     const model = models[locale].interactionModel;
-    const dialog = model.dialog.intents.find((i) => i.name === 'AddItemIntent')!;
-    const slot = dialog.slots[0];
-    assertEquals(slot.name, 'items');
-    const prompt = model.prompts.find((p) => p.id === slot.prompts.elicitation);
-    assertEquals(prompt?.variations[0].value, speechFor(locale).speech.launch, locale);
+    for (const name of ['AddItemIntent', 'AddToListIntent']) {
+      const dialog = model.dialog.intents.find((i) => i.name === name)!;
+      const slot = dialog.slots[0];
+      assertEquals(slot.name, 'items');
+      const prompt = model.prompts.find((p) => p.id === slot.prompts.elicitation);
+      assertEquals(
+        prompt?.variations[0].value,
+        speechFor(locale).speech.launch,
+        `${locale} ${name}`,
+      );
+    }
+  }
+});
+
+Deno.test('AddToListIntent: items and a list name in custom slot types the model defines (job 207)', () => {
+  for (const locale of Object.keys(models)) {
+    const model = language(locale);
+    const intent = model.intents.find((i) => i.name === 'AddToListIntent')!;
+    assertEquals(intent.slots?.map((s) => [s.name, s.type]), [
+      ['items', 'ITEM_PHRASE'],
+      ['list', 'LIST_NAME'],
+    ]);
+    const types = new Map(model.types.map((t) => [t.name, t.values.map((v) => v.name.value)]));
+    for (const type of ['ITEM_PHRASE', 'LIST_NAME']) {
+      const values = types.get(type) ?? [];
+      assert(values.length >= 5, `${locale} ${type}: sample values`);
+      assertEquals(
+        new Set(values.map((v) => v.toLowerCase())).size,
+        values.length,
+        `${locale} ${type}`,
+      );
+    }
+    // The dialog model names the same slots with the same types.
+    const dialog = models[locale].interactionModel.dialog.intents.find((i) =>
+      i.name === 'AddToListIntent'
+    )!;
+    assertEquals(dialog.slots.map((s) => [s.name, s.type]), [
+      ['items', 'ITEM_PHRASE'],
+      ['list', 'LIST_NAME'],
+    ]);
+  }
+});
+
+const listShots: Record<'de' | 'en', string[]> = {
+  de: [
+    // Peter's sentence after "Alexa, öffne Snacklist".
+    'füge Luftballons zur Geburtstag Liste hinzu',
+    'füge Luftballons auf die Geburtstag Liste hinzu',
+    'füge Luftballons zu Geburtstag hinzu',
+    'setz Schrauben auf die Baumarkt Liste',
+    'pack Chips auf die Party Liste',
+    'schreib Milch auf die Alltag Liste',
+  ],
+  en: [
+    'add balloons to the birthday list',
+    'add balloons to birthday',
+    'add balloons onto the birthday list',
+  ],
+};
+
+Deno.test('requests that name a list reach AddToListIntent', () => {
+  for (const locale of Object.keys(models)) {
+    const add = language(locale).intents.find((i) => i.name === 'AddToListIntent')!.samples;
+    for (const rest of listShots[lang(locale)]) {
+      assert(matchesSample(rest, add), `${locale}: no AddToListIntent sample matches "${rest}"`);
+    }
   }
 });
 
@@ -284,6 +349,11 @@ Deno.test('every intent of each model has its own answer in the handler', async 
       Promise.resolve(JSON.parse(new TextDecoder().decode(body))),
     authenticate: () => Promise.resolve({ userId: 'u', householdId: 'h', sessionId: 's' }),
     takeAdds: () => Promise.resolve(true),
+    lists: () =>
+      Promise.resolve({
+        lists: [{ id: 'l', name: 'Einkaufsliste', seedKey: 'main' }],
+        defaultList: { id: 'l', name: 'Einkaufsliste', seedKey: 'main' },
+      }),
     addItems: () => Promise.resolve([]),
     listItems: () => Promise.resolve([]),
     remember: () => Promise.resolve(),

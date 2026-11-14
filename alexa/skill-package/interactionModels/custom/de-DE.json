@@ -57,6 +57,40 @@
           ]
         },
         {
+          "name": "AddToListIntent",
+          "slots": [
+            {
+              "name": "items",
+              "type": "ITEM_PHRASE",
+              "samples": [
+                "{items}"
+              ]
+            },
+            {
+              "name": "list",
+              "type": "LIST_NAME"
+            }
+          ],
+          "samples": [
+            "füge {items} zur {list} liste hinzu",
+            "füg {items} zur {list} liste hinzu",
+            "füge {items} auf die {list} liste hinzu",
+            "füg {items} auf die {list} liste hinzu",
+            "füge {items} zu {list} hinzu",
+            "füg {items} zu {list} hinzu",
+            "füge {items} zur {list} hinzu",
+            "füg {items} zur {list} hinzu",
+            "setz {items} auf die {list} liste",
+            "setze {items} auf die {list} liste",
+            "pack {items} auf die {list} liste",
+            "packe {items} auf die {list} liste",
+            "schreib {items} auf die {list} liste",
+            "schreibe {items} auf die {list} liste",
+            "{items} auf die {list} liste",
+            "{items} zur {list} liste"
+          ]
+        },
+        {
           "name": "ReadListIntent",
           "slots": [],
           "samples": [
@@ -78,13 +112,214 @@
             "die liste"
           ]
         },
-        { "name": "AMAZON.HelpIntent", "samples": [] },
-        { "name": "AMAZON.StopIntent", "samples": [] },
-        { "name": "AMAZON.CancelIntent", "samples": [] },
-        { "name": "AMAZON.NavigateHomeIntent", "samples": [] },
-        { "name": "AMAZON.FallbackIntent", "samples": [] }
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        }
       ],
-      "types": []
+      "types": [
+        {
+          "name": "ITEM_PHRASE",
+          "values": [
+            {
+              "name": {
+                "value": "Milch"
+              }
+            },
+            {
+              "name": {
+                "value": "Eier"
+              }
+            },
+            {
+              "name": {
+                "value": "Brot"
+              }
+            },
+            {
+              "name": {
+                "value": "Butter"
+              }
+            },
+            {
+              "name": {
+                "value": "Luftballons"
+              }
+            },
+            {
+              "name": {
+                "value": "Kerzen"
+              }
+            },
+            {
+              "name": {
+                "value": "Servietten"
+              }
+            },
+            {
+              "name": {
+                "value": "Pappteller"
+              }
+            },
+            {
+              "name": {
+                "value": "Schrauben"
+              }
+            },
+            {
+              "name": {
+                "value": "Dübel"
+              }
+            },
+            {
+              "name": {
+                "value": "Klopapier"
+              }
+            },
+            {
+              "name": {
+                "value": "Kaffee"
+              }
+            },
+            {
+              "name": {
+                "value": "Nudeln"
+              }
+            },
+            {
+              "name": {
+                "value": "Tomaten"
+              }
+            },
+            {
+              "name": {
+                "value": "Äpfel"
+              }
+            },
+            {
+              "name": {
+                "value": "Bananen"
+              }
+            },
+            {
+              "name": {
+                "value": "Käse"
+              }
+            },
+            {
+              "name": {
+                "value": "Joghurt"
+              }
+            },
+            {
+              "name": {
+                "value": "Milch und Eier"
+              }
+            },
+            {
+              "name": {
+                "value": "zwei Gurken"
+              }
+            },
+            {
+              "name": {
+                "value": "Brot und Butter"
+              }
+            },
+            {
+              "name": {
+                "value": "Luftballons und Kerzen"
+              }
+            },
+            {
+              "name": {
+                "value": "eine Packung Servietten"
+              }
+            },
+            {
+              "name": {
+                "value": "ein Kilo Mehl"
+              }
+            }
+          ]
+        },
+        {
+          "name": "LIST_NAME",
+          "values": [
+            {
+              "name": {
+                "value": "Alltag"
+              }
+            },
+            {
+              "name": {
+                "value": "Geburtstag"
+              }
+            },
+            {
+              "name": {
+                "value": "Baumarkt"
+              }
+            },
+            {
+              "name": {
+                "value": "Party"
+              }
+            },
+            {
+              "name": {
+                "value": "Wocheneinkauf"
+              }
+            },
+            {
+              "name": {
+                "value": "Drogerie"
+              }
+            },
+            {
+              "name": {
+                "value": "Grillen"
+              }
+            },
+            {
+              "name": {
+                "value": "Weihnachten"
+              }
+            },
+            {
+              "name": {
+                "value": "Urlaub"
+              }
+            },
+            {
+              "name": {
+                "value": "Büro"
+              }
+            },
+            {
+              "name": {
+                "value": "Geburtstag Liste"
+              }
+            }
+          ]
+        }
+      ]
     },
     "dialog": {
       "intents": [
@@ -99,7 +334,33 @@
               "type": "AMAZON.SearchQuery",
               "elicitationRequired": true,
               "confirmationRequired": false,
-              "prompts": { "elicitation": "Elicit.Slot.AddItemIntent.items" }
+              "prompts": {
+                "elicitation": "Elicit.Slot.AddItemIntent.items"
+              }
+            }
+          ]
+        },
+        {
+          "name": "AddToListIntent",
+          "delegationStrategy": "SKILL_RESPONSE",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "items",
+              "type": "ITEM_PHRASE",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": {
+                "elicitation": "Elicit.Slot.AddToListIntent.items"
+              }
+            },
+            {
+              "name": "list",
+              "type": "LIST_NAME",
+              "elicitationRequired": false,
+              "confirmationRequired": false,
+              "prompts": {}
             }
           ]
         }
@@ -109,7 +370,21 @@
     "prompts": [
       {
         "id": "Elicit.Slot.AddItemIntent.items",
-        "variations": [{ "type": "PlainText", "value": "Was soll auf die Liste?" }]
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Was soll auf die Liste?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.AddToListIntent.items",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "Was soll auf die Liste?"
+          }
+        ]
       }
     ]
   }

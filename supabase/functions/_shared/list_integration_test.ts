@@ -90,7 +90,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: 'job 169b W3: Siri and Alexa add to and read the first list only',
+  name: 'job 169b W3, 207: with no list chosen, Siri and Alexa add to and read the first list only',
   ignore: !enabled,
   sanitizeResources: false,
   fn: async () => {

@@ -388,8 +388,10 @@ Runtime toggles are PostHog feature flags, read in one place: `Analytics.flags.i
   Flags are read with `getAllFeatureFlags()` after the SDK starts and whenever it reports new
   ones.
 - **Keys and rollouts live in PostHog** (project 319492); the Lead creates them. The app reads
-  two keys: `public-api` (the API keys under Zugänge, job 73) and `grocery-log` (the Verlauf
-  tab, job 199). A flag gates code paths only; it never gates consent, data or legal texts.
+  `public-api` (the API keys under Zugänge, job 73), `grocery-log` (the Verlauf tab, job 199),
+  `prices-and-trip-total` (prices and the trip total, job 190) and `default-list-voice-target`
+  (the list Siri, Alexa and AI add to without a named list, on the household page and sheet,
+  job 207). A flag gates code paths only; it never gates consent, data or legal texts.
 - **Targeting internal installs.** A flag may be released by the person property
   `is_internal`, so that only internal installs get it (Peter's TestFlight build, marked
   internal under More). The app sends `{'is_internal': Analytics.internalNow}` with

@@ -9,8 +9,8 @@ import { asUser, type Tx } from '../_shared/db.ts';
 import {
   addItems,
   categories,
+  listCatalog,
   listItems,
-  lists,
   moveItem,
   stores,
   tickItems,
@@ -27,7 +27,8 @@ Abgehakte Einträge verschwinden aus der Liste.
 Wer in mehreren Haushalten ist, findet sie mit list_households; die Listen-Werkzeuge nehmen dann
 "household" (id oder Name), ohne Angabe gilt der Standardhaushalt.
 Ein Haushalt kann mehrere Listen haben (list_lists, z. B. "Wocheneinkauf" und "Baumarkt"); die
-Werkzeuge nehmen dann "list" (id oder genauer Name), ohne Angabe gilt die erste Liste.`;
+Werkzeuge nehmen dann "list" (id oder genauer Name), ohne Angabe gilt die Standardliste des Nutzers
+(in der App gewählt, sonst die erste Liste).`;
 
 /**
  * `ttlMs`/`cacheScope` on 2026-era list results (SEP-2549). The tool list and the server's
@@ -200,14 +201,15 @@ const householdRef = z.string().min(1).max(80).optional().describe(
   'Haushalt (list_households): seine id oder sein Name. Ohne Angabe der Standardhaushalt.',
 );
 const listRef = z.string().min(1).max(60).optional().describe(
-  'Liste des Haushalts (list_lists): ihre id oder ihr genauer Name. Ohne Angabe die erste Liste.',
+  'Liste des Haushalts (list_lists): ihre id oder ihr genauer Name. Ohne Angabe die Standardliste.',
 );
 
 /** A list of the household; `default` is where a call without "list" goes. */
 export type ListEntry = { id: string; name: string; default: boolean };
 
 export async function listLists(tx: Tx, household: string): Promise<ListEntry[]> {
-  return (await lists(tx, household)).map((l, i) => ({ id: l.id, name: l.name, default: i === 0 }));
+  const { lists: options, defaultList } = await listCatalog(tx, household);
+  return options.map((l) => ({ id: l.id, name: l.name, default: l.id === defaultList.id }));
 }
 
 export function buildServer(
@@ -250,7 +252,8 @@ export function buildServer(
     title: 'Listen anzeigen',
     description:
       'Listet die Einkaufslisten des Haushalts in ihrer Reihenfolge. "default" markiert ' +
-      'die erste Liste, in der die anderen Werkzeuge ohne "list" arbeiten (auch Siri und Alexa).',
+      'die Standardliste des Nutzers, in der die anderen Werkzeuge ohne "list" arbeiten (auch Siri ' +
+      'und Alexa); ohne eigene Wahl in der App ist das die erste Liste.',
     inputSchema: z.object({ household: householdRef }),
     annotations: { readOnlyHint: true },
   }, ({ household }) => call('list_lists', once, household, (tx, h) => listLists(tx, h))());

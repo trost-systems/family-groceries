@@ -51,6 +51,31 @@
           ]
         },
         {
+          "name": "AddToListIntent",
+          "slots": [
+            {
+              "name": "items",
+              "type": "ITEM_PHRASE",
+              "samples": [
+                "{items}"
+              ]
+            },
+            {
+              "name": "list",
+              "type": "LIST_NAME"
+            }
+          ],
+          "samples": [
+            "add {items} to the {list} list",
+            "add {items} to my {list} list",
+            "add {items} to our {list} list",
+            "add {items} onto the {list} list",
+            "add {items} to {list}",
+            "put {items} on the {list} list",
+            "put {items} on my {list} list"
+          ]
+        },
+        {
           "name": "ReadListIntent",
           "slots": [],
           "samples": [
@@ -97,7 +122,183 @@
           "samples": []
         }
       ],
-      "types": []
+      "types": [
+        {
+          "name": "ITEM_PHRASE",
+          "values": [
+            {
+              "name": {
+                "value": "milk"
+              }
+            },
+            {
+              "name": {
+                "value": "eggs"
+              }
+            },
+            {
+              "name": {
+                "value": "bread"
+              }
+            },
+            {
+              "name": {
+                "value": "butter"
+              }
+            },
+            {
+              "name": {
+                "value": "balloons"
+              }
+            },
+            {
+              "name": {
+                "value": "candles"
+              }
+            },
+            {
+              "name": {
+                "value": "napkins"
+              }
+            },
+            {
+              "name": {
+                "value": "paper plates"
+              }
+            },
+            {
+              "name": {
+                "value": "screws"
+              }
+            },
+            {
+              "name": {
+                "value": "toilet paper"
+              }
+            },
+            {
+              "name": {
+                "value": "coffee"
+              }
+            },
+            {
+              "name": {
+                "value": "pasta"
+              }
+            },
+            {
+              "name": {
+                "value": "tomatoes"
+              }
+            },
+            {
+              "name": {
+                "value": "apples"
+              }
+            },
+            {
+              "name": {
+                "value": "bananas"
+              }
+            },
+            {
+              "name": {
+                "value": "cheese"
+              }
+            },
+            {
+              "name": {
+                "value": "yogurt"
+              }
+            },
+            {
+              "name": {
+                "value": "milk and eggs"
+              }
+            },
+            {
+              "name": {
+                "value": "two cucumbers"
+              }
+            },
+            {
+              "name": {
+                "value": "bread and butter"
+              }
+            },
+            {
+              "name": {
+                "value": "balloons and candles"
+              }
+            },
+            {
+              "name": {
+                "value": "a pack of napkins"
+              }
+            }
+          ]
+        },
+        {
+          "name": "LIST_NAME",
+          "values": [
+            {
+              "name": {
+                "value": "Birthday"
+              }
+            },
+            {
+              "name": {
+                "value": "Party"
+              }
+            },
+            {
+              "name": {
+                "value": "Hardware store"
+              }
+            },
+            {
+              "name": {
+                "value": "Weekly shop"
+              }
+            },
+            {
+              "name": {
+                "value": "Everyday"
+              }
+            },
+            {
+              "name": {
+                "value": "Christmas"
+              }
+            },
+            {
+              "name": {
+                "value": "Barbecue"
+              }
+            },
+            {
+              "name": {
+                "value": "Office"
+              }
+            },
+            {
+              "name": {
+                "value": "Holiday"
+              }
+            },
+            {
+              "name": {
+                "value": "Pharmacy"
+              }
+            },
+            {
+              "name": {
+                "value": "Birthday list"
+              }
+            }
+          ]
+        }
+      ]
     },
     "dialog": {
       "intents": [
@@ -117,6 +318,30 @@
               }
             }
           ]
+        },
+        {
+          "name": "AddToListIntent",
+          "delegationStrategy": "SKILL_RESPONSE",
+          "confirmationRequired": false,
+          "prompts": {},
+          "slots": [
+            {
+              "name": "items",
+              "type": "ITEM_PHRASE",
+              "elicitationRequired": true,
+              "confirmationRequired": false,
+              "prompts": {
+                "elicitation": "Elicit.Slot.AddToListIntent.items"
+              }
+            },
+            {
+              "name": "list",
+              "type": "LIST_NAME",
+              "elicitationRequired": false,
+              "confirmationRequired": false,
+              "prompts": {}
+            }
+          ]
         }
       ],
       "delegationStrategy": "SKILL_RESPONSE"
@@ -124,6 +349,15 @@
     "prompts": [
       {
         "id": "Elicit.Slot.AddItemIntent.items",
+        "variations": [
+          {
+            "type": "PlainText",
+            "value": "What should go on the list?"
+          }
+        ]
+      },
+      {
+        "id": "Elicit.Slot.AddToListIntent.items",
         "variations": [
           {
             "type": "PlainText",

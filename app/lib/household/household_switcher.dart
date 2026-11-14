@@ -8,6 +8,7 @@ import 'package:family_groceries/design/hex_radio.dart';
 import 'package:family_groceries/design/measured_width.dart';
 import 'package:family_groceries/design/pointy_hex.dart';
 import 'package:family_groceries/design/tokens.g.dart';
+import 'package:family_groceries/household/default_list.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/invite_sheet.dart';
@@ -125,7 +126,8 @@ class const HouseholdChip({
 /// "Leute einladen" ([showInviteSheet]), and greyed rows for the join
 /// requests waiting; then "Neuer Haushalt", "Mit Code
 /// beitreten", and the default for Siri, Alexa & KI, which opens
-/// [showDefaultPicker]. [openNow] counts the shown list's open items better
+/// [showDefaultPicker], with the list they add to there
+/// ([DefaultListPicker]). [openNow] counts the shown list's open items better
 /// than the server's last answer.
 Future<void> showHouseholdSheet(BuildContext context, {int? openNow}) {
   // Fresh counts while the sheet opens; offline it shows the last ones.
@@ -280,6 +282,21 @@ class const HouseholdSheet({final int? openNow, super.key})
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => unawaited(showDefaultPicker(context)),
+          ),
+          DefaultListPicker(
+            householdId: session.defaultHousehold.id,
+            builder: (context, list, pick) => ListTile(
+              key: const ValueKey('household-default-list-row'),
+              leading: hex(Icons.checklist, t.accentSoft),
+              title: Text(
+                l10n.defaultListRow(list),
+                style: theme.textTheme.bodyMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              trailing: const Icon(Icons.expand_more),
+              onTap: pick,
+            ),
           ),
         ],
       ),

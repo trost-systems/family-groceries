@@ -138,6 +138,7 @@ supabase/functions/voice/handler.ts  # 8: reads x-hummlist-client from old build
 supabase/functions/voice/request_line_test.ts  # 8: old header test
 supabase/functions/voice/parse.ts  # 8: Siri on Hummlist builds still says Hummlist/Hummliste
 supabase/functions/voice/parse_en.ts  # 8: Siri on Hummlist builds still says Hummlist
+supabase/functions/_shared/spoken_list.ts  # 8: Siri on Hummlist builds still says Hummlist; such a list phrase names no list
 supabase/functions/voice/parse_test.ts  # 8: tests of the old app names in sentences
 supabase/functions/voice/parse_en_test.ts  # 8: tests of the old app name in sentences
 e2e/tests/voice.spec.ts  # 8: a Hummliste sentence from an old build

@@ -42,7 +42,8 @@ enum VoiceResult: Equatable {
   /// Q79: an open item has the name with its own brand or details ("Butter Weihenstephan" for
   /// "Butter"). `question` asks whether to add it anyway, `again` is what a yes sends back with
   /// `confirmed`, and `speech` is the answer for a no or no answer: nothing more was added.
-  case confirm(speech: String, question: String, again: String)
+  /// `list` is the id of the list the server used (job 207): the yes goes to the same list.
+  case confirm(speech: String, question: String, again: String, list: String? = nil)
   /// `items` are the open items as Siri's Lists domain shows them ("2 kg Mehl").
   case read(speech: String, items: [String])
   case lockedHousehold(speech: String?)
@@ -85,9 +86,11 @@ struct VoiceClient {
   }
 
   /// `ask`: this caller can put a yes/no question to the user (only AddItemsIntent can).
-  /// `confirmed`: the yes to that question.
+  /// `confirmed`: the yes to that question. `list`: the list to add to, by name or id (job 207);
+  /// without it the server uses the user's default list, or a list named in the text.
   func send(
-    text: String?, mode: VoiceMode, lang: VoiceLanguage, ask: Bool = false, confirmed: Bool = false
+    text: String?, mode: VoiceMode, lang: VoiceLanguage, ask: Bool = false, confirmed: Bool = false,
+    list: String? = nil
   ) async -> VoiceResult {
     guard let credential = credential() else {
       Self.log.notice("\(caller, privacy: .public) \(mode.rawValue, privacy: .public): no Siri credential")
@@ -102,6 +105,9 @@ struct VoiceClient {
     if let text { body["text"] = text }
     if ask { body["ask"] = true }
     if confirmed { body["confirmed"] = true }
+    if let list = list?.trimmingCharacters(in: .whitespacesAndNewlines), !list.isEmpty {
+      body["list"] = list
+    }
     request.httpBody = try? JSONSerialization.data(withJSONObject: body)
 
     let data: Data
@@ -144,6 +150,11 @@ struct VoiceClient {
     let items: [Item]?
     let question: String?
     let again: String?
+    let list: List?
+
+    struct List: Decodable {
+      let id: String
+    }
   }
 
   static func result(status: Int, body: Data, mode: VoiceMode) -> VoiceResult {
@@ -161,7 +172,7 @@ struct VoiceClient {
         guard let question = reply?.question, !question.isEmpty, let again = reply?.again,
           !again.isEmpty
         else { return .failed(.noAnswer) }
-        return .confirm(speech: speech, question: question, again: again)
+        return .confirm(speech: speech, question: question, again: again, list: reply?.list?.id)
       case (.read, "read"):
         let items = (reply?.items ?? []).map { item in
           item.quantity.map { "\($0) \(item.name)" } ?? item.name

@@ -5,6 +5,7 @@ A household member can say „Alexa, sag Snacklist, füg Milch und Eier hinzu“
 ## Sub-features
 
 - `alexa-add` adds the items of one phrase (several, quantities, umlauts) to the linked user's household and reads them back. A count said after the name, as a word or digits („Karotten zwei“, „Karotten 2“, "carrots two"), is the quantity, like one said before it (job 89). Up front, a name that starts with a number word keeps it, as typed: „Drei Glocken Nudeln“ is one item, „drei Äpfel“ 3 Äpfel (job 159, the `name` rows of `supabase/tests/number_words.tsv`).
+- `alexa-named-list` (job 207) `AddToListIntent` („füge {items} zur {list} Liste hinzu“) or a list phrase at the end of `AddItemIntent`'s items puts the items on that list: „Ich habe Luftballons auf die Liste Geburtstag gesetzt.“; unknown or ambiguous → the default list and Alexa says so; with several lists every read-back names the list. Driven locally with `scripts/alexa-say.sh --list Geburtstag Luftballons`; the development skill needs a dev deploy first.
 - `alexa-duplicate` names open items without adding them again.
 - `alexa-similar` a spelling variant or synonym already open is added anyway and named.
 - `alexa-read` reads the open items in aisle order: up to ten, then „und N weitere“, but all eleven when there are exactly eleven; an empty list has its own sentence.

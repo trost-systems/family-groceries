@@ -192,7 +192,7 @@ test('the premium gate asks about the household the call acts in', () =>
 // Job 169b W3: several lists per household.
 const text = (r: Result) => JSON.parse(r.content[0]?.text ?? '{}');
 
-test('list_lists names the lists; "list" picks one, the first list without it', () =>
+test('list_lists names the lists; "list" picks one, the default list (none chosen: the first) without it', () =>
   withPeter(async ({ peter, ids }) => {
     const sql = postgres(databaseUrl(), { max: 1, prepare: false, onnotice: () => {} });
     try {
@@ -217,7 +217,7 @@ test('list_lists names the lists; "list" picks one, the first list without it', 
     assertEquals(
       fresh.map((i: { name: string }) => i.name),
       ['Bratwurst', 'Apfelschorle'],
-      'Bratwurst is open on the first list, not on Getränke: added there',
+      'Bratwurst is open on the default list, not on Getränke: added there',
     );
     assertEquals(alreadyOnList, []);
     const getraenke = text(lists).find((l: { name: string }) => l.name === 'Getränke').id;
@@ -243,16 +243,16 @@ test('list_lists names the lists; "list" picks one, the first list without it', 
     assertEquals(
       items(await call(auth, open, 'list_items', { household: 'Sommerfest' })),
       ['Bratwurst'],
-      "ticking on Getränke leaves the first list's Bratwurst open",
+      "ticking on Getränke leaves the default list's Bratwurst open",
     );
 
-    // An id from list_items with "list" works without it; a name means the first list.
+    // An id from list_items with "list" works without it; a name means the default list.
     const schorle = text(drinks).items.find((i: { name: string }) => i.name === 'Apfelschorle').id;
     const byName = await call(auth, open, 'tick_items', {
       household: 'Sommerfest',
       items: ['Apfelschorle'],
     });
-    assertEquals(text(byName).ticked, [], 'Apfelschorle is not on the first list');
+    assertEquals(text(byName).ticked, [], 'Apfelschorle is not on the default list');
     const moved = await call(auth, open, 'move_item', {
       household: 'Sommerfest',
       item: schorle,
