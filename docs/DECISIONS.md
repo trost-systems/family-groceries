@@ -12636,6 +12636,39 @@ The baseline is 199 jobs' transcripts and 14 days of CI; its numbers go into
   provider on the stack's network: it changes how the suite reaches the provider in CI too, for a
   failure that CI does not have. Moving `scripts/fg` to CI's Flutter: its Linux build container
   mounts `~/flutter`.
+- **The job's record is a PR of its own.** The hill-climb section, `docs/done/` and the lead's
+  points need the last change's merge time and the cost up to it, and a PR's description cannot
+  change after its review. So a ninth PR, docs only, carries them.
+- **Costs are what the counters give.** Run 1 has the CLI's result line. Run 2 is read from the
+  transcript stream, which has cache counts and no full output counts, so its output tokens and
+  price are "not measured" and not estimated. Subagent tokens are the totals each run handed
+  back, read from the session transcript; the runs without one are counted and not estimated.
+- **No rate after the fixes is claimed.** The fixes reached main on 14 November. The section
+  gives what was forced or counted on the runner and in single CI runs, and says a failure rate
+  needs a week of runs.
+- **`MERGE_WAIT_MINUTES=45` for a run with the ios job is a sentence, not a new default.** 23 of
+  110 green runs with the ios job took over 30 minutes to `ci-ok`, and the job lost a land to
+  it. The setting exists and `docs/CI.md` named it, so the two files now say when to raise it. A
+  higher default makes every stuck run hold the merge lock longer, which is the lead's to weigh
+  (`NEEDS_LEAD.md`).
+- **The kill by name is fixed on both sides: in the test, and in `merge-pr.sh`'s wait (#451).** The
+  record's first review found what the author's search had missed: the fg-cli gate's
+  `cancel_test.ts` ran `pkill -f '^sleep 20$'`, which ended the poll of any `merge-pr.sh --wait` on
+  the machine. The test now ends the pid its shell wrote down, and a bystander `sleep 20` must
+  outlive it. The first version left `merge-pr.sh` alone, since a silent `sleep 20 || true` would
+  hide the next kill by name. #451's review named the third way and why it is needed: a wait that
+  logs the signal hides nothing, and it protects a land at once, because a land runs `merge-pr.sh`
+  from a rebased checkout, while the test's fix reaches the checkouts that send the kill only as
+  they rebase (103 of 104 on the runner still had the old line, and #445's land was ended a second
+  time while #451 was in review). Only a sleep that a signal ended is survived, and at most 20 of
+  them per wait: a sleep that fails any other way, or the 21st ended one, stops the script with a
+  line that says so. Without that bound a sleep that keeps dying would leave the loop no pause
+  between its looks at `ci-ok` (6587 a minute against the test's fakes); 20 is five times the most
+  fg-cli gate runs the ledger has in 30 minutes. `landing-test.sh` pins the look after an ended
+  sleep, the bound and the stop. No lint rule against a kill by name: one case in a month, and the
+  one other `pkill` in the tree runs on the fg CLI's own emulator. The mutation of the test ran on
+  a name nobody else uses (`sleep 20.219`), because the real pattern would have ended other jobs'
+  lands.
 
 ## Job 225 review 0: feedback doc and the digest URL, 2026-11-14
 

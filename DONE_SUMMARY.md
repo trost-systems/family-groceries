@@ -841,3 +841,20 @@ Follow-up to #447 (already merged) for review 0's must-fix. Under reduced motion
 
 - Tests: new widget tests for the create screen with animations off (no exception, one error, field focused), for typing clearing the error, and for the list tabs at 358 px with animations off. All three fail on main and pass now; 1068 list and household tests pass. The rule flags both call sites on main.
 - Web build (`journeys/new-household-empty-name.mjs`, now with `--reduced-motion` and a typing check): 24 of 24 drives pass on the fix (de, en, 844 and 560 px, with and without reduced motion, three each; one run failed at the sign-in screen and passed on four reruns). On main at 844 px typing reaches nothing; at 560 px with reduced motion the error stays after typing.
+
+## Job 219: verify.sh says what happened, two e2e flakes fixed at their cause, recipes (2026-11-14)
+
+Baseline first (`docs/hillclimb/fable-improvement-2026-11.md`, "Job 219"; 399 transcripts of 199 jobs, 14 days of CI): 28 of 206 failed local gate runs did not show which gate failed, `ci-ok` failed 16.3 % of first attempts, and the MCP shard hung in 15 of 420 runs since #260. Eight PRs; none changes what the app shows, and no gate was weakened, skipped or given a retry:
+
+- **`verify.sh` ends on a plain verdict** (#420, on main as `86d5d8c5`): `[verify] passed: ...` or `[verify] FAILED: <gate> ...; its output: <file>` as the last line, a file per gate run, a time per gate, a ledger (`--history`) and a note for a gate with both results on the same files or three failures in a row.
+- **A failed e2e job keeps the stack's logs** (#423, on main as `31a0de87`): every container's log with timestamps in the `e2e-results` artifact. The first hang read with them was read to its request.
+- **Gates that run Flutter require CI's version; a branch behind main did not delete main's migrations** (#439, on main as `7c3e2faf`).
+- **The MCP hang, at its cause** (#440, on main as `f80960a7`): the edge runtime dropped a finished answer to a POST whose body nobody had read (about a third of 150 on one core, 0 of 150 after). Functions behind `withTelemetry` read the body first.
+- **Five e2e tests wait for a tick's write before they reload** (#441, on main as `868340c2`).
+- **The e2e gate resets a stack whose migrations are not the checkout's** (#442, on main as `789ffd6a`), as the db gate does.
+- **Recipes for failures seen before** (#445, on main as `78659c8f`): a failed gate's verdict names the recipe its output matches (`seen before? <file>`); the first is the fake sign-in provider the Hetzner runner's containers cannot reach. The verify-snacklist skill has a "Gates" section for the loop after an edit.
+- **The fg-cli gate no longer ends a land waiting for CI** (#451, on main as `43453367`): one of its tests cleaned up with `pkill -f '^sleep 20$'`, and `merge-pr.sh --wait` polls with `sleep 20`. It ended this job's land of #445 twice ("Terminated", exit 143); by 17:25 CET on 14 November seven jobs' transcripts held such an end. The test now ends its own process only, and `merge-pr.sh --wait` logs a sleep that a signal ended and waits on.
+
+Fable review PASS on each (`claude-fable-5-2`, 38 rounds in all). Changelog `none`. No flag; nothing for Peter. CI's failure rates after the fixes need a week of runs and are not claimed. The job's own tests make the lint gate 23 to 30 s slower on the runner. `docs/NEEDS_LEAD.md` has ten points for the lead, first the wait at the merge lock (17.6 h over 13 turns).
+
+Details: [docs/done/219-verify-skill-tooling.md](docs/done/219-verify-skill-tooling.md)

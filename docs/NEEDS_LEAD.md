@@ -2218,3 +2218,89 @@ settings) is in `NEEDS_PETER.md`, "Job 220".
    `docs/CI.md`): a default of 40, or land scripts that set it, would keep such a hold from
    being wasted
    (`docs/hillclimb/fable-improvement-2026-11.md`, Job 220, the merge lock table).
+
+## Job 219: what the verification job measured and did not fix (2026-11-14)
+
+Status: open, the lead's call. No browser step. Each point is outside the job's reach or its
+brief; the numbers are in `docs/hillclimb/fable-improvement-2026-11.md`, "Job 219".
+
+1. **The merge lock is where the loop waits now.** In the baseline the merge lock took 55.8 h
+   of the jobs' 602.4 h wall time (36 jobs), second to the wait for CI (172.7 h). In the night
+   of 13 November and on 14 November the Mac lock was unavailable, and `merge-lock` waits for
+   it at every acquisition before it falls back to the Hetzner lock (30 to 38 minutes at this
+   job's turns, by the BOARD's warning lines). Each land then holds that lock for a push and
+   one CI run, and the Hetzner lock is a plain `flock`, which hands the lock to any waiter and
+   not to the first (job 218's point 3 above measures the one CI run per land). This job's 13 turns at the lock waited 17.6 h in sum,
+   30 min to 2 h 48 min each. Two changes would cut that, both in
+   `~/groceries-ops/bin/merge-lock` and so not a job's to make: remember for some minutes that
+   the Mac lock was unavailable and skip the wait, and queue first-come.
+2. **`merge-pr.sh --wait` gives up after 30 minutes; one run in five with the ios job takes
+   longer.** 23 of the baseline's 110 green runs with the ios job took over 30 minutes to
+   `ci-ok`, one over 45. A PR that touches `scripts/gates/` or `scripts/lib.sh` runs every CI
+   job, ios included. It ended #420's first land: the run took 34.6 min (the ios job started
+   4.7 min into the run and ran 28.9), and `ci-ok` turned green 2.6 min after merge-pr had given up.
+   Job 218's #438 lost a land the same way at 09:40 on 14 November (its BOARD line of 09:41).
+   The land then starts again with a new wait for the lock and, when main moved meanwhile, a
+   new push and a new CI run. The setting exists and `docs/CI.md` named it; when to raise it
+   was not written down. This job's last PR says so in `AGENTS.md` and `docs/CI.md`
+   (`MERGE_WAIT_MINUTES=45` for such PRs). Job 220's point above proposes a default of 40. A default of 45 when the run has the ios job would not depend
+   on a job reading that, at the price of a stuck run holding the lock 15 minutes longer: the
+   lead's call.
+3. **The hz-runner's BOARD line is early.** "WARNING <job> merged under the Hetzner-only merge
+   lock" is posted when the wait for the Mac lock ends, before the job has the Hetzner lock and
+   whether or not it merges. It named job 219 at 23:49 on 13 November, 2 h 18 min before its
+   first merge (02:07), and three times at 09:42 on 14 November, 77 minutes before the next
+   (10:59).
+4. **A tick right before the page goes away can be lost (product, not changed).** In the one CI
+   trace read (run 43503369675, WebKit) the app sent no write for a tick when the page reloaded
+   within about half a second of the row leaving, and did not send it after the reload either.
+   Locally an instant reload kept the tick in 20 of 20 tries. The e2e tests now wait for the
+   write (#441). Whether a user who ticks and closes the tab at once can lose the tick is not
+   measured; job 212 owns the list's write path.
+5. **The hosted project and the early answer.** #440 fixed a local finding: the edge runtime
+   drops a finished answer to a POST whose body nobody read (about a third of 150 requests on one
+   core). Whether the hosted runtime does the same was not probed, since jobs do not load-test
+   production. After #440 no function behind `withTelemetry` answers before it has read the
+   body, so the question is open only for the others.
+6. **Ten e2e tests cannot pass on the Hetzner runner.** The stack's containers cannot open a
+   host port there, so the fake sign-in provider is out of reach (at least 20 of 199 jobs have
+   these failures in their transcripts). The recipe names the cause and sends the tests to CI.
+   Letting the Docker bridge reach the e2e port range on the host would make them pass
+   locally; the firewall is not a job's to change.
+7. **Left open in #442, each named in its PR.** The `docker exec` that reads the applied
+   migrations has no timeout. Two checkouts with one `project_id` share a stack, and each resets
+   it for its own migrations. `supabase db reset` restarts auth, realtime and storage, and the
+   gate waits for nothing beyond the CLI's return (one passing run measured).
+8. **The job's tests cost the lint gate 23 to 30 s** on the runner (79 to 86 s before, 108.5 s
+   to 108.6 s after; three rounds each of `scripts/gates/lint.sh`). Most of it is
+   `scripts/verify-test.sh` (28.9 to 29.0 s as merged), whose cases wait on real seconds for the
+   lock-wait and left-over-server checks. Say so if that is too much for what it guards.
+9. **Until #451, any fg-cli gate run ended a land waiting for CI on the same machine; what is left
+   of it.** The gate's `cancel_test.ts` cleaned up with `pkill -f '^sleep 20$'` (since #35), and
+   `merge-pr.sh --wait` polled with `sleep 20` under `set -e`: the land printed "Terminated",
+   exited 143 and lost its turn at the lock. It ended #445's first land at 14:21:38 on 14 November,
+   in the seconds job 215's fg-cli gate ran (the ledger: 7 s, done 14:21:41), and its second at
+   15:05:49 (job 234's gate, 5 s, done 15:05:51). By 17:25 seven jobs' transcripts held such an
+   end. Job 236's land of #453 is one: its wait ended before `ci-ok` on its head turned green at
+   16:18:54, most likely at 16:17:00 in job 231's fg-cli gate (the ledger: 3 s, done 16:17:02),
+   and it merged 48 minutes later. Job 229's ended between 16:41 and 17:00 (job 215's gate, done
+   16:51:44, is the likely sender, not proven). A third end of this job's land's wait, at
+   16:24:00, was this job's own doing: a review subagent ran an old checkout's fg-cli gate by
+   mistake (a `cd` that went into the background with the list it led), which also ended two
+   waiting loops of job 236's session, which went on; the land script started this job's wait
+   again.
+   #451 fixes both sides: the test ends its own process only, and `merge-pr.sh --wait` logs a sleep
+   that a signal ended and waits on, up to 20 times per wait. A land runs `merge-pr.sh` from a
+   checkout that `push-pr.sh` rebased, so lands are safe from the merge on. The worktrees of
+   running jobs keep the old test until they rebase, and their fg-cli gate still ends every other
+   `sleep 20` on the machine: a script that waits that way under `set -e` ends with "Terminated"
+   (of the repo's scripts that wait only `scripts/voice/health.sh` has another `sleep 20`, without
+   `set -e`; an agent's own loop may have one). Nothing to decide; a land that ended that way before #451 was this.
+10. **A 502 from GitHub on the merge call loses a land's turn.** `merge-pr.sh` calls `gh pr merge`
+    once. #445's third turn waited 71 minutes for the lock and 23 for CI, `ci-ok` turned green at
+    16:39:59, and the merge call 20 s later came back "non-200 OK status code: 502 Bad Gateway":
+    exit 1, the PR still open, the turn gone. Job 32b's transcript has the same end on 30 October;
+    no other of the runner's transcripts has that line. Two lands in 16 days did not carry a PR of
+    their own here. The fix would be small: when the merge call fails, read the PR's state, and
+    call once more if it is still open and its head unchanged (`--match-head-commit` keeps a second
+    call from merging anything else).

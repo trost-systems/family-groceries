@@ -671,3 +671,295 @@ push, not a retry of the same commit. No other run on this job's PRs failed.
 - **A stay-off file still gets a recorded finding and a fence.** `supabase-deploy.yml` could not
   be changed here; the allow-list entries name exactly what is excepted, fail when stale, and the
   done doc carries the fix for the job that owns the file.
+
+## Job 219: verification tooling, 2026-11-14
+
+The brief: make the checks an agent runs after an edit objective and reproducible, with a bounded
+fix loop; fix the evidenced flakes and slow steps that dominate that loop; keep recurring local
+fixes as narrow recipes. No gate weakened, no quality score added. The mining scripts, the raw
+tables, the review reports and the flake evidence are in the job's research folder
+(`research/219-verify-skill-tooling/`, out of tree); the paths below are relative to it.
+
+### Baseline
+
+Measured on 13 November 2026, before this job changed anything. The files are in the job's research
+folder (`research/219-verify-skill-tooling/baseline/`, out of tree). `summary.md` mines 399
+transcript files of 199 jobs (30 October to 13 November), `ci-summary.md` reads 14 days of `ci.yml`
+runs from the GitHub API, and `gates-run1.tsv` times each gate script once.
+
+**What runs where** (`scripts/verify.sh`, `scripts/ci-changes.sh` and `ci.yml` on main `aa953203`).
+`verify.sh` runs 14 gates in the table's order and stops at the first that fails. `ci.yml` has 19
+jobs: 16 gate jobs (e2e in two shards with a stack each), `changes`, `keepalive-schedule` and
+`ci-ok`, the one required check. `android` and `ios` run locally only when `--only` names them.
+
+| Gate | Local, s | CI median | CI p90 | CI runs it |
+| --- | ---: | ---: | ---: | --- |
+| gitleaks | 11.6 | 0:24 | 0:29 | always |
+| lint | 101.4 | 2:00 | 2:18 | always |
+| changelog | 0.3 | 0:11 | 0:14 | on pull requests |
+| site | 25.2 | 0:42 | 0:47 | always |
+| site-agent | 31.6 | 0:59 | 1:35 | always |
+| emails | 4.4 | 0:18 | 0:23 | when the mails' sources or outputs change |
+| db | 145.0 | 3:22 | 3:43 | heavy |
+| functions | 27.3 | 0:41 | 0:47 | heavy |
+| nexus | 3.6 | 0:17 | 0:22 | heavy |
+| fg-cli | 5.4 | 0:19 | 0:23 | heavy |
+| flutter | 197.2 | 5:13 | 6:03 | heavy |
+| web-prod | 88.8 | 2:16 | 2:37 | heavy |
+| fastlane | 1.9 | 0:14 | 0:20 | when `app/fastlane/` or the Gemfile changes |
+| e2e | not timed | 15:51 and 17:08 | 18:20 and 23:15 | heavy, shards 1 and 2 |
+| android | CI only | 4:34 | 5:25 | native |
+| ios | CI only | 23:42 | 32:06 | native, on macOS |
+
+- "Heavy" is any change that is not documentation only, "native" one to the native projects, the
+  pubspec or the two gate scripts. A push to main or a change to the CI definition runs all.
+- Local is the gate script alone, one run on the shared box at `9efe6c19` (load average 2.76 to
+  14.72 at a gate's start), so a reading and no distribution. The 13 timings sum to 643.7 s.
+- CI is the whole job with its setup in green first attempts, from the 77 code runs, for emails,
+  fastlane, android and ios from the native runs (n 50, 100, 110, 110). `ci-ok` ends with the
+  slowest job, `e2e (2)` in code runs (17:32, p90 23:47) and `ios` in native runs (24:48, 32:39).
+
+**CI wall time to `ci-ok` and failed first attempts** (the cap set, the 400 most recent completed
+runs, 7 to 13 November. Times are m:ss from the run's start, over first attempts that succeeded).
+
+| Run class | n | Median | p90 | Max | First attempt failed |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| docs (the heavy gates were skipped) | 53 | 2:12 | 2:32 | 3:23 | 5.4 % |
+| code (e2e ran, ios did not) | 77 | 17:40 | 23:53 | 25:29 | 22.2 % |
+| native (ios ran) | 110 | 24:53 | 32:44 | 46:54 | 17.9 % |
+
+**Failures per CI job** (cap set, first attempts that ended in success or failure).
+
+- `ci-ok` failed in 47 of 289 first attempts (16.3 %). 7 of the 47 passed on a rerun of the same
+  commit (14.9 %), a lower bound of the flake share, because most failures get a new push instead.
+- Per job: `e2e (2)` 18 of 233 (7.7 %), `e2e (1)` 16 of 232 (6.9 %), `site` 6 of 289 (2.1 %),
+  `flutter` 4 of 233 (1.7 %), `ios` 2 of 131 (1.5 %), `lint` 3 of 289 (1 %), the others under 1 %.
+- Reruns over the whole window (1419 runs, 61 rerun): `e2e (1)` went green in 22 of 23, `e2e (2)`
+  in 13 of 15, `ios` in 4 of 5, `db` in 3 of 3. 46 of 69 failed `e2e (1)` jobs were never rerun.
+
+**The e2e tests that failed most** (whole window, the 103 failed e2e jobs with at most 3 failed
+tests. "Ran" counts shard results of the cap set only, so it is no denominator for "Alone").
+
+| Alone | Rerun green | Branches | Last 7 d | Ran | Test |
+| ---: | ---: | ---: | ---: | ---: | --- |
+| 12 | 5 | 7 | 0 | 250 | `classifier.spec.ts`, seed dictionary spot checks |
+| 12 | 5 | 11 | 12 | 249 | `mcp.spec.ts`, MCP over OAuth 2.1 |
+| 8 | 3 | 7 | 7 | 188 | `integration-lock.spec.ts`, locked household |
+| 7 | 5 | 7 | 0 | 250 | `add-sheet.spec.ts`, a tap adds the row with every field |
+| 6 | 0 | 3 | 1 | 249 | `stores.spec.ts`, category and store layout changes sync live |
+
+- The classifier and add-sheet rows are two app bugs that #156 and #205 fixed on 1 and 2 November,
+  and 6 of the 8 integration-lock failures are a race that #370 fixed on 12 November.
+- The MCP test is the live one. All 12 hang in the same step, after `5062100c` (#260) changed the
+  edge runtime's policy. The mcp shard had 0 hangs in 542 executions before, 15 in 420 after.
+
+**The local loop** (`summary.md`. 8826 verification runs, 4171 passed, 1996 failed, 2659 unknown).
+
+- A job ran a median of 26 verification commands and 5 failed (13 and 2.5 in the latest 30 jobs).
+  Verification is a median 76 % of a job's wall time. The median wall is 2.1 h, the wait 0.9 h.
+- Waiting for CI took 172.7 h in 188 jobs and the merge lock 55.8 h in 36 jobs, of 602.4 h wall
+  over all jobs. `verify.sh` with several gates blocked 11.8 h in 475 runs (median 77 s, p90 196 s).
+- 28 of the 206 failed `verify.sh` or gate runs did not show which gate failed, and 79 of 754
+  foreground runs showed neither pass nor fail (tail, grep or head cut the output).
+- The 206 by cause, from the message text alone: product 97, unclear 49, timeout or flake 1,
+  environment 59 (`stale-migrations` 17, `deno-lock-fmt` 12, `host-fake-oidc` 12, `format-drift` 6,
+  and smaller classes). By gate: e2e 57, lint 43, db 33, flutter 17, site 12.
+- 32 fail-then-pass pairs of one command had no file change in between (11 of them no environment
+  action either). They are 4 `verify.sh` or gate runs (lint 2, android 1, db 1), 14 direct test
+  tools, 11 `merge-pr.sh --wait` and 3 `push-pr.sh`. A pair is evidence of a flake, not proof.
+- Red streaks that a pass ended, p90 length per gate: db 4, e2e 3, flutter, site, functions and
+  nexus 2, lint, gitleaks and fg-cli 1, the other five none.
+
+**Escaped failures** (`ci-summary.md`, "Failures on pushes to main", whole window. Main takes a
+commit only with `ci-ok` green, so these failed on commits whose PR run was green).
+
+- 25 jobs failed in push runs on main: `e2e (1)` 10, `ios` 7, `e2e (2)` 3, `db` 3, `android` 1,
+  `gitleaks` 1. 24 were not rerun and 1 went green on a rerun. The next push was green after 19.
+- By signature: 8 the add sheet that did not open (to 1 November), 5 ios without a simulator, 4
+  download or docker faults, 2 each the MCP timeout, integration-lock and StoreKit tests, 2 other.
+- `known-flakes.md` lists 14 documented escapes of another kind, defects found after a green gate.
+
+**Not measured**
+
+- A local time for e2e, android and ios, and the e2e-lock wait inside a foreground `verify.sh`.
+- The verdict of 155 of 819 background or detached runs nobody read back, verification inside
+  scripts the transcript never shows, its tokens and cost, and causes beyond the message text.
+- Job data of the 1013 older CI runs the cap cut off (per-job timings and failure rates, e2e
+  artifacts), and 31 cap-set jobs that failed in an attempt a newer push cancelled (lint 11).
+- Flakes that pass inside one job (Playwright's flaky status is 0 in 491 shard results by design),
+  the mechanism of a failure seen after its fix, and the request that hangs in the MCP timeout.
+- Escapes to production beyond the docs, workflows other than `ci.yml`, and the length of Monitor
+  and ScheduleWakeup waits.
+
+### What landed
+
+Eight PRs, one commit each. Each has a test in a gate, a `claude-fable-5-2` review that ended in
+PASS and `ci-ok` green on the merged head. A ninth, docs only, carries this section and one
+sentence for `AGENTS.md` and `docs/CI.md`: a land whose CI run has the ios job waits with
+`MERGE_WAIT_MINUTES=45` (23 of the baseline's 110 green runs with ios took over 30 minutes to
+`ci-ok`, the default wait; one took over 45).
+
+| PR | Merged as | Change | Evidence it rests on |
+| --- | --- | --- | --- |
+| #420 | `86d5d8c5` | `verify.sh` ends on a plain verdict line, keeps each gate run's output in its own file, times each gate, keeps a ledger and notes a gate with both results on one tree or three failures in a row; `--history` | 28 of 206 failed local runs hid the gate, 79 of 754 hid the result, 620 calls stripped colour by hand |
+| #423 | `31a0de87` | a failed e2e job keeps every stack container's log with timestamps; `ci-timings.sh --steps e2e` finds the shards | two flake causes ended at "no log in CI"; no MCP hang could say which container held the request |
+| #439 | `7c3e2faf` | the gates that run Flutter require CI's version and name the fix (`scripts/install-flutter.sh`); the schema check no longer reports a migration main gained after the branch left it as deleted | 3.47.8 on the box against CI's 3.50.0: 4 lockfile changes and 1 analyzer error CI does not have; "is on main and was deleted" in 12 jobs |
+| #440 | `f80960a7` | a function behind `withTelemetry` reads the request's body before it answers; the MCP specs' requests fail after 15 s with the request named; a finished answer keeps its Content-Length | the mcp shard hung in 15 of 420 runs since #260, in 0 of 542 before |
+| #441 | `868340c2` | five e2e tests wait until the server took a tick before they reload (`tickSaved`) | `wasm-boot.spec.ts` failed twice on WebKit in CI; the one trace read (run 43503369675) has the tick lost |
+| #442 | `789ffd6a` | the e2e gate resets a running stack whose applied migrations are not the checkout's | job 168c's ten spec files over a stale stack; 28 of 203 jobs reset by hand (124 commands) |
+| #445 | `78659c8f` | recipes in the verify-snacklist skill, named by the FAILED verdict (`seen before? <recipe>`); the skill's "Gates" section; first recipe: the fake sign-in provider the runner's containers cannot reach | at least 20 of 199 jobs have local failed lines of the ten tests it covers |
+| #451 | `43453367` | the fg-cli gate's test ends the one process it started, and a bystander `sleep 20` must outlive it; `merge-pr.sh --wait` goes on, and says so, when a signal ends only its sleep | the test's `pkill -f '^sleep 20$'` ended every `sleep 20` on the machine, the poll of `merge-pr.sh --wait` among them: #445's land exited 143 twice in the seconds another job's fg-cli gate ran; by 17:25 on 14 November seven jobs' transcripts held a wait for `ci-ok` that ended "Terminated" |
+
+Looked at and left alone, with the reason:
+
+- The integration-lock, deep-links and club e2e flakes were fixed before this job (#370, #314): 0
+  of 79, 0 of 247 and 0 of 81 runs since their fixes (`flakes/lock-deeplinks/diagnosis.md`).
+- CI's shape (shards, the ios job's phases) is job 221's.
+- A finer table from changed files to gates for `verify.sh`: the local gates are 2 % of the jobs'
+  wall time (11.8 h of 602.4 h), and a wrong table gives false greens.
+- A retry anywhere. No test, gate or request got one.
+
+### Before and after
+
+Measured, on the runner or in CI's artifacts:
+
+| What | Before | After | How measured |
+| --- | --- | --- | --- |
+| A failed `verify.sh` run shows which gate failed | 178 of 206 | every run, as its last line | before: transcripts; after: by test (`scripts/verify-test.sh`, a 40 MB burst, a left-over server and two runs at once among the cases), no count yet |
+| A POST with an unread body gets no byte back in 3 s (local stack, edge runtime on one core) | 55, 53 and 49 of 150 on three functions; 11 of 300 SDK connects got a late 503 | 0 of 150 on each; 0 of 1000 SDK connects | `e2e/early-answer-probe.mjs`, `flakes/mcp-oauth/repro/counts.tsv` |
+| The two MCP e2e tests, 15 times each, runtime on one core | 29 of 30 (the body read removed) | 30 of 30 | `--repeat-each 15 --workers 2 --retries 0` |
+| A hung MCP request in CI | the test's 60 s timeout, nothing named | `no response headers after 15005 ms: POST <url>` | the failing run without the body read |
+| An e2e run on a stack one migration behind | fails as if the app were broken (job 168c: about 14 tests) | resets and passes: 109 s with a cold web build, 38 s warm, against 19 s with nothing to reset | `flakes/stale-stack/` |
+| The flutter gate on the runner without `FLUTTER_DIR` | ran 3.47.8: 4 lockfile changes, 1 analyzer error CI does not have | passes on 3.50.0 | `env -u FLUTTER_DIR scripts/verify.sh --only flutter` |
+| The schema check on a branch one migration behind `origin/main` | exit 1, "is on main and was deleted" | passes with a note to rebase | scratch clone, forced before and after |
+| The cause of a CI hang, from the run's own artifacts | not readable in any of 15 hangs | read to the request in run 43566212940, the first hang the job read after #423 (run 43552637024 on main hung 2.8 h earlier; its logs are saved and unread) | trace, edge runtime log and Kong log of that run |
+| The three specs that tick and reload, three times each | no local failure on record (CI: 2) | 54 of 54 | `--repeat-each 3 --retries 0` |
+| An e2e run on the runner that fails in the fake sign-in provider's tests | nothing in the output names the cause; 8 of the 18 jobs counted at #445's second review called it known at their first mention | the verdict ends `seen before? .cursor/skills/verify-snacklist/recipes/e2e-fake-oidc-unreachable.md` | the real gate on `id-token.spec.ts` (6 failed, 156 s); `scripts/verify-test.sh` |
+
+What the job's own tests cost the lint gate, measured:
+
+- On the runner, three alternating rounds of `scripts/gates/lint.sh` (load 1.2 to 2.6): 78.8,
+  79.0 and 85.7 s at `fe56ff6e` (main before #420, with #423), 108.5, 108.6 and 108.6 s with
+  #420, #439, #442 and #445's first version applied (`measurements/lint-ab.tsv`). So 23 to 30 s
+  more. `scripts/verify-test.sh` alone takes 28.9 to 29.0 s as merged with #445 (three runs,
+  `measurements/verify-test-time.txt`): its cases wait on real seconds for the lock-wait and
+  left-over-server checks, and it runs `verify.sh` once for every line of a recipe's Example.
+- In CI the lint job took a median 120.5 s on the 30 pushes to main before #420 (95 to 150 s)
+  and 146.5 s on the 10 from #420 to #442 (125 to 184 s). Not this job's alone: #418 changed
+  the lint gate in the same window.
+
+Not measured, and why:
+
+- CI's failure rates after these PRs. `ci-ok` failed 16.3 % of first attempts in the baseline and
+  the mcp shard hung in 3.6 % of its runs since #260. The tick-and-reload tests failed twice, once
+  in the baseline and once on this job's #423. The fixes reached main on 14 November; a rate
+  needs a week of runs. `ci-summary.md`'s script reads it again (`scripts/` in the research
+  folder).
+- The gates' local times after these PRs, apart from lint above and the e2e gate's reset. The
+  baseline has one reading per gate; the ledger #420 added now collects one per run (the flutter
+  gate, which #439 moved to CI's SDK on the runner: its 10 passes in the ledger
+  by 18:15 CET on 14 November took 127 to 214 s, against the baseline's one reading of 197.2 s
+  and under other loads).
+- How many lands the fg-cli test's kill by name ended before #451. By 17:25 CET on 14 November
+  seven jobs' transcripts (162, 204c, 212, 213, 229, 236 and this one) hold a `waiting for ci-ok`
+  that ended "Terminated": one wait each, two for this job
+  (`measurements/merge-pr-terminated.txt`). Three are matched to a gate run by the ledger:
+  this job's two, and job 236's, which ended before `ci-ok` on its head turned green at 16:18:54,
+  most likely at 16:17:00 in job 231's fg-cli gate (3 s, done 16:17:02). That is the second
+  this job's third land of #445 got the lock, so that turn began early at job 236's cost. Job
+  229's ended between 16:41 and 17:00; job 215's gate (done 16:51:44) is the likely sender, not
+  proven. A land that ran detached wrote to a log file and is not counted unless the session
+  printed that log, and the baseline's 11 `merge-pr.sh --wait` fail-then-pass pairs were not
+  split by cause.
+- How often the verdict line, the ledger's notes and the recipe change what an agent does next.
+  The ledger had 100 rows by 13:10 CET on 14 November: 55 from this job's branches and 45 from
+  eight other jobs' branches, the first of those at 10:24. The 45 are 39 passes and 6 failures,
+  all of the db gate. One tree has both results (job 225c: db failed after 35 s and passed
+  after 124 s two minutes later), and job 229 has five db failures in a row over four trees, so
+  both notes were printed at least once outside this job. What those jobs did next was not
+  read.
+- The hosted project. Whether it loses an early answer the way the local runtime does was not
+  probed.
+- The share of the 124 hand resets that a stale stack caused.
+
+### Cost
+
+Measured where a counter exists; anything else is labelled.
+
+- **Lead time.** Started 13 November 19:47 CET; #451, the last change, merged 14 November
+  18:15: 22.5 h. For 6.9 h of it (23:38 to 06:32) the job was stopped by the usage
+  limit (`limit-blocked`), while two detached lands went on.
+- **Tokens, run 1** (to the stop; the CLI's result line): 494 turns in 3.83 h, input 113,787,
+  output 2,740,776, cache read 176,846,944, cache creation 7,952,450; 67.64 USD at the CLI's
+  prices.
+- **Tokens, run 2** (from 06:32; read from the transcript stream at 18:15 CET, which has no
+  full output counts and no price): the main thread 907 messages with cache read
+  101,092,159 and cache creation 2,847,822; subagents 1,093 messages with 105,812,879 and
+  5,544,016.
+- **Subagents**, inside those totals: 4,189,449 tokens over the 45 runs that
+  handed a total back (reviews and delegates, both runs of the job; read from the session
+  transcript at the same time, `measurements/subagent-tokens.tsv`). Two of the
+  47 subagent transcripts have no total there.
+- **Reviews.** 38 rounds of `claude-fable-5-2` over the eight PRs before each PASS: #420 5,
+  #423 5, #439 7, #440 4, #441 3, #442 4, #445 6, #451 4. Each FAIL named a measured
+  defect, a sentence of the PR that claimed more than its test pinned, or a figure in the
+  description that did not match its source. #445's rounds were
+  mostly the second kind, until its test compared whole outputs in place of single lines. This
+  record had five rounds of its own; the first found the sender of the signal that
+  ended #445's land, which the author had searched for and not found, and so #451. #451's
+  first review in turn showed that the test's fix alone reaches a checkout only when it
+  rebases, and that a wait in `merge-pr.sh` which logs the signal hides nothing; its second
+  that the new test passed for a wait that never looked at `ci-ok` again. Its third reviewer ran
+  an old checkout's fg-cli gate by mistake (a `cd` that went into the background with the list
+  it led) and so sent the kill itself, at 16:24:00: it ended the wait of #445's land, which the
+  land script started again, and two waiting loops of job 236's session, which went on. The
+  fourth brief asked for absolute paths in every command and nothing in the background.
+- **CI.** `ci.yml` ran 35 times on the eight PRs' branches: 26 green, 5 red and 4 cancelled by a
+  newer push. A green run took 18.9 to 40.8 min from its creation (median 23.4). Per PR: #420 9 (6
+  green, 2 red, 1 cancelled), #423 6 (2 green, 1 red, 3 cancelled), #439 2 (2 green), #440 2 (2
+  green), #441 2 (2 green), #442 2 (2 green), #445 7 (5 green, 2 red), #451 5 (5 green). Of the
+  five red runs one was #420's own new test (the burst of output, fixed before the merge). Two were
+  defects this job fixed in another PR: the lost tick (#423's run, the trace #441 rests on) and the
+  MCP hang (#420's second land). The two on #445 were the schema check's "is on main and was
+  deleted" while #445 was stacked on #442's branch, which was behind main: CI checks out a shallow
+  clone of the merge into that branch, where the check finds no merge base and #439's relief does
+  not apply. That is a limit of stacked PRs #439 left open; the next run, with #445 on main, was
+  green.
+- **Not measured:** output tokens and price of run 2, the subagent runs without a total, and
+  the job's share of the runner's load.
+
+The lands, all under the Hetzner-only merge lock (times CET, 14 November unless said; queued is
+when the land's log file was created):
+
+| PR | Queued | Lock | Done | Waited | Held | Result |
+| --- | --- | --- | --- | ---: | ---: | --- |
+| #423 | 13 Nov 23:19 | 01:41 | 02:07 | 2 h 22 min | 26 min | merged |
+| #420 | 13 Nov 23:19 | 02:07 | 02:39 | 2 h 48 min | 32 min | `merge-pr.sh` gave up after its 30 min; `ci-ok` turned green 2.6 min later (the ios job started 4.7 min into the run and ran 28.9) |
+| #420 | 06:35 | 07:24 | 07:51 | 50 min | 26 min | `ci-ok` red: the MCP hang, the first one read to its request (the cause #440 fixes) |
+| #420 | 07:52 | 08:48 | 09:09 | 56 min | 21 min | merged |
+| #441 | 09:12 | 10:34 | 10:59 | 1 h 22 min | 25 min | merged |
+| #439 | 09:12 | 10:59 | 11:24 | 1 h 47 min | 24 min | merged |
+| #440 | 09:12 | 11:24 | 11:46 | 2 h 11 min | 22 min | merged |
+| #442 | 11:24 | 12:40 | 13:07 | 1 h 16 min | 27 min | merged |
+| #445 | 13:10 | 14:07 | 14:21 | 56 min | 15 min | ended by the fg-cli test's kill by name 14 min into `merge-pr.sh`'s wait ("Terminated", exit 143); `ci-ok` turned green 7 min later |
+| #445 | 14:22 | 14:56 | 15:05 | 34 min | 9 min | ended the same way 9 min into the wait (exit 143), by another job's fg-cli gate |
+| #445 | 15:05 | 16:17 | 16:40 | 1 h 11 min | 23 min | the wait was ended once (16:24:00, by this job's own reviewer) and started again by the land script; then `gh pr merge` got a 502 from GitHub 20 s after `ci-ok` turned green (exit 1, the PR still open) |
+| #445 | 16:41 | 17:11 | 17:32 | 30 min | 21 min | merged |
+| #451 | 17:03 | 17:54 | 18:15 | 51 min | 21 min | merged |
+
+Every wait begins with the 30 to 38 minutes `merge-lock` tried the Mac lock, which was unavailable
+at each of these turns (its log: "tunnel down?"). The waits sum to 17.6 h and overlap where
+several of the job's PRs queued at once. 5 of the 13 turns merged nothing: one to
+`merge-pr.sh`'s 30 minutes, one to the MCP hang, two to the fg-cli test's kill by name
+(#451) and one to a 502 from GitHub on the merge call. The land of this section's own PR is not
+in the table.
+
+### For the lead
+
+Ten points are in `docs/NEEDS_LEAD.md`, "Job 219". The three that cost this job the most: the
+wait at the merge lock (the table above), `merge-pr.sh --wait` giving up after 30 minutes when
+the ios job needs longer (now a sentence in `AGENTS.md`; the default is the lead's), and the
+lands that the fg-cli test's kill by name ended (fixed by #451; the point says what is left). A
+fourth lost one turn: a 502 from GitHub on the merge call (not fixed; the point names the fix).
+Two are about the product or production and were not probed: a tick right before a reload, and
+whether the hosted edge runtime loses an early answer.

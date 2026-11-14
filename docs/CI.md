@@ -303,6 +303,18 @@ intervals while scrolling a 200-item list (DECISIONS job 28, 7).
    can't hold the merge lock. The value is a whole number of minutes, such as
    `MERGE_WAIT_MINUTES=10`. Anything else (`0.5`, `abc`) stops merge-pr.sh
    with exit 2 before it does anything.
+   The default is too short for one run in five with the ios job: 23 of 110
+   such runs took over 30 minutes from their start to `ci-ok`, one over 45
+   (green first attempts, 7 to 13 November; job 219's baseline). A land that
+   gives up starts again with a new turn at the merge lock and, when main
+   moved meanwhile, a new push and a new CI run. The ios job runs when a PR
+   changes the native projects, the pubspec, `scripts/gates/`,
+   `scripts/lib.sh` or the CI definition (the list is
+   `scripts/ci-changes.sh`): land those with `MERGE_WAIT_MINUTES=45`.
+   The wait sleeps 20 s between its looks at `ci-ok`. A signal that ends
+   only that sleep (a kill by name elsewhere on the machine, job 219) is
+   logged and the wait goes on. The 21st such sleep of one wait stops it
+   with exit 1, a sleep that fails without a signal with the sleep's status.
 
 The commit message is the PR as GitHub shows it: the title with ` (#n)` as
 the subject and the PR description as the body. Messages of the branch's
