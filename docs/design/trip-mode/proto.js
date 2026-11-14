@@ -13,6 +13,7 @@ let s = M.load();
 const ui = { tab: 'list', view: null, kb: false, kbText: '', pop: false, showTabs: false, panel: false, toast: null };
 let promptTimer = null;
 let reloading = false;
+let stepping = false;
 
 function setup(scenId, keep = {}) {
   const scen = SCENARIOS.find((x) => x.id === scenId);
@@ -26,6 +27,7 @@ function setup(scenId, keep = {}) {
 }
 
 if (!s) setup('S1');
+s.prompt = null;
 const params = new URLSearchParams(location.search);
 if (params.get('tm') && TMS.some((t) => t.id === params.get('tm'))) s.v = params.get('tm');
 if (params.get('free') === '1') s.premium = false;
@@ -40,7 +42,7 @@ const hexBtn = (label, act, extra = '') => `<span class="hexbtn"><button data-ac
 
 function tickItem(id) {
   const r = M.tick(s, id);
-  if (r === 'prompt' && s.v === 'TM3') {
+  if (r === 'prompt' && s.v === 'TM3' && !stepping) {
     clearTimeout(promptTimer);
     promptTimer = setTimeout(() => { if (s.prompt) { M.answer(s, false); render(); } }, 6000);
   }
@@ -65,7 +67,7 @@ function openSummary(id, fresh = false) {
     s.notice = { kind: 'endedCard', tripId: id };
     ui.view = null;
   } else if (s.v === 'TM4' && fresh && !s.premium) {
-    ui.toast = { text: `Einkauf beendet · ${M.minutes(s.history[0].durationMs)}` };
+    ui.toast = { text: `Einkauf beendet · ${M.minutes(s.history[0].durationMs)}`, reopen: id };
   } else {
     ui.view = { kind: s.v === 'TM2' ? 'sheet' : 'page', id, fresh };
   }
@@ -80,7 +82,7 @@ const api = {
   lea: (name) => M.addItem(s, name, 'Lea'),
   pause: () => M.pause(s),
   resume: () => M.resume(s),
-  end: () => endNow(),
+  end: () => { if (s.trip) endNow(); },
   keyboard: (on) => { ui.kb = on; },
   reopen: (ms, fromStep = true) => {
     M.advance(s, ms);
@@ -114,7 +116,8 @@ function watch() {
 function runStep() {
   const step = scen().steps[s.step];
   if (!step) return;
-  step.run(api);
+  stepping = true;
+  try { step.run(api); } finally { stepping = false; }
   if (reloading) return;
   s.step += 1;
 }
@@ -203,8 +206,8 @@ function tripBar() {
   if (s.v === 'TM1') {
     if (ui.kb) return '';
     if (t.nudge) {
-      return `<div class="strip-bar nudge" role="group" aria-label="Einkauf"><div class="strip-text"><b>Noch beim Einkaufen?</b><small>Zuletzt abgehakt um ${M.hhmm(last)}</small></div>
-        <button class="sbtn" data-act="keep-going">Weiter</button><button class="sbtn strong" data-act="end-at-last">Ende ${M.hhmm(last)}</button></div>`;
+      return `<div class="strip-bar nudge" role="group" aria-label="Einkauf"><div class="strip-text"><b>Noch beim Einkaufen?</b><small>Zuletzt abgehakt um ${M.hhmm(last)}${paused ? ' · pausiert' : ''}</small></div>
+        <button class="sbtn" data-act="keep-going">Läuft noch</button><button class="sbtn strong" data-act="end-at-last">Beenden um ${M.hhmm(last)}</button></div>`;
     }
     return `<div class="strip-bar" role="group" aria-label="Einkauf läuft"><span class="live ${paused ? 'off' : ''}"></span>${clockSpan()}
       <span class="strip-label">${paused ? 'Pausiert' : 'Einkauf läuft'}</span>
@@ -219,29 +222,21 @@ function tripBar() {
   }
   if (s.v === 'TM4') {
     const segs = t.segments.filter((g) => g.store);
-    const lapOf = (i) => {
-      const from = segs[i].from;
-      const to = segs[i + 1] ? segs[i + 1].from : (t.endedAt ?? M.now(s));
-      return Math.max(0, to - from - pausedBetween(t, from, to));
-    };
     const cur = segs[segs.length - 1];
+    const stores = [...new Set(segs.map((g) => g.store))];
     if (ui.kb) return `<div class="lap-thin">${icon('timer_outlined')} ${esc(cur ? cur.store : 'Einkauf')} ${clockSpan()}</div>`;
     if (t.nudge) {
-      return `<div class="lap-bar nudge" role="group" aria-label="Einkauf"><div class="lap-main"><b>Noch bei ${esc(cur ? cur.store : 'dem Laden')}?</b><small>Zuletzt abgehakt um ${M.hhmm(last)}</small></div>
-        <button class="sbtn" data-act="keep-going">Weiter</button><button class="sbtn strong" data-act="end-at-last">Ende ${M.hhmm(last)}</button></div>`;
+      return `<div class="lap-bar nudge" role="group" aria-label="Einkauf"><div class="lap-main"><b>Noch bei ${esc(cur ? cur.store : 'dem Laden')}?</b><small>Zuletzt abgehakt um ${M.hhmm(last)}${paused ? ' · pausiert' : ''}</small></div>
+        <button class="sbtn" data-act="keep-going">Läuft noch</button><button class="sbtn strong" data-act="end-at-last">Beenden um ${M.hhmm(last)}</button></div>`;
     }
     return `<div class="lap-bar" role="group" aria-label="Einkauf läuft"><div class="lap-main">
       <div class="lap-now">${icon('storefront_outlined')}<b>${esc(cur ? cur.store : 'Einkauf')}</b>${paused ? '<span class="paused-tag">Pause</span>' : ''}</div>
-      <small>${segs.length > 1 ? segs.map((g, i) => `${esc(g.store)} <span ${i === segs.length - 1 ? 'data-lap' : ''}>${M.clock(lapOf(i))}</span>`).join(' · ') : `seit ${M.hhmm(t.startedAt)}`}</small></div>
+      <small>${stores.length > 1 ? stores.map((st) => `${esc(st)} <span data-lap="${esc(st)}">${M.clock(M.storeTime(t, st, M.now(s)))}</span>`).join(' · ') : `seit ${M.hhmm(t.startedAt)}`}</small></div>
       ${clockSpan()}
       <button class="sbtn" data-act="${paused ? 'resume' : 'pause'}" aria-label="${paused ? 'Weiter' : 'Pause'}">${icon(paused ? 'play_arrow' : 'pause')}</button>
       <button class="sbtn strong" data-act="end">Beenden</button></div>`;
   }
   return '';
-}
-
-function pausedBetween(t, from, to) {
-  return t.pauses.reduce((sum, p) => sum + Math.max(0, Math.min(p.to ?? to, to) - Math.max(p.from, from)), 0);
 }
 
 function tabPill() {
@@ -266,7 +261,7 @@ function tabPill() {
 
 function bottom() {
   const toast = ui.toast && !ui.kb
-    ? `<div class="toast" role="status"><span>${esc(ui.toast.text)}</span>${ui.toast.undo ? `<button data-act="undo-tick" data-id="${esc(ui.toast.undo)}">Rückgängig</button>` : ''}</div>` : '';
+    ? `<div class="toast" role="status"><span>${esc(ui.toast.text)}</span>${ui.toast.undo ? `<button data-act="undo-tick" data-id="${esc(ui.toast.undo)}">Rückgängig</button>` : ''}${ui.toast.reopen ? `<button data-act="reopen-trip" data-id="${esc(ui.toast.reopen)}">Weiter einkaufen</button>` : ''}</div>` : '';
   const tm3prompt = s.prompt && s.v === 'TM3' && !ui.kb
     ? `<div class="toast ask" role="group" aria-label="Kaufst du gerade ein?"><span>${esc(M.byId(s, s.prompt.itemId).name)} abgehakt. <b>Kaufst du gerade ein?</b></span>
       <button data-act="undo-prompt">Rückgängig</button><button class="go" data-act="yes">Starten</button></div>` : '';
@@ -305,7 +300,7 @@ function historyScreen() {
     return `<div class="trip-card ${open ? 'open' : ''}"><button class="trip-row" data-act="open-summary" data-id="${e.id}" aria-expanded="${open}">
       <span class="store-mark">${icon('storefront_outlined')}</span><span class="trip-text"><b>${esc(stores)} · ${M.dayLabel(e.startedAt, M.now(s))}, ${M.hhmm(e.startedAt)}</b>
       <small>${sum.bought} Artikel · ${M.minutes(e.durationMs)}</small></span>${icon(s.v === 'TM3' ? (open ? 'expand_more' : 'chevron_right') : 'chevron_right')}</button>
-      ${open ? `<div class="inline-sum">${gated(e, summaryBody(e, { inline: true }))}</div>` : ''}</div>`;
+      ${open ? `<div class="inline-sum">${gated(e, summaryBody(e, { inline: true }))}${ui.view.fresh && !s.trip ? '<button class="link" data-act="reopen-trip">Weiter einkaufen</button>' : ''}</div>` : ''}</div>`;
   }).join('')}`;
 }
 
@@ -337,11 +332,8 @@ function summaryBody(e, opts = {}) {
       <p class="hint">„War geplant“ zählt einen Artikel zur Liste, wenn er abgesprochen war, aber nicht draufstand.</p>` : '<p class="hint">Nichts. Alles stand auf der Liste.</p>'}`;
   let body;
   if (s.v === 'TM4' && sum.stores.length > 1) {
-    const segs = e.segments.filter((g) => g.store);
     body = sum.stores.map((st) => {
-      const i = segs.findIndex((g) => g.store === st);
-      const to = segs[i + 1] ? segs[i + 1].from : e.endedAt;
-      const lap = to - segs[i].from - pausedBetween(e.trip, segs[i].from, to);
+      const lap = M.storeTime(e.trip, st, e.endedAt);
       return `<div class="store-sec"><div class="store-sec-head">${icon('storefront_outlined')}<b>${esc(st)}</b><span>${M.minutes(lap)}</span></div>
         ${sections(sum.planned.filter((r) => r.store === st), sum.added.filter((r) => r.store === st))}</div>`;
     }).join('');
@@ -418,13 +410,20 @@ function reopenToast() {
   return `<div class="toast top" role="status">Einkauf läuft noch · seit ${M.hhmm(s.trip.startedAt)}</div>`;
 }
 
+function moreScreen() {
+  const row = s.trip
+    ? `<p class="hint">Einkauf läuft seit ${M.hhmm(s.trip.startedAt)}.</p>`
+    : `<button class="more-row" data-act="start-hand">${icon('shopping_cart')}<span><b>Einkauf starten</b><small>Die Uhr läuft ab jetzt, die Liste, wie sie jetzt ist, gilt als geplant.</small></span></button>`;
+  return `<div class="title-row"><h1 class="screen-title">Mehr</h1></div><div class="more">${row}<p class="hint">Der Rest von Mehr ist nicht Teil des Prototyps.</p></div>`;
+}
+
 function render() {
   if (reloading) return;
   const scroll = document.querySelector('#scroll');
   const top = scroll ? scroll.scrollTop : 0;
   const phone = document.querySelector('#phone');
   phone.dataset.v = s.v;
-  const body = ui.tab === 'list' ? listScreen() : ui.tab === 'history' ? historyScreen() : '<div class="title-row"><h1 class="screen-title">Mehr</h1></div><p class="hint">Nicht Teil des Prototyps.</p>';
+  const body = ui.tab === 'list' ? listScreen() : ui.tab === 'history' ? historyScreen() : moreScreen();
   phone.innerHTML = `<div class="status"><span>${M.hhmm(M.now(s))}</span><span class="status-r">5G ▮▮▮</span></div>
     <div class="scroll" id="scroll">${body}</div>${bottom()}${reopenToast()}${osBanner()}${tm2PromptSheet()}${summaryOverlay()}
     ${ui.splash ? '<div class="splash"><span class="splash-hex">S</span></div>' : ''}`;
@@ -447,6 +446,7 @@ function updateClocks() {
   if (!s.trip) return;
   const txt = M.clock(M.elapsed(s));
   for (const el of document.querySelectorAll('[data-clock]')) el.textContent = txt;
+  for (const el of document.querySelectorAll('[data-lap]')) el.textContent = M.clock(M.storeTime(s.trip, el.dataset.lap, M.now(s)));
   const st = document.querySelector('.status span');
   if (st) st.textContent = M.hhmm(M.now(s));
 }
@@ -477,7 +477,7 @@ function renderPanel() {
       <button data-act="lea">Lea schreibt etwas dazu</button><button data-act="reopen">App beenden und neu öffnen</button></div>
     <div class="row-controls"><button data-act="premium-toggle" aria-pressed="${!s.premium}">${s.premium ? 'Premium (umschalten auf Free)' : 'Free (umschalten auf Premium)'}</button></div>
     <p class="note">Tippe Artikel zum Abhaken. „Was brauchst du?“ öffnet eine Tastatur-Attrappe mit Vorschlägen.</p>
-    <p class="note"><a href="#rec" data-act="rec">Empfehlung und offene Fragen (TQ1 bis TQ14)</a></p>`;
+    <p class="note"><a href="#rec" data-act="rec">Empfehlung und offene Fragen (TQ1 bis TQ15, Englisch)</a></p>`;
   document.querySelector('#strip').innerHTML = `<div class="strip-tms">${TMS.map((x) => `<button data-act="tm" data-tm="${x.id}" aria-pressed="${x.id === s.v}">${x.id}</button>`).join('')}
     <button data-act="panel" aria-label="Szenarien und Einstellungen">${icon('menu')}</button></div>
     <div class="strip-step"><span>${sc.id} · ${s.step}/${sc.steps.length}${s.premium ? '' : ' · Free'}</span>${s.step < sc.steps.length ? `<button data-act="step">Weiter: ${esc(sc.steps[s.step].label)}</button>` : '<button data-act="restart">Szenario von vorn</button>'}</div>`;
@@ -545,15 +545,17 @@ document.addEventListener('click', (ev) => {
     case 'close-view': ui.view = null; break;
     case 'mark': M.togglePlanned(s.history.find((h) => h.id === el.dataset.entry), id); break;
     case 'reopen-trip': {
-      const tid = ui.view ? ui.view.id : s.notice && s.notice.tripId;
+      const tid = id ?? (ui.view ? ui.view.id : s.notice && s.notice.tripId);
       M.reopenTrip(s, tid);
       ui.view = null;
+      ui.toast = null;
       ui.tab = 'list';
       break;
     }
     case 'dismiss-notice': s.notice = null; break;
     case 'premium': ui.toast = { text: 'Öffnet die Premium-Seite (nicht Teil des Prototyps).' }; ui.view = null; break;
-    case 'tm': s.v = el.dataset.tm; ui.view = null; ui.pop = false; ui.showTabs = false; break;
+    case 'start-hand': M.startByHand(s); ui.tab = 'list'; break;
+    case 'tm': clearTimeout(promptTimer); s.prompt = null; s.v = el.dataset.tm; ui.view = null; ui.pop = false; ui.showTabs = false; break;
     case 'scen': setup(el.dataset.scen, s); break;
     case 'restart': setup(s.scen, s); break;
     case 'step': runStep(); break;
@@ -572,7 +574,7 @@ document.addEventListener('click', (ev) => {
 
 document.addEventListener('keydown', (ev) => {
   const n = Number(ev.key);
-  if (n >= 1 && n <= 5 && !ev.target.closest('input')) { s.v = `TM${n}`; ui.view = null; render(); }
+  if (n >= 1 && n <= 5 && !ev.target.closest('input')) { clearTimeout(promptTimer); s.prompt = null; s.v = `TM${n}`; ui.view = null; render(); }
 });
 
 setInterval(() => {

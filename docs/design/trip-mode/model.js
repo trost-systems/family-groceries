@@ -71,6 +71,11 @@ export function lastTickAt(s, trip = s.trip) {
   return Math.max(trip.startedAt, ...ticks);
 }
 
+// The last sign of life: a tick, "Läuft noch" on a nudge, or "Doch weiter" after an end.
+export function lastActivity(s, trip = s.trip) {
+  return Math.max(lastTickAt(s, trip), trip.nudgeSnoozedAt ?? 0, trip.reopenedAt ?? 0);
+}
+
 export function clock(ms) {
   const t = Math.floor(ms / 1000);
   const h = Math.floor(t / 3600);
@@ -101,38 +106,39 @@ export function dayLabel(at, ref) {
 // second of simulated time and applies the long-running rule.
 export const POLICY = {
   TM1: {
-    declineRule: '„Nein“ gilt, bis 2 Stunden lang nichts abgehakt wurde. Danach fragt das nächste Abhaken wieder.',
-    longRule: 'Nach 2 Stunden ohne Abhaken fragt die Leiste „Noch beim Einkaufen?“ und schlägt das letzte Abhaken als Ende vor.',
+    declineRule: '„Nein“ gilt, bis 2 Stunden lang nichts abgehakt wurde. Danach fragt das nächste Abhaken wieder. Wer trotzdem einkauft, startet in Mehr › „Einkauf starten“ (in allen fünf).',
+    longRule: 'Nach 2 Stunden ohne Abhaken, auch pausiert, fragt die Leiste „Noch beim Einkaufen?“ mit „Läuft noch“ (fragt 2 Stunden später wieder) und „Beenden um 10:06“ (das letzte Abhaken).',
     ask: (s, item, at) => !(s.quiet && at - s.quiet.lastTickAt < 2 * HOUR),
     decline: (s, at) => { s.quiet = { lastTickAt: at }; },
     onTick: (s, at) => { if (s.quiet) s.quiet.lastTickAt = at; },
     watch: (s, at) => {
       const t = s.trip;
-      if (!t.nudge && !isPaused(t) && at - lastTickAt(s) >= 2 * HOUR) t.nudge = true;
+      if (!t.nudge && at - lastActivity(s) >= 2 * HOUR) t.nudge = true;
     },
   },
   TM2: {
     declineRule: '„Nein, nur abgehakt“ gilt für den Rest des Tages. „Zurücknehmen“ macht das Abhaken rückgängig und merkt sich nichts.',
-    longRule: 'Nach 45 Minuten ohne Abhaken pausiert die Uhr von selbst (ab dem letzten Abhaken + 45 Min.). Nach 4 Stunden ohne Abhaken endet der Einkauf beim letzten Abhaken.',
+    longRule: 'Nach 45 Minuten ohne Abhaken pausiert die Uhr von selbst (ab dem letzten Abhaken + 45 Min.). Nach 4 Stunden ohne Abhaken, auch pausiert, endet der Einkauf beim letzten Abhaken; „Doch weiter“ holt ihn zurück.',
     ask: (s, item, at) => !(s.quiet && s.quiet.day === dayKey(at)),
     decline: (s, at) => { s.quiet = { day: dayKey(at) }; },
     onTick: () => {},
     watch: (s, at) => {
       const t = s.trip;
       const last = lastTickAt(s);
-      if (at - last >= 4 * HOUR) {
+      const quietSince = lastActivity(s);
+      if (at - quietSince >= 4 * HOUR) {
         closePauses(t, last);
         endTrip(s, last, 'auto');
         s.notice = { kind: 'autoEnded', tripId: t.id };
         return;
       }
-      if (!isPaused(t) && at - last >= 45 * MIN && !t.pauses.some((p) => p.from >= last)) {
-        t.pauses.push({ from: last + 45 * MIN, to: null, auto: true });
+      if (!isPaused(t) && at - quietSince >= 45 * MIN && !t.pauses.some((p) => p.from >= quietSince)) {
+        t.pauses.push({ from: quietSince + 45 * MIN, to: null, auto: true });
       }
     },
   },
   TM3: {
-    declineRule: 'Die Frage kommt als Hinweis unten und geht nach 6 Sekunden von selbst. Ohne Antwort fragt höchstens das dritte Abhaken noch einmal, dann erst wieder nach 3 Stunden Ruhe.',
+    declineRule: 'Die Frage kommt als Hinweis unten und geht nach 6 Sekunden von selbst. Ohne Antwort fragt höchstens das dritte Abhaken noch einmal, dann erst wieder nach 3 Stunden Ruhe. In den Szenarien wartet der Hinweis auf den nächsten Schritt.',
     longRule: 'Nach 3 Stunden Laufzeit kommt eine Mitteilung „Einkauf läuft seit 3 Std.“ mit „Beenden“ (beim letzten Abhaken) und „Läuft noch“.',
     ask: (s, item, at) => {
       const q = s.quiet;
@@ -147,12 +153,12 @@ export const POLICY = {
     onTick: (s, at) => { if (s.quiet) { s.quiet.ticks += 1; s.quiet.lastTickAt = at; } },
     watch: (s, at) => {
       const t = s.trip;
-      if (!t.notified && at - t.startedAt >= 3 * HOUR) { t.notified = true; s.notice = { kind: 'osBanner' }; }
+      if (!t.notified && at - Math.max(t.startedAt, t.nudgeSnoozedAt ?? 0, t.reopenedAt ?? 0) >= 3 * HOUR) { t.notified = true; s.notice = { kind: 'osBanner' }; }
     },
   },
   TM4: {
     declineRule: '„Nein“ gilt für diesen Laden bis morgen. Ein Artikel aus einem anderen Laden fragt nach diesem Laden.',
-    longRule: 'Nach 90 Minuten ohne Abhaken fragt die Leiste „Noch bei Rewe?“ und schlägt das letzte Abhaken als Ende vor.',
+    longRule: 'Nach 90 Minuten ohne Abhaken, auch pausiert, fragt die Leiste „Noch bei Rewe?“ mit „Läuft noch“ und „Beenden um …“ (das letzte Abhaken).',
     ask: (s, item, at) => !(s.quiet && s.quiet.day === dayKey(at) && s.quiet.stores.includes(item.store ?? '')),
     decline: (s, at, item) => {
       const same = s.quiet && s.quiet.day === dayKey(at);
@@ -161,7 +167,7 @@ export const POLICY = {
     onTick: () => {},
     watch: (s, at) => {
       const t = s.trip;
-      if (!t.nudge && !isPaused(t) && at - lastTickAt(s) >= 90 * MIN) t.nudge = true;
+      if (!t.nudge && at - lastActivity(s) >= 90 * MIN) t.nudge = true;
     },
   },
   TM5: {
@@ -173,7 +179,7 @@ export const POLICY = {
     watch: (s, at) => {
       const t = s.trip;
       const last = lastTickAt(s);
-      if (at - last >= 2 * HOUR) {
+      if (at - lastActivity(s) >= 2 * HOUR) {
         closePauses(t, last);
         endTrip(s, last, 'auto');
         s.notice = { kind: 'autoEndedCard', tripId: t.id };
@@ -200,7 +206,7 @@ export function tick(s, id, by = ME) {
   item.doneAt = at;
   item.doneBy = by;
   if (s.trip) {
-    if (s.v === 'TM4') enterStore(s, item.store, at);
+    enterStore(s, item.store, at);
     return null;
   }
   const policy = POLICY[s.v];
@@ -225,6 +231,20 @@ export function answer(s, yes) {
     id: `t${p.at}`, startedAt: p.at, snapshot: p.snapshot, pauses: [], segments: [{ store: p.store, from: p.at }],
     markedPlanned: [], endedAt: null, endReason: null, nudge: false, notified: false,
   };
+  const later = s.items.filter((i) => i.doneAt !== null && i.doneAt > p.at).sort((a, b) => a.doneAt - b.doneAt);
+  for (const i of later) enterStore(s, i.store, i.doneAt);
+}
+
+// A trip started by hand (Mehr › Einkauf starten): the snapshot is every open item now.
+export function startByHand(s) {
+  if (s.trip) return;
+  const at = now(s);
+  s.prompt = null;
+  s.quiet = null;
+  s.trip = {
+    id: `t${at}`, startedAt: at, snapshot: s.items.filter(isOpen).map((i) => i.id), pauses: [], segments: [{ store: null, from: at }],
+    markedPlanned: [], endedAt: null, endReason: null, nudge: false, notified: false,
+  };
 }
 
 // Accidental tick: take it back and forget the prompt without counting it as "no".
@@ -239,7 +259,10 @@ export function undoPromptTick(s) {
 
 function enterStore(s, store, at) {
   const segs = s.trip.segments;
-  if (store && segs[segs.length - 1].store !== store) segs.push({ store, from: at });
+  const last = segs[segs.length - 1];
+  if (!store || last.store === store) return;
+  if (last.store === null) last.store = store;
+  else segs.push({ store, from: at });
 }
 
 export function pause(s) { if (!isPaused(s.trip)) s.trip.pauses.push({ from: now(s), to: null }); s.trip.nudge = false; }
@@ -247,7 +270,7 @@ export function resume(s) {
   for (const p of s.trip.pauses) if (p.to === null) p.to = now(s);
   s.trip.nudge = false;
 }
-export function keepGoing(s) { s.trip.nudge = false; s.trip.nudgeSnoozedAt = now(s); }
+export function keepGoing(s) { s.trip.nudge = false; s.trip.notified = false; s.trip.nudgeSnoozedAt = now(s); }
 
 export function endTrip(s, at = now(s), reason = 'user') {
   const t = s.trip;
@@ -267,7 +290,10 @@ export function reopenTrip(s, tripId) {
   const h = s.history[idx];
   s.history.splice(idx, 1);
   const at = now(s);
-  s.trip = { ...h.trip, endedAt: null, endReason: null, nudge: false, pauses: [...h.trip.pauses, { from: h.trip.endedAt, to: at }] };
+  s.trip = {
+    ...h.trip, endedAt: null, endReason: null, nudge: false, notified: false, reopenedAt: at, markedPlanned: h.markedPlanned,
+    pauses: [...h.trip.pauses, { from: h.trip.endedAt, to: at }],
+  };
   s.notice = null;
 }
 
@@ -282,8 +308,18 @@ function freeze(s, t) {
     .map((i) => ({ ...row(i), by: i.addedAt > t.startedAt && i.addedBy !== ME ? i.addedBy : null }));
   return {
     id: t.id, startedAt: t.startedAt, endedAt: t.endedAt, durationMs: elapsed(s, t), endReason: t.endReason,
-    segments: t.segments, planned, added, markedPlanned: [], trip: t,
+    segments: t.segments, planned, added, markedPlanned: [...(t.markedPlanned ?? [])], trip: t,
   };
+}
+
+export function storeTime(trip, store, end) {
+  const segs = trip.segments;
+  return segs.reduce((sum, g, i) => {
+    if (g.store !== store) return sum;
+    const to = segs[i + 1] ? segs[i + 1].from : end;
+    const paused = trip.pauses.reduce((p, x) => p + Math.max(0, Math.min(x.to ?? to, to) - Math.max(x.from, g.from)), 0);
+    return sum + Math.max(0, to - g.from - paused);
+  }, 0);
 }
 
 export function togglePlanned(entry, id) {

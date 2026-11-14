@@ -164,9 +164,11 @@ p { margin: 0; }
 .sbtn { height: 44px; min-width: 44px; padding: 0 12px; border: 0; border-radius: var(--hl-radius-s); background: #fff2; color: inherit; font-weight: 700; font-size: 14px; display: grid; place-items: center; }
 .sbtn.strong { background: var(--hl-color-honey); color: var(--hl-color-on-honey); }
 .sbtn .icon { width: 20px; height: 20px; }
-.strip-bar.nudge, .lap-bar.nudge { height: auto; min-height: 52px; padding-top: 6px; padding-bottom: 6px; background: var(--hl-color-honey-soft); color: var(--hl-color-text); border: 2px solid var(--hl-color-edge); }
+.strip-bar.nudge, .lap-bar.nudge { flex-wrap: wrap; height: auto; min-height: 52px; padding-top: 6px; padding-bottom: 6px; background: var(--hl-color-honey-soft); color: var(--hl-color-text); border: 2px solid var(--hl-color-edge); }
 .nudge .sbtn { background: var(--hl-color-surface-raised); border: 2px solid var(--hl-color-edge); }
 .nudge .sbtn.strong { background: var(--hl-color-honey); }
+.nudge .strip-text, .nudge .lap-main { flex-basis: 100%; }
+.nudge .sbtn { flex: 1; }
 .strip-text, .lap-main { flex: 1; display: grid; line-height: 1.2; min-width: 0; }
 .strip-text small, .lap-main small { font-size: 12.5px; opacity: .8; }
 
@@ -303,3 +305,8 @@ p { margin: 0; }
 .rec table { border-collapse: collapse; font-size: 14px; }
 .rec td, .rec th { border: 1px solid var(--hl-color-divider); padding: 6px 8px; text-align: left; vertical-align: top; }
 .rec-close { position: sticky; top: 0; display: inline-flex; gap: 6px; align-items: center; min-height: 44px; padding: 0 14px; border: 2px solid var(--hl-color-edge); border-radius: var(--hl-radius-full); background: var(--hl-color-honey); font-weight: 700; }
+.more { padding: 0 16px; display: grid; gap: 8px; }
+.more-row { display: flex; gap: 12px; align-items: center; text-align: left; padding: 12px 14px; min-height: 64px; border: 2px solid var(--hl-color-edge); border-radius: var(--hl-radius-m); background: var(--hl-color-surface-raised); box-shadow: 0 3px 0 var(--hl-color-edge); }
+.more-row span { display: grid; }
+.more-row small { color: var(--hl-color-text-muted); }
+@media (min-width: 441px) { .phone { position: sticky; top: 20px; } }

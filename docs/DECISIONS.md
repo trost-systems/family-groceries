@@ -12211,3 +12211,13 @@ On main it showed on the first failed read of the opening resync, or on the firs
   onto the field fails 42.
 - **Preview** on `family-groceries-design` as a preview deployment (SSO; the lead mints the
   share link). The preview is built by `build.sh`, which vendors `tokens.css` and two fonts.
+- **Review 1 (Claude, VERDICT FIX) fixed.** It found seven must-fixes:
+  - the nudge's "Weiter" came back at once;
+  - "Doch weiter" re-ended an auto-ended trip;
+  - a paused trip lived forever;
+  - TM3's 6 s question timed out during a slow scenario and the end step crashed;
+  - TM4 crashed on a store change made while the question was open;
+  - TM4's per-store time stood still;
+  - the panel gave a wrong bar height.
+
+  A long-running rule now measures from the last tick, from "Läuft noch" or from "Doch weiter", and it applies to paused trips too. Every prototype gained Mehr › "Einkauf starten" (TQ15). Each repro is a check in `shoot.mjs`, and the reviewer's own probe passes on the fixed sandbox.

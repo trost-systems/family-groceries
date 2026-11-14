@@ -4,11 +4,11 @@ import { MIN, HOUR } from './model.js';
 export const TMS = [
   {
     id: 'TM1', slug: 'card-ask-slim-strip', title: 'Karte fragt, schmale Leiste',
-    pitch: 'Das erste Abhaken bringt oben eine Karte wie die heutige „Einkauf eintragen?“-Karte. Abhaken geht weiter, die Karte wartet. Während des Einkaufs liegt eine 40 px schmale dunkle Leiste direkt über dem Eingabefeld. Am Ende öffnet sich die Übersicht als eigene Seite.',
+    pitch: 'Das erste Abhaken bringt oben eine Karte wie die heutige „Einkauf eintragen?“-Karte. Abhaken geht weiter, die Karte wartet. Während des Einkaufs liegt eine 52 px hohe dunkle Leiste direkt über dem Eingabefeld (60 px mehr unten). Am Ende öffnet sich die Übersicht als eigene Seite.',
     bar: 'Schmale Leiste über dem Feld: Uhr, Pause, Beenden. Bei offener Tastatur verschwindet sie und kommt danach zurück.',
     summary: 'Eigene Seite mit Zurück-Pfeil.',
     gate: 'Free: Die Seite zeigt Dauer und Datum, darunter die Übersicht unscharf mit einer Premium-Karte.',
-    plus: 'Vertraut (gleiche Karte wie beim Verlauf), blockiert nichts, die Leiste kostet nur 40 px.',
+    plus: 'Vertraut (gleiche Karte wie beim Verlauf), blockiert nichts, die Leiste kostet eine Zeile (60 px).',
     minus: 'Die Karte oben sieht nur, wer nach oben schaut; beim Abhaken weit unten steht sie außerhalb des Blicks (darum klebt sie oben).',
   },
   {

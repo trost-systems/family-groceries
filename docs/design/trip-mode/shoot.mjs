@@ -196,6 +196,83 @@ await page.waitForTimeout(6300);
   check(!st.prompt && st.quiet && st.quiet.asked === 1, 'TM3: the question goes by itself after 6 s');
 }
 
+// Review 1 repros: each must hold.
+const tick = (p, name) => p.locator('[data-act="tick"]', { hasText: name }).first().click();
+const wait = (p, ms) => p.evaluate((ms) => { tm217.api.wait(ms); tm217.render(); }, ms);
+for (const tm of ['TM1', 'TM4']) {
+  await start(page, tm, 'S5');
+  await page.evaluate(() => { tm217.runStep(); tm217.runStep(); tm217.render(); });
+  await page.locator('button:has-text("Läuft noch")').click();
+  await page.waitForTimeout(1500);
+  check(!(await state(page)).trip.nudge, `${tm}: "Läuft noch" keeps the nudge away`);
+  await wait(page, tm === 'TM1' ? 2 * 3600_000 + 60_000 : 91 * 60_000);
+  check((await state(page)).trip.nudge, `${tm}: the nudge comes back after the next quiet window`);
+  await start(page, tm, 'S1');
+  await page.evaluate(() => { tm217.runStep(); tm217.runStep(); tm217.api.pause(); tm217.render(); });
+  await wait(page, 20 * 3600_000);
+  check((await state(page)).trip.nudge, `${tm}: a trip paused for 20 h is nudged too`);
+}
+for (const tm of ['TM2', 'TM5']) {
+  await start(page, tm, 'S5');
+  await page.evaluate(() => { tm217.runStep(); tm217.runStep(); tm217.render(); });
+  await page.locator('button:has-text("Doch weiter")').click();
+  await page.waitForTimeout(1500);
+  const st = await state(page);
+  check(st.trip && st.history.length === 1, `${tm}: "Doch weiter" brings the trip back and it stays`);
+}
+{
+  await start(page, 'TM2', 'S1');
+  await page.evaluate(() => { tm217.runStep(); tm217.runStep(); tm217.api.pause(); tm217.render(); });
+  await wait(page, 20 * 3600_000);
+  check(!(await state(page)).trip, 'TM2: a trip paused for 20 h ends');
+}
+{
+  await start(page, 'TM3', 'S1');
+  await page.evaluate(() => { tm217.runStep(); tm217.render(); });
+  await page.waitForTimeout(6500);
+  check((await state(page)).prompt, 'TM3: in a scenario the question waits for the next step');
+  await page.evaluate(() => { for (let i = 0; i < 7; i++) tm217.runStep(); tm217.render(); });
+  check((await state(page)).history.length === 2, 'TM3: S1 runs to the end after a slow read');
+}
+{
+  await start(page, 'TM4', 'S2');
+  await tick(page, 'Bananen');
+  await tick(page, 'Kaffee');
+  await page.locator('button:has-text("Ja, bei Lidl")').click();
+  await tick(page, 'Butter');
+  await wait(page, 4 * 60_000);
+  check((await state(page)).trip.segments.map((g) => g.store).join() === 'Lidl,Rewe,Lidl', 'TM4: ticks made while the question waited enter their stores');
+  await page.locator('.lap-bar button:has-text("Beenden")').click();
+  const tx = await text(page);
+  check(has(tx, 'Rewe') && has(tx, 'Lidl') && has(tx, 'Geplant und gekauft'), 'TM4: the summary opens after a store change during the question');
+  await start(page, 'TM4', 'S2');
+  await page.evaluate(() => { for (let i = 0; i < 4; i++) tm217.runStep(); tm217.render(); });
+  const lap1 = await page.locator('[data-lap="Rewe"]').innerText();
+  await page.waitForTimeout(2200);
+  check(lap1 !== await page.locator('[data-lap="Rewe"]').innerText(), 'TM4: the current store time runs');
+}
+{
+  await start(page, 'TM1', 'S6');
+  await page.evaluate(() => { tm217.runStep(); tm217.runStep(); tm217.render(); });
+  await page.locator('[data-tab="more"]').click();
+  await page.locator('button:has-text("Einkauf starten")').click();
+  const st = await state(page);
+  check(st.trip && st.trip.snapshot.length === 8, 'Mehr › Einkauf starten starts a trip with the open items after a "no"');
+  await tick(page, 'Kaffee');
+  await page.locator('.strip-bar button:has-text("Beenden")').click();
+  await page.locator('button:has-text("War geplant")').first().click().catch(() => {});
+  await page.locator('button:has-text("Weiter einkaufen")').click();
+  await page.locator('.strip-bar button:has-text("Beenden")').click();
+  const st2 = await state(page);
+  check(st2.history[0].planned.length === 8 && !st2.trip, 'the second end keeps the trip');
+}
+for (const tm of ['TM3', 'TM4']) {
+  await start(page, tm, 'S1', false);
+  await page.evaluate(() => { tm217.runStep(); tm217.runStep(); tm217.api.end(); tm217.render(); });
+  await page.locator('button:has-text("Weiter einkaufen")').click();
+  check((await state(page)).trip, `${tm} Free: an end can be undone with "Weiter einkaufen"`);
+}
+
 // Peter's phone: one phone fills the screen, the strip steps the scenario, nothing overlaps.
 const phonePage = await newPage({ width: 390, height: 844 });
 for (const tm of TMS) {

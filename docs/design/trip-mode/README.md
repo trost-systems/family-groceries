@@ -10,7 +10,7 @@ It prototypes four pieces of trip mode:
 - the end-of-trip summary (approach 1 from job 196, `snapshot-vs-ticked-list`), with "von Lea" and "War geplant" (PB2a);
 - the Premium gate for Free members (PB3a), with no price.
 
-The recommendation and the open questions TQ1 to TQ14 are in [`RECOMMENDATION.md`](RECOMMENDATION.md). The page also shows them under "Empfehlung und offene Fragen".
+The recommendation and the open questions TQ1 to TQ15 are in [`RECOMMENDATION.md`](RECOMMENDATION.md). The page also shows them under "Empfehlung und offene Fragen".
 
 ## Run it
 
@@ -39,6 +39,7 @@ It exits 1 on any failed check.
   - "Lea schreibt etwas dazu" adds an item as Lea;
   - "App beenden und neu öffnen" really reloads the page, and the trip comes back from storage.
 - The Premium button switches between Premium and Free.
+- Mehr › „Einkauf starten“ starts a trip by hand. Its snapshot is the list as it is at that moment.
 - Simulated time starts on Saturday, 14 Nov 2026 at 10:00 Europe/Berlin and then runs in real time.
 
 ## The five prototypes
