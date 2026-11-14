@@ -15,6 +15,10 @@
     "default-list-voice-target": {
       "rollout": "off",
       "note": "picking the list Siri, Alexa and AI add to when no list is named (household page and household sheet) shows only while the PostHog flag default-list-voice-target is on (job 207)"
+    },
+    "trip-mode": {
+      "rollout": "off",
+      "note": "trip mode (the question on a tick, the trip strip with its stopwatch, pause and end, and the trip's summary per store) shows only while the PostHog flag trip-mode is on (job 234); the lead targets it to internal installs"
     }
   },
   "holds": {

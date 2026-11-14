@@ -34,6 +34,7 @@ import 'package:family_groceries/log/trip_prompts.dart';
 import 'package:family_groceries/review/review_prompt_trigger.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/tips/hint_views.dart';
+import 'package:family_groceries/trip/trip_on_list.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/semantics.dart' show OrdinalSortKey;
 import 'package:flutter/services.dart';
@@ -96,7 +97,10 @@ class const ShoppingList({
       child: ProvideHints(
         list: list,
         // The list's snackbars float above the add bar, not above the tabs.
-        child: ScaffoldMessenger(child: _ShoppingList(dictation: dictation)),
+        child: ScaffoldMessenger(
+          // Job 234: the question after a tick, the summary after Beenden.
+          child: TripOnList(child: _ShoppingList(dictation: dictation)),
+        ),
       ),
     );
   }
@@ -600,6 +604,9 @@ class _ShoppingListState() extends State<_ShoppingList> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Job 234: the running trip, above the total and the
+                  // field; away while typing or pricing.
+                  TripStripSlot(hidden: open || pricing != null),
                   if (prices && hasItems)
                     // In the add bar's place, it keeps clear of the shell's
                     // tab pill as the add bar does.
