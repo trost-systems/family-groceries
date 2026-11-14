@@ -23,7 +23,7 @@ exec 9>>"$LOCK"
 if ! flock -n 9; then
   log "waiting for the box-wide e2e lock $LOCK; last recorded holder (a plain 'flock $LOCK <cmd>' records nothing): $(grep . "$LOCK" || echo none recorded)"
   flock 9
-  log "got the e2e lock"
+  log "got the e2e lock: waited $SECONDS s for the lock"
 fi
 holder="$REPO_ROOT (pid $$, since $(date '+%H:%M:%S'))"
 echo "$holder" >"$LOCK"

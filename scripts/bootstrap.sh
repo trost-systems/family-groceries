@@ -13,7 +13,7 @@ WITH_ANDROID=0
 mkdir -p "$TOOLS_BIN"
 arch_go() { case "$(uname -m)" in x86_64) echo amd64 ;; aarch64|arm64) echo arm64 ;; *) uname -m ;; esac; }
 latest_tag() { curl -fsSI "https://github.com/$1/releases/latest" | sed -n 's#^location: .*/tag/\(.*\)\r#\1#Ip'; }
-log() { printf '\033[1;34m[bootstrap]\033[0m %s\n' "$*"; }
+log() { if [[ -t 1 ]]; then printf '\033[1;34m[bootstrap]\033[0m %s\n' "$*"; else printf '[bootstrap] %s\n' "$*"; fi; }
 
 log "apt packages"
 sudo apt-get update -qq || log "apt-get update failed (mirror?); continuing with cached package lists"

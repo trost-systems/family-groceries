@@ -12488,3 +12488,45 @@ The evidence, the replay and the hotspot list are in
     review 0 measured as none of 1,946 merges built from this file's lines.
 14. **The test goes through `rebase_onto_main`** (review 1), not `install_merge_driver`: the one
     call that turns the driver on for every clone is what a refactor would lose unnoticed.
+
+## Job 219: verification tooling, 2026-11-13
+
+The baseline is 199 jobs' transcripts and 14 days of CI; its numbers go into
+`docs/done/219-verify-skill-tooling.md` with the job's last PR. What it changed:
+
+- **`verify.sh` ends on a plain verdict and keeps each gate's output in a file.** 28 of 206
+  failed local runs in the transcripts did not show which gate failed, and 79 of 754 runs showed
+  neither result, because the call piped into `tail` or `grep` and the verdict was a blue line
+  some way up. 620 calls stripped the colour by hand. Now the last line names the gates that
+  passed or the gate that failed and its log file, and `log` is blue only on a terminal. The
+  gate's stderr joins stdout, so one pipe carries everything.
+- **A ledger, not a retry.** Every gate run is a row with the hash of the working tree. A gate
+  with both results on one tree is reported as a flake when it happens. `verify.sh` never reruns
+  a gate by itself: a rerun that passes hides the cause: 32 times in the transcripts a command
+  failed and then passed with no file changed in between, and the baseline finds no cause in
+  the output of 20.
+- **The fix loop is bounded by a note, not by a refusal.** At a gate's third failure in a row on
+  a branch `verify.sh` says to stop patching and test the assumption (p90 of streaks: lint 1,
+  flutter 2, e2e 3, db 4). It still runs the gate a fourth time when asked: refusing would push
+  the caller to the gate script, around the ledger.
+- **The behaviour gates stay a hard stop.** `verify.sh` has no `--keep-going` and no score. The
+  ledger's `--history` is a report beside the gates; nothing reads it to decide pass or fail.
+- **Not built: a diff-to-gate table for `--changed`.** Local gates were about 2 % of the loop's
+  wall time (CI waits 173 h, the merge lock 56 h, detached e2e waits 71 h, local `verify.sh`
+  12 h), and a table that drops a gate wrongly gives a local green that CI then refuses.
+- **The gate writes to a file that a loop follows, not into `tee`.** A server a gate leaves
+  behind keeps a pipe open and the run would wait for it; `scripts/verify-test.sh` has the case.
+  The loop reads on through one open descriptor: review round 1 showed a follower that compared
+  sizes dying on a burst of output (52,009 of 60,001 lines printed).
+- **A log file per gate run, not one per gate behind a lock.** Round 1 showed a leftover writer
+  putting NUL bytes into the next run's truncated log. A new file per run fixed that, and a lock
+  per gate and checkout kept two runs apart, but round 2 showed the waiting run replacing the
+  file 0.3 s after the first run's verdict named it. Now no two runs share a file, so there is
+  nothing to lock: the verdict names its run's file, `<gate>.log` links to the newest, and the
+  five newest per gate stay. Two runs of one gate in one checkout run side by side again, as
+  before the job; the e2e gate has its own box-wide lock.
+- **What "the same tree" covers.** Tracked, untracked, skip-worktree and assume-unchanged files
+  (the port block in `supabase/config.toml` is one, and a changed port block is a real fix), not
+  ignored ones. A flake needs the same arguments too, `--screenshots` included; the streak counts
+  the gate whatever the arguments, as the baseline did, so a fix loop that varies `-g` still
+  reaches 3.

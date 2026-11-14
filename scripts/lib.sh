@@ -4,7 +4,14 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export PATH="${FLUTTER_DIR:-$HOME/flutter}/bin:$HOME/.deno/bin:$HOME/.local/bin:$PATH"
 if command -v ruby >/dev/null; then PATH="$(ruby -e 'print Gem.user_dir')/bin:$PATH"; fi
 
-log() { printf '\033[1;34m[%s]\033[0m %s\n' "$(basename "$0" .sh)" "$*"; }
+# Blue on a terminal, plain into a pipe or a file: `grep '^\[verify\] passed'` has to match.
+log() {
+  if [[ -t 1 && -z ${NO_COLOR:-} ]]; then
+    printf '\033[1;34m[%s]\033[0m %s\n' "$(basename "$0" .sh)" "$*"
+  else
+    printf '[%s] %s\n' "$(basename "$0" .sh)" "$*"
+  fi
+}
 
 # The whole stack is up (API, Auth, Realtime...), not just its database.
 stack_running() { (cd "$REPO_ROOT" && supabase status -o env 2>/dev/null | grep -q '^API_URL='); }
