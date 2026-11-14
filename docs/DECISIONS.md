@@ -12754,3 +12754,53 @@ evidence and what remains: `docs/done/220-security-hardening.md`.
   more form the check did not catch, each time against a sentence that promised all of them
   ("every caching form", "the one place a package comes from"). The cheap forms were closed, and
   the PR texts, the rule rows and the done doc now list what fails and what is known to pass.
+
+## Job 216: Legal's N-145..N-155 privacy redlines, 2026-11-14
+
+Legal Review's final redlines of 13 November 2026 against the #363 text, applied word for word in
+one PR: N-145a, N-145b, N-145c, N-146, N-148, N-149, N-150 (a and b), N-151a, N-151b, N-152,
+N-153a, N-154 (a and b), N-155. A script applied each OLD to NEW and failed unless the OLD anchor
+occurred exactly once. The PR stops at `ready-for-legal`. Legal gives a GO bound to the head SHA
+before anyone merges it.
+
+- **N-146 ships with consent text 2026-11-14.** Text 2026-11-11 named items, households, setup and
+  tips, not Siri, so a yes under it did not cover `siri_add` and `siri_read`. 2026-11-14 adds
+  „und wie du Siri nutzt“ / "and how you use Siri" to the examples and changes nothing else. It is
+  bumped the way #363 bumped 2026-11-11: `consentTextVersion`, `CONSENT_TEXT_VERSION`, a new
+  `docs/consent/2026-11-14.md`, and the e2e spec's stored version. Everyone is asked again, and the
+  server counts only a yes under 2026-11-14 for its own events (§9: nothing is sent until the user
+  answers a notice that names new data). Engineering drafted the wording. Legal approves it with
+  the PR.
+- **N-153a's labels match `events.dart`.** Each of `hint_acted`, `invite_sent`, `item_categorized`,
+  `dedupe_hint_shown`, `dedupe_hint_merged`, `dedupe_hint_ignored`, `checklist_step_done`,
+  `checklist_dismissed`, `feedback_submitted` and `review_prompt_requested` is in `eventCatalog`
+  and has a production call site, so no label changed.
+- **`Stand` stays 13 November 2026.** Under the pipeline, the merge day is Legal's GO day and
+  isn't known yet. A placeholder would keep the site gate red, and the PR must show `ci-ok`. Whoever
+  merges sets `Stand` / `Last updated` and the `updated:` frontmatter in both files to the
+  publication day first.
+- **Gated, not applied.** Each item waits for a flag or switch. The list is in
+  `docs/PRIVACY_DATA_MAP.md`, "Differences to the privacy policy":
+  - N-147a (`mcp_tool_call`): only after a consent text names connected apps (MCP) and
+    `mcpToolCallCapture` in `supabase/functions/mcp/tools.ts` is true again.
+  - N-147b (`api_key_used`): before the PostHog flag `public-api` goes on. §7 also needs text for
+    API keys, idempotency bodies (24 h) and auth-failure IP hashes (1 day). The consent text must
+    name API keys.
+  - N-153b (`paywall_viewed`): before the server switch `premium_offer` or the
+    `REVENUECAT_PURCHASES` define goes on.
+  - N-153c (`integration_blocked`): before the `integration_lock` switch goes on (flags.json
+    `integration-lock`). The consent text must name the event. Legal's draft says the event tells
+    "whether it was Siri, an AI assistant or an API key", but Siri is never blocked:
+    `integration_blocked.integration` is `mcp` or `api` only (`_shared/telemetry.ts:102-104`).
+    Legal drops Siri from the draft before it goes in (review 0).
+- **Out of scope:** gating the widget copy on `homeWidgetPlaced()` (N-152's SHOULD). After that,
+  the policy can say „wenn du ein Widget eingerichtet hast“. This is a candidate for a separate job.
+- **The join page's answer drops the household's kind.** The evidence pass found that
+  `preview_invite_public`, which anyone with a code may call signed out, still returned `kind`,
+  though the page never showed it. N-151 takes the kind out of the policy and the hint, so the
+  answer now matches them (migration `20261114112215_invite_preview_without_kind.sql`). `join.js`
+  never read it, and the signed-in `preview_invite` the app uses is unchanged.
+- **N-146's example reason "Premium nötig" / "Premium needed" became „Text zu lang“ / "text too
+  long".** `siri_add` has no premium reason (`_shared/telemetry.ts`; Siri has been free since job
+  184), and `too_long` is a reason the voice function sends. This is the only change to Legal's
+  wording, and the PR lists it for Legal.

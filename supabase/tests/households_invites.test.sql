@@ -486,13 +486,13 @@ update public.invites set expires_at = now() - interval '1 second' where id = (s
 select pg_temp.anon('203.0.113.7');
 create temp table shown as select public.preview_invite_public(lower((select code from p_open))) as doc;
 select is((select doc from shown), jsonb_build_object(
-  'status', 'ok', 'household', 'Familie Brandt', 'kind', 'family', 'inviter', 'Olga', 'members', 4,
+  'status', 'ok', 'household', 'Familie Brandt', 'inviter', 'Olga', 'members', 4,
   'open_items', 2, 'premium', false, 'invite_kind', 'person'),
-  'a link holder sees household, kind, the inviter''s first name, counts and premium (code in any case)');
+  'a link holder sees household, the inviter''s first name, counts and premium, not the household''s kind (N-151; code in any case)');
 select is(public.preview_invite_public((select code from g4)) ->> 'invite_kind', 'group',
   'and whether it is a group link');
 select is(public.preview_invite_public('ZZZZ-ZZZZ'), jsonb_build_object(
-  'status', 'invalid', 'household', null, 'kind', null, 'inviter', null, 'members', null,
+  'status', 'invalid', 'household', null, 'inviter', null, 'members', null,
   'open_items', null, 'premium', null, 'invite_kind', null),
   'an unknown code: invalid, every other field null');
 select is(public.preview_invite_public((select code from g1)) ->> 'status', 'invalid', 'revoked: invalid');
@@ -501,7 +501,7 @@ select is(public.preview_invite_public((select code from person)) ->> 'status', 
   'a used person invite: invalid');
 select is(public.preview_invite_public('ARCH2222') ->> 'status', 'invalid', 'an archived household: invalid');
 select is(public.preview_invite_public((select code from g3)), jsonb_build_object(
-  'status', 'full', 'household', null, 'kind', null, 'inviter', null, 'members', null,
+  'status', 'full', 'household', null, 'inviter', null, 'members', null,
   'open_items', null, 'premium', null, 'invite_kind', null),
   'a group link at 50: full, nothing else');
 select pg_temp.logout();

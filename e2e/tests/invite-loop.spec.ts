@@ -143,7 +143,7 @@ test('the join page shows the real invite without item names; its button joins t
     status: 'ok', household: 'Familie Brandt', inviter: 'Peter', members: 1, 'open_items': 2, premium: false, 'invite_kind': 'person',
   });
   expect(Object.keys(answer as object).sort(), 'nothing else: no ids, emails or item names')
-    .toEqual(['household', 'invite_kind', 'inviter', 'kind', 'members', 'open_items', 'premium', 'status']);
+    .toEqual(['household', 'invite_kind', 'inviter', 'members', 'open_items', 'premium', 'status']);
   const { data: counted } = await adminClient().from('invites').select('preview_count').eq('id', owner.invite).single();
   expect(must(counted, 'invite').preview_count, 'the page open and the call above').toBeGreaterThanOrEqual(2);
   await screenshot(page, 'w2-de-light-join-page');
