@@ -791,3 +791,7 @@ Docs only (#449). `docs/PRODUCT_FEATURE_MAP.md` has a new row under "Planned (de
 - Other dialogs checked, none changed: new list and rename list (`list/name_dialog.dart`), rename household (`household_page.dart`) and the guided start's name step show the error only under the field; join with a code shows its error only above the button, with no field error.
 - Verified: widget tests in `app/test/household/onboarding_test.dart` (one error, inside the field and on screen, de and en; offline still above the button) fail before the fix and pass after. Web build driven with the new `journeys/new-household-empty-name.mjs`: pre-fix FAIL (twice), fixed PASS in de and en at 390×844 and 390×560. Screenshots `docs/screenshots/231/`. Local `scripts/verify.sh`: every gate but e2e passed; e2e 252 passed, 9 failed, all fake-OIDC provider specs that can't run on hz (CI runs them).
 - Ships with the next green main build on TestFlight and Play internal. No flag.
+
+## Job 235 review 0: feature map follow-up (2026-11-14)
+
+#449's `ci-ok` was confirmed after its merge (main `75071b49`); the job 235 section above was written before that run. This follow-up fixes the "Planned (decided)" count in the overview table of `docs/PRODUCT_FEATURE_MAP.md` (7, with Siri AI app actions), replaces the clashing "S1" code in the row's tier cell with a pointer to the `siri` decision, and notes that the VGV post was checked. Docs only, changelog `none`. The living Page hand-off is in the ops NEEDS_LEAD file.

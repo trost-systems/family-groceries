@@ -12833,3 +12833,14 @@ before anyone merges it.
    rename household (`household_page.dart`) and the guided start's name step show the error only
    under the field; join with a code shows its error only above the button, with no field error.
    None changed.
+
+## Job 235 review 0: feature map overview count, no S1 code, 2026-11-14
+
+- The overview table in `docs/PRODUCT_FEATURE_MAP.md` now counts 7 Planned (decided) rows and names
+  Siri AI app actions; #449 added the row but left the count at 6.
+- The row's tier cell no longer says "S1": that code already means the rename stage (job 174) and
+  the store picker (Q22), and the map asks for names and slugs, not codes. It now points at the
+  `siri` decision under "Decisions in force". The job 235 section above still says S1; read it as
+  that decision.
+- The VGV post was checked on 14 Nov 2026 (review 0); "Sources and method" says so instead of
+  "not re-read".
