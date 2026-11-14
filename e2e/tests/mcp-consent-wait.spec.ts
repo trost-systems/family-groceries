@@ -3,6 +3,7 @@
 // done. window.open is stubbed so the page stays as it looks during that wait: a real pending
 // navigation holds Playwright's locators until it ends (mcp.spec.ts follows the real one).
 import { Client, StreamableHTTPClientTransport, UnauthorizedError } from '@modelcontextprotocol/client';
+import { deadlineFetch } from './deadline';
 import { expect, test } from './fixtures';
 import { must, newEmail, screenshot, signUpWithHousehold } from './helpers';
 import { callbackUrl, mcpUrl, openAuthorization, TestOAuthProvider } from './mcp-helpers';
@@ -15,7 +16,7 @@ test('while the client finishes connecting, the consent page says the user is do
   await signUpWithHousehold(app, newEmail('consent-wait'));
   const provider = new TestOAuthProvider('Claude (E2E)');
   await expect(new Client({ name: 'family-groceries-e2e', version: '1.0.0' })
-    .connect(new StreamableHTTPClientTransport(mcpUrl, { authProvider: provider })))
+    .connect(new StreamableHTTPClientTransport(mcpUrl, { authProvider: provider, fetch: deadlineFetch })))
     .rejects.toThrow(UnauthorizedError);
 
   const consent = await context.newPage();

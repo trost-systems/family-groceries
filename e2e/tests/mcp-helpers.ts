@@ -4,6 +4,7 @@ import {
   StreamableHTTPClientTransport,
 } from '@modelcontextprotocol/client';
 import { expect, type Page } from '@playwright/test';
+import { deadlineFetch } from './deadline';
 import { firstOf, supabaseUrl } from './helpers';
 
 export const mcpUrl = new URL('/functions/v1/mcp', supabaseUrl);
@@ -21,14 +22,17 @@ export type Era = 'legacy' | 'modern';
 const bootFailure = async (res: Response) =>
   [502, 503, 504, 546].includes(res.status) && (await res.clone().text()) === '';
 
-/** fetch for SDK transports that reports slow round trips, to tell server stalls from client ones. */
+/**
+ * fetch for SDK transports that reports slow round trips, to tell server stalls from client ones.
+ * Each attempt has deadlineFetch's deadline, so a request without an answer fails by name.
+ */
 export const timedFetch: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const started = Date.now();
-  let res = await fetch(input, init);
+  let res = await deadlineFetch(input, init);
   if (await bootFailure(res)) {
     console.warn(`edge worker failed to boot: ${init?.method ?? 'GET'} ${String(input)} -> ${res.status}; retrying once`);
     await new Promise((done) => setTimeout(done, 500));
-    res = await fetch(input, init);
+    res = await deadlineFetch(input, init);
   }
   const ms = Date.now() - started;
   if (ms > 2_000) console.warn(`slow MCP round trip: ${init?.method ?? 'GET'} ${String(input)} -> ${res.status} in ${ms} ms`);
@@ -44,6 +48,7 @@ export async function connectWithToken(token: string, era: Era = 'legacy'): Prom
   await client.connect(
     new StreamableHTTPClientTransport(mcpUrl, {
       requestInit: { headers: { authorization: `Bearer ${token}` } },
+      fetch: deadlineFetch,
     }),
   );
   return client;
