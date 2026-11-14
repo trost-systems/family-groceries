@@ -140,7 +140,7 @@ Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
 
 ## 8. Daten exportieren und Konto löschen
 
-Unter Konto › Meine Daten exportieren erhältst du deine Daten als JSON-Datei, mit allen Haushalten, in denen du Mitglied bist, den Einladungen, über die du beigetreten bist, den Listen, die du angelegt hast, deinen „Ich bringe“-Zusagen, deinen Beitrittsanfragen, den gespeicherten Entfernungen aus einem Haushalt (Abschnitt 5) und bei jedem Eintrag, den du hinzugefügt hast, seiner Liste. Unter Konto › Konto löschen löschst du dein Konto sofort. Was dabei mit gemeinsamen Haushalten passiert, steht unter https://app.snacklist.app/konto-loeschen.html.
+Unter Konto › Meine Daten exportieren erhältst du deine Daten als JSON-Datei, mit allen Haushalten, in denen du Mitglied bist, den Einladungen, über die du beigetreten bist, den Listen, die du angelegt hast, deinen „Ich bringe“-Zusagen, deinen Beitrittsanfragen, den gespeicherten Entfernungen aus einem Haushalt (Abschnitt 5), deinen Rückmeldungen aus der App und bei jedem Eintrag, den du hinzugefügt hast, seiner Liste. Unter Konto › Konto löschen löschst du dein Konto sofort. Was dabei mit gemeinsamen Haushalten passiert, steht unter https://app.snacklist.app/konto-loeschen.html.
 
 ## 9. Nutzungsdaten und Fehlerberichte (nur mit Einwilligung)
 
