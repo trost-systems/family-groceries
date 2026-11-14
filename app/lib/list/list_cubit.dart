@@ -441,13 +441,18 @@ class ListCubit(
     _grace = null;
   }
 
+  /// Nothing answered in the grace: the list is online only if its channel
+  /// is up now. A channel that joined and dropped in the grace left the
+  /// state online, with nothing live.
   void _graceOver() {
     _grace = null;
-    if (isClosed || state.connection != ConnectionStatus.connecting) {
+    if (isClosed || state.connection == ConnectionStatus.offline) {
       return;
     }
     if (_channelUp) {
-      emit(state.copyWith(connection: ConnectionStatus.online));
+      if (state.connection != ConnectionStatus.online) {
+        emit(state.copyWith(connection: ConnectionStatus.online));
+      }
     } else {
       _goOffline();
     }
@@ -1543,6 +1548,10 @@ class ListCubit(
       // this one's socket died (job 212).
       if (number > _resyncShown) {
         _goOffline();
+      } else {
+        // The network may have died since: the retry decides, not the
+        // stale socket.
+        _retryLater();
       }
     } finally {
       _resyncsHeard.remove(heard);
