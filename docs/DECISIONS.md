@@ -13005,3 +13005,55 @@ and the household sheet are today's.
    element's DOM focus in a timer after the frame, which would come after an earlier request.
 3. **Typing clears the error**, as on the guided start's name step, so the two name fields behave
    the same.
+
+## Job 215: store screenshots and demo videos in Snacklist naming (2026-11-14)
+
+Redo of job 65's closed PR #190 with the frame Peter picked in job 214
+(`jobs/214-store-frames-redo/NEEDS_LEAD`, t868u and t869u). Guide: `docs/STORE_SCREENSHOTS.md`.
+
+1. **Waited for the pick.** The queue started the job at 00:09 because job 214 was done, but the
+   brief made Peter's frame label a gate. The job stopped without building and started again
+   at 13:22, after the pick was recorded.
+2. **Seven shots, not six.** Peter dropped „Tipp. Erledigt.“ and „Komm mit auf die Liste“, added
+   a voice caption and an AI assistants caption, and kept an invite caption. „Komm mit auf die
+   Liste“ was the invite shot's headline, so the tick shot became voice and the invite shot got
+   new words. The two new shots make seven: list, sync, add, order, voice, assist, invite. Play
+   takes up to 8, the App Store up to 10.
+3. **One code path for the frame, built from 214's kit.** `design/store-frames/` (job 214, PR
+   #425, not for merge) held the FR2 frame and the capture method. It moved into
+   `marketing/store-screenshots/` as a registry (`sets.mjs`: five sets, their sizes, viewports
+   and shots) that both capture and compose read. Job 65's old pipeline served for the sizes,
+   the checks, `compare.mjs` and the workflow. Each set is drawn as one strip and cut, so the
+   cobalt band runs on from shot to shot.
+4. **The invite shot is the household page.** It shows the members, „Leute einladen“ and three
+   lists, and no code or link (Peter: no link or code in the caption). The card ends after the
+   lists, because the iPhone and iPad crops reached the app's own line „Siri, Alexa und
+   KI-Assistenten nutzen diesen Haushalt“.
+5. **Voice and assist show what really arrives.** Jonas's items reach Anna's list through the
+   local `voice` function (the Siri Shortcut's endpoint) and the local `mcp` function, each with
+   his own access token, and capture checks in the database that the honey rows are exactly the sticker's
+   items, added by Jonas. The headline „Gesagt, notiert.“ avoids „einfach“, because Siri needs a
+   Shortcut the user sets up.
+6. **Neutral captions by default.** Following the research (`docs/store/store-captions-assistants.md`):
+   - `named` says „Funktioniert mit Siri und Amazon Alexa.“ on the App Store and Alexa only on
+     Play (no Siri on an Android listing).
+   - `named_api` adds the API, which is switched off (flag `public-api`), so no default run uses it.
+   - The neutral assist line drops „Automationen“, because it implies the API.
+7. **Tablets without words** (spec D4-B), at real tablet viewports under 840 dp, so no More page
+   opens beside the More list.
+8. **Feature graphic without name or logo** (Peter t869u). The card shows the full app width, so
+   the English „2 new from Anna“ is not cut. Its check covers the centre zone (x 432 to 592,
+   y 170 to 330) for the card as well as the text.
+9. **Videos with two phones.** `household-sync` shows Anna and Jonas, as job 65 had it. A short pan
+   from the household name to the add field keeps „Unser Haushalt“ in every poster. Compact
+   household-sync layers Jonas's phone over the bottom of Anna's, below her add field. A layout
+   without the overlap would cut a phone short.
+10. **Tool fixes on the way.** fg copies the auth email templates into its workdir, because
+    `supabase start` refused the symlinked ones. The linux-build wrapper takes the gates' Flutter
+    (`flutter_dir`), not `~/flutter`. The video driver taps through the guided start's
+    „Anmelden“.
+11. **Compared with the approved v2 set.** `jobs/65-store-screenshots/v2-contact-sheet.png` and
+    the spec were available. The scenes match the spec's P1, P2 (the sticker form of D3), P4, P5
+    and the household „Unser Haushalt“ with generic stores. P3 (tick) and P6 (invite page with a
+    code) gave way to Peter's new captions. The v2 frame (cobalt background, centred captions)
+    gave way to FR2.

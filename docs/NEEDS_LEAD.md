@@ -2304,3 +2304,21 @@ brief; the numbers are in `docs/hillclimb/fable-improvement-2026-11.md`, "Job 21
     their own here. The fix would be small: when the merge call fails, read the PR's state, and
     call once more if it is still open and its head unchanged (`--match-head-commit` keeps a second
     call from merging anything else).
+
+## Job 215: store screenshots, for Peter and Legal before any upload (2026-11-14)
+
+Status: open. Nothing was uploaded. Every caption is `draft` in
+`marketing/store-screenshots/captions.yaml`.
+
+1. **Contact sheets** (de-DE, en-US) and the feature graphic are in `docs/screenshots/215/` and the
+   PR body. The workflow "Store screenshots" makes the full set as an artifact once it is on main.
+2. **Legal checks the wording**, the named variants first. Alexa may be named only once the
+   skill is certified and live. Siri is named only on the App Store, as „Funktioniert mit Siri“,
+   with no logo and no "Hey Siri" (`docs/store/store-captions-assistants.md`).
+3. **Decide before launch: MCP and Premium.** Once AI assistants need Premium, Apple 2.3.2
+   requires the screenshot to say the feature needs a purchase, and the brief forbids Premium in
+   frames. Either add a note like „Mit Abo“ or drop the assist shot.
+4. **API caption** (`named_api`): only after the `public-api` flag is on and the API is announced.
+5. **Invite caption** „so viele Listen, wie ihr braucht“: a household has at most 50 lists. Legal
+   may want that softer or exact.
+6. **en-US** captions are drafts written in English. They need a native read.

@@ -858,3 +858,16 @@ Baseline first (`docs/hillclimb/fable-improvement-2026-11.md`, "Job 219"; 399 tr
 Fable review PASS on each (`claude-fable-5-2`, 38 rounds in all). Changelog `none`. No flag; nothing for Peter. CI's failure rates after the fixes need a week of runs and are not claimed. The job's own tests make the lint gate 23 to 30 s slower on the runner. `docs/NEEDS_LEAD.md` has ten points for the lead, first the wait at the merge lock (17.6 h over 13 turns).
 
 Details: [docs/done/219-verify-skill-tooling.md](docs/done/219-verify-skill-tooling.md)
+
+## Job 215: store screenshots and demo videos, redone for Snacklist (2026-11-14)
+
+`scripts/store-screenshots.sh` films the real web build with „Unser Haushalt“ (Anna, Jonas,
+generic stores). It writes the Play and App Store screenshots in Peter's frame: FR2 Großschrift
+with a cobalt Wabenband running through each set. There are seven shots, including the new voice
+and AI-assistant captions, in neutral and named variants. It also writes the feature graphic
+without a logo and the icon. Two runs are byte-identical, and the set comes as a by-hand
+workflow artifact. `add-tick` and `household-sync` on the site are re-filmed with the same
+household. Nothing was uploaded and every caption is a draft for Legal (`docs/NEEDS_LEAD.md`
+"Job 215").
+
+Details: [docs/done/215-store-screenshots-redo.md](docs/done/215-store-screenshots-redo.md)
