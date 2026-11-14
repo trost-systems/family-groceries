@@ -1,0 +1,14 @@
+data	lang	theme	where	today	LD1	LD2	LD3	LD4	LD5
+shot	de	light	top	3	6	5	7	8	6
+shot	de	dark	top	3	6	5	7	8	6
+shot	en	light	top	3	6	5	7	8	6
+shot	en	dark	top	3	6	5	7	8	6
+big	de	light	top	3	7	5	7	9	7
+big	de	light	scrolled 420	5	9	8	10	11	10
+big	de	dark	top	3	7	5	7	9	7
+big	de	dark	scrolled 420	5	9	8	10	11	10
+big	en	light	top	3	7	5	7	9	7
+big	en	light	scrolled 420	5	9	8	10	11	10
+big	en	dark	top	3	7	5	7	9	7
+big	en	dark	scrolled 420	5	9	8	10	11	10
+shot	de	light	trip running	-	6	-	6	-	-
