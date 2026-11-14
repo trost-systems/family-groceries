@@ -40,6 +40,7 @@
 - Job 195, validation events for prices, scans, MCP and the API (F2, F3, F5), consent-gated, no UI; MCP events now reach PostHog: [docs/done/195-validation-events.md](docs/done/195-validation-events.md)
 - Job 199, grocery log behind `grocery-log`: Verlauf tab with the G1 journal and month calendar (store-coloured dots, max 3) and the G2 store timeline, one toggle; trip sheet; per-store post-shop card; Free 4 weeks, older with Premium: [docs/done/199-grocery-log.md](docs/done/199-grocery-log.md)
 - Job 212, a 10 s grace before "Offline" on start and resume: [docs/done/212-offline-banner-startup-grace.md](docs/done/212-offline-banner-startup-grace.md)
+- Job 226, sign-in fields no longer stay in the web page's accessibility tree after sign-in (hidden autofill forms held the email and password): [docs/done/226-signin-fields-a11y-leak.md](docs/done/226-signin-fields-a11y-leak.md)
 
 ## Job 1: foundation (2026-10-22)
 
