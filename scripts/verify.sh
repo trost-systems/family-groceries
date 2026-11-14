@@ -2,6 +2,8 @@
 # Runs the CI gates (scripts/gates/<gate>.sh, the same scripts the ci.yml jobs run) locally and
 # stops at the first that fails. The last line is the verdict in plain text: the gates that
 # passed, or the gate that failed and the file its output is in, so `| tail` still shows it.
+# "seen before? <recipe>" in it names a known cause this output looks like; the gate has failed
+# all the same.
 # Each run of a gate writes its own file (VERIFY_LOG_DIR, by default verify/ in the checkout's
 # git dir): <gate>.<time>.<pid>.<n>.log, the newest five kept and those of runs still going,
 # <gate>.log a link to the newest.
@@ -32,6 +34,8 @@ STREAK=3
 # The runs of a gate whose output stays.
 KEEP=5
 
+# Gate failures seen before whose cause is known, one file each (its README.md has the format).
+RECIPES="${VERIFY_RECIPES:-$REPO_ROOT/.cursor/skills/verify-snacklist/recipes}"
 LEDGER="${VERIFY_LEDGER:-$(cd "$REPO_ROOT" && cd "$(git rev-parse --git-common-dir)" && pwd)/verify-ledger.tsv}"
 LOG_DIR="${VERIFY_LOG_DIR:-$(cd "$REPO_ROOT" && git rev-parse --absolute-git-dir)/verify}"
 
@@ -127,6 +131,27 @@ ledger_note() {
     }' "$LEDGER"
 }
 
+# The value of a key in a recipe's front matter (from a --- on the first line to the next).
+recipe_field() {
+  awk -v key="$2: " 'NR == 1 && !/^---$/ { exit } /^---$/ { if (++fence == 2) exit; next } fence == 1 && index($0, key) == 1 { print substr($0, length(key) + 1); exit }' "$1"
+}
+
+# The recipes of a gate whose signal the failed run's output has. A match is a question, not a
+# verdict: the recipe says how to tell, and the gate has failed either way.
+seen_before() {
+  local gate="$1" output="$2" recipe signal found=()
+  for recipe in "$RECIPES"/*.md; do
+    [[ -r $recipe && "$(recipe_field "$recipe" gate)" == "$gate" ]] || continue
+    signal="$(recipe_field "$recipe" signal)"
+    [[ -n $signal ]] || continue
+    # -c reads to the end: no closed pipe for sed, whose failure would hide a match.
+    if sed $'s/\033\\[[0-9;]*[A-Za-z]//g' "$output" | grep -Ec -- "$signal" >/dev/null 2>&1; then
+      found+=("${recipe#"$REPO_ROOT/"}")
+    fi
+  done
+  echo "${found[*]-}"
+}
+
 mkdir -p "$LOG_DIR"
 # A detached checkout has no branch: its streaks are its own, not every detached worktree's.
 branch="$(cd "$REPO_ROOT" && git symbolic-ref -q --short HEAD || echo "detached:$(basename "$REPO_ROOT")")"
@@ -185,8 +210,9 @@ for index in "${!run[@]}"; do
     for later in "${run[@]:$((index + 1))}"; do
       if [[ $later != e2e || $skip_e2e != 1 ]]; then not_run+=("$later"); fi
     done
+    recipes="$(seen_before "$gate" "$gate_log" || true)"
     log "took: $took"
-    log "FAILED: $gate (exit $rc) after $seconds s; its output: $gate_log${not_run[*]+; not run: ${not_run[*]}}"
+    log "FAILED: $gate (exit $rc) after $seconds s; its output: $gate_log${recipes:+; seen before? $recipes}${not_run[*]+; not run: ${not_run[*]}}"
     exit "$rc"
   fi
   passed+=("$gate")
