@@ -130,7 +130,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/deno
         with:
-          deno-version: v2.x
+          # The gate resolves frozen (job 220): the Deno that wrote the locks, not the newest 2.x.
+          deno-version-file: .dvmrc
       - run: scripts/gates/functions.sh
 
   # The ops dashboard (nexus/, job 156): snapshot pipeline and page tests, the browser bundle.
@@ -143,7 +144,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/deno
         with:
-          deno-version: v2.x
+          deno-version-file: .dvmrc
       - run: scripts/gates/nexus.sh
 
   # The guides site (site/, job 24a). Always runs: guide content is Markdown, which
@@ -200,7 +201,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/deno
         with:
-          deno-version: v2.x
+          deno-version-file: .dvmrc
       - run: scripts/gates/fg-cli.sh
 
   flutter:

@@ -1,14 +1,14 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@std/assert@1": "1.0.19",
+    "jsr:@std/assert@1.0.19": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.14",
     "npm:@modelcontextprotocol/client@2.3.1": "2.3.1",
     "npm:@modelcontextprotocol/server@2.3.1": "2.3.1",
     "npm:@peculiar/x509@1.14.3": "1.14.3",
     "npm:jose@6.2.13": "6.2.13",
     "npm:postgres@3.4.9": "3.4.9",
-    "npm:zod@^4.2.0": "4.6.7"
+    "npm:zod@4.6.7": "4.6.7"
   },
   "jsr": {
     "@std/assert@1.0.19": {
@@ -251,13 +251,13 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@std/assert@1",
+      "jsr:@std/assert@1.0.19",
       "npm:@modelcontextprotocol/client@2.3.1",
       "npm:@modelcontextprotocol/server@2.3.1",
       "npm:@peculiar/x509@1.14.3",
       "npm:jose@6.2.13",
       "npm:postgres@3.4.9",
-      "npm:zod@^4.2.0"
+      "npm:zod@4.6.7"
     ]
   }
 }
