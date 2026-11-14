@@ -202,6 +202,8 @@ void main() {
               MemoryListCache(),
               userId: 'peter',
               network: network,
+              // The indicator's own looks; the start grace is the cubit's.
+              grace: Duration.zero,
             )..start(),
             child: const ShoppingList(),
           ),

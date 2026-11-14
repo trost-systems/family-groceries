@@ -12148,3 +12148,42 @@ build of `hummlist-site` waits for the push-triggered **Supabase deploy** run th
   deploy path pattern `touchesDeploy` cannot match. The out-of-order case (two waiting builds
   opening on one green run) and the shared-address rate limit are documented; the token is now
   recommended in NEEDS_PETER.
+
+
+## Job 212: a 10 s grace before "Offline" on start and resume, 2026-11-13
+
+Peter: the offline card sometimes showed right after opening the app on a slow network.
+On main it showed on the first failed read of the opening resync, or on the first realtime
+`timedOut`/`closed`/`channelError`, with no wait.
+
+- **A start grace of 10 s** (`startGrace`, `ListCubit`). It runs after `start()` and after
+  `resumed()` (the app back in the foreground; `ListScope` called `resync()` before). Until it ends,
+  a failed request and a dropped channel are retried as before (3 s, resubscribe 3 to 30 s) but
+  not shown. When it runs out with no answer and no live channel, the list says offline.
+  10 s is the top of Peter's 8 to 10 s and the realtime client's join timeout.
+- **The background holds too** (`hidden()`, `ListScope`'s `onHide`): supabase_flutter closes the
+  realtime socket when the app pauses, and the channel error that follows used to leave "Offline"
+  waiting on resume. A resume keeps an offline the user saw before leaving (review 0: hiding it
+  only to open the full card 10 s later was noise) and gives an online list the grace. Only a
+  resume after `hidden` starts one: the web engine reports `resumed` on every window focus and
+  never `paused` (review 1), so a refocus only resyncs, or "Offline" would never show to someone
+  who clicks back into the window more often than every 10 s.
+- **"Sync gestört" has no grace.** A 5xx shows as before, after the 3 s retry failed too (165).
+- **The grace ends at the first answer** (a fetch, an acknowledged write, the channel up). After
+  that a failure shows at once, as before, so a write failing mid-session is not delayed.
+- **A join begun in the grace keeps its whole timeout.** Its first status, if a failure, is not
+  shown even after the grace has ended. Otherwise a read that answered at 6 s and the first join timing out
+  at 10 s (the same 10 s) would bring the card up right after the grace. The resubscribe after it
+  is outside the grace, and its failure shows.
+- **The OS's network wins** (job 166's `NetworkWatch`, `connectivity_plus`; web, iOS, Android):
+  reported down, offline shows at once, in the grace too, and a resume keeps it.
+- **An answered resync shows the list online with the channel down.** 2b.4 kept offline until
+  the channel joined. Peter's rule is "hide as soon as a request succeeds". `_channelUp` still
+  says whether realtime is live: resubscribes and the 166b socket renewal are unchanged. A
+  channel that drops later still shows offline. Two exceptions (review 0): while the OS says
+  the network is down an answer does not clear offline, and the one channel error a 166b socket
+  renewal causes on its way to rejoining is not shown, or the reconnect would flicker offline,
+  online, offline, online.
+- **No new timeout on the reads** and no PostgREST retries (2b.5, 4b.5): the grace is the
+  longer wait. The realtime client's timeout stays at its 10 s default.
+- **No feature flag**: a startup reliability fix for every install (ANALYTICS.md, Feature flags).

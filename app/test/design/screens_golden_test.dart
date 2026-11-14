@@ -556,8 +556,11 @@ void main() {
           );
           switch (kind) {
             case SyncTrouble.offline:
+              // A live channel drops: a first join that fails gets its
+              // whole timeout, with the list online (job 212).
               repo
                 ..online = false
+                ..emitStatus!(ConnectionStatus.online)
                 ..emitStatus!(ConnectionStatus.offline);
             case SyncTrouble.failing:
               repo.fetchTrouble = true;

@@ -59,7 +59,13 @@ void main() {
     seed?.call(repo);
     final list = BlocProvider(
       key: UniqueKey(),
-      create: (_) => ListCubit(repo, cache, userId: 'peter')..start(),
+      create: (_) => ListCubit(
+        repo,
+        cache,
+        userId: 'peter',
+        // Offline shows at once: the start grace is the cubit's.
+        grace: Duration.zero,
+      )..start(),
       child: const ShoppingList(),
     );
     await tester.pumpWidget(

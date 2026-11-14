@@ -42,12 +42,18 @@ test('a cold start without Supabase shows the cached list, queues changes across
 
   const network = await cutOff(page);
   await expireStoredSession(page);
+  const reloaded = Date.now();
   await page.reload();
   // Fails fast: no hidden library retries (they took 7 s per read) before the cache shows.
   await within(3_000, (timeout) => expect(itemRow(page, 'Brot'), 'the cached list shows offline').toBeVisible({ timeout }));
   await expect(itemRow(page, 'Milch')).toBeVisible();
   await expect(addField(page)).toBeFocused();
-  await within(3_000, (timeout) => expect(offlineIndicator(page), 'and says so right away').toHaveCount(1, { timeout }));
+  // Job 212: the server may only be slow, so a start says offline after a 10 s grace, not at the first failure.
+  await expect(offlineIndicator(page), 'no banner while the start may be slow').toHaveCount(0);
+  await page.waitForTimeout(Math.max(0, reloaded + 8_000 - Date.now()));
+  await expect(offlineIndicator(page), 'still none 8 s after the reload').toHaveCount(0);
+  await within(15_000, (timeout) => expect(offlineIndicator(page), 'offline once the grace is over').toHaveCount(1, { timeout }));
+  expect(Date.now() - reloaded, 'not before the grace').toBeGreaterThanOrEqual(9_000);
 
   await addItem(page, 'Käse');
   // Job 111: the device reads the amount (number words, job 104); the server splits brand and
