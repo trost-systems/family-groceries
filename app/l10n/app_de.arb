@@ -1315,5 +1315,17 @@
   "currencyHint": "Für Preise und die Einkaufssumme, für alle im Haushalt",
   "@currencyHint": {"description": "Job 190: household page, under the currency"},
   "currencyPick": "Währung wählen",
-  "@currencyPick": {"description": "Job 190: title of the currency picker"}
+  "@currencyPick": {"description": "Job 190: title of the currency picker"},
+  "listSwitch": "Liste oder Haushalt wechseln",
+  "@listSwitch": {"description": "Job 229 (flag list-declutter): screen reader hint of the switcher top left of the list, which shows the household and the list and opens the switcher sheet"},
+  "switcherHouseholds": "Haushalte",
+  "@switcherHouseholds": {"description": "Job 229: switcher sheet, the back row from a household's page to the households"},
+  "switcherBack": "Zurück: {page}",
+  "@switcherBack": {"description": "Job 229: switcher sheet, screen reader label of the back row; page is where it goes (\"Haushalte\" or the household's name)", "placeholders": {"page": {"type": "String"}}},
+  "switcherInvite": "Einladen",
+  "@switcherInvite": {"description": "Job 229: switcher sheet, the labeled button beside the household's name that opens the invite sheet"},
+  "switcherOpenInvites": "{count, plural, =1{1 Einladung offen} other{{count} Einladungen offen}}",
+  "@switcherOpenInvites": {"description": "Job 229: switcher sheet, the members row after the member count, e.g. \"3 Mitglieder · 1 Einladung offen\"", "placeholders": {"count": {"type": "int"}}},
+  "switcherOpenInvitesTitle": "Offene Einladungen",
+  "@switcherOpenInvitesTitle": {"description": "Job 229: switcher sheet's members page, section of the person invites not used yet"}
 }

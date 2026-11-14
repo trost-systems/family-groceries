@@ -376,6 +376,49 @@ void main() {
       expect(cubit.state, _shows('club'));
     });
 
+    group('reorderHouseholds (job 229)', () {
+      List<String> cached() => [
+        for (final h
+            in cache.households['peter']?.households ?? const <Household>[])
+          h.id,
+      ];
+
+      test('the new order shows at once, then the server and the device '
+          'keep it', () async {
+        await cubit.refresh();
+        final reorder = cubit.reorderHouseholds(['club', 'home']);
+        expect(cubit.state, _shows('home', households: ['club', 'home']));
+        await reorder;
+        expect(server.memberships['peter'], ['club', 'home']);
+        expect(cached(), ['club', 'home']);
+        await cubit.refresh();
+        expect(cubit.state, _shows('home', households: ['club', 'home']));
+      });
+
+      test('a refusal puts the order back and is thrown', () async {
+        await cubit.refresh();
+        server.missing.add('reorder_households');
+        await expectLater(
+          cubit.reorderHouseholds(['club', 'home']),
+          throwsA(isA<HouseholdError>()),
+        );
+        expect(cubit.state, _shows('home', households: ['home', 'club']));
+        expect(cached(), ['home', 'club']);
+      });
+
+      test('a reload out while reordering does not bring the old order '
+          'back', () async {
+        await cubit.refresh();
+        server.holdReads = Completer();
+        final reload = cubit.refresh();
+        await pumpEventQueue();
+        await cubit.reorderHouseholds(['club', 'home']);
+        server.holdReads?.complete();
+        await reload;
+        expect(cubit.state, _shows('home', households: ['club', 'home']));
+      });
+    });
+
     test('switching to a household the user is not in does nothing', () async {
       await cubit.refresh();
       await cubit.switchTo('elsewhere');

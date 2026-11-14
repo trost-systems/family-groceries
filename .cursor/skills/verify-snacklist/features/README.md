@@ -75,6 +75,7 @@ The list
 - [live-sync](./live-sync.md): members see each other's changes live; „N neu von <Name>“ and the sync icon.
 - [offline](./offline.md): what works without a connection, what waits, and the messages.
 - [grocery-log](./grocery-log.md): behind the flag `grocery-log` (not public): the „Verlauf“ tab with trips by date under a month calendar with store dots, or by store, one toggle; „Einkauf eintragen“ by hand; the list's card after a store's section is ticked off; Free sees 4 weeks.
+- [list-declutter](./list-declutter.md): behind the flag `list-declutter` (off): one switcher for household and list in a see-through header, the total as a row of the list, and the household sheet with a page per household (its lists, „Einladen“, the members row) and a members page; long-press reorder of lists and households.
 
 Settings, help and account
 

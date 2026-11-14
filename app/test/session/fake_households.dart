@@ -219,6 +219,17 @@ class FakeHouseholds(final FakeAuth fakeAuth)
         return unlocked.contains(household());
       case ('POST', 'rpc/archived_households'):
         return const <Object?>[];
+      case ('POST', 'rpc/reorder_households'):
+        // Job 229: the caller's own households in the order given, the
+        // others' memberships untouched.
+        final ids = [
+          for (final id in body['p_households']! as List<Object?>)
+            if (id is String && mine.contains(id)) id,
+        ];
+        mine
+          ..removeWhere(ids.contains)
+          ..insertAll(0, ids);
+        return null;
       case ('POST', 'rpc/set_default_household'):
         defaults[_user] = household();
         return null;

@@ -41,10 +41,26 @@ class const ListScope({
   State<ListScope> createState() => _ListScopeState();
 }
 
-class _ListScopeState() extends State<ListScope> {
-  /// The open lists by household: the shown one and hidden ones whose
-  /// queue is not sent yet.
+/// Opens the list of a household that is not shown, for as long as it is
+/// held: the switcher sheet shows any household's lists (job 229). Each
+/// [hold] needs its [release].
+abstract interface class ListHolds() {
+  /// The list of [householdId], opened if it is not open.
+  ListCubit hold(String householdId);
+
+  /// Lets go of one [hold] of [householdId]: once none is left and it is
+  /// not shown, it closes as a list switched away from does, once its
+  /// queue reached the server.
+  void release(String householdId);
+}
+
+class _ListScopeState() extends State<ListScope> implements ListHolds {
+  /// The open lists by household: the shown one, hidden ones whose queue is
+  /// not sent yet and held ones.
   final _lists = <String, ListCubit>{};
+
+  /// How often each household's list is held.
+  final _holds = <String, int>{};
 
   /// A hidden list's wait for its queue to empty.
   final _sending = <String, StreamSubscription<ListState>>{};
@@ -73,6 +89,7 @@ class _ListScopeState() extends State<ListScope> {
     )) {
       if (userId != _userId) {
         [..._lists.keys].forEach(_close);
+        _holds.clear();
         _userId = userId;
         unawaited(_sendLeftQueues(userId, households));
       }
@@ -82,11 +99,43 @@ class _ListScopeState() extends State<ListScope> {
         if (id == shown) {
           continue;
         }
-        if (households.any((h) => h.id == id)) {
-          _closeOnceSent(id);
-        } else {
+        if (!households.any((h) => h.id == id)) {
           _close(id);
+        } else if (!_holds.containsKey(id)) {
+          _closeOnceSent(id);
         }
+      }
+    }
+  }
+
+  @override
+  ListCubit hold(String householdId) {
+    _holds.update(householdId, (n) => n + 1, ifAbsent: () => 1);
+    unawaited(_sending.remove(householdId)?.cancel());
+    return _lists.putIfAbsent(householdId, () => _open(_userId!, householdId));
+  }
+
+  @override
+  void release(String householdId) {
+    final left = (_holds[householdId] ?? 0) - 1;
+    if (left > 0) {
+      _holds[householdId] = left;
+      return;
+    }
+    _holds.remove(householdId);
+    if (!mounted) {
+      return;
+    }
+    if (_session
+        case InHousehold(
+          household: Household(id: final shown),
+          :final households,
+        )
+        when shown != householdId) {
+      if (households.any((h) => h.id == householdId)) {
+        _closeOnceSent(householdId);
+      } else {
+        _close(householdId);
       }
     }
   }
@@ -165,14 +214,17 @@ class _ListScopeState() extends State<ListScope> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final household = session.household;
-    return BlocProvider.value(
-      key: ValueKey(household.id),
-      value: _lists[household.id]!,
-      child: RepositoryProvider<TripRepository>(
-        create: (_) =>
-            widget.trips?.call(household.id) ??
-            SupabaseTripRepository(Supabase.instance.client, household.id),
-        child: _Scope(householdId: household.id, child: widget.child),
+    return RepositoryProvider<ListHolds>.value(
+      value: this,
+      child: BlocProvider.value(
+        key: ValueKey(household.id),
+        value: _lists[household.id]!,
+        child: RepositoryProvider<TripRepository>(
+          create: (_) =>
+              widget.trips?.call(household.id) ??
+              SupabaseTripRepository(Supabase.instance.client, household.id),
+          child: _Scope(householdId: household.id, child: widget.child),
+        ),
       ),
     );
   }
@@ -187,6 +239,24 @@ bool teachesSiri(Session session, String householdId) => switch (session) {
   ),
   _ => false,
 };
+
+/// What a refused write tells the user.
+String rejectionText(AppLocalizations l10n, Rejected rejection) =>
+    switch (rejection) {
+      ItemRejected(:final itemName) => l10n.syncFailed(itemName),
+      NameTaken(:final name) => l10n.categoryNameTaken(name),
+      CatalogRejected() => l10n.catalogSaveFailed,
+      NeedsConnection() => l10n.reorderNeedsConnection,
+      StoreNameTaken(:final name) => l10n.storeNameTaken(name),
+      StoreNeedsConnection() => l10n.storesNeedConnection,
+      ListsNeedConnection() => l10n.listsNeedConnection,
+      OnListAlready(:final name, :final list) => l10n.onListAlready(
+        name,
+        listName(list, l10n),
+      ),
+      MergeRefused(:final name) => l10n.mergeRefused(name),
+      RenameTaken(:final name) => l10n.alreadyOnList(name),
+    };
 
 /// Where the List tab tells refused writes while it shows; elsewhere
 /// [ListScope] tells them in the app's messenger, above the tabs.
@@ -238,22 +308,7 @@ class _ScopeState() extends State<_Scope> {
       if (!mounted) {
         return;
       }
-      final l10n = AppLocalizations.of(context);
-      final text = switch (rejection) {
-        ItemRejected(:final itemName) => l10n.syncFailed(itemName),
-        NameTaken(:final name) => l10n.categoryNameTaken(name),
-        CatalogRejected() => l10n.catalogSaveFailed,
-        NeedsConnection() => l10n.reorderNeedsConnection,
-        StoreNameTaken(:final name) => l10n.storeNameTaken(name),
-        StoreNeedsConnection() => l10n.storesNeedConnection,
-        ListsNeedConnection() => l10n.listsNeedConnection,
-        OnListAlready(:final name, :final list) => l10n.onListAlready(
-          name,
-          listName(list, l10n),
-        ),
-        MergeRefused(:final name) => l10n.mergeRefused(name),
-        RenameTaken(:final name) => l10n.alreadyOnList(name),
-      };
+      final text = rejectionText(AppLocalizations.of(context), rejection);
       if (!(_notices.listTab?.call(text) ?? false)) {
         Notices.maybeOf(context)
           ?..hideCurrentSnackBar()

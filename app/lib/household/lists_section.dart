@@ -92,36 +92,47 @@ class const ListsSection({super.key}) extends StatelessWidget {
     _ListAction action, {
     required int open,
   }) async {
-    final l10n = AppLocalizations.of(context);
     final at = cubit.state.catalog.lists.indexWhere((l) => l.id == list.id);
     switch (action) {
       case _ListAction.rename:
-        await showNameDialog(
-          context,
-          title: l10n.listRenameTitle,
-          confirm: l10n.save,
-          label: l10n.listNameLabel,
-          initial: listName(list, l10n),
-          save: (name) => name == listName(list, l10n)
-              ? Future.value(true)
-              : cubit.renameList(list.id, name),
-        );
+        await renameList(context, cubit, list);
       case _ListAction.up:
         await cubit.moveList(list.id, at - 1);
       case _ListAction.down:
         await cubit.moveList(list.id, at + 1);
       case _ListAction.delete:
-        if (await _confirmDelete(context, list, open)) {
-          await cubit.deleteList(list.id);
-        }
+        await deleteList(context, cubit, list, open: open);
     }
   }
+}
 
-  Future<bool> _confirmDelete(
-    BuildContext context,
-    HouseholdList list,
-    int open,
-  ) async =>
+/// Asks for [list]'s new name and saves it in [cubit].
+Future<void> renameList(
+  BuildContext context,
+  ListCubit cubit,
+  HouseholdList list,
+) {
+  final l10n = AppLocalizations.of(context);
+  return showNameDialog(
+    context,
+    title: l10n.listRenameTitle,
+    confirm: l10n.save,
+    label: l10n.listNameLabel,
+    initial: listName(list, l10n),
+    save: (name) => name == listName(list, l10n)
+        ? Future.value(true)
+        : cubit.renameList(list.id, name),
+  );
+}
+
+/// Asks whether to delete [list] with the [open] items on it, and does.
+Future<void> deleteList(
+  BuildContext context,
+  ListCubit cubit,
+  HouseholdList list, {
+  required int open,
+}) async {
+  final delete =
       await showDialog<bool>(
         context: context,
         builder: (dialog) {
@@ -146,6 +157,9 @@ class const ListsSection({super.key}) extends StatelessWidget {
         },
       ) ??
       false;
+  if (delete) {
+    await cubit.deleteList(list.id);
+  }
 }
 
 enum _ListAction() {

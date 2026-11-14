@@ -15,6 +15,11 @@ const pricesFlag = 'prices-and-trip-total';
 /// no list is named, next to the household they use (job 207).
 const defaultListFlag = 'default-list-voice-target';
 
+/// The flag that shows the decluttered list (job 229): one switcher for
+/// household and list in a see-through header, the total as a row of the
+/// list, and the switcher sheet with a page per household and its members.
+const listDeclutterFlag = 'list-declutter';
+
 /// PostHog feature flags, the app's runtime toggles (job 44,
 /// docs/ANALYTICS.md "Feature flags"). Read a toggle with [isOn] wherever it
 /// matters; nothing else in the app reads PostHog flags.

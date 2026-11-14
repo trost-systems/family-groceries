@@ -2904,4 +2904,32 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get currencyPick => 'Währung wählen';
+
+  @override
+  String get listSwitch => 'Liste oder Haushalt wechseln';
+
+  @override
+  String get switcherHouseholds => 'Haushalte';
+
+  @override
+  String switcherBack(String page) {
+    return 'Zurück: $page';
+  }
+
+  @override
+  String get switcherInvite => 'Einladen';
+
+  @override
+  String switcherOpenInvites(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Einladungen offen',
+      one: '1 Einladung offen',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get switcherOpenInvitesTitle => 'Offene Einladungen';
 }

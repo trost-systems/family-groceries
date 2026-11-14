@@ -387,18 +387,26 @@ class const _Pill({
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
     final t = SnacklistColors.of(brightness);
+    final declutter = context.select<Flags?, bool>(
+      (flags) => flags?.isOn(listDeclutterFlag) ?? false,
+    );
     return MediaQuery.withClampedTextScaling(
       // Large text still fits the 44 high indicator.
       maxScaleFactor: 1.5,
       child: LayoutBuilder(
-        builder: (context, constraints) =>
-            _face(context, t, brightness, constraints.maxWidth),
+        builder: (context, constraints) => _face(
+          context,
+          t,
+          brightness,
+          constraints.maxWidth,
+          declutter: declutter,
+        ),
       ),
     );
   }
 
-  /// Each shown tab's width with its label.
-  List<double> _labelled(BuildContext context) {
+  /// Each shown tab's width with its label, with [chrome] beside it.
+  List<double> _labelled(BuildContext context, double chrome) {
     final l10n = AppLocalizations.of(context);
     // As the pill's Material sets it for the tabs.
     final style = Theme.of(context).textTheme.bodyMedium!
@@ -412,7 +420,7 @@ class const _Pill({
       )..layout();
       final width = painter.width;
       painter.dispose();
-      return width + _Tab.chrome;
+      return width + chrome;
     }
 
     return [for (final d in shown) widthOf(d.label(l10n))];
@@ -422,16 +430,27 @@ class const _Pill({
     BuildContext context,
     SnacklistColors t,
     Brightness brightness,
-    double maxWidth,
-  ) {
+    double maxWidth, {
+    required bool declutter,
+  }) {
     // Equal shares while the widest label fits each; then shares as wide
     // as each label (three tabs on a small phone); and when not even that
     // fits (large text), the other tabs keep their icon only and their name
     // for screen readers, the selected one the room for its label.
-    final widths = _labelled(context);
     final room = maxWidth - 2 * _pillInset;
+    bool fits(List<double> widths) => widths.reduce((a, b) => a + b) <= room;
+    var widths = _labelled(context, _Tab.chrome);
+    // Decluttered (job 229), a pill about to drop labels first narrows its
+    // tabs' hexes: three labels stay at 130 % text on a 358 px phone.
+    final tight =
+        !fits(widths) &&
+        declutter &&
+        fits(_labelled(context, _Tab.tightChrome));
+    if (tight) {
+      widths = _labelled(context, _Tab.tightChrome);
+    }
     final equal = widths.length * widths.reduce(math.max) <= room;
-    final crowded = widths.reduce((a, b) => a + b) > room;
+    final crowded = !fits(widths);
     final row = SizedBox(
       height: _pillHeight,
       child: Row(
@@ -446,7 +465,7 @@ class const _Pill({
             else
               Expanded(
                 flex: equal || crowded ? 1 : widths[i].ceil(),
-                child: _tab(destination, i, label: true),
+                child: _tab(destination, i, label: true, tight: tight),
               ),
         ],
       ),
@@ -481,15 +500,20 @@ class const _Pill({
     );
   }
 
-  Widget _tab(_Destination destination, int position, {required bool label}) =>
-      _Tab(
-        destination: destination,
-        position: position,
-        count: shown.length,
-        selected: destination.branch == branch,
-        label: label,
-        onTap: () => onSelect(destination),
-      );
+  Widget _tab(
+    _Destination destination,
+    int position, {
+    required bool label,
+    bool tight = false,
+  }) => _Tab(
+    destination: destination,
+    position: position,
+    count: shown.length,
+    selected: destination.branch == branch,
+    label: label,
+    tight: tight,
+    onTap: () => onSelect(destination),
+  );
 }
 
 /// The face's inset inside the pill's contour.
@@ -508,6 +532,9 @@ class const _Tab({
 
   /// False in a crowded pill: the icon alone, the name for screen readers.
   final bool label = true,
+
+  /// The indicator's narrower insets ([tightChrome]).
+  final bool tight = false,
 }) extends StatefulWidget {
   static const _indicatorHeight = 44.0;
 
@@ -519,6 +546,9 @@ class const _Tab({
   /// A labelled tab's width beside its label: the indicator's insets, the
   /// selected hex's contour, the icon and the gap.
   static const chrome = 11.0 + 14 + 2 * 1.5 + 20 + 6;
+
+  /// [chrome] with the indicator's insets of a [tight] tab.
+  static const tightChrome = 8.0 + 10 + 2 * 1.5 + 20 + 6;
 
   /// An unlabelled tab's share of a crowded pill.
   static const iconOnlyWidth = 56.0;
@@ -538,12 +568,21 @@ class _TabState() extends State<_Tab> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final t = SnacklistColors.of(Theme.of(context).brightness);
-    final _Tab(:destination, :position, :count, :selected, :onTap, :label) =
-        widget;
+    final _Tab(
+      :destination,
+      :position,
+      :count,
+      :selected,
+      :onTap,
+      :label,
+      :tight,
+    ) = widget;
     final color = selected ? t.onHoney : t.text;
     final indicator = Container(
       height: _Tab._indicatorHeight,
-      padding: const EdgeInsetsDirectional.only(start: 11, end: 14),
+      padding: tight
+          ? const EdgeInsetsDirectional.only(start: 8, end: 10)
+          : const EdgeInsetsDirectional.only(start: 11, end: 14),
       decoration: ShapeDecoration(
         color: selected
             ? t.honey

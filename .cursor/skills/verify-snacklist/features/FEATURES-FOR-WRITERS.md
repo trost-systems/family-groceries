@@ -478,6 +478,23 @@ The household picks its currency under „Währung“ (EN "Currency"): euro by d
 
 # Settings, help and account
 
+## Decluttered list (behind a flag, not public)
+
+**What it does.** Not public yet: it is switched on only for internal test installs (feature flag `list-declutter`). With it on, the list's top shows one button with the household's name small above the list's name, instead of the household button and a row of list tabs. The top stays put and is see-through: the list scrolls on under it. With prices on, the shopping total is the last line of the open items instead of a bar above the add field. The button opens the household's own page: its lists (tap one to show it), „Einladen“ (EN "Invite") and a row like „3 Mitglieder · 1 Einladung offen“ (EN "3 members · 1 open invite") that opens the members, where you invite, revoke an open invite or (as owner or admin) remove someone. „‹ Haushalte“ (EN "‹ Households") goes to all households, where a tap opens that household's page. Press and hold a list or a household and drag it to change the order; each person keeps their own order of households.
+
+**How to get there.**
+1. Only on a test install with the flag on: tab „Liste“, the button top left.
+2. Another household: in that sheet „‹ Haushalte“, then the household, then one of its lists.
+3. Members: the members row under the household's name.
+4. Reorder: press and hold a list or a household in the sheet, drag up or down.
+
+**Never claim.**
+- That the new look is available to users: it is behind a flag, rollout off.
+- That the order of households is shared: it is each person's own; the order of lists is the household's.
+- That lists can be reordered offline, or that the bottom bar changed: the add field and the three tabs are as before.
+
+**Last verified.** branch job/229-list-declutter-impl, 2026-11-14 (CET), driven on the web build with the flag on, German light and English dark, 100 % and 130 % text (`journeys/list-declutter.mjs`, PASS). Recipe: [list-declutter.md](./list-declutter.md).
+
 ## Theme: System, light, dark
 
 **What it does.** The user chooses between „System“ (follow the device), light and dark in one three-part switch. The choice applies immediately across the whole app and is remembered on that device, also after signing out. By default the app follows the phone's or browser's own light/dark setting.

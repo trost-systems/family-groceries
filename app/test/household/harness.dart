@@ -532,6 +532,34 @@ class TestSession(super.initialState)
     }
   }
 
+  /// Each [reorderHouseholds] call's ids.
+  final reorders = <List<String>>[];
+
+  /// Shows the new order at once, as the cubit does; a [fail] puts it back.
+  @override
+  Future<void> reorderHouseholds(List<String> ids) async {
+    reorders.add([...ids]);
+    if (state case InHousehold(
+      :final userId,
+      :final household,
+      :final households,
+      :final requests,
+    )) {
+      emit(
+        InHousehold(userId, household, [
+          for (final id in ids)
+            ?households.where((h) => h.id == id).firstOrNull,
+        ], requests: requests),
+      );
+      try {
+        await _answer();
+      } on HouseholdError {
+        emit(InHousehold(userId, household, households, requests: requests));
+        rethrow;
+      }
+    }
+  }
+
   @override
   Future<void> setDefault(String householdId) async {
     defaults.add(householdId);

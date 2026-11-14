@@ -12903,3 +12903,50 @@ before anyone merges it.
   on a step with nothing before it Android usually closes the app. Both change what the user gets
   (an ended guided start, or a closed app with the draft resumed later) for a key press. Staying
   is the smallest change, and the X or „Später“ remain the ways out.
+
+## Job 229: the decluttered list behind `list-declutter`, 2026-11-14
+
+Peter's pick from job 227's round 2 (t861u): base B1 to B6, today's bottom (R2), switcher sheet SS5
+with his adjustments. All of it shows only with the PostHog flag `list-declutter` on; off, the list
+and the household sheet are today's.
+
+1. **One switcher in a see-through header.** The household chip and the list tabs give way to one
+   button, the household small over the shown list in bold (`ListSwitcherButton`), with the chip's
+   width rules. The status bar area and the bar are one layer: a 14 px blur over the surface at
+   72 %, an edge line once the list scrolled, and the whole layer takes taps (also on the web's
+   semantics tree), so a near miss never ticks a row under it.
+2. **The total is a row of the list**, after the open items and before „Zuletzt verwendet“
+   (`TotalBar(inList: true)`), not a bar over the add field.
+3. **The 130 % label fix (R2).** Today's pill drops „Verlauf“ and „Mehr“ from 120 % text on a 358 px
+   phone (three labels need about 306 px, the pill has 298). With the flag, a pill that would drop
+   labels first narrows its tabs' hexes (11/14 px insets to 8/10): all three stay at 130 % on
+   358 px, and the look is unchanged wherever the labels fit anyway.
+4. **The sheet is a three-page state machine** (`SwitcherPage`: households, a household's lists,
+   its members). It opens on the shown household's page, as SS5 did. Back walks members, household,
+   households, and so does the system back; a tap beside the sheet closes it from
+   any page (see 9).
+5. **Another household's lists come from a held `ListCubit`** (`ListScope.hold`/`release`), the same
+   code that runs the shown list: counts, optimistic rename, delete and order, offline refusals.
+   Picking a list there shows it in that cubit, then switches the household, which keeps the held
+   cubit. A refused change to a held list is told in a snackbar (`rejectionText`, shared with the
+   list's scope), since only the shown list's scope tells its own.
+6. **Household order is per member, on the server** (`household_members.position`,
+   `reorder_households(uuid[])`, `my_households()` ordered by it; no new table). Peter asked for
+   long-press reorder of households too, and the lists' order already lives on the server
+   (`move_list`). Households never reordered sort as before (joined_at), so nothing changes for
+   anyone until they drag. MCP and the API list households in the same order.
+7. **Reorder is long-press then drag on every platform** (`ReorderableDelayedDragStartListener`),
+   with the semantics actions „Nach oben“ / „Nach unten“ for screen readers. The ⋮ menu keeps
+   „Umbenennen“ and „Löschen“. More's household page keeps its menu with move up/down: the brief
+   changes the sheet only.
+8. **Members page.** Member rows and their role rules are More's (`MemberTiles`, extracted, one
+   implementation for both pages). Open person invites are withdrawn with „Widerrufen“ and no
+   confirm, as on the invite sheet. The members row counts open person invites
+   („3 Mitglieder · 1 Einladung offen“).
+9. **Back.** The system back walks the pages (`BackButtonListener`); a tap beside the sheet,
+   Escape or a drag down closes it from any page, on every platform. Household orders sent one
+   after the other reach the server in that order, and a fresh reload follows the last one.
+10. **Known limit:** on the web, screen readers have no reorder actions (the engine has no custom
+   semantics actions); lists still move through More's household menu there, households don't.
+11. **Left for later:** the bottom area (none of BB1 to BB5; Peter revisits it), and whether More's
+   household page also moves to long-press reorder.

@@ -198,8 +198,8 @@ final class const InHousehold(
   /// user is still in it, else [defaultHousehold].
   final Household household,
 
-  /// Every household of the user, oldest membership first; [household] is
-  /// one of them.
+  /// Every household of the user, in their own order (job 229), else oldest
+  /// membership first; [household] is one of them.
   final List<Household> households, {
 
   /// Joins waiting for an owner or admin, in households not among
@@ -313,6 +313,11 @@ class SessionCubit(
   /// Counts [refresh]es: only the newest one's answer is shown, so a reload
   /// that started before a change can't undo it.
   var _reloads = 0;
+
+  /// The last household order sent: the next waits for it, so the server
+  /// ends with the order shown.
+  Future<void> _reorderSent = Future.value();
+  var _reorders = 0;
 
   /// A household a change asked to show (a create, a join, an unarchive)
   /// until a reload shows it: a reload that failed leaves it to the next.
@@ -627,6 +632,73 @@ class SessionCubit(
       await _cache.remember(userId, households: households, shown: next.id);
     }
   }
+
+  /// Puts the user's households in the order of [ids] (job 229): here at
+  /// once, and on the server for the user's other devices. Households [ids]
+  /// leaves out stay after the named ones. A refusal puts the order back
+  /// and throws [HouseholdError].
+  Future<void> reorderHouseholds(List<String> ids) async {
+    if (state case InHousehold(
+      :final userId,
+      :final household,
+      :final households,
+      :final requests,
+    )) {
+      final ordered = _inOrder(households, ids);
+      if (listEquals(_ids(ordered), _ids(households))) {
+        return;
+      }
+      // A reload out now answers the old order.
+      _reloads++;
+      final reorder = ++_reorders;
+      emit(InHousehold(userId, household, ordered, requests: requests));
+      await _cache.remember(userId, households: ordered, shown: household.id);
+      final sent = _reorderSent.then(
+        (_) => householdCall(
+          () => _client.rpc<void>(
+            'reorder_households',
+            params: {'p_households': _ids(ordered)},
+          ),
+        ),
+      );
+      _reorderSent = sent.then((_) {}, onError: (Object _) {});
+      try {
+        await sent;
+        // The reload the order discarded: counts and names stay fresh.
+        if (reorder == _reorders) {
+          unawaited(refresh().catchError((Object _) {}));
+        }
+      } on HouseholdError {
+        if (state
+            case InHousehold(
+              userId: final user,
+              household: final shown,
+              households: final now,
+              requests: final waiting,
+            )
+            when user == userId) {
+          final back = _inOrder(now, _ids(households));
+          emit(InHousehold(userId, shown, back, requests: waiting));
+          await _cache.remember(userId, households: back, shown: shown.id);
+        }
+        rethrow;
+      }
+    }
+  }
+
+  static List<String> _ids(List<Household> households) => [
+    for (final h in households) h.id,
+  ];
+
+  /// [households] in the order of [ids], the ones not named after them.
+  static List<Household> _inOrder(
+    List<Household> households,
+    List<String> ids,
+  ) => [
+    for (final id in ids) ?households.where((h) => h.id == id).firstOrNull,
+    for (final h in households)
+      if (!ids.contains(h.id)) h,
+  ];
 
   /// Makes [householdId] the one Siri, Alexa and AI assistants act in.
   /// Throws [HouseholdError].

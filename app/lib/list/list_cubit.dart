@@ -1235,6 +1235,12 @@ class ListCubit(
   /// Moves the list [id] to [position] (0: first). Whether the server took
   /// it.
   Future<bool> moveList(String id, int position) {
+    // Until a list is picked the first one shows: moving another one first
+    // must not change the list on screen (job 229).
+    if (state.catalog.list(state.prefs.shownList) == null &&
+        state.shownList != null) {
+      _setPrefs(state.prefs.copyWith(shownList: state.shownList?.id));
+    }
     final ids = [
       for (final l in state.catalog.lists)
         if (l.id != id) l.id,

@@ -1000,5 +1000,13 @@
   "@storeSubtotal": {"placeholders": {"store": {"type": "String"}, "amount": {"type": "String"}}},
   "currencyTitle": "Currency",
   "currencyHint": "For prices and the shopping total, for everyone in the household",
-  "currencyPick": "Choose currency"
+  "currencyPick": "Choose currency",
+  "listSwitch": "Switch list or household",
+  "switcherHouseholds": "Households",
+  "switcherBack": "Back: {page}",
+  "@switcherBack": {"placeholders": {"page": {"type": "String"}}},
+  "switcherInvite": "Invite",
+  "switcherOpenInvites": "{count, plural, =1{1 open invite} other{{count} open invites}}",
+  "@switcherOpenInvites": {"placeholders": {"count": {"type": "int"}}},
+  "switcherOpenInvitesTitle": "Open invites"
 }
