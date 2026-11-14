@@ -148,16 +148,34 @@ Deno.test('the e2e lock wait ends as soon as the signal aborts, and leaves no wa
 
 Deno.test('a stopped process is not waited on through pipes its own children keep open', async () => {
   const c = new AbortController();
-  const started = Date.now();
-  setTimeout(() => c.abort(), 200);
-  // The shell is killed at once; its sleep keeps the shell's stdout and stderr open for 20 s.
-  const err = await assertRejects(
-    () => realShell.run(['bash', '-c', 'sleep 20 & wait'], { signal: c.signal, timeoutMs: 600_000 }),
-    FgError,
-  );
-  assertEquals(err.code, 'interrupted');
-  assert(Date.now() - started < 5000, `returned after ${Date.now() - started} ms`);
-  await new Deno.Command('pkill', { args: ['-f', '^sleep 20$'] }).output();
+  const pidFile = await Deno.makeTempFile();
+  // The command scripts/merge-pr.sh waits for CI in, as a land on the same box runs it: not this test's to end.
+  const bystander = new Deno.Command('bash', { args: ['-c', 'exec sleep 20'], stdout: 'null', stderr: 'null' }).spawn();
+  let pid = 0;
+  try {
+    // The shell is killed at once; its sleep keeps the shell's stdout and stderr open for 20 s.
+    const run = realShell.run(['bash', '-c', 'sleep 20 & echo $! > "$0"; wait', pidFile], { signal: c.signal, timeoutMs: 600_000 });
+    await waitFor(async () => (await Deno.readTextFile(pidFile)).endsWith('\n'));
+    pid = Number(await Deno.readTextFile(pidFile));
+    assert(pid > 1, `the shell wrote ${pid} as its sleep's pid`);
+    const started = Date.now();
+    c.abort();
+    const err = await assertRejects(() => run, FgError);
+    assertEquals(err.code, 'interrupted');
+    assert(Date.now() - started < 5000, `returned after ${Date.now() - started} ms`);
+  } finally {
+    // The test's own sleep is ended by its pid, on every path.
+    if (pid > 1) await realShell.kill(pid, 'SIGTERM');
+    try {
+      bystander.kill('SIGKILL');
+    } catch {
+      // Ended already: the assertion below names the signal.
+    }
+    await bystander.status;
+    await Deno.remove(pidFile);
+  }
+  // A sleep that a kill by name ended died of that signal, not of the SIGKILL above.
+  assertEquals((await bystander.status).signal, 'SIGKILL', "another process's `sleep 20` was ended too");
 });
 
 Deno.test('a normal run still returns all of its output', async () => {

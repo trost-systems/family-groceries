@@ -2,8 +2,9 @@
 # Tests push-pr.sh and merge-pr.sh against a scratch remote and a fake gh: the landed message is
 # the PR title and description with the co-author trailers (MODEL_CO_AUTHOR optional, Peter's
 # last), the description's `## Changelog` section (job 39; "none" added when no app build
-# changes), MERGE_WAIT_MINUTES takes whole minutes only, and merge-pr.sh waits for GitHub's record
-# of the PR to name the pushed head (job 218). Run by the lint gate.
+# changes), MERGE_WAIT_MINUTES takes whole minutes only, merge-pr.sh waits for GitHub's record
+# of the PR to name the pushed head (job 218), and its wait for ci-ok goes on when a signal ends
+# only its sleep (job 219). Run by the lint gate.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
@@ -253,6 +254,53 @@ if out="$(PATH="$tmp/nosleep:$PATH" scripts/merge-pr.sh 7 2>&1)"; then fail "mer
 [[ ! -e $tmp/pr/slept ]] || fail "merge-pr.sh waited for a record that was current"
 expect_eq "nothing merged behind main" "$(tail -n 1 "$tmp/pr/merged")" \
   "merged $(git --git-dir="$tmp/origin.git" rev-parse refs/heads/p7)"
+
+# Job 219: another checkout's fg-cli gate ended every `sleep 20` on the machine by name, and with
+# it a land's wait for CI. The first two sleeps end as that one did, of SIGTERM with ci-ok still
+# pending: one every time, the other until ci-ok passes during its second sleep. The third fails
+# without a signal (128 is the highest status that is not one). A wait that spins would run to
+# its deadline, hence the one minute.
+mkdir "$tmp/endedsleep" "$tmp/endedtwice" "$tmp/failedsleep"
+cat >"$tmp/endedsleep/sleep" <<'SLEEP'
+#!/usr/bin/env bash
+echo "$1" >>"$FAKE_PR/slept"
+kill -TERM $$
+SLEEP
+cat >"$tmp/endedtwice/sleep" <<'SLEEP'
+#!/usr/bin/env bash
+echo "$1" >>"$FAKE_PR/slept"
+[[ $(wc -l <"$FAKE_PR/slept") -lt 2 ]] || echo pass >"$FAKE_PR/ci"
+kill -TERM $$
+SLEEP
+cat >"$tmp/failedsleep/sleep" <<'SLEEP'
+#!/usr/bin/env bash
+echo "$1" >>"$FAKE_PR/slept"
+exit 128
+SLEEP
+chmod +x "$tmp"/{endedsleep,endedtwice,failedsleep}/sleep
+pushed_pr p10
+echo pending >"$tmp/pr/ci"
+rm -f "$tmp/pr/slept"
+out="$(PATH="$tmp/failedsleep:$PATH" MERGE_WAIT_MINUTES=1 scripts/merge-pr.sh --wait 7 2>&1)" && status=0 || status=$?
+expect_eq "merge-pr.sh stops when its wait's sleep fails without a signal" "$status" 128
+[[ $out == *"the wait's sleep failed (exit 128); not merging"* ]] || fail "a wait whose sleep failed gave: $out"
+expect_eq "it did not wait on after the failed sleep" "$(tr '\n' ' ' <"$tmp/pr/slept")" "20 "
+rm "$tmp/pr/slept"
+out="$(PATH="$tmp/endedsleep:$PATH" MERGE_WAIT_MINUTES=1 scripts/merge-pr.sh --wait 7 2>&1)" && status=0 || status=$?
+expect_eq "merge-pr.sh stops when a signal ends its wait's sleep every time" "$status" 1
+[[ $out == *"the wait's sleep was ended by a signal 21 times (exit 143); not merging"* ]] \
+  || fail "a wait whose sleep was ended every time gave: $(tail -n 2 <<<"$out")"
+expect_eq "it waited on through 20 ended sleeps" "$(wc -l <"$tmp/pr/slept" | tr -d ' ')" 21
+expect_eq "nothing merged after the failed and the ended sleeps" "$(tail -n 1 "$tmp/pr/merged")" \
+  "merged $(git --git-dir="$tmp/origin.git" rev-parse refs/heads/p7)"
+rm "$tmp/pr/slept"
+out="$(PATH="$tmp/endedtwice:$PATH" MERGE_WAIT_MINUTES=1 scripts/merge-pr.sh --wait 7 2>&1)" || fail "a wait whose sleep a signal ended did not merge: $out"
+expect_eq "merge-pr.sh says so each time a signal ended its wait's sleep" \
+  "$(grep -c "the wait's sleep was ended by a signal (exit 143); still waiting for ci-ok" <<<"$out")" 2
+expect_eq "merge-pr.sh waited on while ci-ok was pending, and looked again after each sleep" \
+  "$(tr '\n' ' ' <"$tmp/pr/slept")" "20 20 "
+expect_eq "merge-pr.sh merges after a wait whose sleeps a signal ended" "$(tail -n 1 "$tmp/pr/merged")" \
+  "merged $(git --git-dir="$tmp/origin.git" rev-parse refs/heads/p10)"
 
 if [[ $failures -gt 0 ]]; then
   echo "landing-test: $failures failed" >&2
