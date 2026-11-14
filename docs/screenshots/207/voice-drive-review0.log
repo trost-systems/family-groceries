@@ -1,0 +1,7 @@
+[16:39:57.134Z] lists: Einkaufsliste, Geburtstag
+[16:39:57.140Z] default list: Geburtstag
+[16:39:57.434Z] POST voice {"text":"Servietten zur Einkaufsliste"} -> 200 speech="Hinzugefügt zur Einkaufsliste: Servietten." list=Einkaufsliste
+[16:39:57.502Z] POST voice {"text":"Teller","list":"Einkaufsliste"} -> 200 speech="Hinzugefügt zur Einkaufsliste: Teller." list=Einkaufsliste
+[16:39:57.566Z] POST voice {"text":"Gabeln"} -> 200 speech="Hinzugefügt zur Liste Geburtstag: Gabeln." list=Geburtstag
+[16:39:57.629Z] POST voice {"text":"Brot zu Hause"} -> 200 speech="Hinzugefügt zur Liste Geburtstag: Brot zu Hause." list=Geburtstag
+[16:39:57.634Z] database: Servietten -> Einkaufsliste, Teller -> Einkaufsliste, Gabeln -> Geburtstag, Brot zu Hause -> Geburtstag

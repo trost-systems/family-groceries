@@ -39,7 +39,7 @@ extension VoiceResult {
   func answer(mode: VoiceMode, copy: SiriCopy) -> String {
     switch self {
     case .added(let speech), .nothingAdded(let speech), .read(let speech, _),
-      .confirm(let speech, _, _):
+      .confirm(let speech, _, _, _):
       return speech
     case .lockedHousehold(let speech):
       return speech ?? (mode == .add

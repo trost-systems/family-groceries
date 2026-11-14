@@ -5,7 +5,9 @@ import Intents
 /// hinzu" with an item the app never suggested reaches the app as an INAddTasksIntent; without
 /// these handlers Siri answered "Snacklist unterstützt das nicht" (job 92). AppDelegate hands them
 /// out in-app (`application(_:handlerFor:)`, no Intents extension). The titles go to `voice` like
-/// AddItemsIntent's dictation; the household has one list, so a named list is ignored.
+/// AddItemsIntent's dictation, with the target list's name when Siri heard one (job 207): the
+/// server matches it against the default household's lists like Alexa's list slot; "Einkaufsliste"
+/// or "Snacklist" mean the default list, an unknown name adds there too.
 ///
 /// Every failure, signed out and no household included, answers `.failure`: Siri says its own
 /// localized "couldn't do that" and stays in its sheet. `.failureRequiringAppLaunch` made iOS open
@@ -28,7 +30,11 @@ final class AddTasksHandler: NSObject, INAddTasksIntentHandling {
   func resolveTargetTaskList(
     for intent: INAddTasksIntent, with completion: @escaping (INAddTasksTargetTaskListResolutionResult) -> Void
   ) {
-    completion(.notRequired())
+    guard let list = intent.targetTaskList, Self.listName(intent) != nil else {
+      completion(.notRequired())
+      return
+    }
+    completion(.success(with: list))
   }
 
   func handle(intent: INAddTasksIntent, completion: @escaping (INAddTasksIntentResponse) -> Void) {
@@ -38,7 +44,8 @@ final class AddTasksHandler: NSObject, INAddTasksIntentHandling {
   func respond(to intent: INAddTasksIntent) async -> INAddTasksIntentResponse {
     let titles = Self.titles(intent)
     let text = titles.joined(separator: ", ")
-    let result = await client.send(text: text, mode: .add, lang: VoiceLanguage.of(text))
+    let result = await client.send(
+      text: text, mode: .add, lang: VoiceLanguage.of(text), list: Self.listName(intent))
     switch result {
     case .added, .nothingAdded, .confirm:
       let response = INAddTasksIntentResponse(code: .success, userActivity: nil)
@@ -47,6 +54,12 @@ final class AddTasksHandler: NSObject, INAddTasksIntentHandling {
     case .read, .lockedHousehold, .failed:
       return INAddTasksIntentResponse(code: .failure, userActivity: nil)
     }
+  }
+
+  /// The target list Siri heard, if any.
+  static func listName(_ intent: INAddTasksIntent) -> String? {
+    let name = intent.targetTaskList?.title.spokenPhrase.trimmingCharacters(in: .whitespacesAndNewlines)
+    return name?.isEmpty == false ? name : nil
   }
 
   static func titles(_ intent: INAddTasksIntent) -> [String] {

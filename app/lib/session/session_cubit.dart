@@ -6,6 +6,7 @@ import 'package:family_groceries/analytics/events.dart';
 import 'package:family_groceries/household/household_kind.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/pending_invite.dart';
+import 'package:family_groceries/list/model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -638,6 +639,37 @@ class SessionCubit(
     );
     await householdCall(refresh);
   }
+
+  /// The list Siri, Alexa and AI assistants add to in [householdId] when
+  /// no list is named (job 207): the user's pick, else its first list.
+  /// Null when the user is not in it. Throws [HouseholdError].
+  Future<String?> defaultList(String householdId) => householdCall(
+    () => _client.rpc<String?>(
+      'default_list',
+      params: {'p_household': householdId},
+    ),
+  );
+
+  /// [householdId]'s lists in their order. Throws [HouseholdError].
+  Future<List<HouseholdList>> lists(String householdId) => householdCall(
+    () async => [
+      for (final row
+          in await _client.rest
+              .from('lists')
+              .select('id, name, position, seed_key')
+              .eq('household_id', householdId)
+              .order('position', ascending: true)
+              .order('created_at', ascending: true)
+              .order('id', ascending: true))
+        HouseholdList.fromJson(row),
+    ],
+  );
+
+  /// Makes [listId] the user's [defaultList] in its household; showing
+  /// another list does not. Throws [HouseholdError].
+  Future<void> setDefaultList(String listId) => householdCall(
+    () => _client.rpc<void>('set_default_list', params: {'p_list': listId}),
+  );
 
   /// Renames [householdId] for everyone in it. Throws [HouseholdError].
   Future<void> rename(String householdId, String name) async {

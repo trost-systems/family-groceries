@@ -5,8 +5,13 @@
 // user's default household (household_members.is_default, read per request) is the one written
 // to, never anything from the request. Adds go through the Siri path (voice/parse.ts,
 // voice/items.ts), so items are split, categorized and deduplicated exactly as in the app.
+// Job 207: AddToListIntent's `list` slot, or a list phrase the items slot ends with ("luftballons
+// zur geburtstag liste"), names a list of that household (_shared/spoken_list.ts); without one
+// the add goes to the user's default list there.
 import { AuthError } from '../_shared/auth.ts';
 import { json } from '../_shared/http.ts';
+import type { ListCatalog } from '../_shared/list.ts';
+import { type ListWish, takeListPhrase, targetOf } from '../_shared/spoken_list.ts';
 import type { Added } from '../voice/handler.ts';
 import { maxTextLength } from '../voice/handler.ts';
 import { maxItems, type ParsedItem } from '../voice/parse.ts';
@@ -29,11 +34,16 @@ export interface Deps {
   authenticate(accessToken: string): Promise<Linked>;
   /** Takes [count] from the user's allowance (30 items a minute); false when it is used up. */
   takeAdds(linked: Linked, count: number): Promise<boolean>;
-  /** `addVariants`: the yes to the Q79 question, held items are added (voice/items.ts). */
+  /** The household's lists and the user's default one (job 207). */
+  lists(linked: Linked): Promise<ListCatalog>;
+  /**
+   * Adds to the list [options.list] (an id from `lists`); `addVariants`: the yes to the Q79
+   * question, held items are added (voice/items.ts).
+   */
   addItems(
     linked: Linked,
     items: ParsedItem[],
-    options?: { addVariants?: boolean },
+    options: { addVariants?: boolean; list: string },
   ): Promise<Added[]>;
   /** The household's open items in aisle order. */
   listItems(linked: Linked): Promise<Spoken[]>;
@@ -78,14 +88,46 @@ interface Reply {
   end: boolean;
   kind: ReplyKind;
   card?: 'link' | string;
-  /** Ask for the items again, on AddItemIntent. */
+  /** Ask for the items again, on [intent]. */
   elicit?: boolean;
-  /** Q79: ask yes or no about these items (the slot's new value), on AddItemIntent. */
+  /** Q79: ask yes or no about these items (the slot's new value), on [intent]. */
   confirm?: string;
+  /** The add intent a dialog directive continues, with its list slot; AddItemIntent by default. */
+  intent?: AddIntent;
   attributes?: Record<string, unknown>;
   /** Why a linked token is no link (linkReason), for the request line. */
   reason?: string;
 }
+
+/** The intents that add: AddToListIntent carries the list's name in its own slot (job 207). */
+interface AddIntent {
+  name: 'AddItemIntent' | 'AddToListIntent';
+  /** AddToListIntent's list slot as heard, kept through the dialog. */
+  list?: string;
+}
+
+const addIntentOf = (envelope: Envelope): AddIntent => {
+  const intent = envelope.request.intent;
+  if (intent?.name !== 'AddToListIntent') return { name: 'AddItemIntent' };
+  const list = intent.slots?.list?.value;
+  return list ? { name: intent.name, list } : { name: intent.name };
+};
+
+/** The intent a dialog directive updates: the items slot as given, the list slot kept. */
+const updatedIntent = ({ name, list }: AddIntent, items: string | undefined) => ({
+  name,
+  confirmationStatus: 'NONE',
+  slots: {
+    items: {
+      name: 'items',
+      ...(items !== undefined && { value: items }),
+      confirmationStatus: 'NONE',
+    },
+    ...(name === 'AddToListIntent' && {
+      list: { name: 'list', ...(list && { value: list }), confirmationStatus: 'NONE' },
+    }),
+  },
+});
 
 /** `invalid_token:expired`, `user_deleted`: closed words, never the token or the message. */
 const linkReason = (e: AuthError) => e.detail ? `${e.reason}:${e.detail}` : e.reason;
@@ -100,25 +142,18 @@ function alexaResponse(reply: Reply): Response {
   else if (reply.card) {
     response.card = { type: 'Simple', title: speech.cardTitle, content: clip(reply.card) };
   }
+  const intent = reply.intent ?? { name: 'AddItemIntent' };
   if (reply.elicit) {
     response.directives = [{
       type: 'Dialog.ElicitSlot',
       slotToElicit: 'items',
-      updatedIntent: {
-        name: 'AddItemIntent',
-        confirmationStatus: 'NONE',
-        slots: { items: { name: 'items', confirmationStatus: 'NONE' } },
-      },
+      updatedIntent: updatedIntent(intent, undefined),
     }];
   }
   if (reply.confirm) {
     response.directives = [{
       type: 'Dialog.ConfirmIntent',
-      updatedIntent: {
-        name: 'AddItemIntent',
-        confirmationStatus: 'NONE',
-        slots: { items: { name: 'items', value: reply.confirm, confirmationStatus: 'NONE' } },
-      },
+      updatedIntent: updatedIntent(intent, reply.confirm),
     }];
   }
   response.shouldEndSession = reply.end;
@@ -219,6 +254,7 @@ export function createHandler(deps: Deps) {
         speech: speech.notUnderstoodOnce,
         reprompt: speech.notUnderstoodReprompt,
         elicit: true,
+        intent: addIntentOf(envelope),
         end: false,
         kind: 'reprompt',
         attributes: { retry: 1 },
@@ -240,19 +276,45 @@ export function createHandler(deps: Deps) {
     }
     const linked = await linkedOrReply(envelope);
     if (isReply(linked)) return linked;
-    const items = heard.slice(0, maxItems).map((item) => ({
-      ...item,
-      name: voice.name(item.name, text),
-    }));
-    const cut = heard.length > maxItems ? ` ${speech.tooMany}` : '';
+    const intent = addIntentOf(envelope);
     // Q79: the yes or no to a question about held items; NONE on a first add.
     const answer = envelope.request.intent?.confirmationStatus;
+    let catalog: ListCatalog;
+    try {
+      catalog = await deps.lists(linked);
+    } catch (e) {
+      deps.report(e);
+      return { speech: speech.failed, end: true, kind: 'error' };
+    }
+    // Alexa may hear the list inside the items ("luftballons zur geburtstag liste"); the list slot
+    // wins, and the yes or no to Q79 stays on the list the question was about.
+    const phrase = takeListPhrase(text, voice.lang, catalog.lists);
+    const asked = envelope.session?.attributes?.list;
+    const wish: ListWish =
+      typeof asked === 'string' && (answer === 'CONFIRMED' || answer === 'DENIED')
+        ? { by: 'id', id: asked }
+        : intent.list?.trim()
+        ? { by: 'name', said: intent.list }
+        : phrase.said
+        ? { by: 'name', said: phrase.said }
+        : { by: 'none' };
+    const target = targetOf(catalog, wish);
+    const rest = voice.parse(phrase.text, maxItems + 1);
+    if (rest.length === 0) return notUnderstood(envelope);
+    const items = rest.slice(0, maxItems).map((item) => ({
+      ...item,
+      name: voice.name(item.name, phrase.text),
+    }));
+    const cut = rest.length > maxItems ? ` ${speech.tooMany}` : '';
     let added: Added[];
     try {
       if (!await deps.takeAdds(linked, items.length)) {
         return { speech: speech.rateLimited, end: true, kind: 'rate-limited' };
       }
-      added = await deps.addItems(linked, items, { addVariants: answer === 'CONFIRMED' });
+      added = await deps.addItems(linked, items, {
+        addVariants: answer === 'CONFIRMED',
+        list: target.list.id,
+      });
     } catch (e) {
       deps.report(e);
       return { speech: speech.failed, end: true, kind: 'error' };
@@ -262,12 +324,20 @@ export function createHandler(deps: Deps) {
     if (added.length === 0) {
       return { speech: speech.notUnderstood, end: true, kind: 'not-understood' };
     }
-    const ask = answer === 'NONE' || !answer ? voice.question(added) : null;
+    const ask = answer === 'NONE' || !answer ? voice.question(added, target) : null;
     if (ask) {
       const question = ask.question + cut;
-      return { speech: question, reprompt: question, confirm: ask.again, end: false, kind: 'ask' };
+      return {
+        speech: question,
+        reprompt: question,
+        confirm: ask.again,
+        intent,
+        attributes: { list: target.list.id },
+        end: false,
+        kind: 'ask',
+      };
     }
-    const said = voice.confirmation(added) + cut;
+    const said = voice.confirmation(added, target) + cut;
     return { speech: said, card: said, end: true, kind: 'added' };
   }
 
@@ -302,6 +372,7 @@ export function createHandler(deps: Deps) {
     const { speech } = speechFor(envelope.request.locale);
     switch (envelope.request.intent?.name) {
       case 'AddItemIntent':
+      case 'AddToListIntent':
         return await addItems(envelope);
       case 'ReadListIntent':
         return await readList(envelope);

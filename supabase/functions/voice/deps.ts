@@ -3,7 +3,7 @@
 import { analyticsSubject } from '../alexa/store.ts';
 import { type Auth, authenticate } from '../_shared/auth.ts';
 import { asUser, isMember, serviceDb } from '../_shared/db.ts';
-import { listItems } from '../_shared/list.ts';
+import { listCatalog, listItems } from '../_shared/list.ts';
 import type { Telemetry } from '../_shared/telemetry.ts';
 import type { Deps } from './handler.ts';
 import { addItems, splitItems } from './items.ts';
@@ -15,6 +15,7 @@ export function productionDeps(
   return {
     authenticate: resolve,
     isMember: (auth, household) => isMember(auth.userId, household),
+    lists: (auth) => asUser(auth.userId, (tx) => listCatalog(tx, auth.householdId)),
     addItems: (auth, items, options) =>
       asUser(auth.userId, (tx) => addItems(tx, auth.householdId, items, options)),
     splitItems: (auth, items) =>

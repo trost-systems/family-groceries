@@ -123,12 +123,13 @@ name is enough. An id works too.
 
 A household has one or more lists (job 169b W3, e.g. "Wocheneinkauf" and
 "Baumarkt"). Without the optional `list` argument the item tools act in the
-household's first list, where Siri and Alexa add too; `list` takes a list's id
+caller's default list in the household (chosen in the app, else the first list;
+job 207), where Siri and Alexa add too; `list` takes a list's id
 or its exact name (any case) as `list_lists` shows them, in the chosen
 household; another household's list is a tool error naming this one's lists.
 `tick_items` and `move_item` without `list` find an item given by its id on
 any list of the household (ids from `list_items` with `list`); names still
-mean the first list. Items carry `listId`. Claims ("Ich bringe") are not exposed: they are a
+mean the default list. Items carry `listId`. Claims ("Ich bringe") are not exposed: they are a
 person's promise, not an agent's.
 
 | Tool | Input | What it does |

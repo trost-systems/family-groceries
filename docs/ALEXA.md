@@ -35,9 +35,12 @@ Echo ──> Alexa (speech to text, intent "AddItemIntent", slot items = "milch 
          3. voice/parse.ts splits "milch und eier" (the Siri splitter; voice/parse_en.ts for an
             en-* request, alexa/voices.ts picks by request.locale)
          4. 30 items a minute per user (alexa_take_adds)
-         5. voice/items.ts adds through public.add_item as the user, under RLS (classifier,
+         5. the target list (job 207, _shared/spoken_list.ts): AddToListIntent's list slot, else
+            a list phrase at the end of the items ("… zur geburtstag liste"), else the user's
+            default list in that household (public.default_list: chosen in the app, else the first)
+         6. voice/items.ts adds through public.add_list_item as the user, under RLS (classifier,
             store memory, duplicates) ─> Realtime ─> every member's app
-         6. read-back: "Ich habe Milch und Eier auf die Snacklist gesetzt."
+         7. read-back: "Ich habe Milch und Eier auf die Snacklist gesetzt."
 ```
 
 Nothing from the request body chooses a household: only the token's user and their membership at
@@ -51,6 +54,7 @@ Invocation: "Alexa, sag snacklist, …", "Alexa, frag snacklist, …", "Alexa, �
 | Intent | Examples (de-DE.json has them all) | Answer |
 | --- | --- | --- |
 | `AddItemIntent` (slot `items`, `AMAZON.SearchQuery`) | füg {items} hinzu · setz {items} auf die Liste · schreib {items} auf · wir brauchen {items} · trag {items} ein | added: "Ich habe Milch und Eier auf die Snacklist gesetzt." · open already, with other spellings of new items (job 32b, added anyway; job 68): "Schon auf der Snacklist: Milch und Möhren." |
+| `AddToListIntent` (slots `items`, custom type `ITEM_PHRASE`, and `list`, custom type `LIST_NAME`; job 207) | füge {items} zur {list} Liste hinzu · füge {items} auf die {list} Liste hinzu · füge {items} zu {list} hinzu · setz/pack/schreib {items} auf die {list} Liste · en: add {items} to the {list} list · add {items} to {list} · add {items} onto the {list} list | "Ich habe Luftballons auf die Liste Geburtstag gesetzt." · "Schon auf der Liste Geburtstag: Kerzen." The seeded list is "die Einkaufsliste" / "the shopping list". See [Named lists](#named-lists) |
 | `ReadListIntent` | was auf der Liste steht · was steht auf der Liste · lies die Liste vor · was brauchen wir | "Auf der Snacklist stehen 3 Sachen: Äpfel, 2 Liter Milch und Eier." in the app's aisle order; at most 10, then "und 5 weitere."; empty: "Die Snacklist ist leer." |
 | LaunchRequest | "Alexa, öffne snacklist" | "Was soll auf die Liste?" and waits for the answer (`Dialog.ElicitSlot`, so "Milch" alone works) |
 | `AMAZON.HelpIntent` | "Hilfe" | what the skill does, with the two examples; the session stays open |
@@ -68,6 +72,46 @@ reported to error tracking). Quantities are said in words: "2 l" is "2 Liter", "
 ("Milch ohne Laktose").
 
 `SessionEndedRequest`, `System.ExceptionEncountered` and skill events get an empty answer.
+
+### Named lists
+
+Job 207. A household may have several lists; an add goes to the one the user names, else to their
+default list in the household (set in the app; none chosen: the first list). The list is never
+another household's: the name is matched against the default household's lists only.
+
+- **Why a second intent.** `AMAZON.SearchQuery` must be the only slot in a sample utterance
+  (Amazon, "Tips for Using Built-in Slots"; the model build refuses "a phrase slot and another
+  intent slot"). So `{list}` cannot join `AddItemIntent`'s `{items}`; `AddToListIntent` has both
+  slots in custom types. `ITEM_PHRASE` and `LIST_NAME` carry sample values (groceries and party
+  things; Alltag, Geburtstag, Baumarkt, Party, Wocheneinkauf, …; en: Birthday, Party, Hardware
+  store, Weekly shop, …); custom slots also take values outside the list. Its dialog model
+  elicits `items` with the launch prompt, so "füge zur Geburtstag Liste hinzu" asks "Was soll auf
+  die Liste?" and keeps the list slot.
+- **Alexa may swallow the list into the items.** `AddItemIntent` stays as it was, so "füge
+  luftballons zur geburtstag liste hinzu" can arrive there with items "luftballons zur geburtstag
+  liste". The server takes a list phrase off the end of the items, the way it does for Siri's
+  text (docs/SIRI_SHORTCUT.md, "Target list"): „zur X Liste“, „auf die X Liste“, „to the X list“
+  always; bare „zu X“, „to X“ only when X is a list's name exactly. The list slot wins over a
+  phrase. A sample's own words („füg {items} zur einkaufsliste hinzu“) never reach the function,
+  so with several lists every read-back names the list used („Ich habe Milch auf die Liste Alltag
+  gesetzt.“); with one list it says „auf die Snacklist“ as before. Alexa
+  sends no raw utterance in an IntentRequest (only the slot values), so the slots are all there is
+  to parse.
+- **Matching.** Case-insensitive, umlauts folded, a trailing „Liste“/„list“ stripped („Geburtstag
+  Liste“ finds „Geburtstag“), exact before fuzzy (Levenshtein ratio at least 0.75, one edit per
+  four letters). A list whose name is the spoken word exactly comes first (a list called
+  „Einkaufsliste“); otherwise „Liste“, „Einkaufsliste“, „shopping list“ and the app's names name no
+  list.
+- **Unknown or ambiguous: no question** (docs/DECISIONS.md, job 207). The items go to the default
+  list and Alexa says so before the read-back: "Eine Liste „Party“ habe ich nicht gefunden. Ich
+  habe Luftballons auf die Liste Alltag gesetzt." or "„Party“ passt zu mehreren Listen. …" (en:
+  "I couldn't find a list called Party. I put balloons on the Alltag list."). A clarification
+  prompt is easy to drop on Alexa, and the user must not think the items went to Party.
+- **Q79 on a named list.** The `Dialog.ConfirmIntent` names the intent the request came with
+  (AddToListIntent keeps its list slot) and the session attribute `list` holds the list id; the
+  yes or no reads it back, so the answer lands on the same list.
+- Dynamic entities (`Dialog.UpdateDynamicEntities` with the household's list names) are not used:
+  the server-side match covers what a static `LIST_NAME` misses.
 
 **Integration lock: Alexa stays free (job 72).** The skill is not part of Snacklist Premium
 (Peter Q39, Legal Review N-27). The alexa function never asks the integration lock, and
@@ -392,7 +436,11 @@ skill would rename that one to Snacklist too.
 
 Changes to the model, manifest or icons later: commit them, then run
 `ALEXA_SKILL_ID=<skill id> scripts/alexa-deploy-dev.sh` where the ASK CLI is signed in (the box,
-job 69). It writes the state file below, runs `ask deploy --target skill-metadata` (development
+job 69). Job 207's `AddToListIntent` and its slot types go out the same way, to the development
+stage only (no publishing, no certification):
+`ALEXA_SKILL_ID=amzn1.ask.skill.ad766331-e979-4a6e-95f1-30198b0a34cb scripts/alexa-deploy-dev.sh`.
+The function answers both intents before the model has them; until the deploy, a list name
+spoken inside `AddItemIntent`'s items is parsed on the server. It writes the state file below, runs `ask deploy --target skill-metadata` (development
 stage only), restores `alexa/`, waits for the de-DE model build and checks over SMAPI that the
 development stage serves the name „Snacklist“, the invocation name `snacklist` and both icons. By
 hand: `ask deploy --target skill-metadata` from `alexa/`. In a checkout without `alexa/.ask/ask-states.json`, write it first, or ask deploy
@@ -458,7 +506,8 @@ English, checked by `skill_package_test.ts` (no credentials).
 ## Testing
 
 - `deno test` in `supabase/functions` (the functions gate): `alexa/verify_test.ts` (each
-  verification rule, Amazon's real chain), `handler_test.ts` (intents, read-back, re-prompt,
+  verification rule, Amazon's real chain), `handler_list_test.ts` (job 207: named lists, unknown
+  and ambiguous names, Q79 on a named list), `handler_test.ts` (intents, read-back, re-prompt,
   unlinked and revoked, two households and a switch, errors, rate limit, long input, analytics
   and error-tracking payloads), `skill_package_test.ts` (AC11 and the package's structure),
   `config_test.ts` (the test CA only in a local stack). English: the `English …` tests at the end
@@ -478,5 +527,7 @@ English, checked by `skill_package_test.ts` (no credentials).
 - By hand on a local stack: `scripts/alexa-test-ca.sh` runs with every `supabase_up`
   (scripts/lib.sh); restart the stack once if it was running before. Then
   `scripts/alexa-say.sh --launch`, `scripts/alexa-say.sh --token <access token> "Milch und Eier"`,
-  `--read`, `--unsigned`, `--stale`, `--disable`. An access token comes from the linking flow
+  `--read`, `--unsigned`, `--stale`, `--disable`. `--list Geburtstag "Luftballons"` sends
+  `AddToListIntent` with both slots (job 207); a Q79 answer is
+  `--confirm CONFIRMED --attributes '{"list":"<list id>"}'` with the question's items. An access token comes from the linking flow
   above (the e2e helpers), or any OAuth client's token for the user.

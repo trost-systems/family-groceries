@@ -29,7 +29,8 @@ const variant = (row: Row) =>
     .every((p) => noteWords.has(p));
 
 /**
- * Adds the items to the household's first list (Siri and Alexa know no other) through
+ * Adds the items to the household's list [list] (the voice target, _shared/spoken_list.ts; without
+ * one the caller's default list) through
  * `add_list_item` (the parser, classifier, learned memory, store memory,
  * duplicate check) in one transaction. The splitter already read each amount, so the spoken
  * quantity goes in as the explicit one; brand and properties come from the parser. A new item
@@ -46,9 +47,9 @@ export async function addItems(
   tx: Tx,
   householdId: string,
   items: ParsedItem[],
-  { addVariants = false }: { addVariants?: boolean } = {},
+  { addVariants = false, list: named }: { addVariants?: boolean; list?: string } = {},
 ): Promise<Added[]> {
-  const list = (await listOf(tx, householdId)).id;
+  const list = named ?? (await listOf(tx, householdId)).id;
   const active = await tx<{ id: string }[]>`
     select id from public.items where list_id = ${list} and status = 'active'`;
   const known = new Set(active.map((row) => row.id));

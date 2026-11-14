@@ -1788,3 +1788,29 @@ its RevenueCat customer stays. Before sales go on, **Ops** (one look, no code):
    App User ID is a household id (test and beta households from `scripts/iap/promotional.ts`).
 2. For each one, either grant again and revoke at once (the two events note the household), or
    delete the customer in RevenueCat by hand if the household is gone.
+
+## Job 207: default list for Siri, Alexa & KI, and Alexa's named-list sentences (2026-11-13)
+
+The picker "Liste für Siri, Alexa & KI" (household page) and "Liste: …" (household sheet) ship
+behind the PostHog flag `default-list-voice-target`, off for everyone. The server side is live
+with the merge: a named list in a Siri or Alexa sentence works for everyone, and unnamed adds go
+to the first list until someone picks another.
+
+1. **See the picker on TestFlight.** Same steps as "Job 190" above, with the flag
+   `default-list-voice-target` (create it in PostHog project 319492 if it does not exist,
+   release condition `distinct_id` equals your install id, 100 %). Your household needs two lists
+   or more, else the row stays hidden.
+2. **Alexa's new sentences reach the development skill only after a dev deploy.** The model
+   (new `AddToListIntent` with `{items}` and `{list}`) is on `main`, but the ASK CLI is signed in
+   only on the box, not on the Hetzner runner. Where it is signed in, from a checkout of `main`:
+
+   ```bash
+   ALEXA_SKILL_ID=amzn1.ask.skill.ad766331-e979-4a6e-95f1-30198b0a34cb scripts/alexa-deploy-dev.sh
+   ```
+
+   It writes the development stage only (no certification, no publishing, no testers). Then in
+   the Alexa app on your account: "Alexa, öffne Snacklist und füge Luftballons zur Geburtstag
+   Liste hinzu". Before that deploy the old model should still get there for a list that
+   exists: Alexa puts "Luftballons zur Geburtstag Liste" (or "Luftballons zur Geburtstag") into
+   the items and the server takes the list phrase off. Untested on a device; a name that matches
+   no list can then end up as an item, which the new intent avoids.

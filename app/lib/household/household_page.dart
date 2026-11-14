@@ -8,6 +8,7 @@ import 'package:family_groceries/app/theme.dart';
 import 'package:family_groceries/design/section_label.dart';
 import 'package:family_groceries/household/create_household_screen.dart';
 import 'package:family_groceries/household/currency_section.dart';
+import 'package:family_groceries/household/default_list.dart';
 import 'package:family_groceries/household/invite_repository.dart';
 import 'package:family_groceries/household/invite_share.dart';
 import 'package:family_groceries/household/invite_sheet.dart';
@@ -15,6 +16,8 @@ import 'package:family_groceries/household/join_approval_section.dart';
 import 'package:family_groceries/household/lists_section.dart';
 import 'package:family_groceries/household/onboarding_page.dart';
 import 'package:family_groceries/l10n/app_localizations.dart';
+import 'package:family_groceries/list/list_cubit.dart';
+import 'package:family_groceries/list/model.dart';
 import 'package:family_groceries/purchases/premium_dialogs.dart';
 import 'package:family_groceries/purchases/refund_help.dart';
 import 'package:family_groceries/session/session_cubit.dart';
@@ -26,7 +29,8 @@ import 'package:material_ui/material_ui.dart';
 /// members with their roles (the owner and admins remove members, the
 /// owner names admins), "Leute einladen", its lists ([ListsSection]), its
 /// currency ([CurrencySection]),
-/// whether Siri, Alexa and AI assistants use it, and leaving it.
+/// whether Siri, Alexa and AI assistants use it and which of its lists
+/// they add to ([DefaultListPicker]), and leaving it.
 class const HouseholdPage({
   super.key,
 
@@ -397,6 +401,20 @@ class _HouseholdViewState() extends State<_HouseholdView> {
               child: Text(l10n.voiceDefaultMake),
             ),
           ),
+        DefaultListPicker(
+          householdId: household.id,
+          lists: context.select<ListCubit?, List<HouseholdList>>(
+            (list) => list?.state.catalog.lists ?? const [],
+          ),
+          builder: (context, list, pick) => ListTile(
+            key: const ValueKey('household-default-list'),
+            leading: const Icon(Icons.checklist),
+            title: Text(l10n.defaultListTitle),
+            subtitle: Text(list, maxLines: 1, overflow: TextOverflow.ellipsis),
+            trailing: const Icon(Icons.expand_more),
+            onTap: pick,
+          ),
+        ),
         const SizedBox(height: 16),
         ListTile(
           key: const ValueKey('household-leave'),

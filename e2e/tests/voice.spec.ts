@@ -64,6 +64,8 @@ test('the JSON answer names each item with its category', async ({ page }) => {
         similarOnList: [] },
     ],
     truncated: false,
+    // Job 207: the list the items went to, the default one here.
+    list: { id: expect.any(String), name: 'Einkaufsliste' },
   });
 });
 
@@ -333,6 +335,8 @@ test('the Shortcut recipe with a PAT answers exactly as before job 51', async ({
         similarOnList: [] },
     ],
     truncated: false,
+    // Job 207: the list the items went to, the default one here.
+    list: { id: expect.any(String), name: 'Einkaufsliste' },
   });
   expect(await say(token, 'Bitte, danke', '?format=text')).toEqual({
     status: 422,

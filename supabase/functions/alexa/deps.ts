@@ -2,6 +2,7 @@
 // of index.ts so the database integration test runs the same wiring.
 import { authenticate, AuthError } from '../_shared/auth.ts';
 import { asUser, serviceDb } from '../_shared/db.ts';
+import { listCatalog } from '../_shared/list.ts';
 import type { Telemetry } from '../_shared/telemetry.ts';
 import { addItems } from '../voice/items.ts';
 import { countAdds } from './analytics.ts';
@@ -26,6 +27,7 @@ export function productionDeps(
     verify,
     authenticate: resolve,
     takeAdds: (linked, count) => takeAdds(serviceDb(), linked.userId, count),
+    lists: (linked) => asUser(linked.userId, (tx) => listCatalog(tx, linked.householdId)),
     addItems: (linked, items, options) =>
       asUser(linked.userId, (tx) => addItems(tx, linked.householdId, items, options)),
     listItems: (linked) => asUser(linked.userId, (tx) => openItems(tx, linked.householdId)),

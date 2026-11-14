@@ -148,7 +148,7 @@ is a position, not a page number: items added or ticked meanwhile do not shift t
 ```
 
 `list` (optional, an id or the exact name, any case): the list the items go to; without it, the
-household's first list.
+key owner's default list in the household (chosen in the app, else the first list; job 207).
 
 Per item: `name` (1 to 120 characters, required), `quantity` (up to 40), `brand` (up to 60),
 `properties` (up to 120), `category` and `store` (an id or a name, up to 60). The name is split

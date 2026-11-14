@@ -1,4 +1,5 @@
 // What Alexa says, in German. The app is always "Snacklist" in full.
+import { namesList, type Target } from '../_shared/spoken_list.ts';
 import { copy } from '../voice/copy.ts';
 import type { Added } from '../voice/handler.ts';
 
@@ -63,11 +64,27 @@ export const speech = {
 } as const;
 
 /**
+ * Where an add went, as the sentences name it: the Snacklist for the default list as before job
+ * 207, else the list ("Liste Geburtstag", "Einkaufsliste"), after why a named list was not used.
+ */
+function place(target: Target | undefined): { list: string; why: string | null } {
+  if (!namesList(target)) return { list: 'Snacklist', why: null };
+  return {
+    list: copy.de.listName(target.list),
+    why: target.kind === 'named' || target.kind === 'default'
+      ? null
+      : copy.de.notFound(target.kind, target.said),
+  };
+}
+
+/**
  * The read-back after an add, one sentence per outcome. Added: "Ich habe Milch und Eier auf die
  * Snacklist gesetzt." Open already, the exact items and then the other spellings or synonyms of
  * new ones (job 32b, added anyway), each name once: "Schon auf der Snacklist: Milch und Möhren."
+ * A named list: "Ich habe Luftballons auf die Liste Geburtstag gesetzt."
  */
-export function confirmation(results: readonly Added[]): string {
+export function confirmation(results: readonly Added[], target?: Target): string {
+  const { list, why } = place(target);
   const added = results.filter((r) => !r.alreadyOnList);
   const open = [
     ...new Set([
@@ -75,9 +92,9 @@ export function confirmation(results: readonly Added[]): string {
       ...added.flatMap((r) => r.similarOnList ?? []),
     ]),
   ];
-  const parts: string[] = [];
-  if (added.length) parts.push(`Ich habe ${enumerate(added.map(said))} auf die Snacklist gesetzt.`);
-  if (open.length) parts.push(`Schon auf der Snacklist: ${enumerate(open)}.`);
+  const parts: string[] = why ? [why] : [];
+  if (added.length) parts.push(`Ich habe ${enumerate(added.map(said))} auf die ${list} gesetzt.`);
+  if (open.length) parts.push(`Schon auf der ${list}: ${enumerate(open)}.`);
   return parts.join(' ');
 }
 
@@ -88,15 +105,17 @@ export function confirmation(results: readonly Added[]): string {
  */
 export function question(
   results: readonly Added[],
+  target?: Target,
 ): { question: string; again: string } | null {
   const held = results.filter((r) => r.held);
   if (!held.length) return null;
+  const { list } = place(target);
   const open = enumerate(held.map(said));
   const wanted = enumerate(held.map((r) => said({ ...r.held!, brand: null, properties: null })));
   return {
     question: [
-      confirmation(results.filter((r) => !r.held)),
-      `${open} ${held.length === 1 ? 'steht' : 'stehen'} schon auf der Snacklist. ` +
+      confirmation(results.filter((r) => !r.held), target),
+      `${open} ${held.length === 1 ? 'steht' : 'stehen'} schon auf der ${list}. ` +
       `Soll ich ${wanted} trotzdem dazuschreiben?`,
     ].filter(Boolean).join(' '),
     again: held.map((r) => copy.de.spoken(r.held!)).join(', '),

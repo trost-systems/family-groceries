@@ -7,6 +7,7 @@
 import { assert, assertEquals, assertExists, assertFalse } from '@std/assert';
 import postgres from 'postgres';
 import { asUser, databaseUrl, oneRow } from './db.ts';
+import { listCatalog } from './list.ts';
 import { addItems, splitItems } from '../voice/items.ts';
 import { type Caller, createHandler as voiceHandler } from '../voice/handler.ts';
 import { createHandler as alexaHandler, type Linked } from '../alexa/handler.ts';
@@ -45,9 +46,12 @@ const openItems = ({ userId, householdId }: Household) =>
       where household_id = ${householdId} and status = 'active' order by created_at`);
 
 const add = (h: Household) =>
-(_: unknown, items: Parameters<typeof addItems>[2], options?: {
+(_: unknown, items: Parameters<typeof addItems>[2], options: {
   addVariants?: boolean;
+  list: string;
 }) => asUser(h.userId, (tx) => addItems(tx, h.householdId, items, options));
+
+const lists = (h: Household) => () => asUser(h.userId, (tx) => listCatalog(tx, h.householdId));
 
 /** POST /voice: the Shortcut (a PAT, no lang) or native Siri (lang, ask, confirmed). */
 async function siri(h: Household, body: Record<string, unknown>) {
@@ -59,6 +63,7 @@ async function siri(h: Household, body: Record<string, unknown>) {
         via: body.lang ? 'siri' : 'pat',
       }),
     isMember: () => Promise.resolve(false),
+    lists: lists(h),
     addItems: add(h),
     splitItems: (auth, parsed) =>
       asUser(auth.userId, (tx) => splitItems(tx, auth.householdId, parsed)),
@@ -95,6 +100,7 @@ async function alexa(
       Promise.resolve(JSON.parse(new TextDecoder().decode(raw)) as Envelope),
     authenticate: () => Promise.resolve(linked),
     takeAdds: () => Promise.resolve(true),
+    lists: lists(h),
     addItems: add(h),
     listItems: () => Promise.resolve([]),
     remember: () => Promise.resolve(),

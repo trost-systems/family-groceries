@@ -2094,6 +2094,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voiceDefaultMake => 'Make default';
 
   @override
+  String get defaultListTitle => 'List for Siri, Alexa & AI';
+
+  @override
+  String defaultListRow(String list) {
+    return 'List: $list';
+  }
+
+  @override
   String get inviteSheetTitle => 'Invite people';
 
   @override

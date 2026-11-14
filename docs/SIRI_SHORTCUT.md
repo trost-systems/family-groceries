@@ -178,10 +178,17 @@ die Erinnerungen-App, gib dem Kurzbefehl einen eindeutigeren Namen, etwa
   der App). OAuth-Tokens verbundener KI-Assistenten (MCP) bekommen 401
   (Job 213).
 - Anfrage: JSON `{"text": "Milch, zwei Gurken und Klopapier"}`; ein
-  reiner Text-Hauptteil geht auch.
-- Antwort ohne `?format=text`: JSON mit `speech` (der Satz für Siri) und
-  `items` (Name, Marke, Eigenschaften, Menge, Kategorie, `alreadyOnList`, `similarOnList`). Mit `?format=text`
-  nur der Satz als `text/plain`. Fehler haben einen HTTP-Status
+  reiner Text-Hauptteil geht auch. Optional `"list"`: die id oder der Name
+  einer Liste des Haushalts (Job 207). Ohne `list` landen die Sachen auf
+  der Liste, die der Satz am Ende nennt („Luftballons zur Geburtstag
+  Liste“, „Kerzen auf die Liste Geburtstag“, „Kerzen zu Geburtstag“), sonst
+  auf deiner Standardliste (in der App gewählt, sonst die erste Liste).
+  Gibt es die genannte Liste nicht oder passen mehrere, kommen die Sachen
+  auf die Standardliste und der Satz sagt das.
+- Antwort ohne `?format=text`: JSON mit `speech` (der Satz für Siri),
+  `items` (Name, Marke, Eigenschaften, Menge, Kategorie, `alreadyOnList`,
+  `similarOnList`) und `list` (`id` und `name` der Liste, auf die sie
+  kamen). Mit `?format=text` nur der Satz als `text/plain`. Fehler haben einen HTTP-Status
   (400, 401, 403, 405, 413, 422, 500) und ebenfalls einen deutschen Satz.
 - Test von der Kommandozeile:
 
@@ -218,6 +225,13 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
   97); dialogs:
   `Localizable.xcstrings`. The app's list of the phrases for Zugänge is
   `app/lib/siri/siri_phrases.dart`; keep both in step.
+- **List parameter** (job 207). `AddItemsIntent` has an optional `list` (a list name, String),
+  sent as `voice`'s `list`; the Shortcuts app can fill it. No App Shortcut phrase names a list:
+  a phrase holds at most one parameter (the item already has it), a list-only phrase would put
+  Snacklist next to Reminders' "add to my X list" grammar (job 92), and without an iPhone here the
+  build log is the only check. A named list therefore reaches Snacklist three ways: the dictated
+  text ("Luftballons zur Geburtstag Liste", taken off by the server), the Shortcuts parameter, and
+  SiriKit's `targetTaskList`. A Q79 yes resends the list id the server answered with (`list.id`).
 - **Credential.** After sign-in in a household the app (`app/lib/siri/siri_credentials.dart`)
   calls `create_siri_credential()` and stores `{token, id, userId, sessionId, url}` in the Keychain
   (service `com.snacklist.app.siri`, this device only). The row is kind `siri` in
@@ -226,8 +240,32 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
   (`purge_access_tokens`, see docs/MCP.md "Retention"). Only `voice` accepts it (`authenticate(req, deps, { siri: true })`).
   Zugänge lists it as "Siri (dieses iPhone)".
 - **Request** from the intents: `POST /functions/v1/voice` with `Authorization: Bearer fgp_…` and
-  JSON `{"text", "mode": "add"|"read", "lang": "de"|"en"}`. `lang` comes from the dictated text
-  (`NLLanguageRecognizer`, English or German), else the app's language.
+  JSON `{"text", "mode": "add"|"read", "lang": "de"|"en", "list"}`. `lang` comes from the dictated
+  text (`NLLanguageRecognizer`, English or German), else the app's language.
+- **Target list** (job 207, `supabase/functions/_shared/spoken_list.ts`). An add goes to the list
+  `list` names: a list id, or a name matched against the credential's household's lists
+  (case-insensitive, umlauts folded, a trailing „Liste“/„list“ and a leading article stripped,
+  exact before fuzzy at a Levenshtein ratio of at least 0.75). Without `list`, a phrase at the end
+  of `text` names it: „zur X Liste“, „zur X-Liste“, „zur Xliste“, „auf/in die X Liste“, „to the X
+  list“, „onto/on the X list“, „to my X list“ are always taken off the text; bare „zu X“, „auf X“,
+  „auf die Liste X“, „to X“, „onto X“ only when X is a list's name exactly (no fuzzy match), so
+  „Brot zu Hause“ stays an item next to a list „Haus“. The field wins over the phrase; the phrase
+  still leaves the text. A list whose name is the spoken word exactly is taken first, so a list
+  called „Einkaufsliste“ (every household's first) is found by that name; otherwise generic words
+  („Liste“, „Einkaufsliste“, „shopping list“, the app's names) name no list. Nothing named: the
+  caller's default list (`public.default_list`, chosen in the app, else the first list). With
+  several lists the confirmation always names the list used, so nobody thinks an item went
+  elsewhere; with one list it is spoken as before job 207. A named list is said in the
+  confirmation („Hinzugefügt zur Liste Geburtstag:
+  Luftballons.“, "Added balloons to the Birthday list in Snacklist."; the seeded list is
+  „Einkaufsliste“ / "the shopping list"). A name that finds no list or several, or an id of no list
+  of the household (deleted, another household's), adds to the default list and says so first:
+  „Eine Liste „Party“ habe ich nicht gefunden.“, „„Party“ passt zu mehreren Listen.“, „Diese Liste
+  gibt es nicht mehr.“ (en: "I couldn't find a list called Party.", "Party matches more than one
+  list.", "That list doesn't exist anymore."). Siri never asks which list. Every add answer carries
+  `list: {id, name}`, the list used; the yes to a Q79 question resends that id as `list` with
+  `confirmed: true`, so it lands on the same list. A list never moves the request to another
+  household.
 - **Answer.** A request with `lang` gets `outcome` in every JSON answer: `added`, `nothing_added`,
   `parsed`, `read`, or the failure code (also in `error`): `method`, `unauthorized`,
   `no_household`, `no_text`, `too_long`, `nothing_understood` and `server`. Since job 184 Siri
@@ -249,10 +287,10 @@ Engineering notes; the reasons are in `docs/DECISIONS.md`, "Job 51".
 a Siri test can be followed live with `scripts/voice/tail.sh`:
 
 ```
-voice: <via> <mode> <lang> client=<client> -> <outcome> status=<n> count=<n> ms=<n>
-voice: siri add de client=ios-1210.AddItems -> added status=200 count=2 ms=640
-voice: siri add de client=ios-1210.Lists.add -> added status=200 count=1 ms=702
-voice: none read de client=ios-1210.ReadList -> unauthorized status=401 count=0 ms=95
+voice: <via> <mode> <lang> client=<client> -> <outcome> status=<n> count=<n> target=<kind> ms=<n>
+voice: siri add de client=ios-1210.AddItems -> added status=200 count=2 target=default ms=640
+voice: siri add de client=ios-1210.Lists.add -> added status=200 count=1 target=named ms=702
+voice: none read de client=ios-1210.ReadList -> unauthorized status=401 count=0 target=- ms=95
 ```
 
 - `via`: `siri` (the app's Siri credential), `pat` (the Shortcut recipe), `session` (in-app
@@ -263,6 +301,8 @@ voice: none read de client=ios-1210.ReadList -> unauthorized status=401 count=0 
   or `Lists.add` / `Lists.read` (SiriKit's list grammar). `-` without the header (the Shortcut,
   older builds), `other` for a value that isn't one token.
 - `count`: the items understood (add, parse) or open (read).
+- `target` (job 207): where an add went, `default` (no list named), `named`, `unknown` or
+  `ambiguous` (both on the default list); `-` for anything but an add that got that far.
 - Never in the line: the text, item names, tokens, user or household ids.
 
 On the iPhone the intents log to Console.app (subsystem `com.snacklist.app`, category `siri`):
@@ -309,8 +349,11 @@ The fix:
   (`Runner.entitlements`, the App ID capability and match profiles from #221),
   `INIntentsSupported` and `NSSiriUsageDescription`. SiriKit routes intents only after the user
   allowed Siri for the app: `SiriBridge` asks once (`INPreferences.requestSiriAuthorization`)
-  when the app stores the Siri credential after sign-in. A list name the user says is ignored;
-  the household has one list. Siri speaks its own confirmation here, not `voice`'s sentence.
+  when the app stores the Siri credential after sign-in. A list name Siri hands over
+  (`targetTaskList`) goes to `voice` as `list` (job 207) and is matched like Alexa's list slot:
+  "Einkaufsliste" or "Snacklist" mean the default list, an unknown name adds there. Siri speaks
+  its own confirmation here, not `voice`'s sentence, so an unknown name is not said aloud on
+  this path.
   Every failure, signed out and no household included, answers `failure`:
   Siri says its own localized sentence and stays in its sheet (job 97; `failureRequiringAppLaunch`
   opened the app). A Lists response has no field for the app's own words, so the reason ("open

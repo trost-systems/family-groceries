@@ -1,5 +1,6 @@
 // Everything the voice function says, in German (the Shortcut's language, unchanged since job 4)
 // and English (native Siri, job 51). The request's `lang` picks one.
+import type { ListOption } from '../_shared/list.ts';
 import { type ParsedItem, spoken } from './parse.ts';
 import { spokenEnglish } from './parse_en.ts';
 
@@ -23,8 +24,13 @@ export interface Copy {
   tooMany: string;
   /** "2 Gurken", "2 cucumbers". */
   spoken(item: ParsedItem): string;
-  added(said: string[]): string;
-  existing(said: string[]): string;
+  /** [list]: the list named (listName) when it is not the default one (job 207), else null. */
+  added(said: string[], list?: string | null): string;
+  existing(said: string[], list?: string | null): string;
+  /** Before the add when a named list was not found or was not one; `said` null: an old id. */
+  notFound(kind: 'unknown' | 'ambiguous', said: string | null): string;
+  /** A list as spoken: the seeded one in this language, the others by name. */
+  listName(list: ListOption): string;
   /** Q79 (copy pending Peter): the open variants, then whether to add the names anyway. */
   ask(open: string[], wanted: string[]): string;
   parsed(said: string[]): string;
@@ -43,6 +49,9 @@ const exampleEn = 'Say for example: milk, two cucumbers and toilet paper.';
 const und = enumerate('und');
 const and = enumerate('and');
 
+/** The list every household starts with, while it keeps the name the server gave it. */
+const seeded = (list: ListOption) => list.seedKey === 'main' && list.name === 'Einkaufsliste';
+
 export const copy: Record<Lang, Copy> = {
   de: {
     failures: {
@@ -58,8 +67,16 @@ export const copy: Record<Lang, Copy> = {
     },
     tooMany: 'Mehr als dreißig auf einmal gehen nicht; sag den Rest bitte noch einmal.',
     spoken,
-    added: (said) => `Hinzugefügt: ${said.join(', ')}.`,
-    existing: (said) => `Schon auf der Liste: ${said.join(', ')}.`,
+    added: (said, list) =>
+      list ? `Hinzugefügt zur ${list}: ${said.join(', ')}.` : `Hinzugefügt: ${said.join(', ')}.`,
+    existing: (said, list) => `Schon auf der ${list ?? 'Liste'}: ${said.join(', ')}.`,
+    notFound: (kind, said) =>
+      said === null
+        ? 'Diese Liste gibt es nicht mehr.'
+        : kind === 'unknown'
+        ? `Eine Liste „${said}“ habe ich nicht gefunden.`
+        : `„${said}“ passt zu mehreren Listen.`,
+    listName: (list) => (seeded(list) ? 'Einkaufsliste' : `Liste ${list.name}`),
     ask: (open, wanted) =>
       `${und(open)} ${open.length === 1 ? 'steht' : 'stehen'} schon drauf. Soll ich ${
         und(wanted)
@@ -89,8 +106,16 @@ export const copy: Record<Lang, Copy> = {
     },
     tooMany: "More than thirty at once doesn't work; please say the rest again.",
     spoken: spokenEnglish,
-    added: (said) => `Added ${and(said)} to Snacklist.`,
-    existing: (said) => `Already on the list: ${and(said)}.`,
+    added: (said, list) =>
+      list ? `Added ${and(said)} to ${list} in Snacklist.` : `Added ${and(said)} to Snacklist.`,
+    existing: (said, list) => `Already on ${list ?? 'the list'}: ${and(said)}.`,
+    notFound: (kind, said) =>
+      said === null
+        ? "That list doesn't exist anymore."
+        : kind === 'unknown'
+        ? `I couldn't find a list called ${said}.`
+        : `${said} matches more than one list.`,
+    listName: (list) => (seeded(list) ? 'the shopping list' : `the ${list.name} list`),
     ask: (open, wanted) =>
       `${and(open)} ${open.length === 1 ? 'is' : 'are'} already on the list. Should I add ${
         and(wanted)

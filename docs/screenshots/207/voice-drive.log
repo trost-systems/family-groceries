@@ -1,0 +1,6 @@
+[15:34:24.359Z] POST voice {"text":"Luftballons zur Geburtstag Liste"} -> 200 speech="Hinzugefügt zur Liste Geburtstag: Luftballons." list=Geburtstag
+[15:34:24.440Z] POST voice {"text":"Servietten","list":"geburtstags liste"} -> 200 speech="Hinzugefügt zur Liste Geburtstag: Servietten." list=Geburtstag
+[15:34:24.512Z] POST voice {"text":"Kerzen zur Party Liste"} -> 200 speech="Eine Liste „Party“ habe ich nicht gefunden. Hinzugefügt zur Liste Alltag: Kerzen." list=Alltag
+[15:34:24.612Z] POST voice {"text":"Hafermilch"} -> 200 speech="Hinzugefügt: Hafermilch." list=Alltag
+[15:34:24.708Z] POST voice {"lang":"en","text":"balloons to the Geburtstag list"} -> 200 speech="Added balloons to the Geburtstag list in Snacklist." list=Geburtstag
+[15:34:24.734Z] database: Luftballons -> Geburtstag, Servietten -> Geburtstag, Kerzen -> Alltag, Hafermilch -> Alltag, balloons -> Geburtstag

@@ -108,6 +108,7 @@ Deno.test('the unlinked body, signed like Amazon does, gets the LinkAccount card
       }),
     authenticate: unexpected,
     takeAdds: unexpected,
+    lists: unexpected,
     addItems: unexpected,
     listItems: unexpected,
     remember: unexpected,

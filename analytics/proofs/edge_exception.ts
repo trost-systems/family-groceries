@@ -31,6 +31,10 @@ const caught = withTelemetry(
   createHandler({
     authenticate: () => Promise.resolve({ userId: 'u', householdId: 'h' }),
     isMember: () => Promise.resolve(false),
+    lists: () => {
+      const main = { id: 'l', name: 'Einkaufsliste', seedKey: 'main' };
+      return Promise.resolve({ lists: [main], defaultList: main });
+    },
     addItems: () =>
       Promise.reject(
         Object.assign(new Error('duplicate key (name)=(Hafermilch) for peter@example.com'), {

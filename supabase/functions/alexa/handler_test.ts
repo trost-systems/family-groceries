@@ -4,6 +4,7 @@
 // request reaches nothing.
 import { assert, assertEquals, assertFalse, assertMatch, assertStringIncludes } from '@std/assert';
 import { AuthError } from '../_shared/auth.ts';
+import type { ListCatalog } from '../_shared/list.ts';
 import { telemetryFor } from '../_shared/telemetry.ts';
 import type { Added } from '../voice/handler.ts';
 import type { ParsedItem } from '../voice/parse.ts';
@@ -44,7 +45,9 @@ interface Row {
 /** A small stand-in for the database: tokens, households, items, links. */
 class World {
   rows: Row[] = [];
-  addOptions: { addVariants?: boolean }[] = [];
+  addOptions: { addVariants?: boolean; list: string }[] = [];
+  /** Each household's lists (job 207); one seeded list unless a test sets others. */
+  catalogs = new Map<string, ListCatalog>();
   /** access token -> user and session; a deleted entry is a revoked grant. */
   tokens = new Map<string, { userId: string; sessionId: string }>();
   householdOf = new Map<string, string | null>();
@@ -87,7 +90,18 @@ class World {
         this.taken.set(linked.userId, used);
         return Promise.resolve(true);
       },
-      addItems: (linked: Linked, items: ParsedItem[], options = {}) => {
+      lists: (linked) =>
+        Promise.resolve(
+          this.catalogs.get(linked.householdId) ?? {
+            lists: [{ id: `${linked.householdId}-main`, name: 'Einkaufsliste', seedKey: 'main' }],
+            defaultList: {
+              id: `${linked.householdId}-main`,
+              name: 'Einkaufsliste',
+              seedKey: 'main',
+            },
+          },
+        ),
+      addItems: (linked: Linked, items: ParsedItem[], options) => {
         if (this.failAdds) return Promise.reject(new Error('connection reset'));
         this.addOptions.push(options);
         const added: Added[] = [];

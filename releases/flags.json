@@ -11,6 +11,10 @@
     "prices-and-trip-total": {
       "rollout": "off",
       "note": "prices on the list's rows, the list's total with per-store subtotals and the household's currency show only while the PostHog flag prices-and-trip-total is on (job 190); free for everyone"
+    },
+    "default-list-voice-target": {
+      "rollout": "off",
+      "note": "picking the list Siri, Alexa and AI add to when no list is named (household page and household sheet) shows only while the PostHog flag default-list-voice-target is on (job 207)"
     }
   },
   "holds": {

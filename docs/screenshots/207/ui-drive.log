@@ -1,0 +1,14 @@
+[15:32:33.162Z] lists: [{"name":"Alltag","position":0},{"name":"Einkaufsliste","position":1},{"name":"Geburtstag","position":2}]
+[15:32:33.169Z] default list before: Alltag
+[15:32:41.749Z] page tile: "" / - button "Liste für Siri, Alexa & KI Alltag"
+[15:32:43.359Z] default list after the pick: Geburtstag
+[15:32:48.173Z] sheet row: - 'button "Liste: Geburtstag"'
+[15:32:49.385Z] after picking Alltag in the sheet: server says Alltag
+[15:32:49.545Z] PASS
+[15:32:50.102Z] lists: [{"name":"Alltag","position":0},{"name":"Einkaufsliste","position":1},{"name":"Geburtstag","position":2}]
+[15:32:50.110Z] default list before: Geburtstag
+[15:32:59.867Z] page tile: "" / - button "List for Siri, Alexa & AI Geburtstag"
+[15:33:01.447Z] default list after the pick: Geburtstag
+[15:33:03.861Z] sheet row: - 'button "List: Geburtstag"'
+[15:33:05.131Z] after picking Alltag in the sheet: server says Alltag
+[15:33:05.351Z] PASS
