@@ -24,6 +24,11 @@ function details(n: Note): string[] {
   ];
 }
 
+// Each line of the note quoted, so a typed "Reply allowed: yes" or "Email: ..." line can't pass
+// for the entry's own details.
+const quoted = (message: string) =>
+  message.split(/\r\n|\r|\n/).map((line) => `> ${line}`).join('\n');
+
 const heading = (n: Note, i: number) =>
   `${i + 1}. ${n.created_berlin} (Berlin) · Category: ${n.category ?? 'none'}`;
 
@@ -31,7 +36,7 @@ export function digestMail(batch: OpenBatch): DigestMail {
   const subject = `Snacklist feedback digest ${batch.digest_on} (${batch.notes.length} new)`;
   const text = [
     subject,
-    ...batch.notes.map((n, i) => [heading(n, i), n.message, ...details(n)].join('\n')),
+    ...batch.notes.map((n, i) => [heading(n, i), quoted(n.message), ...details(n)].join('\n')),
   ].join('\n\n') + '\n';
   const muted = 'margin:0;color:#555;font-size:13px';
   const html = [

@@ -12844,3 +12844,17 @@ before anyone merges it.
   that decision.
 - The VGV post was checked on 14 Nov 2026 (review 0); "Sources and method" says so instead of
   "not re-read".
+## Job 225 review 1: tracking wording, the policy step, quoted notes, 2026-11-14
+
+1. **Resend tracking must be off, not "harmless".** FEEDBACK.md had said the digest could not be
+   tracked because it has no links. Open tracking adds a pixel to every HTML mail the domain sends,
+   so the doc and NEEDS_PETER "Job 225" now make "both off for `snacklist.app`" a hard step, with
+   a sending subdomain as the fallback should another mail ever need tracking.
+2. **The privacy policy goes first.** NEEDS_PETER "Job 225" gains a step before the switch-on: the
+   feedback paragraphs of `datenschutz.md` and `privacy.md` must name Resend and the mailbox.
+3. **Notes are quoted in the text part** (`> ` per line), so a sender can't type lines that look
+   like the entry's "Reply allowed" or "Email" details.
+4. **N-174 leftovers.** The comments in `e2e/tests/feedback.spec.ts` and
+   `supabase/tests/feedback.test.sql`, and Job 21's policy draft in NEEDS_PETER (now "readable
+   only by Peter Trost", as the live policy says), no longer name the PM.
+
