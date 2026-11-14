@@ -34,16 +34,31 @@ bool validHouseholdName(String name) {
 }
 
 /// The screen of the guided start's [step].
-Widget onboardingStepScreen(OnboardingStep step) => switch (step) {
-  OnboardingStep.usage => const _UsageStep(),
-  OnboardingStep.who => const _WhoStep(),
-  OnboardingStep.name => const _NameStep(),
-  OnboardingStep.stores => const _StoresStep(),
-  OnboardingStep.need => const _NeedStep(),
-  OnboardingStep.account => const _AccountStep(),
-  OnboardingStep.setup => const _SetupStep(),
-  OnboardingStep.invite => const InviteStep(),
-};
+Widget onboardingStepScreen(OnboardingStep step) => _SignedInBackStays(
+  child: switch (step) {
+    OnboardingStep.usage => const _UsageStep(),
+    OnboardingStep.who => const _WhoStep(),
+    OnboardingStep.name => const _NameStep(),
+    OnboardingStep.stores => const _StoresStep(),
+    OnboardingStep.need => const _NeedStep(),
+    OnboardingStep.account => const _AccountStep(),
+    OnboardingStep.setup => const _SetupStep(),
+    OnboardingStep.invite => const InviteStep(),
+  },
+);
+
+/// Android's back on a step without Zurück: signed out to the first
+/// screen, the route under every step. Signed in, that screen („Schon ein
+/// Konto? Anmelden“) is not theirs, and a pop runs no redirect, so back
+/// stays on the step.
+class const _SignedInBackStays({required final Widget child})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => PopScope(
+    canPop: context.watch<SessionCubit>().state is SignedOut,
+    child: child,
+  );
+}
 
 /// The words of [kind] on its chip.
 String kindLabel(AppLocalizations l10n, HouseholdKind kind) => switch (kind) {
@@ -588,43 +603,51 @@ class const _AccountStep() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(onboardingProgressText(context, OnboardingStep.account)),
-        automaticallyImplyLeading: false,
-        leading: BackButton(
-          onPressed: () =>
-              context.read<OnboardingCubit>().at(OnboardingStep.need),
+    void back() => context.read<OnboardingCubit>().at(OnboardingStep.need);
+    // Android's back too, as on the other steps ([OnboardingPage]); popped,
+    // it showed the first screen.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          back();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(onboardingProgressText(context, OnboardingStep.account)),
+          automaticallyImplyLeading: false,
+          leading: BackButton(onPressed: back),
+          actions: const [OnboardingExitButton()],
         ),
-        actions: const [OnboardingExitButton()],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: SignInPanel(
-                  key: const ValueKey('onboarding-account'),
-                  // Back at the root, where the router finds the draft
-                  // (a web sign-in reloads the page, the apps return through
-                  // their callback).
-                  returnPath: '/',
-                  header: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const OnboardingProgress(step: OnboardingStep.account),
-                      const SizedBox(height: HlSpace.s5),
-                      OnboardingHeading(l10n.accountStepTitle),
-                      const SizedBox(height: HlSpace.s3),
-                      Text(l10n.accountStepBody),
-                    ],
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: SignInPanel(
+                    key: const ValueKey('onboarding-account'),
+                    // Back at the root, where the router finds the draft
+                    // (a web sign-in reloads the page, the apps return through
+                    // their callback).
+                    returnPath: '/',
+                    header: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const OnboardingProgress(step: OnboardingStep.account),
+                        const SizedBox(height: HlSpace.s5),
+                        OnboardingHeading(l10n.accountStepTitle),
+                        const SizedBox(height: HlSpace.s3),
+                        Text(l10n.accountStepBody),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const LegalFooter(),
-          ],
+              const LegalFooter(),
+            ],
+          ),
         ),
       ),
     );

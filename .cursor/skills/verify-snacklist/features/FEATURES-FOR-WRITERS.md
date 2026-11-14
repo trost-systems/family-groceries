@@ -110,7 +110,7 @@ The app is called Snacklist. It used to be called Hummlist. The app, its Siri ph
 6. „Konto erstellen“ (EN: "Create your account"): sign up or sign in with Google, Apple or email.
 7. The invite screen, for example „Familie einladen“ (EN: "Invite your family"): see „Household and invites“. „Später“ (EN: "Later") or „Weiter zur Liste“ (EN: "Go to the list") opens the list with the items on it. With „Nur ich“ (EN: "Just me") as the only answer, the list opens right away.
 
-On Android the phone's back button goes one screen back, as the arrow in the title bar does.
+On Android the phone's back button goes one screen back, as the arrow in the title bar does. On a screen without the arrow it leaves to the first screen while signed out, and stays put once signed in.
 
 **Never claim.**
 - A tour, a tutorial or a newsletter or email opt-in in the app: there is none.
@@ -120,7 +120,7 @@ On Android the phone's back button goes one screen back, as the arrow in the tit
 - A referral or "how did you hear about us" question: there is none.
 - That the answers sync before the account exists: they stay on this one device until the sign-in.
 
-**Last verified.** 14 November 2026, code version 97b2907e, in the web app (German and English).
+**Last verified.** 14 November 2026, code version 97b2907e, in the web app (German and English); Android's back on 14 November 2026 by widget tests (job 236).
 
 ## Household and invites
 

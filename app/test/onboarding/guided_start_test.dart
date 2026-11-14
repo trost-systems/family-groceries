@@ -220,6 +220,48 @@ void main() {
       expect(location(o), '/start/who');
     });
 
+    testWidgets("Android's back on the usage question goes to the first "
+        'screen', (tester) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/',
+        session: const SignedOut(),
+        consentAnswered: false,
+        draft: const OnboardingDraft(),
+      );
+      expect(location(o), '/start/usage');
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+      expect(location(o), '/start');
+      expect(key('start-go'), findsOneWidget);
+    });
+
+    testWidgets("Android's back on „Mit wem“: signed out the first screen, "
+        'signed in it stays', (tester) async {
+      var o = await pumpOnboarding(
+        tester,
+        location: '/',
+        session: const SignedOut(),
+        draft: const OnboardingDraft(step: OnboardingStep.who),
+      );
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+      expect(location(o), '/start');
+      expect(key('start-go'), findsOneWidget);
+
+      await tester.pumpWidget(const SizedBox());
+      o = await pumpOnboarding(
+        tester,
+        location: '/',
+        draft: const OnboardingDraft(step: OnboardingStep.who),
+      );
+      expect(location(o), '/start/who');
+      expect(await tester.binding.handlePopRoute(), isTrue, reason: 'stays');
+      await tester.pumpAndSettle();
+      expect(location(o), '/start/who');
+      expect(key('start-log-in'), findsNothing);
+    });
+
     testWidgets('stores in the order picked, own ones too; a typed chain '
         'ticks its chip', (tester) async {
       final o = await pumpOnboarding(
@@ -319,6 +361,21 @@ void main() {
       );
     });
 
+    testWidgets("Android's back on the account step goes back to „Was fehlt "
+        'gerade?“, as Zurück does', (tester) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/',
+        session: const SignedOut(),
+        draft: answered(OnboardingStep.account),
+      );
+      expect(location(o), '/start/account');
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+      expect(location(o), '/start/need');
+      expect(o.onboarding.state?.step, OnboardingStep.need);
+    });
+
     testWidgets('offline at the setup: the problem and a retry, which '
         'creates once and adds each item once', (tester) async {
       final o = await pumpOnboarding(
@@ -336,6 +393,20 @@ void main() {
       expect(location(o), '/start/invite');
       expect(o.session.creates, hasLength(1));
       expect(o.backend.items['home'], hasLength(2));
+    });
+
+    testWidgets("Android's back at the setup stays there", (tester) async {
+      final o = await pumpOnboarding(
+        tester,
+        location: '/',
+        draft: answered(OnboardingStep.setup),
+        backend: FakeOnboardingBackend()..fail = HouseholdProblem.offline,
+      );
+      expect(location(o), '/start/setup');
+      expect(await tester.binding.handlePopRoute(), isTrue, reason: 'stays');
+      await tester.pumpAndSettle();
+      expect(location(o), '/start/setup');
+      expect(key('onboarding-setup-retry'), findsOneWidget);
     });
 
     testWidgets('a household an older build made without its kind gets it '
@@ -579,6 +650,14 @@ void main() {
       expect(find.text('Beigetreten'), findsOneWidget);
       await scrollTo(tester, key('invite-later'));
       expect(find.text('Weiter zur Liste'), findsOneWidget);
+    });
+
+    testWidgets("Android's back stays on the invite step", (tester) async {
+      final o = await atInvite(tester);
+      expect(await tester.binding.handlePopRoute(), isTrue, reason: 'stays');
+      await tester.pumpAndSettle();
+      expect(location(o), '/start/invite');
+      expect(o.onboarding.state?.step, OnboardingStep.invite);
     });
 
     testWidgets('an invite accepted before the watch began shows too', (
