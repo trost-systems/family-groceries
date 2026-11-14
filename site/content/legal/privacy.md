@@ -122,7 +122,7 @@ Legal basis: Art. 6(1)(b) GDPR.
 
 ## 8. Export your data and delete your account
 
-Account › Export my data gives you your data as a JSON file, with all households you are a member of, the invites you joined through, the lists you created, your "I'll bring it" claims, your join requests, the stored removals from a household (section 5) and, for each item you added, its list. Account › Delete account deletes your account immediately. What happens to shared households is explained at https://app.snacklist.app/konto-loeschen.html.
+Account › Export my data gives you your data as a JSON file, with all households you are a member of, the invites you joined through, the lists you created, your "I'll bring it" claims, your join requests, the stored removals from a household (section 5), your in-app feedback and, for each item you added, its list. Account › Delete account deletes your account immediately. What happens to shared households is explained at https://app.snacklist.app/konto-loeschen.html.
 
 ## 9. Usage data and error reports (only with consent)
 
