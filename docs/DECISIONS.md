@@ -12187,3 +12187,42 @@ On main it showed on the first failed read of the opening resync, or on the firs
 - **No new timeout on the reads** and no PostgREST retries (2b.5, 4b.5): the grace is the
   longer wait. The realtime client's timeout stays at its 10 s default.
 - **No feature flag**: a startup reliability fix for every install (ANALYTICS.md, Feature flags).
+
+## Job 217: shopping trip mode, five prototypes, 2026-11-14
+
+- **Prototype gate only.** Peter's PB1c, PB2a and PB3a (t839u, t840u, 13 Nov 2026) are sketched
+  in `docs/design/trip-mode/` as TM1 to TM5. No app, `supabase/` or `alexa/` change, and the
+  draft PR is not for merge. Changelog: none.
+- **One state shape, five policies.** `model.js` holds the items, the trip and the frozen
+  summaries. A trip starts at the tick that raised the question, and its snapshot is the open
+  items just before that tick (job 196's false positive). Each prototype differs only in its
+  `POLICY` entry (when to ask, how long "no" holds, what a long trip does) and its rendering.
+- **Time is simulated but real.** The clock starts at 14 Nov 2026 10:00 Europe/Berlin and runs
+  in real time, and "+5 Min." to "+3 Std." move it forward. The state lives in `localStorage`, so
+  "App beenden und neu öffnen" is a real page reload (S3).
+- **Every automatic or proposed end uses the last tick**, so a forgotten trip keeps an honest
+  duration. A paused trip still counts ticks (open question TQ5).
+- **Recommended TM1 `card-ask-slim-strip`** with TM2's Premium card (no blur) and the last-tick
+  end (`RECOMMENDATION.md`). It neither blocks nor hides the question, "Nein" holds for one
+  session (2 h without a tick), and the 52 px strip adds 60 px without touching the field or the tabs.
+- **Proof is `shoot.mjs`.** It runs 6 scenarios × 5 prototypes, Premium and Free, at 900 px and on
+  a 390 × 844 phone. It checks state, copy, overlap, 44 px targets and that no price shows. Two
+  mutations prove the layout checks bite: buttons at 34 px fail 84 checks, and the bar pushed
+  onto the field fails 42.
+- **Preview** on `family-groceries-design` as a preview deployment (SSO; the lead mints the
+  share link). The preview is built by `build.sh`, which vendors `tokens.css` and two fonts.
+- **Review 1 (Claude, VERDICT FIX) fixed.** It found seven must-fixes:
+  - the nudge's "Weiter" came back at once;
+  - "Doch weiter" re-ended an auto-ended trip;
+  - a paused trip lived forever;
+  - TM3's 6 s question timed out during a slow scenario and the end step crashed;
+  - TM4 crashed on a store change made while the question was open;
+  - TM4's per-store time stood still;
+  - the panel gave a wrong bar height.
+
+  A long-running rule now measures from the last tick, from "Läuft noch" or from "Doch weiter", and it applies to paused trips too. Every prototype gained Mehr › "Einkauf starten" (TQ15). Each repro is a check in `shoot.mjs`, and the reviewer's own probe passes on the fixed sandbox.
+- **Review 0 (Claude, VERDICT FIX) fixed.**
+  - An open question and an auto-ended trip could lose a trip. In TM5, "Doch weiter" followed by a late "Ja" replaced the reopened trip. In TM2, a new trip left a dead "Doch weiter" card.
+  - Now `answer()` does nothing while a trip runs, a reopen closes the open question, and starting a trip clears the end card.
+  - The open question now survives a reload, so the ticked item stays in the snapshot. TM3 re-arms its 6 s timer after the reload.
+  - `shoot.mjs` takes a relative Playwright path, and it checks each of these paths. They fail 8 times on 438ed269.
