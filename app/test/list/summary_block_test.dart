@@ -57,7 +57,10 @@ void main() {
   final block = find.byType(SummaryBlock);
 
   String? text(WidgetTester tester, String k) =>
-      tester.widget<Text>(key(k)).data;
+      switch (tester.widget<Text>(key(k))) {
+        Text(:final data?) => data,
+        Text(:final textSpan) => textSpan?.toPlainText(),
+      };
 
   Future<void> toBlock(WidgetTester tester) async {
     await tester.scrollUntilVisible(

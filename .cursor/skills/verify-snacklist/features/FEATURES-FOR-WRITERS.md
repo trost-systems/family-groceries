@@ -515,7 +515,7 @@ The household picks its currency under „Währung“ (EN "Currency"): euro by d
 - That the order of households is shared: it is each person's own; the order of lists is the household's.
 - That lists can be reordered offline, or that the bottom bar changed: the add field and the three tabs are as before.
 
-**Last verified.** branch job/229-list-declutter-impl, 2026-11-14 (CET), driven on the web build with the flag on, German light and English dark, 100 % and 130 % text (`journeys/list-declutter.mjs`, PASS). Recipe: [list-declutter.md](./list-declutter.md).
+**Last verified.** branch job/229-list-declutter-impl, 2026-11-14 (CET), driven on the web build with the flag on, German light and English dark, 100 % and 130 % text (`journeys/list-declutter.mjs`, PASS). The totals block: branch job/237-store-subtotals-st3-impl, 2026-11-14 (CET), German light and English dark, 100 % and 160 % text (`journeys/list-summary.mjs`, PASS). Recipe: [list-declutter.md](./list-declutter.md).
 
 ## Theme: System, light, dark
 

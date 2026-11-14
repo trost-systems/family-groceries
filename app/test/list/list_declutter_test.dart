@@ -290,7 +290,7 @@ void main() {
       expect(find.text('Einkaufssumme'), findsOneWidget);
       // Three Artikel without a price: a floor (job 237).
       expect(
-        tester.widget<Text>(key('total-amount')).data,
+        tester.widget<Text>(key('total-amount')).textSpan?.toPlainText(),
         'mind. 1,19\u00a0€',
       );
 

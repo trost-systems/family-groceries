@@ -10,25 +10,19 @@ import 'package:material_ui/material_ui.dart';
 
 const _figures = [FontFeature.tabularFigures()];
 
-/// [sum]'s amount as shown, or for screen readers when [spoken]: „mind.“
-/// with items unpriced when [floor], „≈“ with an estimate in it. Null when
-/// nothing in it has a price.
-String? sumText(
-  BuildContext context,
-  Sum sum, {
-  required String currency,
-  bool floor = true,
-  bool spoken = false,
+/// Where the amount goes in [_qualified]'s answer.
+const _slot = '\u{E000}';
+
+/// [amount] with [sum]'s marks, or for screen readers when [spoken]:
+/// „mind.“ with items unpriced when [floor], „≈“ with an estimate in it.
+String _qualified(
+  AppLocalizations l10n,
+  Sum sum,
+  String amount, {
+  required bool floor,
+  required bool spoken,
 }) {
-  if (sum.empty) {
-    return null;
-  }
-  final l10n = AppLocalizations.of(context);
-  var text = formatMoney(
-    sum.cents,
-    currency: currency,
-    locale: moneyLocale(context),
-  );
+  var text = amount;
   if (sum.estimate) {
     text = spoken ? l10n.moneyEstimateSpoken(text) : l10n.moneyEstimate(text);
   }
@@ -36,6 +30,86 @@ String? sumText(
     text = spoken ? l10n.moneyAtLeastSpoken(text) : l10n.moneyAtLeast(text);
   }
   return text;
+}
+
+/// [sum]'s amount as shown, or for screen readers when [spoken]. Null when
+/// nothing in it has a price.
+String? sumText(
+  BuildContext context,
+  Sum sum, {
+  required String currency,
+  bool floor = true,
+  bool spoken = false,
+}) => sum.empty
+    ? null
+    : _qualified(
+        AppLocalizations.of(context),
+        sum,
+        formatMoney(
+          sum.cents,
+          currency: currency,
+          locale: moneyLocale(context),
+        ),
+        floor: floor,
+        spoken: spoken,
+      );
+
+/// A line's amount at most this share of its width: a long store name
+/// keeps the rest.
+const _amountShare = 0.55;
+
+/// [name] and [sum]'s amount on one line, the amount right and only as
+/// wide as it needs, up to [_amountShare]; „mind.“ and „≈“ in [marks].
+class const _Line({
+  required final Widget name,
+  required final Sum sum,
+  required final String currency,
+  required final TextStyle style,
+  required final Key amountKey,
+  final TextStyle? marks,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final [before, after] = _qualified(
+      l10n,
+      sum,
+      _slot,
+      floor: true,
+      spoken: false,
+    ).split(_slot);
+    final money = formatMoney(
+      sum.cents,
+      currency: currency,
+      locale: moneyLocale(context),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) => Row(
+        spacing: HlSpace.s3,
+        children: [
+          Expanded(child: name),
+          if (!sum.empty)
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: constraints.maxWidth * _amountShare,
+              ),
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    if (before.isNotEmpty) TextSpan(text: before, style: marks),
+                    TextSpan(text: money),
+                    if (after.isNotEmpty) TextSpan(text: after, style: marks),
+                  ],
+                ),
+                key: amountKey,
+                textAlign: TextAlign.end,
+                style: style.copyWith(fontFeatures: _figures),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 /// ST3 (job 237, flag `list-declutter`): where job 229's total row was,
@@ -119,6 +193,9 @@ List<String> _details(
   Sum open,
   String currency, {
   required bool allBought,
+
+  /// Bought and open also when nothing was bought yet (Gesamt).
+  bool split = false,
   bool spoken = false,
 }) {
   final l10n = AppLocalizations.of(context);
@@ -127,13 +204,11 @@ List<String> _details(
       formatMoney(0, currency: currency, locale: moneyLocale(context));
   final unpriced = (bought ?? Sum.zero).unpriced + open.unpriced;
   return [
-    if (bought != null) ...[
-      if (allBought)
-        l10n.subtotalsAllBought
-      else ...[
-        l10n.subtotalsBought(part(bought)),
-        l10n.subtotalsOpen(part(open)),
-      ],
+    if (allBought)
+      l10n.subtotalsAllBought
+    else if (bought != null && (split || !bought.empty || bought.floor)) ...[
+      l10n.subtotalsBought(part(bought)),
+      l10n.subtotalsOpen(part(open)),
     ],
     if (unpriced > 0) l10n.subtotalsUnpriced(unpriced),
   ];
@@ -151,7 +226,6 @@ class const _StoreLine({
     final l10n = AppLocalizations.of(context);
     final t = SnacklistColors.of(Theme.of(context).brightness);
     final name = tally.store?.name ?? l10n.noStore;
-    final amount = sumText(context, tally.sum, currency: currency);
     List<String> details({bool spoken = false}) => _details(
       context,
       tally.bought,
@@ -164,66 +238,55 @@ class const _StoreLine({
     final line = Container(
       constraints: const BoxConstraints(minHeight: HlSize.target),
       padding: const EdgeInsets.symmetric(vertical: HlSpace.s1),
-      child: Row(
-        spacing: HlSpace.s3,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: t.text,
-                  ),
-                ),
-                if (shown.isNotEmpty)
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        if (tally.allBought && tally.bought != null)
-                          WidgetSpan(
-                            alignment: PlaceholderAlignment.middle,
-                            child: Padding(
-                              padding: const EdgeInsetsDirectional.only(end: 2),
-                              child: Icon(
-                                Icons.check,
-                                size: 14,
-                                color: t.textMuted,
-                              ),
-                            ),
-                          ),
-                        TextSpan(text: shown.join(' · ')),
-                      ],
-                    ),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: t.textMuted,
-                      fontFeatures: _figures,
-                    ),
-                  ),
-              ],
+      child: _Line(
+        amountKey: ValueKey('subtotal-amount-${tally.key}'),
+        sum: tally.sum,
+        currency: currency,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+          color: t.text,
+        ),
+        name: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              name,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: t.text,
+              ),
             ),
-          ),
-          if (amount != null)
-            Flexible(
-              child: Text(
-                amount,
-                key: ValueKey('subtotal-amount-${tally.key}'),
-                textAlign: TextAlign.end,
+            if (shown.isNotEmpty)
+              Text.rich(
+                TextSpan(
+                  children: [
+                    if (tally.allBought && tally.bought != null)
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(end: 2),
+                          child: Icon(
+                            Icons.check,
+                            size: 14,
+                            color: t.textMuted,
+                          ),
+                        ),
+                      ),
+                    TextSpan(text: shown.join(' · ')),
+                  ],
+                ),
                 style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: t.text,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: t.textMuted,
                   fontFeatures: _figures,
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
     return Semantics(
@@ -256,7 +319,6 @@ class const _TotalLine({
     final l10n = AppLocalizations.of(context);
     final t = SnacklistColors.of(Theme.of(context).brightness);
     final total = summary.total;
-    final amount = sumText(context, total, currency: currency);
     final title = summary.perStore ? l10n.subtotalsTotal : l10n.tripTotal;
     // Without a trip the app's count wording (ST-Q6); with one „offen“
     // names the open amount, so the count says „ohne Preis“.
@@ -267,6 +329,7 @@ class const _TotalLine({
             summary.open,
             currency,
             allBought: false,
+            split: true,
             spoken: spoken,
           )
         : [l10n.tripCounts(total.priced, total.unpriced)];
@@ -282,49 +345,44 @@ class const _TotalLine({
       child: Container(
         constraints: const BoxConstraints(minHeight: TotalBar.height),
         padding: const EdgeInsets.symmetric(vertical: HlSpace.s1),
-        child: Row(
-          spacing: HlSpace.s3,
+        // The counts under the whole row: at large text the amount would
+        // squeeze them into a narrow column.
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: summary.perStore ? 17 : 15,
-                      fontWeight: FontWeight.w800,
-                      color: t.text,
-                    ),
-                  ),
-                  Text(
-                    details().join(' · '),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: t.textMuted,
-                      fontFeatures: _figures,
-                    ),
-                  ),
-                ],
+            _Line(
+              amountKey: const ValueKey('total-amount'),
+              sum: total,
+              currency: currency,
+              style: TextStyle(
+                fontFamily: HlFont.display,
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: t.text,
               ),
-            ),
-            if (amount != null)
-              Flexible(
-                child: Text(
-                  amount,
-                  key: const ValueKey('total-amount'),
-                  textAlign: TextAlign.end,
-                  style: TextStyle(
-                    fontFamily: HlFont.display,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: t.text,
-                    fontFeatures: _figures,
-                  ),
+              marks: TextStyle(
+                fontFamily: HlFont.sans,
+                fontSize: 15,
+                color: t.textMuted,
+              ),
+              name: Text(
+                title,
+                style: TextStyle(
+                  fontSize: summary.perStore ? 17 : 15,
+                  fontWeight: FontWeight.w800,
+                  color: t.text,
                 ),
               ),
+            ),
+            Text(
+              details().join(' · '),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: t.textMuted,
+                fontFeatures: _figures,
+              ),
+            ),
           ],
         ),
       ),

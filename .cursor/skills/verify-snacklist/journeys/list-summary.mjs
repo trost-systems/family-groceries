@@ -5,7 +5,7 @@
 // at dm Seife 0,95 €; at „Wochenmarkt am Kollwitzplatz (Samstag)“ 2 kg Kartoffeln from the label's
 // 3,60 €; without a store Pinsel 3,00 €. It checks every line's label (floor, estimate, „Ohne
 // Laden“), jumps to Lidl from its line, ticks Seife and starts a trip („Ja“): dm stays „alles
-// gekauft“ and every line splits bought and open. Beenden ends the trip; ticked items drop out
+// gekauft“, Gesamt splits bought and open. Beenden ends the trip; ticked items drop out
 // again. It deletes the trip and its items at the end.
 //
 //   node journeys/list-summary.mjs <evidence dir> [--lang de|en] [--dark] [--scale 1.6] [--compact]
@@ -142,7 +142,8 @@ try {
   const split = await aria();
   for (const text of [
     `dm, ${money(95)}, ${L('subtotalsAllBought')}`,
-    `Lidl, ${atLeast(about(money(519)))}, ${L('subtotalsBought', { amount: money(0) })}, ${L('subtotalsOpen', { amount: about(money(519)) })}, ${unpriced(1)}`,
+    // Nothing bought at Lidl yet: no split on its line.
+    `Lidl, ${atLeast(about(money(519)))}, ${unpriced(1)}`,
     `${L('subtotalsTotal')}, ${atLeast(about(money(1274)))}, ${L('subtotalsBought', { amount: money(95) })}, ${L('subtotalsOpen', { amount: about(money(1179)) })}, ${unpriced(1)}`,
   ]) check(split.includes(flat(text)), `during the trip „${flat(text)}“`);
   await shot('03-trip-split');

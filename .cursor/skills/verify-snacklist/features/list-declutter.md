@@ -25,6 +25,7 @@ Behind the PostHog flag `list-declutter` (rollout off, internal installs only; j
 
 ## Driving it with Playwright
 
+- `node journeys/list-summary.mjs <dir> [--lang de|en] [--dark] [--scale 1.6] [--compact]` (`ld-total`, needs `trip-mode` in `FLAGS_ON` too) on `demo-familie`: ticks off the household's open items a day ago, puts seven priced and unpriced items over Lidl, dm, a long-named market and no store on Mia's list, reads every block line's accessible name, jumps to Lidl from its line, ticks Seife and answers „Ja“ (dm „alles gekauft“, Gesamt split), ends the trip and checks Seife drops out. It deletes its items and trip sessions at the end.
 - `node journeys/list-declutter.mjs <dir> [--lang de|en] [--dark] [--scale 1.3]` on `demo-familie` or `demo-family-en` (not through drive.sh: a sub-feature journey). It adds two lists, a second household and an open person invite through the API, shoots the list (top, scrolled, end with the total), the three sheet pages and the members page, drags a list and a household by real touch (CDP touch events, 700 ms hold) and checks the new orders through `lists` and `my_households`, and that the switcher still names the same list. It removes what it added.
 - The switcher: `page.getByRole('button', { name: / · Familie Brandt$/ })`. With the sheet open the header is under the barrier and has no role: read the switcher before opening or after closing (Escape).
 - Text size 130 %: set `document.documentElement.style.fontSize = '130%'` at DOMContentLoaded (`context.addInitScript`).
@@ -35,4 +36,4 @@ Behind the PostHog flag `list-declutter` (rollout off, internal installs only; j
 - A first list stored as „Einkaufsliste“ shows as "Shopping list" in English (`listName`): compare what the switcher shows, not the database name.
 - `ReorderableDelayedDragStartListener` needs the hold to stay still for the long-press time; a mouse drag without the hold scrolls the sheet instead.
 
-**Last verified.** branch job/229-list-declutter-impl, 2026-11-14 (CET), driven on the web build with `FLAGS_ON=list-declutter,grocery-log,prices-and-trip-total`, German light and English dark at 100 % and 130 %, PASS (`docs/screenshots/229/`).
+**Last verified.** branch job/229-list-declutter-impl, 2026-11-14 (CET), driven on the web build with `FLAGS_ON=list-declutter,grocery-log,prices-and-trip-total`, German light and English dark at 100 % and 130 %, PASS (`docs/screenshots/229/`). `ld-total` (the summary block): branch job/237-store-subtotals-st3-impl, 2026-11-14 (CET), `journeys/list-summary.mjs` with `FLAGS_ON=list-declutter,prices-and-trip-total,trip-mode`, German light and English dark at 100 % (390 px) and 160 % (358 px), PASS (`docs/screenshots/237/`).
