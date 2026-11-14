@@ -75,8 +75,9 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   pauses the browser, runner or stack S s of every P s, DECISIONS job 119).
   `docs/CI.md` explains CI.
 - `tool/hotspots/`: where jobs collide, measured: `history.py` (change counts and co-change on
-  main), `conflicts.py` (conflicts in the job transcripts) and `replay.py` (main's history of a file
-  replayed as rebases). Results: `docs/hillclimb/fable-improvement-2026-11.md`.
+  main), `conflicts.py` (conflicts in the job transcripts), `replay.py` (main's history of a file
+  replayed as rebases) and `e2e-duplicates.mjs` (helpers copied between e2e specs). Results:
+  `docs/hillclimb/fable-improvement-2026-11.md`.
 
 ## Conventions
 
