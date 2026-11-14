@@ -1054,8 +1054,8 @@ void main() {
       });
     });
 
-    test('a live channel that drops after the list was online shows '
-        'offline at once, grace or not', () {
+    test('a live channel that drops after a fetch answered shows offline '
+        'at once, grace or not', () {
       fakeAsync((async) {
         final (c, _) = started(async);
         repo.emitStatus!(ConnectionStatus.online);
@@ -1063,6 +1063,44 @@ void main() {
         repo.emitStatus!(ConnectionStatus.offline);
         async.elapse(Duration.zero);
         expect(c.state.trouble, SyncTrouble.offline);
+        close(async, c);
+      });
+    });
+
+    test('a channel that joins before the first fetch fails ends no grace', () {
+      fakeAsync((async) {
+        final first = repo.itemsGate = Completer();
+        final (c, seen) = started(async);
+        async.elapse(const Duration(seconds: 1));
+        repo.emitStatus!(ConnectionStatus.online);
+        // The channel's own resync waits too.
+        async.elapse(const Duration(seconds: 4));
+        first.completeError(Exception('connection reset'));
+        async.elapse(justBefore - const Duration(seconds: 5));
+        expect(seen, everyElement(isNull), reason: 'no banner in the grace');
+        repo.itemsGate = null;
+        async.elapse(const Duration(seconds: 10));
+        expect(seen, everyElement(isNull));
+        close(async, c);
+      });
+    });
+
+    test('a resync that fails after a later one answered shows nothing', () {
+      fakeAsync((async) {
+        final (c, seen) = started(async);
+        async.elapse(const Duration(seconds: 11));
+        // A request on a socket that died in the background, then one on a
+        // fresh connection that answers first.
+        final stale = repo.itemsGate = Completer();
+        unawaited(c.resync());
+        async.elapse(Duration.zero);
+        repo.itemsGate = null;
+        unawaited(c.resync());
+        async.elapse(Duration.zero);
+        expect(c.state.connection, ConnectionStatus.online);
+        stale.completeError(Exception('connection reset'));
+        async.elapse(const Duration(seconds: 5));
+        expect(seen, everyElement(isNull));
         close(async, c);
       });
     });

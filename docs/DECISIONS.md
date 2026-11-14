@@ -12169,8 +12169,8 @@ On main it showed on the first failed read of the opening resync, or on the firs
   never `paused` (review 1), so a refocus only resyncs, or "Offline" would never show to someone
   who clicks back into the window more often than every 10 s.
 - **"Sync gestört" has no grace.** A 5xx shows as before, after the 3 s retry failed too (165).
-- **The grace ends at the first answer** (a fetch, an acknowledged write, the channel up). After
-  that a failure shows at once, as before, so a write failing mid-session is not delayed.
+- **The grace ends at the first answer** (a fetch or an acknowledged write). After that a
+  failure shows at once, as before, so a write failing mid-session is not delayed.
 - **A join begun in the grace keeps its whole timeout.** Its first status, if a failure, is not
   shown even after the grace has ended. Otherwise a read that answered at 6 s and the first join timing out
   at 10 s (the same 10 s) would bring the card up right after the grace. The resubscribe after it
@@ -12187,3 +12187,14 @@ On main it showed on the first failed read of the opening resync, or on the firs
 - **No new timeout on the reads** and no PostgREST retries (2b.5, 4b.5): the grace is the
   longer wait. The realtime client's timeout stays at its 10 s default.
 - **No feature flag**: a startup reliability fix for every install (ANALYTICS.md, Feature flags).
+
+### Job 212 post-merge review (round 0), 2026-11-14
+
+- **The channel joining no longer ends the grace.** Only an answered fetch or an acknowledged
+  write does (`_endGrace`). Before, a channel that joined at 1 s let the first fetch's failure at
+  5 s show "Offline" inside the 10 s. `_graceOver` still leaves an online channel alone.
+- **A resync that fails after a later one answered shows nothing.** A resync started on resume
+  can go out on a socket the OS killed in the background and fail after the channel's resync,
+  on a fresh connection, answered. That stale failure used to show "Offline" for about 3 s right
+  after opening the app. It is ignored now (`number > _resyncShown`), also outside the grace.
+- **Left as they were:** "Sync gestört" keeps no grace, and a household switch starts a new grace.

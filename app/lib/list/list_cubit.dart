@@ -239,8 +239,8 @@ class ListCubit(
   final DateTime Function() _clock = clock ?? DateTime.now;
   final _graceLength = grace;
 
-  /// Runs for [startGrace] after a start or a resume, until the list is
-  /// online. Meanwhile a failed request or a dropped channel is retried
+  /// Runs for [startGrace] after a start or a resume, until a request
+  /// answers. Meanwhile a failed request or a dropped channel is retried
   /// unseen; the OS's network down still shows offline at once.
   Timer? _grace;
 
@@ -432,6 +432,13 @@ class ListCubit(
     _grace = _graceLength > Duration.zero
         ? Timer(_graceLength, _graceOver)
         : null;
+  }
+
+  /// A request answered: what fails from now on shows. The channel coming
+  /// up is no answer: a first fetch may still fail after it.
+  void _endGrace() {
+    _grace?.cancel();
+    _grace = null;
   }
 
   void _graceOver() {
@@ -1532,7 +1539,11 @@ class ListCubit(
       _goFailing(round);
     } on Object {
       fetched = false;
-      _goOffline();
+      // A resync started later answered meanwhile: the server is reachable,
+      // this one's socket died (job 212).
+      if (number > _resyncShown) {
+        _goOffline();
+      }
     } finally {
       _resyncsHeard.remove(heard);
     }
@@ -1576,6 +1587,7 @@ class ListCubit(
         connection: _networkDown ? null : ConnectionStatus.online,
       ),
     );
+    _endGrace();
     if (state.seen == null && _cacheRead) {
       // A first start: what is on the list already is not news.
       final created = [for (final row in snapshot.values) row.createdAt]
@@ -1748,6 +1760,7 @@ class ListCubit(
       ),
     );
     _troubleRound = null;
+    _endGrace();
     // Job 104: a rename to another spelling or a synonym of an open item
     // (known once the server keyed the new name) is offered, as for an add,
     // never merged on its own. Only a new name gives a new key.
@@ -1913,11 +1926,6 @@ class ListCubit(
     super.onChange(change);
     final next = change.nextState;
     final before = change.currentState;
-    if (next.connection == ConnectionStatus.online) {
-      // Online once is the end of the grace: what fails later shows.
-      _grace?.cancel();
-      _grace = null;
-    }
     if (_tripTicked.isNotEmpty && !_hasOpenItem(next.items)) {
       _tripTicked.clear();
     }
