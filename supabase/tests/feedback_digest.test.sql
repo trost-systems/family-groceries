@@ -4,7 +4,7 @@
 -- internal-only windows; the address only with contact_ok; Premium; the watermark's
 -- compare-and-set; the health status.
 begin;
-select plan(65);
+select plan(67);
 
 create function pg_temp.as_role(p_role text) returns void language plpgsql as $$
 begin
@@ -92,6 +92,10 @@ select vault.create_secret('digest-secret-225-value', 'feedback_digest_secret');
 select throws_ok($$ select public.feedback_digest_set(true) $$, '22023', null, 'on without a URL is refused');
 select throws_ok($$ select public.feedback_digest_set(true, 'file:///etc/passwd') $$, '22023', null,
   'on with a non-HTTP URL is refused');
+select throws_ok($$ select public.feedback_digest_set(true, 'http://fn.test/functions/v1/feedback-digest') $$,
+  '22023', null, 'on with plain http to a real host is refused: the secret header would go in clear text');
+select is(public.feedback_digest_set(true, 'http://kong:8000/functions/v1/feedback-digest'), 'on',
+  'plain http to the local stack is allowed');
 select is(public.feedback_digest_set(true, 'https://fn.test/functions/v1/feedback-digest'), 'on',
   'on with the secret and a URL');
 select is(public.app_switch('feedback_digest'), true, 'the switch is on');

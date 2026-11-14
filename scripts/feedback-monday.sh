@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Proves the PM's Monday summary (docs/FEEDBACK.md) on the local stack, run by the db gate: seeds
+# Proves Peter's Monday queries (docs/FEEDBACK.md) on the local stack, run by the db gate: seeds
 # fake notes around last week's Berlin boundaries, runs the three SQL blocks exactly as the doc
 # has them, prints their output (for the PR) and checks it. Removes its rows again.
 set -euo pipefail

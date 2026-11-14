@@ -37,7 +37,7 @@ async function userIdOf(email: string): Promise<string> {
   return data.user.id;
 }
 
-/** The user's notes, as the PM reads them (service role). */
+/** The user's notes, read with the service role as Peter does in the dashboard. */
 async function rowsOf(userId: string): Promise<Row[]> {
   const { data, error } = await adminClient().from('feedback').select('*').eq('user_id', userId).order('created_at');
   if (error) throw error;

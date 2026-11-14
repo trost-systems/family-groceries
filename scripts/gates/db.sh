@@ -11,7 +11,7 @@ else
   supabase_up
 fi
 supabase test db
-# Job 21: the PM's Monday feedback summary, exactly as docs/FEEDBACK.md has it, on fake notes.
+# Job 21: Peter's Monday feedback queries, exactly as docs/FEEDBACK.md has it, on fake notes.
 scripts/feedback-monday.sh
 supabase/classifier/sweep.sh
 supabase/classifier/wordlist.sh

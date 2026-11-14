@@ -12530,3 +12530,16 @@ The baseline is 199 jobs' transcripts and 14 days of CI; its numbers go into
   ignored ones. A flake needs the same arguments too, `--screenshots` included; the streak counts
   the gate whatever the arguments, as the baseline did, so a fix loop that varies `-g` still
   reaches 3.
+
+## Job 225 review 0: feedback doc and the digest URL, 2026-11-14
+
+1. **Legal N-174 applied late.** #431 landed without it. `docs/FEEDBACK.md` no longer says the PM
+   reads `public.feedback` (intro, "Who can read it", "Monday summary"): only Peter reads it, by
+   hand in the dashboard, and the daily digest, once on, mails him alone. Comments in
+   `scripts/feedback-monday.sh`, `scripts/gates/db.sh` and `e2e/tests/feedback.spec.ts` say
+   Peter too. The 20261030070000 migration's header comment stays: it is history.
+2. **`feedback_digest_set` takes an `https://` URL only**, plain `http://` only to localhost,
+   127.0.0.1 or kong (the local stack): the job sends the vault secret as a header every hour,
+   and a mistyped `http://` prod URL would send it in clear text
+   (`20261114063746_feedback_digest_https.sql`).
+
