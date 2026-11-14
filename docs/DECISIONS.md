@@ -12221,3 +12221,41 @@ change, per user and device).
 4. **An accidental tick undone at once still does the step.** The usage log only records;
    undoing the tick takes nothing back, and the step is about having tried the tap, not about
    what stays ticked.
+
+
+## Job 184/213: Siri-free hardening before the integration lock, 2026-11-13
+
+Follow-ups from job 184's post-merge review (`jobs/184-siri-free-price-prep/review.0.md`).
+
+- **The voice function refuses OAuth tokens.** Since job 184 `/voice` asks no premium check, and
+  `authenticate` hands it every bearer kind. An OAuth access token belongs to an MCP or
+  AI-assistant client, which the integration lock puts behind Premium; on `/voice` it would add
+  items for free once the lock is on. The handler answers such a caller 401 `unauthorized`
+  before anything else (`voice/handler.ts`, test in `handler_test.ts`). The check sits in the
+  handler, after authentication, because the credential kinds a function takes are its own
+  policy and the handler's fake-auth tests then cover it; `_shared/auth.ts` stays shared and
+  unchanged. Kept: `session` (the app's dictation), `siri` (the app's Siri credential) and `pat`.
+  It holds for every household, Premium or not (job 50's table let a Premium household's OAuth
+  token through): no MCP or assistant client calls `/voice`, they add through their own endpoint.
+  401 rather than RFC 6750's 403 `insufficient_scope`: the voice answers know no 403 for a token
+  (403 is `no_household`, a sentence about joining one), and the request line still tells the
+  cases apart (`via=oauth`).
+  Tradeoff: a personal access token also signs in MCP, so a household without Premium can still
+  add through `/voice` with a Shortcut token. That is by design: the Shortcut is the Siri path until
+  native Siri ships, and Siri is free. What stays Premium is MCP and the API, where
+  the same token is checked.
+- **Play's `--apply` needs the price spelled out.** `scripts/iap/google_product.ts --apply`
+  overwrites the live Lifetime price with `basePrice`. It now refuses, with exit 2 and before any
+  request, unless `--confirm-price <amount>` equals that base price, so a base-price change in
+  `product.ts` can't reach Play unseen. `apple_product.ts` creates only and was left alone.
+- **Changelog rewords, not a version override.** The integration lock's held item (#187) said
+  Siri belongs to Premium. A `<version>.override.md` replaces only a version's title and store
+  texts; the items stay as collected and the site lists them. The item's text is in a commit
+  message on main, which can't change. `releases/changelog/rewords.json` therefore gives one
+  item, by commit and place in the note, new `de`/`en` wording; its category and hold stay, and
+  `draft` and `record.mjs` read the new text when they collect. The new sentence keeps the
+  meaning that AI-assistant access is Premium and names Snacklist (the old text said Hummlist).
+- **Not done here:** the "Pausiert: braucht Snacklist Premium" line on Kurzbefehl tokens waits for
+  Peter's copy decision before lock-on (brief item 5). Other merged items on main still name
+  Hummlist; they are not wrong about what is free, and a rename sweep of the changelog is its own
+  call (rewords.json is the tool for it).

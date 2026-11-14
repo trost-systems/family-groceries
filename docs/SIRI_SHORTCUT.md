@@ -175,7 +175,8 @@ die Erinnerungen-App, gib dem Kurzbefehl einen eindeutigeren Namen, etwa
 
 - Endpunkt: `POST https://jdwqrallbpdbshrdhenk.supabase.co/functions/v1/voice`
 - Anmeldung: `Authorization: Bearer <Zugriffstoken>` (oder ein Sitzungstoken
-  der App).
+  der App). OAuth-Tokens verbundener KI-Assistenten (MCP) bekommen 401
+  (Job 213).
 - Anfrage: JSON `{"text": "Milch, zwei Gurken und Klopapier"}`; ein
   reiner Text-Hauptteil geht auch.
 - Antwort ohne `?format=text`: JSON mit `speech` (der Satz für Siri) und

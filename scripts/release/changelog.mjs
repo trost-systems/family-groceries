@@ -16,7 +16,7 @@
 //     TestFlight's "What to Test" for the commits in previous..sha (testerNotes).
 //   node scripts/release/changelog.mjs drafts [--dir D]
 //     Checks releases/flags.json and releases/changelog/: every draft valid, named <version>.json,
-//     store texts current; pending.json and the <version>.override.md files valid.
+//     store texts current; pending.json, rewords.json and the <version>.override.md files valid.
 //
 // Job 40: an item with a `flag:` or `hold:` line stays out of the draft until releases/flags.json
 // opens its gate. The draft lists it under `held`; record.mjs keeps it in
@@ -34,6 +34,7 @@ import {
   DRAFT_STATUS,
   GATE_KEY,
   PENDING_FILE,
+  REWORDS_FILE,
   RecordError,
   STORE_LIMITS,
   compareVersions,
@@ -43,6 +44,7 @@ import {
   parseGates,
   parsePending,
   parseRecord,
+  parseRewords,
   publicReleases,
 } from '../../site/releases.mjs';
 
@@ -256,6 +258,11 @@ export function loadGates(file) {
 export function loadPending(dir) {
   const file = join(dir, PENDING_FILE);
   return existsSync(file) ? parsePending(readFileSync(file, 'utf8'), relative(process.cwd(), file) || file) : { items: [] };
+}
+
+export function loadRewords(dir) {
+  const file = join(dir, REWORDS_FILE);
+  return existsSync(file) ? parseRewords(readFileSync(file, 'utf8'), relative(process.cwd(), file) || file) : { items: [] };
 }
 
 export const serializePending = (pending) => `${JSON.stringify(pending, null, 2)}\n`;
@@ -473,8 +480,9 @@ export function internalReason({ subject, message, paths }, note) {
 // The items of the notes of main's commits in previous..sha (from the root without previous),
 // oldest first, each with its category, flag or hold, PR and commit. Commits without a section
 // (before job 39, release records, Dependabot) and `none` give no items; nor do internal commits,
-// whose items come back as `excluded` for the report.
-export function collect({ previous, sha, skip = [] }) {
+// whose items come back as `excluded` for the report. An item in releases/changelog/rewords.json
+// takes the wording there (job 213); its category and gate stay the note's.
+export function collect({ previous, sha, skip = [], rewords = loadRewords(changelogDir()).items }) {
   const items = [];
   const excluded = [];
   const problems = [];
@@ -496,7 +504,12 @@ export function collect({ previous, sha, skip = [] }) {
       continue;
     }
     const pr = Number(/\(#(\d+)\)$/.exec(subject)?.[1]) || null;
-    for (const item of note) items.push({ ...item, pr, sha: hash });
+    const stray = rewords.find((r) => r.sha === hash && r.item > note.length);
+    if (stray) refuse(`releases/changelog/${REWORDS_FILE} rewords item ${stray.item} of ${hash.slice(0, 7)} "${subject}", but its note has ${note.length}; fix the entry's "item"`);
+    note.forEach((item, i) => {
+      const reword = rewords.find((r) => r.sha === hash && r.item === i + 1);
+      items.push({ ...item, ...(reword ? { de: reword.de, en: reword.en } : {}), pr, sha: hash });
+    });
   }
   if (problems.length) {
     refuse(`invalid ## Changelog sections on main (fix the wording in the draft by hand and rerun with --skip <sha> for each):\n  ${problems.join('\n  ')}`);
@@ -698,7 +711,8 @@ function draftsCommand(argv) {
     if (stale.length) refuse(staleMessage(label, stale, draft.version, override));
   }
   keysKnown(pending.items, relative(process.cwd(), join(dir, PENDING_FILE)) || PENDING_FILE);
-  console.log(`changelog drafts: ${drafts.length} checked, ${overrides.length} overrides, ${pending.items.length} pending items`);
+  const rewords = loadRewords(dir);
+  console.log(`changelog drafts: ${drafts.length} checked, ${overrides.length} overrides, ${pending.items.length} pending items, ${rewords.items.length} rewords`);
 }
 
 function checkCommand(argv) {

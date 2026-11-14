@@ -115,6 +115,10 @@ test('locked household: MCP refuses in context and adds nothing, Siri and Alexa 
   expect(await siri(shortcut, 'Brot'), 'Siri is never locked (job 184)')
     .toEqual({ status: 200, speech: 'Hinzugefügt: Brot.' });
   expect(await alexaSay(alexa.access_token, 'Eier'), 'Alexa is never locked').toBe('Ich habe Eier auf die Snacklist gesetzt.');
+  const sideDoor = await siri(alexa.access_token, 'Senf');
+  expect(sideDoor.status, 'an OAuth client token is no way into the voice function (job 213)').toBe(401);
+  expect(sideDoor.speech).toContain('Zugriffstoken fehlt oder ist ungültig');
+  expect(await openNames(peterEmail), 'nothing added through it').not.toContain('Senf');
   const tools = (await mcp.listTools()).tools.map((t) => t.name);
   expect(tools, 'tools/list stays reachable').toContain('add_items');
   expect(await toolText(mcp, 'add_items', { items: [{ name: 'Kaffee' }] })).toEqual({ isError: true, text: mcpPremium });

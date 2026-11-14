@@ -14,6 +14,7 @@ export const GATE_KEY = /^[a-z0-9][a-z0-9._-]*$/;
 export const ROLLOUTS = ['full', 'partial', 'off'];
 // Items held back from the public changelog until their gate opens (docs/CHANGELOG.md, "Gated items").
 export const PENDING_FILE = 'pending.json';
+export const REWORDS_FILE = 'rewords.json';
 
 // "What's new" limits per language. Play: "up to 500 Unicode characters per language" (Play Console
 // Help, answer 9859348). App Store: "Limited to 4000 characters" (App Store Connect Help, Platform
@@ -288,8 +289,29 @@ export function parsePending(text, source = `releases/changelog/${PENDING_FILE}`
   return data;
 }
 
-// The draft files in releases/changelog/: every .json but pending.json.
-export const draftFileNames = (files) => files.filter((f) => f.endsWith('.json') && f !== PENDING_FILE);
+// releases/changelog/rewords.json (job 213): new wording for an item already on main, whose commit
+// message can't change. `item` counts the note's items from 1; `why` is for the reviewer.
+export function parseRewords(text, source = `releases/changelog/${REWORDS_FILE}`) {
+  const c = checker(source);
+  const data = parseJson(text, source);
+  c.object(data, '$', ['items']);
+  const seen = new Set();
+  c.array(data.items, 'items').forEach((reword, i) => {
+    const at = `items[${i}]`;
+    c.object(reword, at, ['sha', 'item', 'why', 'de', 'en']);
+    c.matches(SHA.test(c.string(reword.sha, `${at}.sha`)), reword.sha, `${at}.sha`, 'a full commit sha (40 hex)');
+    c.matches(Number.isInteger(reword.item) && reword.item > 0, reword.item, `${at}.item`, 'the item\'s place in the note, from 1');
+    if (c.string(reword.why, `${at}.why`).trim() === '') c.fail(`${at}.why`, 'must not be empty');
+    texts(c, { de: reword.de, en: reword.en }, at, { nonEmpty: true });
+    const key = `${reword.sha}#${reword.item}`;
+    if (seen.has(key)) c.fail(at, `rewords item ${reword.item} of ${reword.sha.slice(0, 7)} a second time`);
+    seen.add(key);
+  });
+  return data;
+}
+
+// The draft files in releases/changelog/: every .json but pending.json and rewords.json.
+export const draftFileNames = (files) => files.filter((f) => f.endsWith('.json') && f !== PENDING_FILE && f !== REWORDS_FILE);
 
 export function serializeRecord(record) {
   return `${JSON.stringify({ ...record, releases: sortReleases(record.releases) }, null, 2)}\n`;

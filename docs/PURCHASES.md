@@ -73,8 +73,8 @@ reasons.
   features (the list, Alexa, and later price entry, trip totals and barcode scanning) never ask
   for Premium: `integration_gate` knows only `siri`, `alexa`, `mcp` and `api`.
 - **Integration gate.** `integration_gate(household, integration, user)` opens for the
-  household's premium or the caller's own (`user_has_premium`); Siri, MCP and the API pass the
-  caller (`_shared/premium.ts`). The two-argument form stays for function deploys that still call
+  household's premium or the caller's own (`user_has_premium`); MCP and the API pass the
+  caller (`_shared/premium.ts`, `Integration` is `'mcp' | 'api'`). The two-argument form stays for function deploys that still call
   it.
 - **Billing notes follow the subscriber.** `my_yearly_plan()` counts the caller's own yearly plan
   in every household, so the subscriber sees its status and billing problem wherever they are,
@@ -615,7 +615,9 @@ function no longer asks, and its Zugänge tile never shows as paused. Siri is fr
 (job 184, `20261113034530_siri_free.sql`): `integration_gate` answers `siri` open, so a voice
 function deployed before it never refuses, the voice function no longer asks, and the Siri
 credential's tile never shows as paused. A Shortcut's personal access token still shows as paused,
-since the same token also signs in MCP. All copy is a placeholder until Snacklist Launch.
+since the same token also signs in MCP; on the voice function it stays free by design. OAuth
+tokens, which MCP and AI-assistant clients hold, get 401 from the voice function (job 213), so a
+locked client cannot add through it instead. All copy is a placeholder until Snacklist Launch.
 
 What it never does: delete, revoke or disconnect anything. A lapsed yearly plan (or a refund)
 locks again at read time; tokens, the Siri credential, the Alexa link, OAuth connections and the
@@ -746,7 +748,9 @@ Scripted where the APIs allow it, never submitted for review:
 - `scripts/iap/google_product.ts`: Play Developer API `monetization.onetimeproducts`, dry run by
   default; prints Play's converted AT and CH prices. Needs the payments profile first. On a
   product that exists, `--apply` overwrites its price with `basePrice` (EUR 149.99 since job 184),
-  so it changes the live Lifetime price on Play: an Ops step, never run from engineering.
+  so it changes the live Lifetime price on Play: an Ops step, never run from engineering. It
+  therefore refuses `--apply` (exit 2, before any request) unless `--confirm-price <amount>` names
+  that base price, e.g. `--apply --confirm-price 149.99` (job 213, `google_product_test.ts`).
 - `scripts/iap/product.ts` holds both products (ids, Apple IDs, names, base prices, period,
   subscription group, Play base plan) and the expected prices; `product_test.ts` pins the
   StoreKit file and the function's product map to it. `apple_product.ts` and `google_product.ts`

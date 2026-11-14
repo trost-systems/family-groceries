@@ -358,10 +358,12 @@ shown.
 and preview). The next store builds and the next web deploy then show the
 Premium card under Mehr › Zugänge. A PR sets `"released": true` for
 `integration-lock` in `releases/flags.json`. The held item then reaches
-the next release. Its old text "Sprachbefehle über Siri und der Zugang für
-KI-Assistenten gehören jetzt zu Snacklist Premium." names Siri, which stays
-free (job 184): reword it to the AI assistants only before releasing the
-hold.
+the next release. Its commit's text named Siri, which stays free (job 184).
+`releases/changelog/rewords.json` (job 213, docs/CHANGELOG.md, "Rewording an
+item on main") replaces it, so the draft says only "Der Zugang für
+KI-Assistenten gehört jetzt zu Snacklist Premium; dein Haushalt schaltet ihn
+mit einem Kauf für alle frei." Check that line in the next draft before
+releasing the hold.
 
 ## 7. After each step: what to watch
 

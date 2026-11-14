@@ -114,6 +114,10 @@ the `held` format, oldest first. Only `record.mjs add` writes it, in the release
 release's held items go in, the ones it published go out. The next draft takes those whose gate
 is open now. The site never reads it.
 
+`changelog/rewords.json` gives items already on main new wording, by commit and place in the
+note (job 213, [`docs/CHANGELOG.md`](../docs/CHANGELOG.md), "Rewording an item on main"). `draft`
+and `record.mjs` read it when they collect; the site never reads it.
+
 `changelog/<version>.override.md` is a hand-written title and "What's new" text for one version
 (the 1.0 launch). `draft` and `store` use it instead of the generated texts. While it says
 `status: draft`, `record.mjs add` refuses to record that version. On recording, the override
