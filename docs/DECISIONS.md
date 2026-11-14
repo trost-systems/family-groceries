@@ -12804,3 +12804,14 @@ before anyone merges it.
   long".** `siri_add` has no premium reason (`_shared/telemetry.ts`; Siri has been free since job
   184), and `too_long` is a reason the voice function sends. This is the only change to Legal's
   wording, and the PR lists it for Legal.
+
+## Job 235: Siri AI app actions on the roadmap, 2026-11-14
+
+- Peter (t871u, 14 Nov 2026 12:55 CET) put Siri AI app actions (App Intents) under Planned
+  (decided) in `docs/PRODUCT_FEATURE_MAP.md`, slug `siri-ai-app-actions`. No implementation now;
+  the build starts 1 to 3 months before Siri AI reaches EU users or before a US launch, whichever
+  comes first.
+- Tier written as Free, following "Siri stays free" (S1); Peter did not tier the new actions
+  separately. The row names the App Intents that job 51 already ships, since Siri AI reads App
+  Intents and a build extends those rather than starting over.
+- The living Page (Cursor canvas) is not editable from the runner; the lead mirrors the row there.
