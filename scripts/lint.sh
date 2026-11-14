@@ -56,6 +56,9 @@ deno test -q --config scripts/deno.json --allow-read --allow-write scripts/brand
 log "workflow hardening"
 deno run --allow-read --config scripts/deno.json scripts/workflow-hardening.ts
 deno test -q --config scripts/deno.json --allow-read --allow-write scripts/workflow-hardening_test.ts
+log "pinned dependencies"
+deno run --frozen --allow-read scripts/pinned-deps.ts
+deno test -q --frozen --config scripts/deno.json --allow-read --allow-write scripts/pinned-deps_test.ts
 log "mcp.snacklist.app routes"
 deno test -q --config scripts/deno.json --allow-read scripts/mcp-proxy-routes_test.ts
 

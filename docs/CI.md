@@ -340,9 +340,10 @@ tools and retries what is still downloaded.
   A tool that already reports its pinned version is not downloaded again.
 - Deno: every workflow uses `.github/actions/deno` instead of
   `denoland/setup-deno`. `scripts/ci/deno-toolcache.sh` picks the version
-  setup-deno would pick: the exact version in `.dvmrc` for lint, without the
-  network, and for `v2.x` elsewhere the newest 2.x (its `versions.json` fetch
-  retried by `download.sh`), restores it from the Actions cache (or downloads it with
+  setup-deno would pick: the exact version in `.dvmrc` in every CI job, without
+  the network, and for `v2.x` (only `supabase-deploy.yml` still asks for it)
+  the newest 2.x (its `versions.json` fetch retried by `download.sh`),
+  restores it from the Actions cache (or downloads it with
   retries and checks it against the release's `.sha256sum`) and puts it on
   PATH. Deno's problem matcher (error annotations) is not registered;
   failures still fail the job.

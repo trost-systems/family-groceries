@@ -74,7 +74,7 @@ runs:
     # Job 18: the fixtures integration test and the fg sync smoke test run scripts/fg (Deno).
     - uses: ./.github/actions/deno
       with:
-        deno-version: v2.x
+        deno-version-file: .dvmrc
     # Job 18: the fg sync smoke test stacks the client videos with ffmpeg.
     - name: Install ffmpeg
       if: inputs.ffmpeg == 'true'

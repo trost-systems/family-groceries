@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/deno
         with:
-          deno-version: v2.x
+          deno-version-file: .dvmrc
           # This job holds secrets: no Deno from the Actions cache, only a checksum-verified download.
           cache: false
       - name: Compare the stores' prices with product.ts
@@ -55,7 +55,7 @@ jobs:
           fi
           unset ASC_KEY_P8
           code=0
-          deno run --allow-env --allow-read --allow-net scripts/iap/price_drift.ts --require || code=$?
+          deno run --frozen --allow-env --allow-read --allow-net scripts/iap/price_drift.ts --require || code=$?
           rm -f "$RUNNER_TEMP/asc.p8"
           echo "code=$code" >> "$GITHUB_OUTPUT"
           if [ "$code" = 2 ]; then

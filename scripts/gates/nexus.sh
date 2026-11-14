@@ -6,8 +6,8 @@ source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT/nexus"
 deno fmt --check
 deno lint
-deno check pipeline/ scripts/ src/ test/ web/
-deno test --allow-read --allow-write --allow-env --allow-run=bash
+deno check --frozen pipeline/ scripts/ src/ test/ web/
+deno test --frozen --allow-read --allow-write --allow-env --allow-run=bash
 out="$(mktemp -d)"
 trap 'rm -rf "$out"' EXIT
-deno bundle --quiet --platform browser -o "$out/app.js" web/main.ts
+deno bundle --frozen --quiet --platform browser -o "$out/app.js" web/main.ts

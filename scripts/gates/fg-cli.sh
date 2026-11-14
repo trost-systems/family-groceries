@@ -5,4 +5,4 @@ source "$(dirname "$0")/../lib.sh"
 cd "$REPO_ROOT/.cursor/skills/verify-family-groceries/cli"
 deno fmt --check
 deno lint
-deno test --allow-all
+deno test --frozen --allow-all

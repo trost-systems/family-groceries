@@ -178,9 +178,9 @@ they need a new baseline.
   in excluded paths, so a `tsconfig.json` error (TS5023) counts. Probes: the reviewer's left-pad
   import fails with "The lockfile is out of date"; an unknown tsconfig option fails as a finding;
   a plain TS2322 is still reported. The measured score is unchanged (2, sha 9ef068bcb2b4cb7a).
-- Deno is pinned in one file, `.dvmrc` (2.9.8). CI's lint job reads it (`deno-version-file`),
-  `scripts/bootstrap.sh` installs or upgrades to it, and the runner's rule-list error names it
-  and the fix.
+- Deno is pinned in one file, `.dvmrc` (2.9.8). CI's lint job reads it (`deno-version-file`;
+  since job 220 every CI job does), `scripts/bootstrap.sh` installs or upgrades to it, and the
+  runner's rule-list error names it and the fix.
 - The temporary config is per process (`.deno.strict.<pid>.json`), so a lint gate and a
   measurement started side by side keep their own.
 

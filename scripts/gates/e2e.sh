@@ -33,7 +33,7 @@ trap '[[ "$(cat "$LOCK" 2>/dev/null)" == "$holder" ]] && : >"$LOCK"' EXIT
 supabase_up
 log "web build against the local stack"
 cd "$REPO_ROOT/app"
-flutter pub get >/dev/null
+flutter pub get --enforce-lockfile >/dev/null
 # shellcheck disable=SC2046 # flutter_defines prints several arguments
 flutter build web --release --no-web-resources-cdn --wasm $(flutter_defines) --dart-define-from-file=config/e2e.json
 "$REPO_ROOT/scripts/join-config.sh" build/web

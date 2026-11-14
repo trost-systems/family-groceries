@@ -5,7 +5,7 @@ set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
 no_posthog_in_ci
 cd "$REPO_ROOT/app"
-flutter pub get >/dev/null
+flutter pub get --enforce-lockfile >/dev/null
 flutter build web --release --no-web-resources-cdn --wasm --output build/web-prod
 
 # Job 28: one --wasm build holds both entry points; flutter_bootstrap.js picks the wasm one where
