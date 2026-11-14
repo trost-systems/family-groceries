@@ -77,7 +77,7 @@ jobs:
           persist-credentials: false
       # No Actions cache in a job with the signing secrets: any run on main can write an entry
       # that this job would unpack and run (job 220).
-      - uses: ruby/setup-ruby@14594264cd68ce8a2345dd349bc3d138a4ef85c8 # v1.327.0
+      - uses: ruby/setup-ruby@b3aaceaef7e0ee231b499e7b5f49c03fc1d32199 # v1.338.0
         with:
           working-directory: app
       - name: Install the gems from the lockfile
