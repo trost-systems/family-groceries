@@ -88,7 +88,7 @@ typedef OAuthLauncher = Future<bool> Function(
 });
 
 class SocialSignIn(
-  final GoTrueClient _auth, {
+  final GoTrueClient auth, {
   required final Map<SocialProvider, SignInFlow> flows,
   required final NativeSignIn _native,
   OAuthLauncher? launch,
@@ -101,7 +101,7 @@ class SocialSignIn(
 
   final OAuthLauncher _launch =
       launch ??
-      (provider, {redirectTo}) => _auth.signInWithOAuth(
+      (provider, {redirectTo}) => auth.signInWithOAuth(
         provider,
         redirectTo: redirectTo,
         // On Android, the system browser hands the deep link back to the app.
@@ -131,7 +131,7 @@ class SocialSignIn(
           provider,
           hashedNonce: sha256.convert(utf8.encode(nonce)).toString(),
         );
-        await _auth.signInWithIdToken(
+        await auth.signInWithIdToken(
           provider: provider.oauth,
           idToken: credential.idToken,
           nonce: nonce,
@@ -151,7 +151,7 @@ class SocialSignIn(
       return;
     }
     try {
-      await _auth.updateUser(
+      await auth.updateUser(
         UserAttributes(
           data: {
             'full_name': parts.join(' '),

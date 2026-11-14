@@ -15,9 +15,10 @@ import 'package:family_groceries/session/provider_buttons.dart';
 import 'package:family_groceries/session/session_cubit.dart';
 import 'package:family_groceries/session/social_sign_in.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide Session;
 
 class const LoginScreen({
   super.key,
@@ -109,7 +110,8 @@ class const LoginScreen({
 /// Every sign-in method: Google, Apple, email and password, magic link.
 /// Where a build offers Google or Apple, the email form waits behind
 /// „Weiter mit E-Mail“: most people sign in with an account they already
-/// have. The MCP consent page embeds it too, with its own [returnPath].
+/// have. The guided start's account step embeds it too, with its own
+/// [returnPath].
 class const SignInPanel({
   /// Where a web redirect or magic link lands after sign-in, e.g.
   /// `/?invite=ABCD2345`. The mobile apps always return through
@@ -133,6 +135,11 @@ class _SignInPanelState() extends State<SignInPanel> {
   final _password = TextEditingController();
   var _busy = false;
   var _passwordRequired = true;
+  var _autofillEnded = false;
+
+  /// Whether the last attempt that went out was by email and password and
+  /// has not failed: only that login is worth offering to save.
+  var _byPassword = false;
 
   /// The errors the last submit showed, kept as the fields' semantics hints:
   /// an error widget, unlike `errorText`, does not set them.
@@ -163,12 +170,25 @@ class _SignInPanelState() extends State<SignInPanel> {
 
   @override
   void dispose() {
+    _endAutofill(save: false);
     _email.dispose();
     _password.dispose();
     super.dispose();
   }
 
-  GoTrueClient get _auth => Supabase.instance.client.auth;
+  /// Ends the fields' autofill context. Until then the web engine keeps
+  /// each field left in a hidden form, email and password filled in, on
+  /// every later screen, where screen readers find them (job 226). After a
+  /// sign-in it ends at once, while a login field still owns the text
+  /// connection: ending it later would close the next screen's field.
+  void _endAutofill({required bool save}) {
+    if (!_autofillEnded) {
+      _autofillEnded = true;
+      TextInput.finishAutofillContext(shouldSave: save);
+    }
+  }
+
+  GoTrueClient get _auth => context.read<SocialSignIn>().auth;
 
   String get _redirectTo =>
       kIsWeb ? '$webRoot${widget.returnPath}' : mobileAuthCallback;
@@ -193,6 +213,7 @@ class _SignInPanelState() extends State<SignInPanel> {
         messenger.showSnackBar(SnackBar(content: Text(message)));
       }
     } on Exception catch (e) {
+      _byPassword = false;
       if (mounted) {
         _report(e);
       }
@@ -214,6 +235,7 @@ class _SignInPanelState() extends State<SignInPanel> {
       _passwordError = _passwordProblem(_password.text);
     });
     if (valid) {
+      _byPassword = needsPassword;
       await _run(action);
     }
   }
@@ -230,6 +252,7 @@ class _SignInPanelState() extends State<SignInPanel> {
     // The provider's sheet or page takes over; an open keyboard would wait
     // under it and still be there after a cancel.
     FocusManager.instance.primaryFocus?.unfocus();
+    _byPassword = false;
     return _run(() async {
       await context.read<SocialSignIn>().signIn(
         provider,
@@ -245,138 +268,143 @@ class _SignInPanelState() extends State<SignInPanel> {
     // The first mail's language (supabase/templates/).
     final mailData = mailLocaleData(Localizations.localeOf(context));
     final flows = context.read<SocialSignIn>().flows;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 420),
-      child: Form(
-        key: _form,
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          shrinkWrap: true,
-          children: [
-            if (widget.header case final header?) ...[
-              header,
-              const SizedBox(height: HlSpace.s5),
-            ],
-            if (flows.containsKey(SocialProvider.google)) ...[
-              GoogleSignInButton(
-                key: const ValueKey('sign-in-google'),
-                label: l10n.signInWithGoogle,
-                onPressed: _busy
-                    ? null
-                    : () => unawaited(_social(SocialProvider.google)),
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (flows.containsKey(SocialProvider.apple)) ...[
-              AppleSignInButton(
-                key: const ValueKey('sign-in-apple'),
-                label: l10n.signInWithApple,
-                onPressed: _busy
-                    ? null
-                    : () => unawaited(_social(SocialProvider.apple)),
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (!_emailOpen)
-              EmailSignInButton(
-                key: const ValueKey('sign-in-email'),
-                label: l10n.continueWithEmail,
-                onPressed: _busy
-                    ? null
-                    : () => setState(() => _emailOpen = true),
-              )
-            else ...[
-              if (flows.isNotEmpty) ...[
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(l10n.orWithEmail),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
+    return BlocListener<SessionCubit, Session>(
+      listenWhen: (_, session) =>
+          session is NeedsHousehold || session is InHousehold,
+      listener: (_, _) => _endAutofill(save: _byPassword),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Form(
+          key: _form,
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            shrinkWrap: true,
+            children: [
+              if (widget.header case final header?) ...[
+                header,
+                const SizedBox(height: HlSpace.s5),
+              ],
+              if (flows.containsKey(SocialProvider.google)) ...[
+                GoogleSignInButton(
+                  key: const ValueKey('sign-in-google'),
+                  label: l10n.signInWithGoogle,
+                  onPressed: _busy
+                      ? null
+                      : () => unawaited(_social(SocialProvider.google)),
                 ),
                 const SizedBox(height: 12),
               ],
-              LabeledField(
-                label: l10n.email,
-                field: Semantics(
-                  hint: _emailError ?? '',
-                  child: TextFormField(
-                    key: const ValueKey('login-email'),
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    errorBuilder: (_, error) => FieldError(error),
-                    validator: _emailProblem,
+              if (flows.containsKey(SocialProvider.apple)) ...[
+                AppleSignInButton(
+                  key: const ValueKey('sign-in-apple'),
+                  label: l10n.signInWithApple,
+                  onPressed: _busy
+                      ? null
+                      : () => unawaited(_social(SocialProvider.apple)),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (!_emailOpen)
+                EmailSignInButton(
+                  key: const ValueKey('sign-in-email'),
+                  label: l10n.continueWithEmail,
+                  onPressed: _busy
+                      ? null
+                      : () => setState(() => _emailOpen = true),
+                )
+              else ...[
+                if (flows.isNotEmpty) ...[
+                  Row(
+                    children: [
+                      const Expanded(child: Divider()),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(l10n.orWithEmail),
+                      ),
+                      const Expanded(child: Divider()),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                LabeledField(
+                  label: l10n.email,
+                  field: Semantics(
+                    hint: _emailError ?? '',
+                    child: TextFormField(
+                      key: const ValueKey('login-email'),
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      errorBuilder: (_, error) => FieldError(error),
+                      validator: _emailProblem,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              LabeledField(
-                label: l10n.password,
-                field: Semantics(
-                  hint: _passwordError ?? '',
-                  child: TextFormField(
-                    key: const ValueKey('login-password'),
-                    controller: _password,
-                    obscureText: true,
-                    autofillHints: const [AutofillHints.password],
-                    errorBuilder: (_, error) => FieldError(error),
-                    validator: _passwordProblem,
-                    onFieldSubmitted: (_) => unawaited(_signIn()),
+                const SizedBox(height: 12),
+                LabeledField(
+                  label: l10n.password,
+                  field: Semantics(
+                    hint: _passwordError ?? '',
+                    child: TextFormField(
+                      key: const ValueKey('login-password'),
+                      controller: _password,
+                      obscureText: true,
+                      autofillHints: const [AutofillHints.password],
+                      errorBuilder: (_, error) => FieldError(error),
+                      validator: _passwordProblem,
+                      onFieldSubmitted: (_) => unawaited(_signIn()),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              FilledButton(
-                onPressed: _busy ? null : () => unawaited(_signIn()),
-                child: Text(l10n.signIn),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: _busy
-                    ? null
-                    : () => unawaited(
-                        _runWithForm(() async {
-                          final res = await _auth.signUp(
-                            email: _email.text.trim(),
-                            password: _password.text,
-                            emailRedirectTo: _redirectTo,
-                            data: mailData,
-                          );
-                          return res.session == null
-                              ? l10n.signUpCheckEmail
-                              : null;
-                        }),
-                      ),
-                child: Text(l10n.signUp),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: _busy
-                    ? null
-                    : () => unawaited(
-                        _runWithForm(() async {
-                          await _auth.signInWithOtp(
-                            email: _email.text.trim(),
-                            emailRedirectTo: _redirectTo,
-                            // Only a new account takes it; mails to an
-                            // existing one use its saved language.
-                            data: mailData,
-                          );
-                          return l10n.magicLinkSent;
-                        }, needsPassword: false),
-                      ),
-                child: Text(l10n.sendMagicLink),
-              ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: _busy ? null : () => unawaited(_signIn()),
+                  child: Text(l10n.signIn),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton(
+                  onPressed: _busy
+                      ? null
+                      : () => unawaited(
+                          _runWithForm(() async {
+                            final res = await _auth.signUp(
+                              email: _email.text.trim(),
+                              password: _password.text,
+                              emailRedirectTo: _redirectTo,
+                              data: mailData,
+                            );
+                            return res.session == null
+                                ? l10n.signUpCheckEmail
+                                : null;
+                          }),
+                        ),
+                  child: Text(l10n.signUp),
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: _busy
+                      ? null
+                      : () => unawaited(
+                          _runWithForm(() async {
+                            await _auth.signInWithOtp(
+                              email: _email.text.trim(),
+                              emailRedirectTo: _redirectTo,
+                              // Only a new account takes it; mails to an
+                              // existing one use its saved language.
+                              data: mailData,
+                            );
+                            return l10n.magicLinkSent;
+                          }, needsPassword: false),
+                        ),
+                  child: Text(l10n.sendMagicLink),
+                ),
+              ],
+              if (widget.footer case final footer?) ...[
+                const SizedBox(height: HlSpace.s4),
+                footer,
+              ],
             ],
-            if (widget.footer case final footer?) ...[
-              const SizedBox(height: HlSpace.s4),
-              footer,
-            ],
-          ],
+          ),
         ),
       ),
     );

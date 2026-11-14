@@ -12271,3 +12271,52 @@ Follow-ups from job 184's post-merge review (`jobs/184-siri-free-price-prep/revi
   network died after the newer resync answered, the retry tells within 3 s.
 - **Kept:** the e2e drop spec still waits a fixed 500 ms after the items GET. There is no
   app-side signal for "the list has answered" to poll.
+
+## Job 226: the sign-in fields leave the web page with the login screen, 2026-11-13
+
+- **What job 223 saw is real and happened every time.** After a sign-in by email and password,
+  the web page kept two hidden `<form>`s on every later screen until a reload. One held an input
+  with the email and the other one with the password, in plain text in the DOM. Chrome's
+  accessibility tree named the email (screen readers find it) and masked the password. Playwright's
+  ARIA snapshot printed both. Reproduced in 5 of 5 drives on main 7bfae2ed (verify-snacklist, local
+  stack, seeded account).
+- **Cause: the sign-in form never ended its autofill context.** Flutter 3.50's web engine keeps a
+  field the user has left as a synthetic input in a dormant form, so the browser can still save
+  the login (job 201, flutter/flutter#180652). It removes those forms only on
+  `TextInput.finishAutofillContext`, which `AutofillGroup` sends when it is disposed. The login
+  form had no `AutofillGroup`, so nothing ever sent it. It was not a route kept in the stack: the
+  login route had gone, only the engine's forms stayed. The copies are a web page thing; whether
+  iOS keeps its autofill views reachable for VoiceOver until the context ends was not checked (no
+  iPhone here), and the fix ends the context there too. Job 201 documented the copies in
+  `sign-in.md` as harmless; they were not.
+- **Fix: the sign-in panel ends the autofill context itself** (`SignInPanel._endAutofill`,
+  `login_screen.dart`). When the session turns signed in it sends
+  `finishAutofillContext(shouldSave: true)` at once, so the browser or phone may offer to save the
+  login, but only after an email-and-password attempt: a Google or Apple sign-in or a magic link
+  ends it with `shouldSave: false`, so a password typed and not used is not offered. A password
+  attempt counts only once it is sent, and a failed one stops counting. When the
+  panel goes while signed out (a wrong password, then „Neu bei Snacklist? Los geht's“) it sends
+  `shouldSave: false` from `dispose`. Either way the hidden forms go, once. The panel now takes
+  its auth client from `SocialSignIn` (the same `client.auth` in the app), so the widget tests
+  can drive the password path.
+- **Not `AutofillGroup`.** The first version wrapped the form in one, which ends the context in
+  its `dispose`. That runs after the next screen's push animation, when the list's add field
+  already owns the text connection, and the engine closes the active connection first: the add
+  field lost focus after every sign-in and a typed key went nowhere (3 of 3 drives; main keeps the
+  focus). The Opus review found it from the engine source. Ending the context at the session
+  change, while a login field still owns the connection, keeps the focus (3 of 3). The signed-out
+  exits lead to `/start` or an earlier guided-start step, which focus no field on arrival, so
+  `dispose` is early enough there. The fields stay ungrouped, as before: grouping only
+  `AutofillGroup` offers, and its dispose cannot be turned off.
+- **Proof.** After the fix, 5 of 5 drives show no `form`, no input holding the email or password,
+  and one textbox („Was brauchst du?“), with the add field still focused and taking a key.
+  Leaving the login screen after a wrong password also leaves nothing. Widget tests check that a
+  password sign-in ends the context at once, once and saving, a Google sign-in without saving,
+  and leaving signed out without saving; they fail on main and on the `AutofillGroup` version.
+  `e2e/tests/auth.spec.ts` checks the DOM, the ARIA snapshot and the add field's focus after a
+  sign-up and a sign-in, and the DOM after a failed sign-in and the way to the start screen.
+- **No new lint.** A rule flagging `autofillHints:` in a file without `finishAutofillContext`
+  would catch the next login-like form, but the login is the only field with hints and the
+  existing rule's message now says what such a field needs. Not
+  observed: whether Chrome or iOS now offer to save the password (headless Chromium shows no
+  prompt, no iPhone here).

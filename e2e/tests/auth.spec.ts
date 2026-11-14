@@ -1,13 +1,27 @@
-import { expect, test } from './fixtures';
+import { expect, test, type Page } from './fixtures';
 import {
   addField, holdFrames, latestLinkFor, newEmail, nextFrames, openMore, password, signUpWithHousehold, typeInto,
   openEmailSignIn,
 } from './helpers';
 import { watchBuild, withoutWasmGC } from './web-build';
 
+/**
+ * The sign-in screen left no copy of its fields behind (job 226): Flutter's web engine kept the
+ * email and password in hidden autofill forms, read by screen readers on every later screen.
+ */
+async function expectNoCredentials(page: Page, email: string): Promise<void> {
+  const holding = (): Promise<number> => page.evaluate(
+    (values) => [...document.querySelectorAll('input')].filter((input) => values.includes(input.value)).length,
+    [email, password],
+  );
+  await expect.poll(holding).toBe(0);
+  expect(await page.locator('body').ariaSnapshot()).not.toContain(email);
+}
+
 test('email and password: sign out and back in', async ({ page }) => {
   const email = newEmail('pw');
   await signUpWithHousehold(page, email);
+  await expectNoCredentials(page, email);
   await openMore(page, 'Abmelden');
   await expect(page).toHaveURL(/\/login$/);
 
@@ -20,6 +34,22 @@ test('email and password: sign out and back in', async ({ page }) => {
   await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
   await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
   await expect(addField(page)).toBeFocused();
+  await expectNoCredentials(page, email);
+  await expect(addField(page), 'ending the autofill context left the add field alone').toBeFocused();
+});
+
+test('a failed sign-in, then the start screen: no copy of the login stays', async ({ page }) => {
+  const email = newEmail('left');
+  await page.goto('/login');
+  await openEmailSignIn(page);
+  await typeInto(page.getByRole('textbox', { name: 'E-Mail' }), email);
+  await typeInto(page.getByRole('textbox', { name: 'Passwort' }), password);
+  await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
+  await expect(page.getByText(/Anmeldung fehlgeschlagen/).first()).toBeVisible();
+
+  await page.getByRole('button', { name: "Neu bei Snacklist? Los geht's" }).click();
+  await expect(page).toHaveURL(/\/start/);
+  await expectNoCredentials(page, email);
 });
 
 test('magic link signs in on this device', async ({ page }) => {

@@ -1,0 +1,32 @@
+- button "Familie Brandt"
+- button "Anpassen"
+- group:
+  - button "Ohne Laden, 15 Artikel" [expanded]
+  - heading "Obst & Gemüse" [level=2]
+  - checkbox "Bananen 6"
+  - checkbox "Äpfel 1 kg"
+  - heading "Brot & Backwaren" [level=2]
+  - checkbox "Brötchen 4"
+  - heading "Kühlregal" [level=2]
+  - checkbox "Vollmilch 2"
+  - checkbox "Butter"
+  - heading "Vorrat & Konserven" [level=2]
+  - checkbox "Nudeln"
+  - checkbox "Reis"
+  - heading "Süßes & Snacks" [level=2]
+  - checkbox "Schokolade"
+  - heading "Getränke" [level=2]
+  - checkbox "Apfelsaft"
+  - checkbox "Mineralwasser"
+  - heading "Tiefkühl" [level=2]
+  - checkbox "Erbsen"
+  - heading "Haushalt" [level=2]
+  - checkbox "Müllbeutel"
+  - checkbox "Spülmittel"
+  - heading "👶 Drogerie" [level=2]
+  - checkbox "Zahnpasta"
+  - checkbox "Duschgel"
+- textbox "Was brauchst du?"
+- tablist:
+  - tab "Liste" [selected]
+  - tab "Mehr"

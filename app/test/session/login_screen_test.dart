@@ -8,14 +8,19 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    as auth_types
+    show Session;
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../app/fake_launcher.dart';
 import 'fake_auth.dart';
+import 'fake_households.dart';
 
 void main() {
   late FakeAuth auth;
   late FakeNativeSignIn native;
+  late SessionCubit session;
 
   const both = {
     SocialProvider.google: SignInFlow.native,
@@ -28,6 +33,7 @@ void main() {
     Exception? returnError,
     Locale locale = const Locale('de'),
     Size size = const Size(390, 844),
+    SupabaseClient Function(FakeAuth auth)? client,
   }) async {
     tester.view
       ..devicePixelRatio = 1
@@ -36,7 +42,10 @@ void main() {
     auth = FakeAuth();
     addTearDown(auth.close);
     native = FakeNativeSignIn();
-    final session = SessionCubit(FakeClient(auth), MemorySessionCache());
+    session = SessionCubit(
+      client?.call(auth) ?? FakeClient(auth),
+      MemorySessionCache(),
+    );
     addTearDown(session.close);
     auth.states.add(const AuthState(AuthChangeEvent.initialSession, null));
     if (returnError != null) {
@@ -356,5 +365,100 @@ void main() {
       ),
     );
     expect(find.text('Anmeldung abgebrochen'), findsOneWidget);
+  });
+
+  group('the sign-in ends its autofill context (job 226)', () {
+    // On the web an open context keeps the fields, email and password
+    // included, in hidden forms that screen readers find on every later
+    // screen.
+    const user = User(
+      id: 'peter',
+      appMetadata: {},
+      userMetadata: {},
+      aud: 'authenticated',
+      createdAt: '2026-10-22T12:00:00Z',
+    );
+
+    Future<void> fillIn(WidgetTester tester) async {
+      await tester.tap(continueWithEmail());
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('login-email')),
+        'a@b.c',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('login-password')),
+        'secret-123',
+      );
+      await tester.pump();
+    }
+
+    List<Object?> finishes(WidgetTester tester) => [
+      for (final call in tester.testTextInput.log)
+        if (call.method == 'TextInput.finishAutofillContext') call.arguments,
+    ];
+
+    Future<void> signedIn(WidgetTester tester) async {
+      auth
+        ..user = user
+        ..states.add(
+          AuthState(
+            AuthChangeEvent.signedIn,
+            auth_types.Session(
+              accessToken: 'jwt',
+              tokenType: 'bearer',
+              user: user,
+            ),
+          ),
+        );
+      await tester.runAsync(
+        () => session.stream.firstWhere((state) => state is InHousehold),
+      );
+      await tester.pump();
+    }
+
+    SupabaseClient server(FakeAuth auth) =>
+        FakeHouseholds(auth)..member('peter', 'home', 'Zuhause');
+
+    testWidgets('a password sign-in ends it at once and offers to save the '
+        'login', (tester) async {
+      await pumpLogin(tester, client: server);
+      await fillIn(tester);
+      await tester.tap(find.widgetWithText(FilledButton, 'Anmelden'));
+      await tester.pump();
+      expect(auth.passwordSignIns, ['a@b.c']);
+      await signedIn(tester);
+      expect(finishes(tester), [
+        true,
+      ], reason: 'at the sign-in, while a login field still owns the input');
+      await tester.pumpWidget(const SizedBox());
+      expect(finishes(tester), [
+        true,
+      ], reason: "not again: by then the next screen's field owns it");
+    });
+
+    testWidgets('a Google sign-in after a failed password ends it at once '
+        'without saving', (tester) async {
+      await pumpLogin(tester, client: server);
+      await fillIn(tester);
+      auth.passwordError = const AuthException('Invalid login credentials');
+      await tester.tap(find.widgetWithText(FilledButton, 'Anmelden'));
+      await tester.pumpAndSettle();
+      expect(auth.passwordSignIns, hasLength(1));
+      await tester.tap(google());
+      await tester.pump();
+      expect(auth.idTokenCalls, hasLength(1));
+      await signedIn(tester);
+      expect(finishes(tester), [false]);
+      await tester.pumpWidget(const SizedBox());
+      expect(finishes(tester), [false]);
+    });
+
+    testWidgets('left signed out: it ends without saving them', (tester) async {
+      await pumpLogin(tester);
+      await fillIn(tester);
+      await tester.pumpWidget(const SizedBox());
+      expect(finishes(tester), [false]);
+    });
   });
 }
