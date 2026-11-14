@@ -26,7 +26,7 @@ A spoken sentence such as "Milch, zwei Gurken und Klopapier" becomes separate li
 
 - Siri: "Hey Siri, Einkaufsliste", then the sentence. The Shortcut (docs/SIRI_SHORTCUT.md) POSTs `{"text": "<dictated text>"}` to `/functions/v1/voice?format=text` with `Authorization: Bearer fgp_…`.
 - App: on the list screen, tap the microphone in the add bar at the bottom and speak. Tap it again to stop early.
-- Any HTTP client: `POST <API URL>/functions/v1/voice` with a session JWT or a personal access token.
+- Any HTTP client: `POST <API URL>/functions/v1/voice` with a session JWT or a personal access token. An OAuth client's token (MCP, AI assistants, the Alexa link) gets 401 `unauthorized` (job 213).
 
 ## Driving it with fg
 

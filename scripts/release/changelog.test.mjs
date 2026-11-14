@@ -753,3 +753,64 @@ describe('internal commits stay out of the notes and the draft', () => {
     assert.match(r.stderr, /"Debug overlay \(#71\)": it is marked "Changelog: skip"/);
   });
 });
+
+// Job 213: rewords.json gives an item already on main new wording; the commit can't change.
+describe('rewords.json', () => {
+  let repo;
+  let sha;
+  const git = (...args) => execFileSync('git', args, { cwd: repo, encoding: 'utf8' }).trim();
+  const run = (...args) => {
+    const r = spawnSync('node', [cli, ...args], { cwd: repo, encoding: 'utf8' });
+    return { code: r.status, stdout: r.stdout, stderr: r.stderr };
+  };
+  const rewords = (items) => writeFileSync(join(repo, 'releases/changelog/rewords.json'), `${JSON.stringify({ items }, null, 2)}\n`);
+  const reword = (patch = {}) => ({ sha, item: 2, why: 'Siri stays free', de: 'Der Zugang für KI-Assistenten gehört zu Premium.', en: 'Access for AI assistants is part of Premium.', ...patch });
+  const dryDraft = (stdout) => JSON.parse(stdout.slice(0, stdout.indexOf('\n}\n') + 2));
+
+  before(() => {
+    repo = mkdtempSync(join(tmpdir(), 'changelog-rewords-'));
+    git('init', '-q', '-b', 'main');
+    mkdirSync(join(repo, 'releases/changelog'), { recursive: true });
+    mkdirSync(join(repo, 'app/lib'), { recursive: true });
+    writeFileSync(join(repo, 'releases/releases.json'), realRecord);
+    writeFileSync(join(repo, 'releases/flags.json'), `${JSON.stringify({ flags: {}, holds: { 'integration-lock': { released: false, note: 'off' } } }, null, 2)}\n`);
+    writeFileSync(join(repo, 'app/lib/f.dart'), 'x');
+    git('add', '-A');
+    const body = note(item('fixed', 'Haken bleiben gesetzt.', 'Checks stay set.'), `${item('new', 'Siri und KI-Assistenten gehören zu Premium.', 'Siri and AI assistants are part of Premium.')}\nhold: integration-lock`);
+    git('-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '-q', '-m', 'Premium (#7)', '-m', body);
+    sha = git('rev-parse', 'HEAD');
+  });
+  after(() => rmSync(repo, { recursive: true, force: true }));
+
+  test('the reworded item keeps its category and hold; the others stay as written', () => {
+    rewords([reword()]);
+    const r = run('draft', '--version', '9.0.0', '--sha', 'main', '--dry-run');
+    assert.equal(r.code, 0, r.stderr);
+    const draft = dryDraft(r.stdout);
+    assert.deepEqual(draft.held, [{ category: 'new', de: 'Der Zugang für KI-Assistenten gehört zu Premium.', en: 'Access for AI assistants is part of Premium.', flag: null, hold: 'integration-lock', pr: 7, sha }]);
+    assert.deepEqual(draft.items.fixed.map((i) => i.en), ['Checks stay set.']);
+    assert.doesNotMatch(r.stdout, /Siri and AI assistants/);
+  });
+
+  test('a reword of an item the note does not have refuses the draft', () => {
+    rewords([reword({ item: 3 })]);
+    const r = run('draft', '--version', '9.0.0', '--sha', 'main', '--dry-run');
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /rewords\.json rewords item 3 of [0-9a-f]{7} "Premium \(#7\)", but its note has 2; fix the entry/);
+  });
+
+  test('drafts checks the file and does not take it for a draft', () => {
+    rewords([reword()]);
+    const ok = run('drafts');
+    assert.equal(ok.code, 0, ok.stderr);
+    assert.match(ok.stdout, /0 checked, 0 overrides, 0 pending items, 1 rewords/);
+    for (const [patch, pattern] of [[{ why: '' }, /items\[0\]\.why: must not be empty/], [{ sha: 'abc' }, /items\[0\]\.sha: must be a full commit sha/], [{ item: 0 }, /items\[0\]\.item: must be the item's place/]]) {
+      rewords([reword(patch)]);
+      const r = run('drafts');
+      assert.equal(r.code, 1, JSON.stringify(patch));
+      assert.match(r.stderr, pattern);
+    }
+    rewords([reword(), reword()]);
+    assert.match(run('drafts').stderr, /rewords item 2 of [0-9a-f]{7} a second time/);
+  });
+});

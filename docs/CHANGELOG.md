@@ -243,6 +243,39 @@ The 1.0.0 launch text is
 [`releases/changelog/1.0.0.override.md`](../releases/changelog/1.0.0.override.md),
 waiting for Peter's review.
 
+## Rewording an item on main (job 213)
+
+An item's text lives in its commit message on `main`, which can't change. When
+a merged item turns out wrong before it is published (the integration lock's
+held item named Siri, which stays free since job 184), give it new wording in
+[`releases/changelog/rewords.json`](../releases/changelog/rewords.json):
+
+```json
+{
+  "items": [
+    {
+      "sha": "<the commit on main, 40 hex>",
+      "item": 2,
+      "why": "what was wrong, for the reviewer",
+      "de": "Der neue deutsche Satz.",
+      "en": "The new English sentence."
+    }
+  ]
+}
+```
+
+- `item` counts the items of that commit's note from 1, in the order written.
+- Only `de` and `en` change. The category, the flag or hold, the PR and the
+  commit stay the note's, so a held item stays held.
+- `draft` and `record.mjs` (for items merged after a draft) read the new
+  wording when they collect the commit, so a draft, its store texts and
+  `pending.json` only ever hold the new text. A reword of an item the note
+  doesn't have refuses the draft; the `drafts` check validates the file.
+- TestFlight's "What to Test" (`notes`) keeps the commit's text: it reads
+  only the newest commits, never one old enough to need a reword.
+- A reword whose commit is already in a public release changes nothing:
+  the record holds that text. Delete the entry when its item is published.
+
 ## Collecting a release
 
 ```bash

@@ -2,10 +2,12 @@
 // docs/PURCHASES.md, "Store setup"). Play only sells in-app products once the developer account has
 // a payments (merchant) profile, which only Peter can create (NEEDS_PETER Job 25): before that this
 // refuses to write. Dry run by default; --apply upserts the product and activates its purchase
-// option. Idempotent (allowMissing upsert). Also prints Play's converted prices for AT and CH.
+// option, which sets the live Play price, so it also needs --confirm-price with that price
+// (job 213). Idempotent (allowMissing upsert). Also prints Play's converted prices for AT and CH.
 //
 //   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH=<key file> \
-//     deno run --allow-env --allow-read --allow-net scripts/iap/google_product.ts [--apply]
+//     deno run --allow-env --allow-read --allow-net scripts/iap/google_product.ts \
+//     [--apply --confirm-price 149.99]
 //
 // The service account needs "Manage store presence" for the app (Play Console > Users and
 // permissions). Prints ids and prices, never the key.
@@ -70,8 +72,35 @@ export function oneTimeProductBody(): Json {
   };
 }
 
+/**
+ * Why --apply may not write, or null when it may: --confirm-price must name the price it sets
+ * (`product.basePrice`), so a changed base price never reaches Play unseen.
+ */
+export function applyRefusal(
+  args: string[],
+  price: { amount: string; currency: string } = product.basePrice,
+): string | null {
+  if (!args.includes('--apply')) return null;
+  const flag = args.findIndex((a) => a === '--confirm-price' || a.startsWith('--confirm-price='));
+  const given = flag === -1 ? undefined : args[flag]?.split('=')[1] ?? args[flag + 1];
+  const expected = `${price.amount} ${price.currency}`;
+  if (given === undefined || !/^\d+(\.\d+)?$/.test(given)) {
+    return `--apply sets the live Play price to ${expected}: add --confirm-price ${price.amount}`;
+  }
+  const a = money(given, price.currency);
+  const b = money(price.amount, price.currency);
+  return a.units === b.units && a.nanos === b.nanos
+    ? null
+    : `--confirm-price ${given} is not the base price ${expected}; nothing written`;
+}
+
 async function main() {
   const apply = Deno.args.includes('--apply');
+  const refusal = applyRefusal(Deno.args);
+  if (refusal) {
+    console.error(refusal);
+    Deno.exit(2);
+  }
   const path = Deno.env.get('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH');
   if (!path) throw new Error('GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_PATH is not set');
   const access_token = await playAccessToken(

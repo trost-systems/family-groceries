@@ -16,6 +16,7 @@ function fakeDeps(overrides: Partial<Deps> = {}) {
       if (token === 'Bearer fgp_good') return Promise.resolve(caller);
       if (token === 'Bearer app-session') return Promise.resolve({ ...caller, via: 'session' });
       if (token === 'Bearer fgp_siri') return Promise.resolve({ ...caller, via: 'siri' });
+      if (token === 'Bearer mcp-client') return Promise.resolve({ ...caller, via: 'oauth' });
       return Promise.reject(fail(401));
     },
     // u1 is in h1 (the default) and h2.
@@ -233,6 +234,20 @@ Deno.test('job 169b: Siri and token callers keep their credential household', as
     const res = await handle(post({ text: 'Milch', household: 'h2' }, { token }));
     assertEquals(res.status, 200, token);
     assertEquals(addedIn, ['h1'], token);
+  }
+});
+
+Deno.test('job 213: an OAuth client token (MCP, AI assistants) is refused, nothing added', async () => {
+  for (const mode of ['add', 'parse', 'read']) {
+    const { handle, calls } = fakeDeps({
+      splitItems: () => Promise.reject(new Error('not asked')),
+      readItems: () => Promise.reject(new Error('not asked')),
+    });
+    const body = mode === 'add' ? { text: 'Milch' } : { text: 'Milch', mode, lang: 'de' };
+    const res = await handle(post(body, { token: 'mcp-client' }));
+    assertEquals(res.status, 401, mode);
+    assertEquals((await res.json()).error, 'unauthorized', mode);
+    assertEquals(calls, [], mode);
   }
 });
 

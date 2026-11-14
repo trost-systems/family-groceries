@@ -326,6 +326,9 @@ export function createHandler<C extends Caller>(deps: Deps<C>) {
     }
 
     facts.via = caller.via ?? '-';
+    // Job 213: OAuth tokens belong to MCP and AI-assistant clients, which the integration lock
+    // puts behind Premium; voice stays free, so it must not be their side door.
+    if (caller.via === 'oauth') return fail('unauthorized');
     if (caller.via === 'session' && body.household !== null) {
       try {
         if (!await deps.isMember(caller, body.household)) return fail('no_household');
