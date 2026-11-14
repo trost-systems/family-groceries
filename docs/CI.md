@@ -39,7 +39,55 @@ scripts/verify.sh                          # every local gate, e2e last
 scripts/verify.sh --only flutter,db        # some gates
 scripts/verify.sh --only e2e -- tests/list.spec.ts   # one spec, under the e2e lock
 scripts/verify.sh --skip-e2e
+scripts/verify.sh --history 2026-11-14     # runs, failures, seconds and flakes per gate since then
 ```
+
+### The local loop
+
+`verify.sh` stops at the first gate that fails and exits with that gate's
+code. Its last lines are plain text, so `| tail` and `grep` still show the
+verdict:
+
+```text
+[verify] took: gitleaks 12 s, lint 101 s
+[verify] FAILED: lint (exit 1) after 101 s; its output: <git dir>/verify/lint.20261113-214502.4711.1.log; not run: changelog site ...
+```
+
+A green run ends in `[verify] passed: <gates>`. Each run of a gate writes its
+whole output, stdout and stderr, to a file of its own in `<git dir>/verify/`
+(`VERIFY_LOG_DIR`); the five newest per gate stay, as does the file of a run
+that is still going, and `<gate>.log` there links to the newest. When a
+filter cut the failure off, read the file the verdict names instead of
+running the gate again: it holds that run's output until five later runs of
+the gate, a second run at the same time included. The
+`[gate]` lines are blue only on a terminal.
+
+Every gate run is a row in the ledger, `verify-ledger.tsv` in the clone's
+`.git` (`VERIFY_LEDGER`; worktrees share it): time, branch, tree, gate, result,
+seconds, arguments (`--screenshots` among them), seconds waited for a lock.
+The tree is the hash of the working tree: uncommitted and untracked files and
+the skip-worktree and assume-unchanged ones (the port block in
+`supabase/config.toml`) included,
+ignored files (`.env` files, build output) not. `--history` prints, per gate,
+the runs, the failed runs, the median and p90 seconds of the passing runs,
+and the trees that have both results for the same arguments.
+
+Two notes come from the ledger:
+
+- `flake: <gate> had the other result on this same tree`, with the same
+  arguments. The files git does not ignore are the same, so the cause is
+  outside them. The causes found in 199 jobs' runs
+  (job 219) were all of this kind: another Flutter SDK on `PATH`, a stack that
+  is down or still has the schema from before a rebase, a held port,
+  `origin/main` moving under the lint gate's migration check, a missing tool
+  (`JAVA_HOME`, Playwright's browsers), the host pausing an e2e run. Find the
+  one that applies and write it into the PR. A rerun that passes is a second
+  observation, not a fix.
+- `<gate> has failed 3 runs in a row on this branch`, whatever the arguments.
+  Over those jobs the p90 of such streaks was 1 (lint), 2 (flutter), 3 (e2e)
+  and 4 (db), so a third failure is at the edge of the normal fix loop or
+  past it. Stop patching: write down what the fixes had in common, and test
+  that assumption directly before a fourth.
 
 To add a check, add it to the gate script it belongs to. To add a gate, add
 `scripts/gates/<name>.sh`, a `ci.yml` job of the same name that runs it, the

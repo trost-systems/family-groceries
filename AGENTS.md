@@ -104,7 +104,11 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
 - Run `scripts/verify.sh` before pushing. It runs the same
   `scripts/gates/<gate>.sh` scripts the CI jobs run (gitleaks, lint, changelog, site,
   site-agent, emails, db, functions, nexus, fg-cli, flutter, web-prod, fastlane, e2e); `--only <gate>` runs
-  some, `--only e2e -- <spec>` one spec. A check goes into a gate script,
+  some, `--only e2e -- <spec>` one spec. It stops at the first failing gate;
+  its last line is the verdict in plain text (`[verify] passed: ...` or
+  `[verify] FAILED: <gate> ...; its output: <file>`), and it notes a gate
+  that gave both results on the same files or failed three runs in a row
+  (`docs/CI.md`, "The local loop"). A check goes into a gate script,
   never into `ci.yml` or `verify.sh` (`scripts/check-gates.sh` fails
   otherwise). The e2e gate holds the box-wide lock `/tmp/fg-e2e.lock`, so a
   second run waits instead of overlapping.
