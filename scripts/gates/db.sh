@@ -20,44 +20,20 @@ supabase/classifier/latency.sh
 supabase/classifier/client_lexicon.sh --check
 # Job 59: suggest_entries with fuzzy matching stays under 50 ms p95 on a 5000-item household.
 supabase/bench/suggest_latency.sh
-# Job 32a: the MCP and voice/Siri add code against this stack classifies like the app (AC7).
-# Job 31: the alexa function's wiring (add, read, households, rate limit, revocation, consent).
-# Job 32b: the add paths report a similar open item, and merge_quantities matches the app's table.
-# Job 25: the purchases function's wiring (grant, RLS read, replay, Apple refund, rate limit).
-# Job 50: the integration lock through the voice, alexa and mcp wiring (switch, lapse, events).
-# Job 62: list_items counts the whole list, per household.
-# Job 64: two members adding the same item at once leave one open row (items_skip_duplicate).
-# Job 73: the api function's wiring (keys, limits, idempotency, pagination, households, lock).
-# Job 104: the server's number words are supabase/tests/number_words.tsv, like the app's.
-# Job 111: in-app dictation splits brand and details as add_item does.
-# Job 112: a plain name whose item is open with a brand, a note or a product word (Q79), through
-# the Shortcut, native Siri and Alexa on parser-stored items.
-# Job 172: Alexa, Siri and list_items read only the open items of the caller's household.
-# Job 82: the waitlist function's wiring (sign-up, confirm, one-click unsubscribe, rate limit).
-# Job 169b: one default per user under concurrent leaves, joins and creates; the MCP household tools;
-# W2: joins racing for a group link's last uses never pass 50.
-# W3: two approvals racing for a group link's last use count one join; an approval racing the same
-# user's second tap or direct join leaves one membership and no open request; Siri and Alexa use the
-# default list (job 207; the first list while none is chosen).
-# Job 94: Client ID Metadata Documents through the mcp function and this stack's Supabase Auth.
-# Job 211: a RevenueCat customer note racing the account's deletion leaves the customer queued.
-# Job 207: adds without a named list go to the member's default list (else the first) through
-# voice, MCP and the API; a spoken list name ("Luftballons zur Geburtstag Liste") picks the list.
-# Job 225: the feedback digest over the real database (empty, internal-only, rerun, failed send, cutoff).
+# The functions' code against this stack: every *_integration_test.ts under supabase/functions, each
+# with what it proves in its header. A new one runs without a line here (deno expands the pattern).
+# Under another name it would run in no gate: the functions gate skips what reads FG_DB_TEST.
+if misnamed="$(git grep -l FG_DB_TEST -- 'supabase/functions/*.ts' | grep -v '_integration_test\.ts$')"; then
+  echo "reads FG_DB_TEST, so only the db gate runs it, and only as *_integration_test.ts: $misnamed" >&2
+  exit 1
+fi
 db_port="$(sed -n '/^\[db\]/,/^\[/ s/^port = \([0-9]*\)$/\1/p' supabase/config.toml)"
 stack_env="$(supabase status -o env 2>/dev/null)"
 stack_value() { sed -n "s/^$1=\"\(.*\)\"$/\1/p" <<<"$stack_env"; }
 (cd supabase/functions && FG_DB_TEST=1 SUPABASE_DB_URL="postgresql://postgres:postgres@127.0.0.1:$db_port/postgres" \
   SUPABASE_URL="$(stack_value API_URL)" SUPABASE_ANON_KEY="$(stack_value PUBLISHABLE_KEY)" \
   SUPABASE_SERVICE_ROLE_KEY="$(stack_value SERVICE_ROLE_KEY)" \
-  deno test --allow-env --allow-net --allow-read _shared/add_paths_integration_test.ts alexa/store_integration_test.ts \
-  _shared/dedupe_integration_test.ts purchases/store_integration_test.ts purchases/revenuecat_customers_integration_test.ts _shared/premium_integration_test.ts \
-  _shared/zero_stores_integration_test.ts _shared/list_integration_test.ts \
-  _shared/one_open_item_integration_test.ts _shared/read_open_only_integration_test.ts api/api_integration_test.ts _shared/number_words_integration_test.ts \
-  voice/split_integration_test.ts _shared/voice_variants_integration_test.ts waitlist/waitlist_integration_test.ts \
-  _shared/households_integration_test.ts mcp/households_integration_test.ts \
-  mcp/cimd_integration_test.ts _shared/default_list_integration_test.ts \
-  feedback-digest/digest_integration_test.ts)
+  deno test --allow-env --allow-net --allow-read '**/*_integration_test.ts')
 supabase db lint --local --fail-on warning
 scripts/backup/drill.sh
 

@@ -326,9 +326,85 @@ lead's standing instructions, for the 7 % of conflicts the driver leaves. Record
 | List cluster: `list_cubit.dart`, `list_repository.dart`, `model.dart`, `fake_repository.dart`, `list_screen.dart` | strongest co-change (0.88 to 0.95); 3 conflict events | Blocked: job 212 owns these files and jobs 221 and 222 wait for it |
 | `FEATURES-FOR-WRITERS.md` and the verify feature files | 11 events in 9 jobs; #405 conflicted in three of them on 13 November | Not append-only: jobs edit a feature's section in place, so the driver does not fit. Job 219 works on the verify skill; left to it |
 | Goldens (`app/test/design/goldens/*.png`) | 4 events in 3 jobs per file | Inherent to binary files: regenerate after the rebase. No refactor helps |
-| `scripts/gates/db.sh` | 27 commits for 62 lines, 3 events, 3 replayed conflicts: every new integration test adds itself to one list | Blocked until #405 lands (it edits the list); then list the tests by glob |
+| `scripts/gates/db.sh` | 27 commits for 62 lines, 3 events, 3 replayed conflicts: every new integration test adds itself to one list | PR 2, after #405 and #431 (each added to the list) |
 | `more_screen.dart` with `more_harness.dart` and `router.dart` | 0.73 to 0.76 | Blocked: #281 and job 206 |
 | `app.dart` with `main.dart` | 0.67 | Blocked: `main.dart` is job 212's |
 | `ci.yml` with `verify.sh` | 1.00 | By design: `scripts/check-gates.sh` ties one CI job to one gate script. Job 221 owns iteration speed |
 | ARB and generated l10n | 73 commits, 2 replayed conflicts | Many edits, few collisions (keys are spread over the file). Nothing to fix |
-| `e2e/tests/helpers.ts` | 41 commits, 1 replayed conflict | Few collisions. Spec-local copies of helpers are a duplication candidate, not a collision one |
+| `e2e/tests/helpers.ts` | 41 commits, 1 replayed conflict | Few collisions, and little to dedupe: 13 spare copies of helpers in the specs, 44 lines (below). Not done |
+
+### PR 2: the db gate finds its integration tests by pattern
+
+`scripts/gates/db.sh` ran the functions' integration tests from a list of file names, with a
+comment line per job above it. A job with a new `*_integration_test.ts` added a name at the end
+of the list and a comment at the end of the block, the same two places as every other such job.
+
+- 17 of the 27 commits on main that touch the file add a name to the list, and 15 of them
+  change nothing else in it. 2 more only add to the comment block (`git log --first-parent
+  7bfae2ed -- scripts/gates/db.sh`, counted on each commit's diff of the file). The transcripts
+  hold 3 conflict events in the file and the replay 3 conflicts, with 6 more PRs it could not
+  rebuild. #405 (`95316b50`, 14 November) was commit 28, the 18th to add a name (the list's
+  19th: one commit, `6d2a193e`, had added two). It added
+  `_shared/default_list_integration_test.ts` and two comment lines, and this PR's rebase
+  conflicted with it in both places. #431 (`b97deee7`, the same morning) added
+  `feedback-digest/digest_integration_test.ts` and one comment line while this PR waited for
+  PR 1 in the merge queue: the next rebase conflicted in both places again.
+- A test file that nobody added to the list was never run, without a message. None was missing
+  at `7bfae2ed`: the list and `find supabase/functions -name '*_integration_test.ts'` both name
+  the same 18 files.
+
+Now the step is `deno test ... '**/*_integration_test.ts'`. The pattern is quoted: deno expands
+it, so the step does not depend on the shell's `globstar` setting. The comment block is gone;
+every one of the files says in its header what it proves, and two lines in the gate say where
+to look. A new integration test needs no edit of the gate.
+
+The same tests run, measured on a fresh local stack on hz (block 628, the step cut out of both
+versions of the script at `8c1a9177`, which has main's migrations up to `7bfae2ed`, `db reset`
+in between):
+
+| | Files | Tests passed | Failed | Ignored | Time |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| The list (before) | 18 | 118 | 0 | 0 | 31 s |
+| The pattern (after) | 18 | 118 | 0 | 0 | 31 s |
+
+The 118 pairs of file and test name are the same in both runs. The order of the files is not.
+Deno ran the listed files grouped by directory (`purchases`, `waitlist`, `_shared`, `alexa`,
+`voice`, `api`, `mcp`), in the list's order inside a directory; it runs the pattern's files
+sorted by path. Both orders pass, one run each. With no match the step fails ("No test modules
+found", exit 1), so a typo in the pattern cannot pass as an empty run.
+
+On main there were 19 files with #405 and 20 with #431. No local stack ran for them (the box
+was short of memory on 14 November); the comparison is main's CI against the pattern's listing:
+
+- The list, in CI's db job on `055d33ec` (PR 1's head on #431, run 43568327834, deno 2.9.8):
+  20 files, 128 passed, 0 failed, 31 s.
+- The pattern on that tree, run without a stack, so every test reports as ignored: the same 20
+  files, 128 tests, and the same 128 pairs of file and test name as in the CI log. (Compared the
+  same way at #405: 19 files, 127 tests, run 43561038725.)
+- That the 128 pass in path order is for the db job of this PR's own CI run to show; its
+  counts are in the job's done summary.
+
+One check is new. The list failed the gate when a listed file was renamed or deleted (deno
+found no such file); the pattern runs what matches, so a file renamed off the suffix would drop
+out without a message. The functions gate skips these tests (they read `FG_DB_TEST`), so no gate
+would run it. The gate now stops when a file under `supabase/functions` reads `FG_DB_TEST` and
+is not named `*_integration_test.ts`. All 20 that read it have the suffix; renaming one, and
+adding one in a new directory under another name, each stopped the check (run by hand on the
+18 before #405, then undone).
+
+Limits: a test that only passes after another file's leftovers shows up when the order changes,
+and a new file now changes the order where it sorts in; no such pair showed in the one sorted
+run of the 18 on a fresh database. The new check finds a misnamed test only if it is a tracked
+`.ts` file that reads `FG_DB_TEST` itself. A deleted test file no longer fails the gate: the
+list did when the name stayed behind, and nothing does now (a job that deleted both the file and
+its name passed before too). The rest of the gate (pgTAP, the classifier checks, the latency
+benches, db lint, the backup drill, the fixtures test) is untouched.
+
+**Measured and not done: helpers copied between e2e specs.** `tool/hotspots/e2e-duplicates.mjs`
+parses `e2e/tests/*.ts` and prints the top-level functions whose code is the same in several
+files: 13 spare copies, 44 lines of the 11,741 in those files (`cat e2e/tests/*.ts | wc -l`,
+0.4 %), 6 of the copies between `club.spec.ts` and `invite-loop.spec.ts`. Eight specs have a
+`newPage`, in four variants (the viewport or the options they take differ). Moving them is a PR
+that runs the whole e2e gate and takes a place in the merge queue for 44 lines, and
+`invite-loop.spec.ts` is in open PR #429. Left as it is; the script is there to see whether the
+number grows.

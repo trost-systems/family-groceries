@@ -12612,3 +12612,37 @@ The baseline is 199 jobs' transcripts and 14 days of CI; its numbers go into
    and a mistyped `http://` prod URL would send it in clear text
    (`20261114063746_feedback_digest_https.sql`).
 
+
+## Job 218, PR 2: the db gate finds its integration tests by pattern, 2026-11-14
+
+Evidence and the measured comparison: `docs/hillclimb/fable-improvement-2026-11.md`, PR 2.
+
+1. **A pattern in place of the list.** `scripts/gates/db.sh` runs
+   `deno test '**/*_integration_test.ts'` in `supabase/functions`. 17 of the 27 commits to the
+   gate added a file name to its list, and a file left out was never run. The pattern matched
+   the same 18 files, and the same 118 tests passed with the list and with the pattern on a
+   fresh stack. With #405 and #431 on main it is 20 files and 128 tests, the same in the
+   pattern's listing as in CI's run of the list.
+2. **Deno expands the pattern, not the shell.** Quoted, so the step is the same whatever
+   `globstar` is set to in the shell that runs the gate. Without a match deno fails with "No
+   test modules found".
+3. **The comment block went with the list.** One comment line per job was the second place every
+   such job appended to. Each test file's header says what it proves; the gate says where to look.
+4. **Order by path.** Deno ran the listed files grouped by directory, not in the list's order,
+   so the list never fixed an order. The sorted order of the 18 files before #405 passed on a
+   fresh database; with the two new files the first run in path order is this PR's CI.
+   No sort key or numbering to keep an order nobody chose.
+5. **A misnamed test stops the gate.** The list failed when a listed file was renamed; the
+   pattern would skip it without a message. So the gate stops on a tracked file under
+   `supabase/functions` that reads `FG_DB_TEST` and is not named `*_integration_test.ts`. That
+   also covers what the list never did: a new test nobody registered. In the db gate next to the
+   step it guards, not in `scripts/lint.sh`: it costs one `git grep`, and a failure there is as
+   rare as a renamed test.
+6. **After #405 and #431.** Job 207's PR added a name to the list and two comment lines. This
+   PR waited for it and took the conflict on its own rebase, so job 207 did not meet one from a
+   refactor. Job 225's #431 then did the same with a 20th name while this PR waited in the
+   queue, and the next rebase conflicted again. The names and the comment lines went with the
+   list; each new test's header says what it proves.
+7. **Helpers copied between e2e specs stay.** `tool/hotspots/e2e-duplicates.mjs` counts 13 spare
+   copies, 44 lines of 11,741. Moving them costs a full e2e run and a place in the merge queue,
+   and one of the files is in an open PR. The script stays to see whether the number grows.
