@@ -469,6 +469,18 @@ void main() {
       expect(checklist.has(ChecklistStep.invite), isFalse);
     });
 
+    test('a tick, a saved edit or a finished shop does the first shop', () {
+      bool shopped(UsageLog log) => Checklist.of(
+        log,
+        kind: HouseholdKind.solo,
+        owner: true,
+      ).entries.any((e) => e.step == ChecklistStep.firstShop && e.done);
+      expect(shopped(fresh()), isFalse);
+      expect(shopped(fresh().record(Signal.itemTicked)), isTrue);
+      expect(shopped(fresh().record(Signal.itemEdited)), isTrue);
+      expect(shopped(fresh().record(Signal.shopDone)), isTrue);
+    });
+
     test('steps are done by what the log saw', () {
       final log = fresh()
           .note(Signal.memberJoined)

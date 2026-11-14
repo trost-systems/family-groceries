@@ -1359,6 +1359,7 @@ void main() {
       await pumpList(
         tester,
         seed: (repo) => repo
+          ..members = const [Member(id: 'peter', displayName: 'Peter')]
           ..remoteAdd('Brot')
           ..remoteAdd('Milch'),
       );
@@ -1367,7 +1368,7 @@ void main() {
       final height = tester.getSize(header()).height;
       final editRect = tester.getRect(edit);
       // The list's first entry, the Erste Schritte card, stays while items
-      // go.
+      // go: alone in the household, Peter still has the invite open.
       final card = find.byKey(const ValueKey('list-hint-dismiss'));
       final rowTop = tester.getTopLeft(card).dy;
       // The capsule, its gaps and the shadow below the notch (job 148).

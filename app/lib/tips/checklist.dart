@@ -35,7 +35,16 @@ class const Checklist(
       (step: ChecklistStep.started, done: true),
       if (owner && kind != HouseholdKind.solo)
         (step: ChecklistStep.invite, done: log.saw(Signal.memberJoined)),
-      (step: ChecklistStep.firstShop, done: log.saw(Signal.shopDone)),
+      (
+        step: ChecklistStep.firstShop,
+        // Its line is the gesture sentence: a tick or a saved edit does it
+        // (job 204). Logs from before item_ticked only knew a finished shop.
+        done: [
+          Signal.itemTicked,
+          Signal.itemEdited,
+          Signal.shopDone,
+        ].any(log.saw),
+      ),
       if (kind == HouseholdKind.club)
         (
           step: ChecklistStep.assistant,
