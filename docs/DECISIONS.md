@@ -12676,3 +12676,81 @@ Evidence and the test: `docs/hillclimb/fable-improvement-2026-11.md`, PR 3.
    back.
 5. **"Main moved" has a test now.** The wait must not hide the real refusal, and no case
    covered it: a main that moved after the push still stops the merge, without a wait.
+
+## Job 220: security hardening, 2026-11-13
+
+A review of the database grants and policies, the edge functions, secrets in the repo and CI, and
+dependency and Actions pinning, then four small PRs (#416, #417, #418, #421). Findings,
+evidence and what remains: `docs/done/220-security-hardening.md`.
+
+- **Repository settings are Peter's steps, not this job's.** Moving the production secrets into
+  an environment, a ruleset for `main`, secret scanning and Dependabot alerts all
+  sit in GitHub's settings (NEEDS_PETER, Job 220). The bot token could change them, but a ruleset
+  or a moved secret set wrong stops every other job's landing or the nightly backup, and the brief
+  says existing guardrails only. The code half is merged first and is a no-op until then:
+  repository secrets still resolve in a job that names an environment.
+- **`environment: {name: ops, deployment: false}` for the scheduled production jobs.** A probe
+  run showed that the form runs, leaves no deployment record (a plain `environment: ops` would
+  add about 90 a month), and that a branch rule still refuses another branch with it.
+- **The `secret-needs-environment` check knows the environments by name** (`release`, `ops`). A
+  misspelt name would pass a check that only asks for some environment, and GitHub creates an
+  unknown one on the first run, empty and without rules.
+- **No global `revoke execute ... from public` default.** The foundation's per-schema default
+  cannot take away PUBLIC's built-in execute right. A default without `in schema` would, but it
+  also changes functions outside `public` (extensions, later Supabase schemas). Every migration
+  revokes per function already, and `households_invites.test.sql` pins the list of what `anon`
+  may call, so #416 revokes the three leftovers by name.
+- **A known MCP client gets its own fetch count, reset by a working fetch (job 94's "30 per host,
+  600 in all" now covers unknown URLs only).** Job 94's entry says clients already mapped keep
+  working when strangers use up the limits; for a new sign-in with a stale document they did not.
+  Rejected: serving the stale row (whoever holds the limit down keeps a removed redirect URI
+  alive); a limit over all known clients (the same registrations that could abuse it could spend
+  it, and the lockout returns); a `token:all` ceiling for the token route (same lockout). The
+  reset means no fixed number of fetches while a document is stale, and someone who registers
+  URLs on names of their own can have each fetched about 350 times an hour at another public
+  address, one fetch per request. The reviews weighed three mechanisms that would bound this:
+  counting down on a working fetch instead of starting again, single flight under an advisory
+  lock (holds one of the pool's 3 connections across a fetch of up to 8 s) and an in-process map
+  (bounds nothing across workers). None does it without bringing the lockout back or costing
+  more than the gap, so after three failed review rounds on that one point the change stayed as
+  it was and `docs/MCP.md` states the limits as they are.
+- **The Alexa chain cache keys on host and path as written.** Refusing a query string or a `%` in
+  the path would change which URLs are accepted, for an endpoint Amazon calls; the cap of 16
+  bounds memory either way.
+- **No dependency version moved.** Every known advisory sits in dev, CI or release tooling and
+  none is reachable; a bump was justified by neither reach nor a test that could prove it here
+  (`addressable` needs a release run). The PR closes the places where a build could take a
+  version the lockfile does not record.
+- **No Actions cache in a job that holds secrets or a token that may write** (rule
+  `no-cache-in-trusted-job`). Any job that runs on `main` can save a cache entry, also with a
+  read-only token, and the release job unpacked a Flutter SDK and a gem directory from the cache
+  next to the signing secrets. The store jobs now download Flutter and install the gems from
+  `Gemfile.lock` on every run. The first six release runs after the merge: `plan` 23 s slower at
+  the median, `android` and `ios` within their run-to-run spread (numbers in the done doc). Rejected:
+  keeping the caches and checking what they hold (there is nothing to check a gem directory
+  against short of installing it again), and keys only the release job writes (the scope of a
+  cache is the branch, not the workflow). Jobs whose token may write count too, although none
+  uses a cache today: release's `web` job pushes the branch Vercel builds as production.
+- **`supabase-deploy.yml` stays as it is** (job 209's file), with what the review found in it:
+  the access token in the job's `env:`, no environment, and `supabase/setup-cli` running a `bun`
+  it restores from the Actions cache in that job. The three exceptions are entries in
+  `scripts/workflow-hardening.allow.json`, each limited to what it names (the two secrets, the
+  one action), so a third secret or another caching action there fails the lint gate. The fix
+  is written out in `docs/done/220-security-hardening.md`, "In files other jobs own".
+- **An allow-list entry lists what it covers.** The first version let an entry for a rule
+  without secrets cover its whole job. One model for all four rules (`secrets` or `actions`,
+  never both, stale names fail) is less code than the special case and closes it.
+- **The cache rule went into #421 instead of a fifth PR.** Both change the same check, its tests
+  and the same workflows; every merge here costs a rebase and a CI run of 20 to 34 minutes under
+  the merge lock, with six other jobs waiting for it.
+- **`pinned-deps` reads the functions' sources itself.** deno lint's `no-import-prefix` passes
+  `export ... from 'npm:...'`, a scheme in capitals and a pragma such as
+  `@jsxImportSource npm:preact@^10`, which Deno resolves like an import (review rounds 3 and 4
+  of #418, reproduced). The check fails the text `npm:<name>` or `jsr:<name>` anywhere in a
+  function's source, and a URL after `from` or `import` or in such a pragma. A parser would
+  also see the text in a comment as none; the pattern does not, and its message says to reword.
+  Not worth a parser: no file has such a text.
+- **The two checks claim a list of forms, not completeness.** Review rounds kept failing on one
+  more form the check did not catch, each time against a sentence that promised all of them
+  ("every caching form", "the one place a package comes from"). The cheap forms were closed, and
+  the PR texts, the rule rows and the done doc now list what fails and what is known to pass.

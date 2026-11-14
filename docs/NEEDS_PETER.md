@@ -1848,3 +1848,109 @@ the function's answers (`{"status":"sent","count":N}`, `empty`, `failed`), and
 (`{"enabled":true,"healthy":true}`). The workflow "Feedback digest watch" checks that URL daily
 and opens the issue "Feedback digest failed" when a run fails. The queries are in
 docs/FEEDBACK.md.
+
+## Job 220: repository settings that close what the security review found (2026-11-13)
+
+Job 220's code is merged and changes nothing by itself here: the scheduled jobs name the
+environment `ops`, but their secrets are still repository secrets. A repository secret is
+readable by a workflow file on any pushed branch (a branch copy of `backup.yml` with a `push`
+trigger once ran a full production dump that way, harmlessly, on `job/13b-db-backups`). An
+environment limited to `main` is not. Nothing indicates misuse, so no value needs rotating for
+this. Steps 1 to 3 are the ones that matter; the Engineering Lead can do them from the box (it
+has the database password). Details and evidence: `docs/done/220-security-hardening.md`.
+
+1. **Limit the environment `ops` to `main`.** It exists already (empty, no rules). GitHub,
+   Settings, Environments, `ops`, "Deployment branches and tags": "Selected branches and tags",
+   add `main`. No required reviewers: the jobs run on a schedule.
+2. **Move the two secrets into it,** environment first, then delete the repository one (the
+   environment's value wins while both exist):
+   ```
+   gh secret set SUPABASE_DB_PASSWORD --env ops -R trost-systems/snacklist      # asks for the value
+   gh secret delete SUPABASE_DB_PASSWORD -R trost-systems/snacklist
+   v="$(openssl rand -hex 32)"
+   printf '%s' "$v" | gh secret set REVENUECAT_DELETIONS_SECRET --env ops -R trost-systems/snacklist
+   supabase secrets set --project-ref jdwqrallbpdbshrdhenk REVENUECAT_DELETIONS_SECRET="$v"
+   unset v
+   gh secret delete REVENUECAT_DELETIONS_SECRET -R trost-systems/snacklist
+   ```
+   The deletions secret gets a new value because neither GitHub nor Supabase shows the old one.
+   Then run both once from `main`: `gh workflow run backup.yml` and
+   `gh workflow run revenuecat-delete.yml`. Both should end green; a failure opens the usual
+   issue. A copy of the old deletions secret kept elsewhere for `scripts/iap/promotional.ts`
+   (`reconcile --apply`, `grant --apply`) stops working with the new value: store the new one
+   there before `unset v`. Running the block again later, without the last line, is harmless.
+   Also delete `POSTHOG_PERSONAL_API_KEY` at repository level
+   (`gh secret delete POSTHOG_PERSONAL_API_KEY -R trost-systems/snacklist`): no workflow reads it
+   (the web build reads its own from the Vercel project).
+3. **The price drift check's secrets go into `ops` too.** `ASC_KEY_ID`, `ASC_ISSUER_ID`,
+   `ASC_KEY_P8` and `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` exist nowhere yet, which is why the daily
+   `price-drift.yml` run fails. When you create them (NEEDS_LEAD "Job 49", step 5), use
+   `gh secret set <NAME> --env ops`, not a repository secret. `SUPABASE_ACCESS_TOKEN` stays a
+   repository secret for now: `supabase-deploy.yml` names no environment yet (another job's
+   file; the follow-up is in `docs/done/220-security-hardening.md`, "In files other jobs own").
+4. **A ruleset for `main`** (Settings, Rules, Rulesets). `main` has no protection today: a
+   direct push skips `ci-ok` and deploys migrations and functions to production. Require a pull
+   request (0 approvals), require the status check `ci-ok`, block force pushes, restrict
+   deletions. Bypass list: the GitHub Actions app, because `public-release-record.yml` pushes the
+   release record straight to `main` with the workflow's token. Whether the settings page offers
+   that app as a bypass actor is not confirmed from here. If it does not, enforce only the
+   force-push and deletion rules, leave the pull request and status check rules off until the
+   record has another way in (a deploy key on the bypass list, or the record through a PR), and
+   tell the Engineering Lead. A dry run of `public-release-record.yml` does not test the bypass:
+   it stops before the push. The first real record after a public release does. If `main`
+   refuses it, the run fails with "the token may not be allowed to push to main"; the stores
+   already have the build by then, and the site shows the release once the rule is fixed and the
+   workflow has run again. `scripts/merge-pr.sh` keeps working: it rebase-merges a PR whose head
+   has `ci-ok`. The bot account is a repository admin and could edit a ruleset, and with the
+   Actions app on the bypass list a workflow whose token may write contents can still push to
+   `main`. So this stops mistakes and tokens that cannot push workflow files, not that token.
+   No ruleset for `release`: `release.yml` pushes that branch with the workflow's token, the
+   runbook pushes it by hand to recover, and `docs/DEPLOY.md` ("Web app") says why nothing may
+   cover it.
+5. **Secret scanning and alerts** (Settings, Advanced Security; free for a public repository):
+   turn on Secret Protection with push protection, Dependabot alerts and private vulnerability
+   reporting. Today a secret that gitleaks' rules miss is public before anything objects, and no
+   advisory for a dependency reaches anyone. Alerts are enough: "Dependabot security updates"
+   would also open a PR, with a full CI run, for each advisory, including the ones in build
+   tooling that this review looked at and left (`docs/done/220-security-hardening.md`).
+6. **Actions settings** (Settings, Actions, General): "Require approval for all external
+   contributors" for fork pull requests. Optionally allow only GitHub's own actions plus
+   `subosito/flutter-action@*`, `ruby/setup-ruby@*`, `supabase/setup-cli@*`,
+   `oven-sh/setup-bun@*` (setup-cli calls it), `denoland/setup-deno@*`,
+   `webfactory/ssh-agent@*` and `google-github-actions/auth@*`. The CI run of a PR that changes
+   `app/` or `supabase/` shows whether the first five are right (a docs-only PR skips the jobs
+   that use setup-cli). The last two are used only by `release.yml` and `certificates.yml`:
+   check them with `gh workflow run release.yml -f upload=false` (builds, signs and validates,
+   uploads nothing; if the plan says blocked because CI on `main` is still running, run it
+   again) before the next green CI on `main` starts a real release.
+   **Leave "Require actions to be pinned to a full-length commit SHA" off for now.** Every
+   `uses:` in this repo's files is pinned and the lint gate keeps it so, but the setting also
+   covers the actions an action calls, and `subosito/flutter-action` (9 uses) calls
+   `actions/cache@v5` by tag. With the setting on, those jobs would most likely be refused and
+   `ci-ok` would go red (GitHub's documentation says so; not tried on this repo).
+7. **Not a step, a warning: no required reviewer on the environment `release` as the workflow
+   stands.** `release.yml`'s `plan` job is in that environment too, and it runs after every green
+   CI on `main` (34 green release runs on 13 and 14 November up to 11:00 on the 14th, 17 of
+   which built for a store).
+   Each run would wait for your approval at `plan` and again at `ios` and `android`, and
+   TestFlight, Play internal and the web production push would stop being automatic. The same
+   holds for `ops`: a click per nightly run. A reviewer becomes worth it only once `plan` no
+   longer needs the environment.
+8. **One read-only look, now that #416 is deployed** (Supabase SQL editor). The migration sets
+   default privileges for the role that runs migrations. Locally that role owns every table; this
+   checks the same for production:
+   ```sql
+   select defaclrole::regrole, defaclobjtype, defaclacl
+   from pg_default_acl where defaclnamespace = 'public'::regnamespace;
+   select relowner::regrole, relkind, count(*)
+   from pg_class where relnamespace = 'public'::regnamespace and relkind in ('r', 'S') group by 1, 2;
+   ```
+   The second result names the owner of the tables (locally `postgres`; 54 tables and 3
+   sequences on #416's branch). In the first, that role's rows for tables (`r`) and sequences
+   (`S`) should list only itself and `service_role`, as they do locally:
+   `{postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres}` for tables and
+   `{postgres=rwU/postgres,service_role=rwU/postgres}` for sequences. The `supabase_admin` rows still
+   name `anon` and `authenticated`; they apply to tables that role creates, which migrations do
+   not. If the owner's rows still name `anon` or `authenticated`, tell the next job: a new table
+   would again start with every privilege granted, and only its own `revoke` (the convention)
+   would close it.
