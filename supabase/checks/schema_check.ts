@@ -10,14 +10,21 @@ const TESTS = 'supabase/tests';
 const NAME = /^(\d{14})_[a-z0-9_]+\.sql$/;
 
 /** Migrations on main are applied in production and never change (DECISIONS 31); new ones sort
- * after main's newest, because a deploy refuses a migration older than the remote's newest. */
-export function checkHistory(base: Migrations, tree: Migrations): Finding[] {
+ * after main's newest, because a deploy refuses a migration older than the remote's newest.
+ * `gained` are the migrations main got after this branch left it: the branch never had them, so
+ * it did not delete them (job 219: 12 jobs hit this finding). */
+export function checkHistory(
+  base: Migrations,
+  tree: Migrations,
+  gained: ReadonlySet<string> = new Set(),
+): Finding[] {
   const findings: Finding[] = [];
   const newest = [...base.keys()].sort().at(-1) ?? '';
   const seen = new Map<string, string>();
   for (const [file, sql] of base) {
     const now = tree.get(file);
     if (now === undefined) {
+      if (gained.has(file)) continue;
       findings.push({
         file,
         message:
@@ -419,8 +426,9 @@ export function checkMembershipReads(base: Migrations, tree: Migrations): Findin
 async function run(
   cmd: string,
   args: string[],
+  cwd = '.',
 ): Promise<{ ok: boolean; out: string; err: string }> {
-  const { success, stdout, stderr } = await new Deno.Command(cmd, { args }).output();
+  const { success, stdout, stderr } = await new Deno.Command(cmd, { args, cwd }).output();
   const text = new TextDecoder();
   return { ok: success, out: text.decode(stdout), err: text.decode(stderr) };
 }
@@ -451,12 +459,48 @@ async function baseMigrations(ref: string): Promise<Map<string, string>> {
   return base;
 }
 
+/** The migrations `ref` added after HEAD left it, apart from those the branch's own commits
+ * touched: a branch stacked on a PR that landed under another SHA had the file, so losing it
+ * is a deletion. None when git knows no merge base (CI's shallow clone of the merge commit,
+ * which has all of main's): then a missing one was deleted. */
+export async function gainedSince(ref: string, repository = '.'): Promise<Set<string>> {
+  const merge = await run('git', ['merge-base', ref, 'HEAD'], repository);
+  if (!merge.ok) return new Set();
+  const fork = merge.out.trim();
+  const paths = async (...args: string[]): Promise<string[]> => {
+    const listed = await run('git', [...args, '--', `${MIGRATIONS}/`], repository);
+    if (!listed.ok) throw new Error(`git ${args.join(' ')}: ${listed.err}`);
+    return listed.out.split('\n').filter(Boolean);
+  };
+  const added = await paths('diff', '--name-only', '--no-renames', '--diff-filter=A', fork, ref);
+  // --full-history: at a merge of main whose migrations equal main's, a plain git log follows
+  // main and leaves out the branch's own commits, a deletion among them. --diff-merges=separate:
+  // what a merge commit itself changed (a migration renamed while merging main) is listed against
+  // each parent. A plain log lists nothing for a merge, and -m follows log.diffMerges.
+  const own = new Set(
+    await paths(
+      'log',
+      '--format=',
+      '--name-only',
+      '--no-renames',
+      '--full-history',
+      '--diff-merges=separate',
+      `${fork}..HEAD`,
+    ),
+  );
+  return new Set(
+    added.filter((path) => !own.has(path)).map((path) => path.slice(MIGRATIONS.length + 1)),
+  );
+}
+
 if (import.meta.main) {
   const ref = Deno.args[0] ?? 'origin/main';
   const base = await baseMigrations(ref);
   const tree = await readDir(MIGRATIONS, /\.sql$/);
+  const gained = await gainedSince(ref);
+  const behind = [...gained].filter((f) => !tree.has(f));
   const findings = [
-    ...checkHistory(base, tree),
+    ...checkHistory(base, tree, gained),
     ...checkTables(tree, await readDir(TESTS, /\.test\.sql$/)),
     ...checkIgnores(tree),
     ...checkMembershipReads(base, tree),
@@ -475,6 +519,9 @@ if (import.meta.main) {
   for (const f of findings) console.error(`${MIGRATIONS}/${f.file}: ${f.message}`);
   if (findings.length > 0) Deno.exit(1);
   console.log(
-    `schema check: ${tree.size} migrations, ${added.length} new since ${ref}, no findings`,
+    `schema check: ${tree.size} migrations, ${added.length} new since ${ref}, no findings` +
+      (behind.length > 0
+        ? `; ${ref} has ${behind.length} more that this branch lacks: rebase before trusting the db gate`
+        : ''),
   );
 }

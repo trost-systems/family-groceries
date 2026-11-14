@@ -5,6 +5,7 @@ import {
   checkMembershipReads,
   checkTables,
   compat,
+  gainedSince,
   qualifiedName,
   statements,
 } from './schema_check.ts';
@@ -50,6 +51,127 @@ Deno.test('history: a migration on main that is edited or deleted fails', () => 
   assertEquals(found.length, 2);
   assertMatch(nth(found, 0), /^20261022150000_foundation\.sql: is on main and was modified/);
   assertMatch(nth(found, 1), /^20261022190000_more\.sql: is on main and was deleted/);
+});
+
+Deno.test('history: a migration main gained after the branch left it is not a deletion', () => {
+  const base = new Map([
+    ['20261022150000_foundation.sql', 'create table a ();'],
+    ['20261022190000_gained.sql', 'select 1;'],
+    ['20261022200000_dropped.sql', 'select 2;'],
+  ]);
+  const gained = new Set(['20261022190000_gained.sql']);
+  const tree = new Map([['20261022150000_foundation.sql', 'create table a ();']]);
+  const found = messages(checkHistory(base, tree, gained));
+  assertEquals(found.length, 1);
+  assertMatch(nth(found, 0), /^20261022200000_dropped\.sql: is on main and was deleted/);
+  // The branch's own migration still has to sort after the one it has not got yet.
+  const older = new Map([...tree, ['20261022180000_mine.sql', 'select 3;']]);
+  const sorts = messages(
+    checkHistory(base, older, new Set([...gained, '20261022200000_dropped.sql'])),
+  );
+  assertEquals(sorts.length, 1);
+  assertMatch(nth(sorts, 0), /^20261022180000_mine\.sql: sorts before 20261022200000_dropped\.sql/);
+});
+
+Deno.test('history: a gained migration the branch has with other content is modified', () => {
+  const base = new Map([['20261022190000_gained.sql', 'select 1;']]);
+  const tree = new Map([['20261022190000_gained.sql', 'select 2;']]);
+  const found = messages(checkHistory(base, tree, new Set(['20261022190000_gained.sql'])));
+  assertEquals(found.length, 1);
+  assertMatch(nth(found, 0), /^20261022190000_gained\.sql: is on main and was modified/);
+});
+
+Deno.test('history: what main gained is read from the merge base', async () => {
+  const dir = await Deno.makeTempDir();
+  using _ = { [Symbol.dispose]: () => Deno.removeSync(dir, { recursive: true }) };
+  const git = async (...args: string[]) => {
+    const identity = ['-c', 'user.name=t', '-c', 'user.email=t@example.com'];
+    const { success, stderr } = await new Deno.Command('git', {
+      args: [...identity, ...args],
+      cwd: dir,
+    }).output();
+    if (!success) throw new Error(`git ${args.join(' ')}: ${new TextDecoder().decode(stderr)}`);
+  };
+  const migration = async (name: string, sql = 'select 1;') => {
+    await Deno.mkdir(`${dir}/supabase/migrations`, { recursive: true });
+    await Deno.writeTextFile(`${dir}/supabase/migrations/${name}`, sql);
+    await git('add', '-A');
+    await git('commit', '-q', '-m', name);
+  };
+  // The checkout gained nothing from main, whatever the caller's log.diffMerges says.
+  const gainsNothingUnderAnySetting = async () => {
+    assertEquals([...await gainedSince('main', dir)], []);
+    for (const setting of ['off', 'combined', 'dense-combined']) {
+      await git('config', 'log.diffMerges', setting);
+      assertEquals([...await gainedSince('main', dir)], [], `log.diffMerges ${setting}`);
+    }
+    await git('config', '--unset', 'log.diffMerges');
+  };
+  await git('init', '-q', '-b', 'main');
+  await migration('20261022150000_foundation.sql');
+  await git('checkout', '-q', '-b', 'work');
+  await migration('20261022160000_mine.sql');
+  await git('checkout', '-q', 'main');
+  await migration('20261022170000_gained.sql');
+  // An edit on main is not a gain: only added files are.
+  await migration('20261022150000_foundation.sql', 'select 2;');
+  await git('checkout', '-q', 'work');
+  assertEquals([...await gainedSince('main', dir)], ['20261022170000_gained.sql']);
+
+  // A branch stacked on a PR that landed on main as another commit had that PR's migration:
+  // deleting or renaming it there is not "main gained it".
+  await git('checkout', '-q', '-b', 'stacked');
+  await migration('20261022180000_landed.sql');
+  await git('checkout', '-q', 'main');
+  await git('cherry-pick', 'stacked');
+  await git('checkout', '-q', 'stacked');
+  await git('rm', '-q', 'supabase/migrations/20261022180000_landed.sql');
+  await git('commit', '-q', '-m', 'deleted');
+  assertEquals([...await gainedSince('main', dir)], ['20261022170000_gained.sql']);
+
+  // The same deletion, then a merge of main, then the PR lands: the merge's migrations equal
+  // main's, where a plain git log follows main and skips the deletion.
+  await git('checkout', '-q', '-b', 'pr', 'main');
+  await migration('20261022190000_pr.sql');
+  await git('checkout', '-q', '-b', 'onpr');
+  await git('rm', '-q', 'supabase/migrations/20261022190000_pr.sql');
+  await git('commit', '-q', '-m', 'deleted');
+  await git('checkout', '-q', 'main');
+  await migration('20261022200000_later.sql');
+  await git('checkout', '-q', 'onpr');
+  await git('merge', '-q', '--no-edit', 'main');
+  await git('checkout', '-q', 'main');
+  await git('cherry-pick', 'pr');
+  await git('checkout', '-q', 'onpr');
+  await gainsNothingUnderAnySetting();
+
+  // A migration the branch got in a merge commit only (its own, renamed while it merged main):
+  // a plain git log lists nothing for a merge; --diff-merges=separate lists what the merge itself
+  // changed, and as two paths only without rename detection.
+  await git('checkout', '-q', '-b', 'renamer', 'main');
+  await migration('20261022210000_old.sql');
+  await git('checkout', '-q', 'main');
+  await migration('20261022220000_other.sql');
+  await git('checkout', '-q', 'renamer');
+  await git('merge', '-q', '--no-commit', 'main');
+  await git(
+    'mv',
+    'supabase/migrations/20261022210000_old.sql',
+    'supabase/migrations/20261022230000_new.sql',
+  );
+  await git('commit', '-q', '-m', 'merged main, renamed');
+  await git('checkout', '-q', 'main');
+  await git('merge', '-q', '--squash', 'renamer');
+  await git('commit', '-q', '-m', 'landed');
+  await git('checkout', '-q', 'renamer');
+  await gainsNothingUnderAnySetting();
+
+  await git('checkout', '-q', 'work');
+  await git('merge', '-q', '--no-edit', 'main');
+  assertEquals([...await gainedSince('main', dir)], []);
+  await git('checkout', '-q', '--orphan', 'unrelated');
+  await git('commit', '-q', '--allow-empty', '-m', 'no merge base');
+  assertEquals([...await gainedSince('main', dir)], []);
 });
 
 Deno.test('history: a new migration older than main newest, a bad name or a twin fails', () => {

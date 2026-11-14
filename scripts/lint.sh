@@ -67,4 +67,4 @@ log "schema check against $base"
 # migrations too, and the check's message is the one that says what to do.
 deno run --allow-read --allow-run=git,squawk supabase/checks/schema_check.ts "$base"
 log "schema check tests"
-(cd supabase/checks && deno fmt --check -q && deno lint -q && deno test -q --allow-read --allow-write --allow-run=squawk)
+(cd supabase/checks && deno fmt --check -q && deno lint -q && deno test -q --allow-read --allow-write --allow-run=squawk,git)

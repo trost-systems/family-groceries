@@ -1,7 +1,42 @@
 # shellcheck shell=bash
 # Shared helpers for scripts/*.sh and scripts/gates/*.sh. Source, don't run.
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-export PATH="${FLUTTER_DIR:-$HOME/flutter}/bin:$HOME/.deno/bin:$HOME/.local/bin:$PATH"
+
+# The Flutter that CI builds and tests with.
+ci_flutter_version() { sed -n 's/^ *FLUTTER_VERSION: *//p' "$REPO_ROOT/.github/workflows/ci.yml" 2>/dev/null | head -1; }
+
+# FLUTTER_DIR when set, else an SDK of CI's version next to the default one (~/flutter-<version>,
+# where a box keeps it while ~/flutter is older), else ~/flutter.
+flutter_dir() {
+  local beside
+  beside="$HOME/flutter-$(ci_flutter_version)"
+  if [[ -n ${FLUTTER_DIR:-} ]]; then
+    echo "$FLUTTER_DIR"
+  elif [[ -x $beside/bin/flutter ]]; then
+    echo "$beside"
+  else
+    echo "$HOME/flutter"
+  fi
+}
+PATH="$(flutter_dir)/bin:$HOME/.deno/bin:$HOME/.local/bin:$PATH"
+export PATH
+
+# The version a flutter command reports, empty when it cannot run.
+flutter_version_of() {
+  # `|| true`: without that flutter a gate's `set -e` would end it here, before its message.
+  { "$1" --version --machine 2>/dev/null || true; } | sed -n 's/.*"frameworkVersion": *"\([^"]*\)".*/\1/p' | head -1
+}
+# Every gate that runs Flutter starts with this. Another SDK than CI's still runs, but its
+# `pub get` resolves other packages into app/pubspec.lock and its analyzer has other rules: on
+# 2026-11-13 Flutter 3.47.8 changed 4 packages and found a lint error that 3.50.0 does not.
+require_ci_flutter() {
+  local want have
+  want="$(ci_flutter_version)"
+  have="$(flutter_version_of flutter)"
+  [[ $have == "$want" ]] && return 0
+  echo "$(basename -- "$0" .sh): flutter on PATH is ${have:-missing} ($(command -v flutter || echo none)), CI uses $want (.github/workflows/ci.yml): run scripts/install-flutter.sh (it adds ~/flutter-$want) or set FLUTTER_DIR to an SDK of that version" >&2
+  return 1
+}
 if command -v ruby >/dev/null; then PATH="$(ruby -e 'print Gem.user_dir')/bin:$PATH"; fi
 
 # Blue on a terminal, plain into a pipe or a file: `grep '^\[verify\] passed'` has to match.

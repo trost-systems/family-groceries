@@ -30,7 +30,7 @@ One instance per checkout: the ports come from your `supabase/config.toml` port 
 It goes from nothing to a signed-in household and is idempotent.
 
 1. It starts the stack (`supabase start`, which applies every migration to an empty database) unless it already runs.
-2. It builds the release web app when `app/` or CI's Flutter version (`FLUTTER_VERSION` in `.github/workflows/ci.yml`) changed. It refuses to build with any other Flutter version: set `FLUTTER_DIR` to an SDK of that version (`scripts/lib.sh` puts its `bin` first on PATH). The build takes about 80 s; a rerun with no change takes about 5 s.
+2. It builds the release web app when `app/` or CI's Flutter version (`FLUTTER_VERSION` in `.github/workflows/ci.yml`) changed. It refuses to build with any other Flutter version, as the gates do: `scripts/lib.sh` puts `FLUTTER_DIR` first on PATH, else `~/flutter-<that version>` when it exists, else `~/flutter`. The build takes about 80 s; a rerun with no change takes about 5 s.
 3. It serves the build on `http://127.0.0.1:<prefix>81` with `e2e/serve.mjs`.
 4. It seeds the scenario with `scripts/fg seed`.
 5. It signs the first member in through the login screen, reopens the app, and checks that the add field has focus and a seeded item shows.
@@ -161,7 +161,7 @@ How-to clips (GIF for emails, MP4/WebM for the site) of the same build: [snackli
 - The add sheet's note „✓ Hinzugefügt: …“ exists twice in the DOM (the note and a screen-reader announcement). Scope it to `addSheet(page, L)`.
 - Catalogue suggestions are German words in both UI languages. In English, type a prefix of a German word ("Ched" → „Cheddar“).
 - `fg` accepts port blocks 500 to 649. On the Hetzner runner `env.sh` sources `~/groceries-ops/env.hz` for PATH.
-- A host whose `~/flutter` is older than CI's version makes `launch.sh` stop with "flutter on PATH is …, CI builds with …". An older SDK would still build, but it rewrites `app/pubspec.lock` (so doctor never sees a matching build) and serves an app users don't get. Unpack the matching SDK somewhere of your own and set `FLUTTER_DIR`; never change a shared `~/flutter`.
+- A host whose `~/flutter` is older than CI's version makes `launch.sh` stop with "flutter on PATH is …, CI builds with …". An older SDK would still build, but it rewrites `app/pubspec.lock` (so doctor never sees a matching build) and serves an app users don't get. Unpack the matching SDK as `~/flutter-<version>` (found without any variable) or somewhere of your own with `FLUTTER_DIR` set; never change a shared `~/flutter`.
 - After a box reset Playwright's Chromium can be missing: `launch.sh` then stops at its sign-in check with "Executable doesn't exist at …/ms-playwright/…" while the stack and the server are up. Run `cd e2e && npx playwright install chromium`, then `launch.sh` again.
 - `/join/<code>` is the static invite page (`app/web/join/`, served by `e2e/serve.mjs` as on Vercel), not the app: click „Im Browser beitreten“ / "Join in the browser" to reach the app with the invite.
 - The local stack signs up without email confirmation, while the hosted project requires it (`features/sign-in.md`).
