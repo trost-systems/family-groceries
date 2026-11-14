@@ -76,7 +76,8 @@ reasons are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
   `docs/CI.md` explains CI.
 - `tool/hotspots/`: where jobs collide, measured: `history.py` (change counts and co-change on
   main), `conflicts.py` (conflicts in the job transcripts), `replay.py` (main's history of a file
-  replayed as rebases) and `e2e-duplicates.mjs` (helpers copied between e2e specs). Results:
+  replayed as rebases), `e2e-duplicates.mjs` (helpers copied between e2e specs) and `stale-head.py`
+  (lands refused as "behind main" right after a push). Results:
   `docs/hillclimb/fable-improvement-2026-11.md`.
 
 ## Conventions

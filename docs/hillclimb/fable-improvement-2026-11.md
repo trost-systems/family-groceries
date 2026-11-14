@@ -332,6 +332,8 @@ lead's standing instructions, for the 7 % of conflicts the driver leaves. Record
 | `ci.yml` with `verify.sh` | 1.00 | By design: `scripts/check-gates.sh` ties one CI job to one gate script. Job 221 owns iteration speed |
 | ARB and generated l10n | 73 commits, 2 replayed conflicts | Many edits, few collisions (keys are spread over the file). Nothing to fix |
 | `e2e/tests/helpers.ts` | 41 commits, 1 replayed conflict | Few collisions, and little to dedupe: 13 spare copies of helpers in the specs, 44 lines (below). Not done |
+| `merge-pr.sh` right after `push-pr.sh` | 17 lands in 16 jobs refused as "behind main" on GitHub's stale record of the head | PR 3 |
+| `scripts/gates/lint.sh` | 15 commits, 3 events in 1 job; a header sentence and a line per script test | Left: PR #420 edited it and was open until 14 November 09:09 (PR 3, below) |
 
 ### PR 2: the db gate finds its integration tests by pattern
 
@@ -408,3 +410,132 @@ files: 13 spare copies, 44 lines of the 11,741 in those files (`cat e2e/tests/*.
 that runs the whole e2e gate and takes a place in the merge queue for 44 lines, and
 `invite-loop.spec.ts` is in open PR #429. Left as it is; the script is there to see whether the
 number grows.
+
+### PR 3: merge-pr.sh waits for GitHub's record of the pushed head
+
+A land is `scripts/push-pr.sh && scripts/merge-pr.sh --wait <n>` in one hold of the merge lock.
+push-pr.sh rebases onto `origin/main` and pushes. merge-pr.sh then asked GitHub for the PR's head
+(`gh pr view --json headRefOid`), and for some seconds after a push that record still names the
+head before it. The old head is not on top of main, so merge-pr.sh stopped with "is behind main;
+run scripts/push-pr.sh", the lock was released, and the land went back to the end of the queue.
+
+- `tool/hotspots/stale-head.py ~/groceries-ops/jobs` (14 November, 07:05, 211 jobs with
+  transcripts): 17 pushes in 16 jobs were refused that way in the same tool result as the push.
+  That the record lagged is inferred from the order of the two lines, not read from GitHub.
+  Review 1 checked the other reading, a main that moved between the two scripts: each of the 17
+  pushed commits has its parent on main, and main's next commit came after the refusal. 30 more
+  "behind main" results in 17 jobs have no push before them (main had moved, two separate
+  commands, a log read again, or this job's own test output) and are not counted.
+- This job's PR 1 was one of the 17: queued at 23:09, at the lock at 01:40, pushed `6845602d`,
+  refused right after the push, back to the queue (2 h 31 min for nothing).
+- Jobs had started to work around it one by one. Of the 9 other job directories with a land
+  script in `/tmp` on hz that morning, 4 had a `sleep 20` between the two scripts (jobs 201,
+  208, 219 and 220). Job 219's also retried on "is behind main"; that the other sleeps were for
+  the record is inferred, their scripts do not say. Scratch files, not versioned: seen, not
+  reproducible later.
+
+Now merge-pr.sh takes the head from the branch (`git fetch origin <branch>`, `FETCH_HEAD`) and
+waits until the record names it: 5 s between two looks, 24 times (2 min), then it stops with a
+message that says what to check. With the record current, as in every later run, the loop ends
+at its first look. Nothing else in the script changed: the checks on the head, the wait for
+`ci-ok` and `gh pr merge --match-head-commit` are as before, now on the branch's head.
+
+`scripts/landing-test.sh` (lint gate) has three cases against its fake `gh`: a record that
+names the old head for two looks (the PR merges, after two 5 s sleeps), one that never follows
+(exit 1 after 24 sleeps, nothing merged), and a main that moved after the push with the record
+current (still "is behind main", no sleep, nothing merged; no case covered that refusal
+before). Six mutants of merge-pr.sh each fail it: main's script as it was, the head read from
+the record again, giving up after 2 looks, never giving up, a 1 s sleep, and no check for
+"behind main". The test ran 5.4 to 7.1 s with the three cases and 3.8 to 4.0 s before them
+(three runs each, at different times on a box whose load changes: about two seconds more).
+
+Limits: how long the record lags was not measured (the 20 s sleeps of the other jobs worked for
+them). The wait covers the head only. A description edited after the push is still refused, as
+before. Whether `gh pr checks` can show the old head's `ci-ok` for a moment after the record
+names the new head was not tested; `gh pr merge --match-head-commit` names the head either way.
+
+Two more places where lands meet, measured and left:
+
+- `scripts/gates/lint.sh`: one header sentence names every script test and one line per test
+  runs it, so two jobs with a new test conflict twice. 15 commits on main, 3 conflict events in
+  1 job in the transcripts (job 219, whose land script then redid its edit of the file by
+  itself), and this job's PR 1 met #423's test in the same sentence on 14 November. The tests
+  have no common name (`landing-test.sh`, `release/test.sh`, `ci/download-test.sh`), so a
+  pattern as in PR 2 needs renames first. PR #420 edited the file and was open until 09:09 on
+  14 November, when this job's last PR was reviewed; not done, recorded in
+  `docs/NEEDS_LEAD.md`.
+- The merge queue itself. A land holds the lock from its push to the merge, so through one CI
+  run. Between 13 November 23:12 and 14 November 06:40 main took 17 commits, a median 25 min
+  apart, with jobs waiting all night; the last 26 green CI runs on PRs took a median 23.8 min
+  from creation to green (2 min for a docs-only PR, 49.5 for one with a rerun). The queue moves
+  at one CI run per land. Changing that (CI before the lock, or a merge queue on GitHub) is the
+  lead's design and no refactor; the number is here for it.
+
+### Landing and totals, 2026-11-14
+
+| PR | Review rounds | Rebases that stopped | CI on the landed head | On main |
+| --- | --- | --- | --- | --- |
+| 1, #426: merge driver `append-log` | 7 (0 to 6: six FIX, then PASS) | 1, in `scripts/gates/lint.sh` | 26 min, first attempt | `fe56ff6e`, 14 November 08:17 |
+| 2, #438: db gate by pattern | 3 (FIX, FIX, FIX on one clause, then PASS) | 2, both in the list it removes (#405, #431) | 31 min, first attempt (33 min on the head before it, `7eaff830`) | `5c83230d`, 14 November 12:16 |
+| 3: merge-pr.sh waits for the record | 3 (FIX, PASS, and PASS on the closing docs) | 0 | in the job's done summary | in the job's done summary |
+
+PR 2's own CI shows what its section left open: the db job on its landed head (`5642a208`, run
+43586832198) ran the pattern's 20 files in path order, 128 passed, 0 failed, 27 s, the same
+128 pairs of file and test name as the list's run on `055d33ec`. So did the run on the head
+before it (`7eaff830`, run 43574486351, 30 s).
+
+Every review ran on `claude-fable-5-2`, as did the build. No review found a change in what
+the app or a gate does beyond what its PR says; the must-fixes were three in PR 1's review 0
+(the driver's guards), none after.
+
+**PR 1's way to main** took 9 h 8 min from its PASS (queued at the merge lock at 23:09 on 13
+November) to the merge at 08:17:
+
+- 2 h 31 min in the queue, then the push and the refusal on GitHub's stale record (PR 3).
+- 4 h 55 min in which nobody queued it again: the job was stopped by its usage limit from 23:37
+  to 06:32, and the land script had ended at 01:41.
+- 1 h 16 min for the second try, 36 min of it the wait for the Mac's lock, which was not
+  reachable, and 40 min behind two other lands (#431, and a try of #420 that failed in CI).
+- 26 min for CI (run 43568327834, green at the first attempt), inside the lock.
+
+The driver worked on its own PR. Before it was on main, this job's worktree had it through a
+scratch entry in the clone's config (removed after the merge). The last rebase, from `95316b50`
+onto `b97deee7`, met job 225's new section at the end of `docs/DECISIONS.md`: plain git stops
+there (`git merge-tree` in a clone without the driver), the land's rebase did not, and main has
+both sections, job 225's first. The hand rebase before it stopped once, in
+`scripts/gates/lint.sh` on #423's test, and not in the logs.
+
+It worked a second time from main, on PR 2's last rebase (from `86d5d8c5` onto `f80960a7`,
+inside the lock at 11:46). Main had a new section at the end of `docs/DECISIONS.md` (job 225's
+review 0), where PR 2 adds its own. Plain git stops there (`git merge-tree
+--merge-base=86d5d8c5 f80960a7 7eaff830` in a clone without the driver); `push-pr.sh` ran
+through and pushed. A stop would have cost that turn at the lock.
+
+**The baseline for a later rerun.** `tool/hotspots/conflicts.py ~/groceries-ops/jobs
+218-fable-hotspot-refactor` at 08:22 on 14 November, five minutes after the driver reached main:
+168 conflict events in 210 jobs, 115 of them in the logs alone, 86 jobs with a conflict in a log
+(145, 102 and 79 of 198 jobs at 20:51 the evening before). What the driver saves is the growth
+of the 115 from here on; not measurable yet. Clones that have not run `push-pr.sh` from a branch
+with PR 1 still stop as before.
+
+**Cost of the whole job**, measured at 11:50 on 14 November (PR 3's own land is not in
+it):
+
+- Wall time: 16 h 3 min from the start at 19:47 on 13 November, 6 h 55 min of it stopped by the
+  usage limit. Most of the rest of the second day was waiting for the merge lock and CI.
+- Tokens, from the usage fields of the transcripts, each message id counted once, every model
+  message on `claude-fable-5-2` (the two other entries are the harness's limit notices, without
+  tokens): the main session wrote 1.56 M tokens to the cache, read 46.6 M from it and put out
+  532 k; the 15 subagent runs (three evidence searches, the reviews; a
+  reviewer asked again counts once) wrote 2.47 M, read 49.1 M and put out 678 k. Uncached
+  input is about 1,000 tokens in each.
+- Gates: the lint gates (`scripts/verify.sh --only gitleaks,lint,changelog,nexus`) ran before
+  every push, 1.5 to 2 min each. The db gate did not run locally for PR 2's final base (no
+  memory for a second stack on 14 November); CI's db job ran it.
+- Flakes: none in this job's CI runs, each green at its first attempt.
+- Failures: one land lost to the stale record (above); one usage-limit stop; a rebase of PR 2
+  twice into the list it removes; and PR 2's first turn at the lock, which ended without a
+  merge. Its CI run (43574486351) took 33 min, 33 of them the iOS job, and `merge-pr.sh --wait`
+  gives up after 30. The run turned green 3 min later; the merge had to queue for the lock
+  again (2 h 5 min, behind five other lands). By then main had moved, so the second turn was
+  one more push and CI run (43586832198).

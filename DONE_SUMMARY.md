@@ -763,3 +763,15 @@ Follow-ups from job 184's post-merge review. Merged as c6c17cf9 (#410, https://g
 - Not touched (brief): the „Pausiert: braucht Snacklist Premium“ line on Kurzbefehl tokens (Peter's copy call before lock-on), UI copy, paywall, flags, legal, store, job 182.
 
 Opus review PASS, no must-fix; its nice-to-haves were applied before merge. Changelog `none`: nothing users see. Ships with the next green main build on TestFlight and Play internal (the voice function is live: supabase-deploy for c6c17cf9 succeeded), no flag. Noticed, not fixed: other merged changelog items on main still say Hummlist; rewords.json can fix them if Peter wants that before the first public release.
+
+## Job 218: where jobs collide, measured, and three small fixes (2026-11-14)
+
+Evidence first (`tool/hotspots/`, results in `docs/hillclimb/fable-improvement-2026-11.md`): 115 of the 168 merge conflicts in the job transcripts sat only in the logs every job appends to, and 17 lands were refused as "behind main" right after their own push. Three PRs, none changes what the app or a gate does:
+
+- **Appended log sections merge themselves** (#426, on main as fe56ff6e): the `append-log` merge driver for `docs/DECISIONS.md`, `docs/NEEDS_LEAD.md`, `docs/NEEDS_PETER.md`, `DONE_SUMMARY.md` and the hillclimb log. push-pr.sh installs it.
+- **The db gate finds its integration tests by pattern** (#438, on main as 5c83230d): a new `*_integration_test.ts` runs without a line in `scripts/gates/db.sh`, the list two PRs in a row had collided in. Same 128 tests in CI as before.
+- **merge-pr.sh takes the PR's head from the branch** (#446, this entry's commit) and waits up to 2 min for GitHub's record to follow, so `push-pr.sh && merge-pr.sh --wait` works in one hold of the merge lock. 17 lands in 16 jobs had lost their turn to that stale record (`tool/hotspots/stale-head.py`).
+
+Fable review PASS on each (`claude-fable-5-2`). Changelog `none`. No flag; nothing for Peter. Skipped targets (the list cluster and `more_screen.dart` with the router: in-flight jobs own them; the feature files; `scripts/gates/lint.sh`) are in the hillclimb doc with their numbers, and `docs/NEEDS_LEAD.md` has two things left for the lead.
+
+Details: [docs/done/218-fable-hotspot-refactor.md](docs/done/218-fable-hotspot-refactor.md)

@@ -11,6 +11,8 @@
 #   exits 2: wait for ci-ok on the new head, then rerun. That costs a second CI run.
 #   If main moved since the push, the head is no longer on top of main: rerun
 #   scripts/push-pr.sh (one rebase, one push, one CI run), then this.
+#   Run right after a push, it waits (up to 2 min) until GitHub's record of the PR names the
+#   pushed head.
 #   If the PR description changed since that push, it stops: rerun scripts/push-pr.sh, which
 #   lands the current description.
 #   --dry-run checks everything and stops before the merge.
@@ -38,10 +40,24 @@ wait_minutes=$((10#$wait_minutes))
 
 cd "$REPO_ROOT"
 branch="$(gh pr view "$PR" --json headRefName -q .headRefName)"
-head="$(gh pr view "$PR" --json headRefOid -q .headRefOid)"
 title="$(gh pr view "$PR" --json title -q .title)"
 subject="$title (#$PR)"
-git fetch -q origin main "$branch"
+git fetch -q origin main
+git fetch -q origin "$branch"
+head="$(git rev-parse FETCH_HEAD)"
+# The head is what the branch holds. For some seconds after a push GitHub's record of the PR still
+# names the head before it, and the checks and the merge go by that record: wait until it follows.
+# Read from the record, a head pushed a moment ago looked "behind main" (17 lands, job 218).
+for ((try = 0; ; try++)); do
+  recorded="$(gh pr view "$PR" --json headRefOid -q .headRefOid)"
+  [[ $recorded == "$head" ]] && break
+  if [[ $try == 24 ]]; then
+    echo "GitHub names $recorded as #$PR's head, 2 min after $branch was read as $head; rerun once \`gh pr view $PR --json headRefOid\` shows the branch's head" >&2
+    exit 1
+  fi
+  [[ $try == 0 ]] && log "GitHub names ${recorded:0:8} as #$PR's head, $branch is at ${head:0:8}: waiting for its record"
+  sleep 5
+done
 
 if [[ "$(git merge-base origin/main "$head")" != "$(git rev-parse origin/main)" ]]; then
   echo "$branch is behind main; run scripts/push-pr.sh on it (rebases and squashes), wait for ci-ok, then rerun" >&2
