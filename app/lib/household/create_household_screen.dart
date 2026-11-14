@@ -108,11 +108,11 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
       // The error shows only under the field (Peter E1). From the button
       // below the store choices the field is scrolled away and, in the lazy
       // list, not even built: focus alone would not bring it back.
-      await _scroll.animateTo(
-        0,
-        duration: hlMotion(context, HlDuration.short),
-        curve: HlEasing.standard,
-      );
+      await hlScrollTo(context, _scroll.position, 0);
+      // On web, focus asked for in the tap's frame ended on the page, not
+      // the field (typing went nowhere); after that frame's timers it lands.
+      await WidgetsBinding.instance.endOfFrame;
+      await Future<void>.delayed(Duration.zero);
       if (mounted) {
         _nameFocus.requestFocus();
       }
@@ -183,6 +183,11 @@ class _CreateHouseholdScreenState() extends State<CreateHouseholdScreen> {
                     ? l10n.householdNameHintFurther
                     : null,
               ),
+              onChanged: (_) {
+                if (_invalidName) {
+                  setState(() => _invalidName = false);
+                }
+              },
               onSubmitted: (_) => unawaited(_create()),
             ),
           ),

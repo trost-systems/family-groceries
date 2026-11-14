@@ -834,3 +834,10 @@ Peter's pick from job 227's round 2 (t861u), built in Flutter behind the new Pos
 - More's household page still has "Nach oben" and "Nach unten". The brief changed only the sheet.
 - On the web, screen readers can't reorder. The engine has no custom actions there.
 - With the flag on, the total no longer stays in view while a price is being edited. It is a list row, which is what the brief asked for. Worth raising when the bottom area is revisited.
+
+## Job 231 review 0: reduced motion and focus on „Neuer Haushalt“ (2026-11-14)
+
+Follow-up to #447 (already merged) for review 0's must-fix. Under reduced motion, the scroll back to the name field threw: an assert in debug and a `LateInitializationError` on release web, and the field was never focused. `hlScrollTo` (`app/lib/design/motion.dart`) now jumps when there is no motion. The create screen and the list tabs (`list_tabs.dart`, the same bug since before) use it, and a new ast-grep rule, `scroll-animation-through-hl-scroll-to`, stops the pattern. From the review's nice-to-haves: the field now gets the cursor after an empty submit on the web at 844 px too (focus is asked for after the frame's timers), typing clears the error, and the journey checks that typing lands.
+
+- Tests: new widget tests for the create screen with animations off (no exception, one error, field focused), for typing clearing the error, and for the list tabs at 358 px with animations off. All three fail on main and pass now; 1068 list and household tests pass. The rule flags both call sites on main.
+- Web build (`journeys/new-household-empty-name.mjs`, now with `--reduced-motion` and a typing check): 24 of 24 drives pass on the fix (de, en, 844 and 560 px, with and without reduced motion, three each; one run failed at the sign-in screen and passed on four reruns). On main at 844 px typing reaches nothing; at 560 px with reduced motion the error stays after typing.

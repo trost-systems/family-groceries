@@ -1,0 +1,19 @@
+id: scroll-animation-through-hl-scroll-to
+snapshots:
+  "Future<void> top() async {\n  await _scroll.animateTo(0, duration: hlMotion(context, HlDuration.short), curve: HlEasing.standard);\n}\n":
+    labels:
+    - source: "_scroll.animateTo(0, duration: hlMotion(context, HlDuration.short), curve: HlEasing.standard)"
+      style: primary
+      start: 35
+      end: 128
+  "void reveal() {\n  unawaited(\n    position.animateTo(\n      to,\n      duration: hlMotion(context, HlDuration.short),\n      curve: HlEasing.standard,\n    ),\n  );\n}\n":
+    labels:
+    - source: |-
+        position.animateTo(
+              to,
+              duration: hlMotion(context, HlDuration.short),
+              curve: HlEasing.standard,
+            )
+      style: primary
+      start: 33
+      end: 153

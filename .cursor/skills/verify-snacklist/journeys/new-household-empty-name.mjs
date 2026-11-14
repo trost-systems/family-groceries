@@ -1,10 +1,12 @@
 // Feature household-invites, sub-feature switcher: „Neuer Haushalt“ submitted with an empty name
 // from the button below the store chips. Proves the list scrolls back to the name field, the error
-// shows once (under the field, not again above the button), and no household is made.
+// shows once (under the field, not again above the button), typing lands in the field and clears
+// it, and no household is made.
 //
-//   node journeys/new-household-empty-name.mjs <evidence dir> [--lang de|en] [--height 560]
+//   node journeys/new-household-empty-name.mjs <evidence dir> [--lang de|en] [--height 560] [--reduced-motion]
 //
-// A short --height puts the field out of view at the button.
+// A short --height puts the field out of view at the button; --reduced-motion jumps instead of
+// scrolling (an animation of zero length threw before job 231's review fix).
 import process from 'node:process';
 import { apiAs, capture, instance, logger, member, openApp, signIn } from '../helpers/lib.mjs';
 
@@ -12,7 +14,8 @@ const [dir, ...rest] = process.argv.slice(2);
 const opt = (name, def) => (rest.includes(`--${name}`) ? rest[rest.indexOf(`--${name}`) + 1] : def);
 const lang = opt('lang', 'de');
 const height = Number(opt('height', 844));
-if (!dir) throw new Error('usage: new-household-empty-name.mjs <evidence dir> [--lang de|en] [--height px]');
+const still = rest.includes('--reduced-motion');
+if (!dir) throw new Error('usage: new-household-empty-name.mjs <evidence dir> [--lang de|en] [--height px] [--reduced-motion]');
 
 const log = logger(dir);
 const inst = instance();
@@ -26,11 +29,12 @@ const households = async () => {
 const { browser, page, L, errors } = await openApp(inst, { lang, viewport: { width: 390, height }, videoDir: dir });
 let failed = null;
 try {
+  if (still) await page.emulateMedia({ reducedMotion: 'reduce' });
   await signIn(page, L, user);
   const before = await households();
   const { data: shown, error } = await api.from('households').select('name').eq('id', user.householdId).single();
   if (error) throw error;
-  log(`signed in as ${user.handle} (${lang}), in ${before} households`);
+  log(`signed in as ${user.handle} (${lang}${still ? ', reduced motion' : ''}), in ${before} households`);
 
   await page.getByRole('button', { name: new RegExp(`^${shown.name}(\\s|$)`) }).click();
   await page.getByRole('heading', { name: L('householdsTitle') }).waitFor({ timeout: 10_000 });
@@ -64,10 +68,18 @@ try {
   const mentions = tree.split('\n').filter((l) => l.includes(message));
   log(`„${message}“: ${texts} visible text(s); in the ARIA tree: ${mentions.map((l) => l.trim()).join(' | ')}`);
   log(`name field ${fieldBox ? `on screen at y=${Math.round(fieldBox.y)}` : 'not in the page'}`);
+  await page.keyboard.type('Abc');
+  await page.waitForTimeout(500);
+  const typed = await field.inputValue();
+  const left = await page.getByText(message, { exact: true }).count();
+  log(`typed "Abc" without a click: the field holds "${typed}", the error shows ${left} times`);
+  await capture(page, dir, '03-typed');
   const after = await households();
   log(`database: in ${after} households`);
   if (texts !== 1) throw new Error(`the error shows ${texts} times, not once`);
   if (!fieldBox || fieldBox.y < 0 || fieldBox.y + fieldBox.height > height) throw new Error('the name field is not on screen after the submit');
+  if (typed !== 'Abc') throw new Error(`typing after the submit did not reach the field (it holds "${typed}")`);
+  if (left !== 0) throw new Error('the error stays after typing a name');
   if (after !== before) throw new Error('an empty name made a household');
   if (errors.length) throw new Error(`page errors: ${errors.join('; ')}`);
 } catch (error) {
