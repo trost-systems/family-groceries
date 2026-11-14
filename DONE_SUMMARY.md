@@ -751,3 +751,15 @@ The field theme puts every field's helper, error and counter `HlSpace.s2` past t
 ## Job 210: Firefox keeps the add field after an add by Enter (2026-11-13)
 
 In Firefox the add field no longer loses its focus after an add by Enter: on web it has no `onSubmitted`, so `EditableText` no longer restarts the text connection, whose deferred engine blur landed after the refocus. `wasm-boot.spec.ts` adds two items in a row by Enter in Chromium, WebKit and Firefox again (CI 10x: 60/60 Firefox and Chromium, 30/30 WebKit). Merged as ab93915a (#409). Details: [docs/done/210-firefox-enter-focus.md](docs/done/210-firefox-enter-focus.md).
+
+## Job 213: Siri-free hardening before the integration lock (2026-11-13)
+
+Follow-ups from job 184's post-merge review. Merged as c6c17cf9 (#410, https://github.com/trost-systems/snacklist/pull/410).
+
+- **`/voice` refuses OAuth tokens.** An OAuth client's token (MCP, AI assistants, the Alexa link) now gets 401 `unauthorized` from the voice function, before any split, add or read, so a client the integration lock pauses can't add through `/voice` instead. The app's session, the Siri credential and personal access tokens still work; a Shortcut token stays free on `/voice` by design (DECISIONS "Job 184/213"). Proof: `voice/handler_test.ts` (fails without the fix: 200 instead of 401), and `e2e/tests/integration-lock.spec.ts` in CI with the lock on (the Alexa link's real OAuth token gets 401, nothing added).
+- **PURCHASES.md:** the integration gate's callers are MCP and the API (`Integration` is `'mcp' | 'api'`).
+- **Play price guard:** `scripts/iap/google_product.ts --apply` exits 2 before any request unless `--confirm-price` equals the base price (149.99 EUR); `google_product_test.ts`, PURCHASES.md "Store setup". No store script was run with `--apply`; no store or console was touched.
+- **Changelog reword:** new `releases/changelog/rewords.json` (docs/CHANGELOG.md, "Rewording an item on main") rewords one merged item by commit and place in its note. The held integration-lock item (#187) now says only that access for AI assistants is part of Snacklist Premium; it keeps its hold. A dry-run draft over main differs from before only in that item. PAYWALL_RELEASE.md 6.5 points at it.
+- Not touched (brief): the „Pausiert: braucht Snacklist Premium“ line on Kurzbefehl tokens (Peter's copy call before lock-on), UI copy, paywall, flags, legal, store, job 182.
+
+Opus review PASS, no must-fix; its nice-to-haves were applied before merge. Changelog `none`: nothing users see. Ships with the next green main build on TestFlight and Play internal (the voice function is live: supabase-deploy for c6c17cf9 succeeded), no flag. Noticed, not fixed: other merged changelog items on main still say Hummlist; rewords.json can fix them if Peter wants that before the first public release.
