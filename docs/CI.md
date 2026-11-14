@@ -251,6 +251,21 @@ If `main` moved after your last push, the commit is no longer on top of
 `main`. merge-pr.sh then stops and says so. Run `scripts/push-pr.sh` again
 (one rebase, one push, one CI run), then merge-pr.sh.
 
+That rebase does not stop when the only overlap is a section both sides
+appended to one of the logs every job writes (`docs/DECISIONS.md`,
+`docs/NEEDS_LEAD.md`, `docs/NEEDS_PETER.md`, `DONE_SUMMARY.md`, listed in
+`.gitattributes`). The merge driver `scripts/merge-append-log.sh` keeps both
+sections, main's first; the rebase stores its command in the clone's git
+config (`install_merge_driver` in `scripts/lib.sh`), since git reads a
+driver's command only from there. It leaves a conflict as before when a side
+edits existing lines, when an entry is there twice (a section of the PR that
+main already holds), or when the PR's text continues an older section next to
+a section main added. In those cases, and where the script is missing or
+fails, the stored command merges with `git merge-file`, as git does without a
+driver. `scripts/merge-append-log-test.sh` (lint gate) covers it. GitHub runs no
+merge drivers, so such a PR still shows as conflicting until the next
+`scripts/push-pr.sh`.
+
 A PR pushed with plain `git push` still lands the old way: merge-pr.sh
 squashes it, force-pushes, exits 2, and merges when rerun after `ci-ok`. That
 costs a second CI run. The pre-push hook (`.githooks/pre-push`) warns when a
