@@ -783,3 +783,9 @@ An evidence-first review of the database policies and grants, the edge functions
 ## Job 235: Siri AI app actions on the roadmap (2026-11-14)
 
 Docs only (#449). `docs/PRODUCT_FEATURE_MAP.md` has a new row under "Planned (decided)": Siri AI app actions (App Intents), slug `siri-ai-app-actions`, from Peter's t871u. Candidate actions are add, read and tick. Timing: the build starts about 1 to 3 months before Siri AI reaches EU users, or before a US launch, whichever comes first, and not before. The tier is Free, because Siri stays free. The row cites the VGV post, the state of the preview and the App Intents that native Siri already ships. `docs/DECISIONS.md` ("Job 235") records the tier call. Changelog `none`, no flag, no TestFlight change. Open: the lead adds the same row to the living Page, which the runner can't edit. Verified: `scripts/verify.sh --only lint,changelog` passed, and CI (`ci-ok`) passed before the merge.
+
+- Job 230, subtotals per store, five prototypes ST1 to ST5 on the round 2 sandbox (draft #414): [docs/done/230-store-subtotals-prototypes.md](docs/done/230-store-subtotals-prototypes.md)
+
+## Job 238: one page per prototype round (2026-11-14)
+
+The list-declutter prototypes (draft #414) now have an overview at `/` and one page per round (`st/`, `ss-bb/`, `round1/`), each with only its own buttons; old links forward. Preview `family-groceries-design-3uyoj9dfw` (SSO, share link from the lead; `6ev8d49kf` superseded). Review 0 addressed (PR body preview, flaky LD5 check, comparing line on a phone, static titles). Details: [docs/done/238-split-prototype-pages.md](docs/done/238-split-prototype-pages.md)

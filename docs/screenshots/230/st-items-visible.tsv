@@ -1,0 +1,73 @@
+data	text	lang	theme	where	today	R2	ST1	ST2	ST3	ST4	ST5
+one	100	de	light	top	3	6	6	6	6	6	6
+one	100	de	light	first steps hidden	7	9	9	9	9	9	9
+one	100	de	dark	top	3	6	6	6	6	6	6
+one	100	de	dark	first steps hidden	7	9	9	9	9	9	9
+one	100	en	light	top	3	6	6	6	6	6	6
+one	100	en	light	first steps hidden	7	9	9	9	9	9	9
+one	100	en	dark	top	3	6	6	6	6	6	6
+one	100	en	dark	first steps hidden	7	9	9	9	9	9	9
+one	130	de	light	top	3	5	5	5	5	5	5
+one	130	de	light	first steps hidden	7	9	9	9	9	9	9
+one	130	de	dark	top	3	5	5	5	5	5	5
+one	130	de	dark	first steps hidden	7	9	9	9	9	9	9
+one	130	en	light	top	3	5	5	5	5	5	5
+one	130	en	light	first steps hidden	7	9	9	9	9	9	9
+one	130	en	dark	top	3	5	5	5	5	5	5
+one	130	en	dark	first steps hidden	7	9	9	9	9	9	9
+one	160	de	light	top	2	4	4	4	4	4	4
+one	160	de	light	first steps hidden	7	9	9	9	9	9	9
+one	160	de	dark	top	2	4	4	4	4	4	4
+one	160	de	dark	first steps hidden	7	9	9	9	9	9	9
+one	160	en	light	top	2	4	4	4	4	4	4
+one	160	en	light	first steps hidden	7	9	9	9	9	9	9
+one	160	en	dark	top	2	4	4	4	4	4	4
+one	160	en	dark	first steps hidden	7	9	9	9	9	9	9
+three	100	de	light	top	3	6	5	6	6	6	6
+three	100	de	light	first steps hidden	6	8	8	7	8	8	8
+three	100	de	dark	top	3	6	5	6	6	6	6
+three	100	de	dark	first steps hidden	6	8	8	7	8	8	8
+three	100	en	light	top	3	6	5	6	6	6	6
+three	100	en	light	first steps hidden	6	8	8	7	8	8	8
+three	100	en	dark	top	3	6	5	6	6	6	6
+three	100	en	dark	first steps hidden	6	8	8	7	8	8	8
+three	130	de	light	top	2	5	5	5	5	5	5
+three	130	de	light	first steps hidden	6	8	8	7	8	8	8
+three	130	de	dark	top	2	5	5	5	5	5	5
+three	130	de	dark	first steps hidden	6	8	8	7	8	8	8
+three	130	en	light	top	2	5	5	5	5	5	5
+three	130	en	light	first steps hidden	6	8	8	7	8	8	8
+three	130	en	dark	top	2	5	5	5	5	5	5
+three	130	en	dark	first steps hidden	6	8	8	7	8	8	8
+three	160	de	light	top	2	4	4	4	4	4	4
+three	160	de	light	first steps hidden	6	8	7	7	8	8	8
+three	160	de	dark	top	2	4	4	4	4	4	4
+three	160	de	dark	first steps hidden	6	8	7	7	8	8	8
+three	160	en	light	top	2	4	4	4	4	4	4
+three	160	en	light	first steps hidden	6	8	7	7	8	8	8
+three	160	en	dark	top	2	4	4	4	4	4	4
+three	160	en	dark	first steps hidden	6	8	7	7	8	8	8
+mixed	100	de	light	top	3	6	5	6	6	6	6
+mixed	100	de	light	first steps hidden	6	8	8	7	8	8	8
+mixed	100	de	dark	top	3	6	5	6	6	6	6
+mixed	100	de	dark	first steps hidden	6	8	8	7	8	8	8
+mixed	100	en	light	top	3	6	5	6	6	6	6
+mixed	100	en	light	first steps hidden	6	8	8	7	8	8	8
+mixed	100	en	dark	top	3	6	5	6	6	6	6
+mixed	100	en	dark	first steps hidden	6	8	8	7	8	8	8
+mixed	130	de	light	top	2	5	5	5	5	5	5
+mixed	130	de	light	first steps hidden	6	8	8	7	8	8	8
+mixed	130	de	dark	top	2	5	5	5	5	5	5
+mixed	130	de	dark	first steps hidden	6	8	8	7	8	8	8
+mixed	130	en	light	top	2	5	5	5	5	5	5
+mixed	130	en	light	first steps hidden	6	8	8	7	8	8	8
+mixed	130	en	dark	top	2	5	5	5	5	5	5
+mixed	130	en	dark	first steps hidden	6	8	8	7	8	8	8
+mixed	160	de	light	top	2	4	4	4	4	4	4
+mixed	160	de	light	first steps hidden	6	8	7	7	8	8	8
+mixed	160	de	dark	top	2	4	4	4	4	4	4
+mixed	160	de	dark	first steps hidden	6	8	7	7	8	8	8
+mixed	160	en	light	top	2	4	4	4	4	4	4
+mixed	160	en	light	first steps hidden	6	8	7	7	8	8	8
+mixed	160	en	dark	top	2	4	4	4	4	4	4
+mixed	160	en	dark	first steps hidden	6	8	7	7	8	8	8
