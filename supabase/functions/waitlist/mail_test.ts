@@ -11,7 +11,7 @@ import {
   unsubscribeLinks,
   welcomeMail,
 } from './mail.ts';
-import { MailError, resendMailer } from './resend.ts';
+import { MailError, resendMailer } from '../_shared/resend.ts';
 
 const ID = '3f2a8c1e-0b6d-4e7f-9a1b-2c3d4e5f6a7b';
 const SIG = 'ab'.repeat(32);

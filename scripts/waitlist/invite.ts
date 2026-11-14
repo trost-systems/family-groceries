@@ -27,7 +27,7 @@ import {
   type Mailer,
   RESEND_API_URL,
   resendMailer,
-} from '../../supabase/functions/waitlist/resend.ts';
+} from '../../supabase/functions/_shared/resend.ts';
 
 export interface Counts {
   platform: Platform;

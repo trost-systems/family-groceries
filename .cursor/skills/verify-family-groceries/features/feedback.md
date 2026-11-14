@@ -26,6 +26,15 @@ Preconditions: the baseline from `features/README.md`; peter signed in on the li
 - **RLS.** `fg db query "select count(*) from feedback" --as peter` fails with permission denied: the sender can't read their own notes from the table (their data export, `features/account.md`, does include them).
 - **Proof.** Screenshots `fb-more`, `fb-empty`, `fb-filled`, `fb-thanks` and the db query output.
 
+## Daily digest (server only, off by default)
+
+`fd-digest` (job 225, `docs/FEEDBACK.md` "Daily digest") has no app UI. Prove it on the local stack only, never against the hosted project, with synthetic notes:
+
+- **Off.** `curl -s $API_URL/functions/v1/feedback-digest/status` answers `{"enabled":false,"healthy":true}`; `select count(*) from cron.job where jobname = 'feedback-digest'` is 0.
+- **A run through pg_cron's command.** Serve the functions with an env file holding `FEEDBACK_DIGEST_SECRET`, and `RESEND_API_KEY` plus `RESEND_API_URL` pointing at a throwaway fake (an untracked function under `supabase/functions/` that logs the request and answers 200; remove it afterwards): `supabase functions serve --env-file <file> --no-verify-jwt`. As postgres: `select vault.create_secret('<same secret>', 'feedback_digest_secret')`, `select public.feedback_digest_set(true, 'http://kong:8000/functions/v1/feedback-digest')`, move the watermark back (`update feedback_digest_state set since_created_at = <two days ago>`), insert a note for a non-test address and set its `created_at` to yesterday morning. Run the job's command by hand (`select command from cron.job where jobname = 'feedback-digest'`, then execute it), wait a few seconds: `select status_code, content from net._http_response order by id desc limit 1` is `200 {"status":"sent","count":1}`, the fake logged one mail to hello@snacklist.app with the idempotency key `feedback-digest/<day>/<hash>`, and a second run answers `empty`.
+- **Clean up.** `select feedback_digest_set(false)`, delete the vault secret, the user and reset `feedback_digest_state`; stop `functions serve` by its pid.
+- The pgTAP file `supabase/tests/feedback_digest.test.sql` and `feedback-digest/digest_integration_test.ts` (db gate) cover the windows, reruns and failures.
+
 ## Gotchas
 
 - The sheet covers the tabs: close it (`feedback-close` or `fg back`) before `fg tap --key tab-list`.

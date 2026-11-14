@@ -1,6 +1,14 @@
 // Single sends through Resend's API (POST /emails): no batch, audiences, tags or metadata. An
 // error says only the HTTP status, never the answer, which may echo the address.
-import type { Mail } from './mail.ts';
+
+export interface Mail {
+  from: string;
+  replyTo?: string;
+  subject: string;
+  html: string;
+  text: string;
+  headers?: Record<string, string>;
+}
 
 export interface Mailer {
   /** Sends [mail] to [to]; Resend sends a repeated [idempotencyKey] only once (24 h). */
@@ -37,7 +45,7 @@ export function resendMailer(
           subject: mail.subject,
           html: mail.html,
           text: mail.text,
-          ...(Object.keys(mail.headers).length ? { headers: mail.headers } : {}),
+          ...(mail.headers && Object.keys(mail.headers).length ? { headers: mail.headers } : {}),
         }),
       });
       await res.body?.cancel();

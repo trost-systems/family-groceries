@@ -1,0 +1,81 @@
+# Watches the daily feedback digest (docs/FEEDBACK.md, "Daily digest"): once a day, after the
+# 08:00 Berlin run, it reads the feedback-digest function's status, two booleans and nothing else.
+# Fails when the digest is on and its last good run is older than three hours or the last run
+# failed, or when the function answers anything but 200 JSON. A 404 means the function is not
+# deployed yet: a notice, not a failure. The issue it opens names no feedback content.
+name: Feedback digest watch
+
+on:
+  schedule:
+    - cron: '40 7 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: feedback-digest-watch
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
+      GH_TOKEN: ${{ github.token }}
+      ISSUE_TITLE: 'Feedback digest failed'
+    steps:
+      - name: Read the digest's status
+        id: status
+        run: |
+          if [ -z "$SUPABASE_PROJECT_REF" ]; then
+            echo "::error::Repository variable SUPABASE_PROJECT_REF is missing; nothing was checked."
+            exit 1
+          fi
+          url="https://$SUPABASE_PROJECT_REF.supabase.co/functions/v1/feedback-digest/status"
+          code=$(curl -sS --max-time 30 --retry 3 --retry-delay 10 --retry-connrefused \
+            -o status.json -w '%{http_code}' "$url") || true
+          if [ "$code" = 404 ]; then
+            echo "::notice::$url answered 404: the feedback-digest function is not deployed yet."
+            exit 0
+          fi
+          if [ "$code" != 200 ] || ! jq -e '(.enabled | type) == "boolean" and (.healthy | type) == "boolean"' status.json >/dev/null 2>&1; then
+            echo "::error::$url answered HTTP ${code:-none} without the status JSON."
+            exit 1
+          fi
+          if jq -e '.enabled and (.healthy | not)' status.json >/dev/null; then
+            echo "::error::The feedback digest is on and unhealthy: its last run failed or no run succeeded for three hours (docs/FEEDBACK.md, Daily digest)."
+            exit 1
+          fi
+          echo "Feedback digest: $(jq -c . status.json)"
+      # GitHub disables scheduled workflows in a public repo after 60 days without repository
+      # activity; ci.yml keepalive-schedule re-enables this one on every push to main too.
+      - name: Keep this schedule enabled
+        id: enable
+        if: ${{ !cancelled() }}
+        run: gh workflow enable feedback-digest-watch.yml --repo "$GITHUB_REPOSITORY"
+      # Failure mails for scheduled runs go to whoever last edited the cron line, so a failure is
+      # one open issue instead, and the next green run closes it.
+      - name: Report the failure in an issue
+        if: failure()
+        env:
+          STATUS: ${{ steps.status.outcome }}
+          ENABLE: ${{ steps.enable.outcome }}
+        run: |
+          body="Run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID failed. Digest status: $STATUS. Re-enabling the schedule: $ENABLE. docs/FEEDBACK.md, section Daily digest, says how to look at the runs."
+          open=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 500 --json number,title \
+            --jq 'map(select(.title == env.ISSUE_TITLE))[0].number // empty')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$ISSUE_TITLE" --body "$body"
+          fi
+      - name: Close the failure issue
+        run: |
+          for n in $(gh issue list --repo "$GITHUB_REPOSITORY" --state open --limit 500 --json number,title \
+            --jq '.[] | select(.title == env.ISSUE_TITLE) | .number'); do
+            gh issue close "$n" --repo "$GITHUB_REPOSITORY" --comment "Run $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID is green again."
+          done
