@@ -18,6 +18,8 @@
 #   --dry-run checks everything and stops before the merge.
 #   --wait gives up after MERGE_WAIT_MINUTES (whole minutes, default 30), so a ci-ok that never
 #   reports can't hold the merge lock forever.
+#   A signal that ends only the wait's sleep (a kill by name elsewhere on the machine) does not
+#   end the wait: it is logged and the wait goes on, up to 20 times.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
@@ -87,13 +89,28 @@ ci_ok() { gh pr checks "$PR" --json name,bucket -q '.[] | select(.name=="ci-ok")
 state="$(ci_ok)"
 if [[ $wait == 1 ]]; then
   deadline=$((SECONDS + wait_minutes * 60))
+  ended_sleeps=0
   log "waiting for ci-ok on $head (up to $wait_minutes min)"
   while [[ $state != pass && $state != fail && $state != cancel ]]; do
     if [[ $SECONDS -ge $deadline ]]; then
       echo "ci-ok is still '${state:-missing}' on $head after $wait_minutes min; not merging. Check the run, then rerun (release the merge lock meanwhile)" >&2
       exit 1
     fi
-    sleep 20
+    # A kill by name elsewhere on the machine ends this sleep too (an fg-cli gate's test did,
+    # job 219): the land keeps its turn. A sleep that fails any other way, or keeps being ended,
+    # stops it: without the pause the loop would spend much of the token's API budget on looks.
+    sleep 20 || {
+      status=$?
+      if ((status <= 128)); then
+        echo "the wait's sleep failed (exit $status); not merging" >&2
+        exit "$status"
+      fi
+      if ((++ended_sleeps > 20)); then
+        echo "the wait's sleep was ended by a signal $ended_sleeps times (exit $status); not merging" >&2
+        exit 1
+      fi
+      log "the wait's sleep was ended by a signal (exit $status); still waiting for ci-ok"
+    }
     state="$(ci_ok)"
   done
 fi
