@@ -206,9 +206,17 @@ async function interceptRealtime(page: import('@playwright/test').Page) {
 for (const drop of ['closes the list channel', 'drops the socket'] as const) {
   test(`the list recovers when Realtime ${drop}`, async ({ page }) => {
     const realtime = await interceptRealtime(page);
+    let answered = false;
+    page.on('requestfinished', (request) => {
+      if (request.method() === 'GET' && /\/rest\/v1\/items\b/.test(request.url())) answered = true;
+    });
     const email = newEmail('drop');
     await signUpWithHousehold(page, email);
     await expect.poll(() => realtime.live, { message: 'the channel is live' }).toBe(true);
+    // Job 212: until a fetch answers, the start grace holds a dropped channel back.
+    await expect.poll(() => answered, { message: 'the list has answered' }).toBe(true);
+    // The app reads the answer a moment after the browser has it.
+    await page.waitForTimeout(500);
     realtime.live = false;
 
     if (drop === 'closes the list channel') realtime.closeChannel();

@@ -11,7 +11,7 @@ network. It now waits up to 10 s for the server after a start or a return to the
   - While it runs, failed reads and dropped or slow realtime joins are retried unseen (`_holding`,
     `:256`; `_goOffline`; `_onChannelStatus`).
   - When it ends with no answer and no live channel, the list says offline (`_graceOver`, `:437`).
-  - The first answer ends it (`onChange`, `:1917`). After that, failures show at once as before.
+  - The first answered request ends it (`_endGrace`, `:439`, called from `_showSnapshot` and `_ack`). The realtime channel joining does not (post-merge review). After that, failures show at once as before.
   - A realtime join begun in the grace keeps its whole 10 s timeout.
 - **Hide on a successful request:** `_showSnapshot` sets `online` after any answered resync,
   even while realtime is still joining (`:1576`). It does not do so while the OS reports no
@@ -60,3 +60,18 @@ network. It now waits up to 10 s for the server after a start or a return to the
 - **Catalog changes during a grace on a dead network** say "could not be saved" instead of
   "needs connection".
 - Nothing needs Peter.
+
+## Post-merge review fix (round 0, PR #432)
+
+- **The channel joining no longer ends the grace** (`app/lib/list/list_cubit.dart:439`, called at `:1590` and `:1763`).
+  A first fetch that fails after the channel joined stays unseen in the 10 s. Test: "a channel
+  that joins before the first fetch fails ends no grace".
+- **A stale resync failure no longer shows "Offline"** when a later resync already answered
+  (`:1544`). This covers the resume case: an old pooled socket failing after the fresh one answered.
+  Test: "a resync that fails after a later one answered shows nothing".
+- **Mutation check:** reverting either fix fails exactly its test.
+- **e2e change:** `live-sync.spec.ts` "the list recovers when Realtime …" closed the channel
+  the moment it was live, before the list's first fetch answered. CI caught that the drop is now
+  held there, as the grace intends. The spec now drops the channel once a fetch has answered.
+  Locally, `live-sync`, `offline-start`, `connectivity` and `list-header` passed 30/30 with
+  `--repeat-each=2`.
