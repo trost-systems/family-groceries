@@ -3,6 +3,7 @@
 # unit tests (the home widget's payload parser, job 63) pass.
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
+require_ci_flutter
 cd "$REPO_ROOT/app"
 flutter build apk --debug
 # The Flutter build writes the Gradle wrapper (not committed).

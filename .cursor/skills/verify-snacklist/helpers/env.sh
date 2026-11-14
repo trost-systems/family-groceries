@@ -8,8 +8,9 @@ VH_SKILL="$(dirname "$VH_HELPERS")"
 source "$VH_HELPERS/../../../../scripts/lib.sh"
 # shellcheck disable=SC1091 # the Hetzner runner's PATH (flutter, supabase, node); absent elsewhere
 [[ -f $HOME/groceries-ops/env.hz ]] && source "$HOME/groceries-ops/env.hz"
-# env.hz resets PATH to ~/flutter: a side-by-side SDK (FLUTTER_DIR, as in scripts/lib.sh) goes first again.
-if [[ -n ${FLUTTER_DIR:-} ]]; then export PATH="$FLUTTER_DIR/bin:$PATH"; fi
+# env.hz resets PATH to ~/flutter: the SDK scripts/lib.sh chose (flutter_dir) goes first again.
+PATH="$(flutter_dir)/bin:$PATH"
+export PATH
 
 VH_PREFIX="$(sed -n 's/^port = \([56][0-9][0-9]\)21$/\1/p' "$REPO_ROOT/supabase/config.toml" | head -1)"
 VH_PROJECT_ID="$(project_id)"

@@ -3,6 +3,7 @@
 # it never replaces the e2e build in app/build/web.
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
+require_ci_flutter
 no_posthog_in_ci
 cd "$REPO_ROOT/app"
 flutter pub get --enforce-lockfile >/dev/null

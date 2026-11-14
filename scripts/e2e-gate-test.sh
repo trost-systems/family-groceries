@@ -15,6 +15,7 @@ cat >"$tmp/repo/scripts/lib.sh" <<'LIB'
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 log() { :; }
 no_posthog_in_ci() { :; }
+require_ci_flutter() { :; }
 supabase_up() { :; }
 flutter_defines() { :; }
 fg_on_repo_stack() { :; }

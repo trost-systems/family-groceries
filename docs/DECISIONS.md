@@ -12545,6 +12545,22 @@ The baseline is 199 jobs' transcripts and 14 days of CI; its numbers go into
   instead. The app's side (a tick that was neither sent nor sent again after the reload, when the
   page went away within about half a second of the row leaving; seen once) is not changed here; it
   is noted for the lead.
+- **Gates that run Flutter require CI's version.** The box keeps Flutter 3.47.8 at `~/flutter`
+  and 3.50.0 beside it. With 3.47.8 the flutter gate changed 4 packages in `app/pubspec.lock`
+  and failed on a lint that CI does not report. `scripts/lib.sh` now prefers
+  `~/flutter-<FLUTTER_VERSION>` and the gates stop on any other version, naming the fix
+  (`scripts/install-flutter.sh`, which adds that directory and leaves `~/flutter` alone). A
+  warning was rejected: the transcripts show warnings above the fold are not read. `scripts/fg`
+  stays on `~/flutter`: its Linux build container mounts that directory, and it builds the app
+  to drive it, not to judge it.
+- **A branch behind main did not delete main's migrations.** `origin/main` is shared by all
+  worktrees, so another job's fetch made the schema check report "is on main and was deleted:
+  restore it" in 12 jobs, and following that advice staged main's migration in the branch. The
+  check now leaves out migrations that main added after the merge base and that no commit of
+  the branch touched (review round 1: a branch stacked on a PR that main took as another commit
+  had the file, so its deletion or edit must still fail). In CI's shallow clone
+  git knows no merge base and the check is as strict as before; the tree there is the merge
+  commit, which has all of main's migrations.
 
 ## Job 225 review 0: feedback doc and the digest URL, 2026-11-14
 

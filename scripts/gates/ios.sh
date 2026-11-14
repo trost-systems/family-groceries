@@ -9,6 +9,7 @@
 # test) let a slow runner hit the job's 40-minute limit (job 118, scripts/ci-ios-phases.sh).
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
+require_ci_flutter
 cd "$REPO_ROOT/app"
 log "phase config"
 flutter build ios --config-only --simulator --debug

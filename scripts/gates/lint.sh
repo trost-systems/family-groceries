@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Workflows (actionlint), shell scripts (shellcheck), the e2e TypeScript (tsc), the TypeScript lint
-# pack (tool/lint/ts), the gate wiring, the landing, append-log merge driver, e2e gate, verify.sh, Vercel ignore step, CI download, stack logs and release scripts' tests, the
+# pack (tool/lint/ts), the gate wiring, the landing, append-log merge driver, e2e gate, verify.sh, Flutter SDK, Vercel ignore step, CI download, stack logs and release scripts' tests, the
 # structural lints in scripts/lint.sh, and
 # the generated files against their source: the design tokens (design/tokens/build.mjs) and the
 # app icon and splash screens (design/app-icon/build.mjs), the Android widget's hex shapes
@@ -22,6 +22,7 @@ scripts/landing-test.sh
 scripts/merge-append-log-test.sh
 scripts/e2e-gate-test.sh
 scripts/verify-test.sh
+scripts/flutter-sdk-test.sh
 scripts/vercel-ignore-test.sh
 scripts/ci/download-test.sh
 scripts/ci/stack-logs-test.sh

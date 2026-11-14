@@ -8,6 +8,7 @@
 # when the holder exits, however it exits.
 set -euo pipefail
 source "$(dirname "$0")/../lib.sh"
+require_ci_flutter
 no_posthog_in_ci
 if [[ ${1:-} == -- ]]; then shift; fi
 

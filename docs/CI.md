@@ -89,6 +89,26 @@ Two notes come from the ledger:
   past it. Stop patching: write down what the fixes had in common, and test
   that assumption directly before a fourth.
 
+A local run uses CI's toolchain or says what is missing:
+
+- **Flutter.** `scripts/lib.sh` puts `FLUTTER_DIR` first on `PATH`, else
+  `~/flutter-<CI's version>` when that exists, else `~/flutter`. Every gate
+  that runs Flutter then checks the version against `FLUTTER_VERSION` in
+  `ci.yml` and stops on another one (`require_ci_flutter`), naming
+  `scripts/install-flutter.sh`: on Linux it downloads CI's version to
+  `~/flutter-<version>` and leaves `~/flutter` alone. Another SDK still
+  runs the app, but its gate is not the one CI runs: Flutter 3.47.8 on this
+  tree resolved 4 other packages into `app/pubspec.lock` and reported a lint
+  error that 3.50.0 does not (measured 2026-11-13). `scripts/fg` and
+  `scripts/bootstrap.sh` still use `~/flutter`.
+- **Migrations.** The lint gate's schema check compares the branch with
+  `origin/main`, which every fetch in any worktree moves. A migration that
+  main gained after the branch left it is not reported as deleted, unless
+  the branch's own commits touched that file (a branch stacked on a PR that
+  main took as another commit had it, so losing it is a deletion); the
+  check's last line says how many the branch lacks. A branch's own
+  migration still has to sort after main's newest.
+
 To add a check, add it to the gate script it belongs to. To add a gate, add
 `scripts/gates/<name>.sh`, a `ci.yml` job of the same name that runs it, the
 name in `ci-ok`'s `needs`, and the name in `GATES` (or `CI_ONLY`) in
