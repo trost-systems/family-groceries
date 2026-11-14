@@ -319,6 +319,12 @@ If `main` moved after your last push, the commit is no longer on top of
 `main`. merge-pr.sh then stops and says so. Run `scripts/push-pr.sh` again
 (one rebase, one push, one CI run), then merge-pr.sh.
 
+merge-pr.sh may run right after push-pr.sh, in one command. It takes the
+head from the branch and waits until GitHub's record of the PR names it (a
+look every 5 s, up to 2 min): for some seconds after a push the record still
+names the head before it, and the checks and the merge go by the record.
+No `sleep` between the two scripts is needed (job 218).
+
 That rebase does not stop when the only overlap is a section both sides
 appended to one of the logs every job writes (`docs/DECISIONS.md`,
 `docs/NEEDS_LEAD.md`, `docs/NEEDS_PETER.md`, `DONE_SUMMARY.md`, listed in

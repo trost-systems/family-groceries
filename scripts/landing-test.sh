@@ -2,7 +2,8 @@
 # Tests push-pr.sh and merge-pr.sh against a scratch remote and a fake gh: the landed message is
 # the PR title and description with the co-author trailers (MODEL_CO_AUTHOR optional, Peter's
 # last), the description's `## Changelog` section (job 39; "none" added when no app build
-# changes), and MERGE_WAIT_MINUTES takes whole minutes only. Run by the lint gate.
+# changes), MERGE_WAIT_MINUTES takes whole minutes only, and merge-pr.sh waits for GitHub's record
+# of the PR to name the pushed head (job 218). Run by the lint gate.
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
@@ -27,6 +28,7 @@ git commit -q --allow-empty -m init
 git push -q origin HEAD:main
 
 # The fake gh answers for one open PR, #7, from files in $tmp/pr; merging fast-forwards main.
+# While $tmp/pr/stale-heads has lines, each question for the head takes the first as its answer.
 cat >"$tmp/bin/gh" <<'GH'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -38,7 +40,13 @@ case "$1 $2" in
     case "$fields" in
       number,title,state) echo "7 $(cat "$pr/title")" ;;
       headRefName) echo "$branch" ;;
-      headRefOid) git --git-dir="$FAKE_REMOTE" rev-parse "refs/heads/$branch" ;;
+      headRefOid)
+        if [[ -s $pr/stale-heads ]]; then
+          sed -n 1p "$pr/stale-heads"
+          sed -i 1d "$pr/stale-heads"
+        else
+          git --git-dir="$FAKE_REMOTE" rev-parse "refs/heads/$branch"
+        fi ;;
       title) cat "$pr/title" ;;
       body) cat "$pr/body" ;;
       *) echo "fake gh: no answer for $*" >&2; exit 1 ;;
@@ -198,6 +206,53 @@ mv "$tmp/pr/body.pushed" "$tmp/pr/body"
 out="$(MERGE_WAIT_MINUTES=08 scripts/merge-pr.sh --wait 7 2>&1)" || fail "MERGE_WAIT_MINUTES=08 did not merge: $out"
 expect_eq "MERGE_WAIT_MINUTES=08 merges once ci-ok passes" "$(cat "$tmp/pr/merged" 2>/dev/null)" \
   "merged $(git --git-dir="$tmp/origin.git" rev-parse refs/heads/p6)"
+
+# Job 218: right after push-pr.sh's push GitHub's record still names the head before it, which is
+# not on top of main. A sleep that only counts stands in for the 5 s between two looks.
+mkdir "$tmp/nosleep"
+cat >"$tmp/nosleep/sleep" <<'SLEEP'
+#!/usr/bin/env bash
+echo "$1" >>"$FAKE_PR/slept"
+SLEEP
+chmod +x "$tmp/nosleep/sleep"
+# A PR opened before main moved (on the first commit), then pushed with push-pr.sh: the head
+# before that push is behind main, as in a land that had to rebase.
+pushed_pr() {
+  git checkout -q -B "$1" "$(git rev-list --max-parents=0 origin/main)"
+  echo "$1" >"$tmp/pr/branch"
+  echo "$1" >"$1" && git add "$1" && git commit -q -m "wip"
+  git push -q -u origin HEAD 2>/dev/null
+  before_push="$(git rev-parse HEAD)"
+  scripts/push-pr.sh >/dev/null 2>&1 || fail "push-pr.sh did not push $1"
+  echo pass >"$tmp/pr/ci"
+}
+pushed_pr p7
+printf '%s\n%s\n' "$before_push" "$before_push" >"$tmp/pr/stale-heads"
+out="$(PATH="$tmp/nosleep:$PATH" scripts/merge-pr.sh 7 2>&1)" || fail "a record two looks behind the push stopped the merge: $out"
+expect_eq "merge-pr.sh merges the pushed head once GitHub's record names it" "$(tail -n 1 "$tmp/pr/merged")" \
+  "merged $(git --git-dir="$tmp/origin.git" rev-parse refs/heads/p7)"
+expect_eq "merge-pr.sh looked again twice, 5 s apart" "$(tr '\n' ' ' <"$tmp/pr/slept")" "5 5 "
+
+pushed_pr p8
+for _ in $(seq 100); do echo "$before_push"; done >"$tmp/pr/stale-heads"
+rm -f "$tmp/pr/slept"
+if out="$(PATH="$tmp/nosleep:$PATH" scripts/merge-pr.sh 7 2>&1)"; then fail "merged on a record that never named the pushed head"; fi
+[[ $out == *"GitHub names $before_push as #7's head, 2 min after p8 was read as $(git rev-parse HEAD)"* ]] \
+  || fail "a record that stays behind gave: $out"
+expect_eq "merge-pr.sh gives the record 2 min" "$(wc -l <"$tmp/pr/slept" | tr -d ' ')" 24
+expect_eq "nothing merged on the stale record" "$(tail -n 1 "$tmp/pr/merged")" \
+  "merged $(git --git-dir="$tmp/origin.git" rev-parse refs/heads/p7)"
+rm "$tmp/pr/stale-heads"
+
+# The wait is for the record only: a main that moved after the push still stops the merge.
+pushed_pr p9
+git push -q origin "$(git commit-tree -p origin/main -m "main moved" 'origin/main^{tree}'):refs/heads/main"
+rm -f "$tmp/pr/slept"
+if out="$(PATH="$tmp/nosleep:$PATH" scripts/merge-pr.sh 7 2>&1)"; then fail "merged a head that is behind main"; fi
+[[ $out == *"p9 is behind main; run scripts/push-pr.sh"* ]] || fail "main moved after the push gave: $out"
+[[ ! -e $tmp/pr/slept ]] || fail "merge-pr.sh waited for a record that was current"
+expect_eq "nothing merged behind main" "$(tail -n 1 "$tmp/pr/merged")" \
+  "merged $(git --git-dir="$tmp/origin.git" rev-parse refs/heads/p7)"
 
 if [[ $failures -gt 0 ]]; then
   echo "landing-test: $failures failed" >&2

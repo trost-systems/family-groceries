@@ -2172,3 +2172,25 @@ instructions.
    job's decisions to `docs/decisions/<job>.md` would end those too. It needs the standing
    instructions changed (where a job writes, how docs cite a decision) and is not worth it for
    that remainder alone; say so if it should be done.
+
+## Job 218: lands after PR 3, and two things left for the lead (2026-11-14)
+
+Status: open, the lead's call. No browser step. Numbers:
+`docs/hillclimb/fable-improvement-2026-11.md`, PR 3.
+
+1. **No sleep between push-pr.sh and merge-pr.sh.** merge-pr.sh now waits until GitHub's record
+   of the PR names the pushed head (up to 2 min). Land scripts and the standing instructions
+   can drop their `sleep 20`; a land is
+   `merge-lock bash -c 'scripts/push-pr.sh && scripts/merge-pr.sh --wait <n>'` again.
+2. **Optional: the lint gate's list of script tests.** `scripts/gates/lint.sh` names each
+   script test in one header sentence and runs each on its own line; jobs that add a test
+   conflict there (job 219 three times, job 218 once). A pattern, as the db gate has since
+   job 218's PR 2, needs the tests renamed to one suffix first. PR #420 edited the file and
+   was open until the morning of 14 November, so job 218 left it. Worth a small job now that
+   #420 is in, if jobs keep adding script tests.
+3. **For the record: the merge queue moves at one CI run per land.** In the night of 13 to 14
+   November main took 17 commits a median 25 min apart while lands waited (job 218's first
+   land: 2 h 31 min in the queue). The lock is held from the push to the merge, so through the
+   CI run (median 23.8 min from creation to green). Nothing to do unless that wait starts to hurt; a change (CI before
+   the lock, a merge queue on GitHub) is a design of its own.
+

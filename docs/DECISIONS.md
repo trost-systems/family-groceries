@@ -12646,3 +12646,24 @@ Evidence and the measured comparison: `docs/hillclimb/fable-improvement-2026-11.
 7. **Helpers copied between e2e specs stay.** `tool/hotspots/e2e-duplicates.mjs` counts 13 spare
    copies, 44 lines of 11,741. Moving them costs a full e2e run and a place in the merge queue,
    and one of the files is in an open PR. The script stays to see whether the number grows.
+
+## Job 218, PR 3: merge-pr.sh waits for GitHub's record of the pushed head, 2026-11-14
+
+Evidence and the test: `docs/hillclimb/fable-improvement-2026-11.md`, PR 3.
+
+1. **The branch is the head, the record follows.** Right after `push-pr.sh`, GitHub's record
+   of the PR still named the head before the push; merge-pr.sh read it, found it behind main
+   and stopped. 17 lands in 16 jobs went back to the merge queue that way. merge-pr.sh now reads
+   the head from the branch and waits until the record names it.
+2. **In merge-pr.sh, not in push-pr.sh.** push-pr.sh could wait after its push, but a push
+   outside a land (a fix round) would wait for nothing, and merge-pr.sh is the script that
+   depends on the record: `gh pr checks` and `gh pr merge` go by it.
+3. **5 s between looks, 2 min, no setting.** Jobs that slept 20 s got through, so 2 min is far
+   above what was seen; a record that stays behind that long is something to look at, not to
+   wait out inside the merge lock. The test replaces `sleep` on its `PATH`, so no variable for
+   the interval was needed.
+4. **The recipe replaces the private fixes.** Four jobs had put a `sleep 20` between the two
+   scripts in a land script in `/tmp`. `docs/CI.md` now says that the two scripts run back to
+   back.
+5. **"Main moved" has a test now.** The wait must not hide the real refusal, and no case
+   covered it: a main that moved after the push still stops the merge, without a wait.
